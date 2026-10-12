@@ -64,5 +64,11 @@ jobs:
           else
             echo "Отчёт не получен, последние строки лога:"
             tail -40 bench.log
+            sleep 5
+            crash=$(ls -t ~/Library/Logs/DiagnosticReports/mollygram_prototype* 2>/dev/null | head -1)
+            if [ -n "$crash" ]; then
+              echo "Отчёт о падении: $crash"
+              head -c 20000 "$crash"
+            fi
             exit 1
           fi
