@@ -211,8 +211,11 @@ class _Results extends StatelessWidget {
             Text(
               '${e.key.label}: ${f(e.value.fps)} fps, '
               'raster p95 ${f(e.value.rasterP95)} мс, '
-              'дропов ${e.value.missedVsyncs} (${f(e.value.missedPct)}%)',
-              style: TextStyle(color: c.fg2),
+              'дропов ${e.value.missedVsyncs} (${f(e.value.missedPct)}%)'
+              '${e.value.pauses > 0 ? ', прерван, повторите' : ''}',
+              style: TextStyle(
+                color: e.value.pauses > 0 ? const Color(0xFFD70015) : c.fg2,
+              ),
             ),
         ],
       ],

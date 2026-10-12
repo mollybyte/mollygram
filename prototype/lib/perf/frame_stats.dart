@@ -39,6 +39,7 @@ class FrameSummary {
     required this.rasterMax,
     required this.overBudget,
     required this.missedVsyncs,
+    required this.pauses,
   });
 
   /// [refreshHz] из display.refreshRate; 0, если система его не сообщила,
@@ -58,14 +59,23 @@ class FrameSummary {
         rasterMax: 0,
         overBudget: 0,
         missedVsyncs: 0,
+        pauses: 0,
       );
     }
     final sorted = [...s]..sort((a, b) => a.vsyncUs.compareTo(b.vsyncUs));
     final gaps = <double>[];
+    var pauses = 0;
+    var pausedMs = 0.0;
     for (var i = 1; i < sorted.length; i++) {
       final g = (sorted[i].vsyncUs - sorted[i - 1].vsyncUs) / 1000;
-      // Длинные паузы — простой (ничего не анимировалось), не дроп.
-      if (g > 0 && g < 100) gaps.add(g);
+      // Паузы дольше 100 мс — не дроп, а простой: окно скрыли, свернули
+      // или увели на другой экран. Их считаем отдельно.
+      if (g >= 100) {
+        pauses++;
+        pausedMs += g;
+      } else if (g > 0) {
+        gaps.add(g);
+      }
     }
     final medianGap = gaps.isEmpty ? 0.0 : _pct(gaps, 50);
     final vsyncHz = medianGap > 0 ? 1000 / medianGap : 0.0;
@@ -77,7 +87,8 @@ class FrameSummary {
       final n = (g / budget).round() - 1;
       if (n > 0) missed += n;
     }
-    final spanMs = (sorted.last.vsyncUs - sorted.first.vsyncUs) / 1000;
+    final spanMs =
+        (sorted.last.vsyncUs - sorted.first.vsyncUs) / 1000 - pausedMs;
     final build = s.map((e) => e.buildMs).toList();
     final raster = s.map((e) => e.rasterMs).toList();
     return FrameSummary._(
@@ -95,6 +106,7 @@ class FrameSummary {
           .where((e) => e.buildMs > budget || e.rasterMs > budget)
           .length,
       missedVsyncs: missed,
+      pauses: pauses,
     );
   }
 
@@ -116,6 +128,9 @@ class FrameSummary {
 
   /// Пропущенные vsync при непрерывной анимации: настоящие дропы.
   final int missedVsyncs;
+
+  /// Паузы дольше 100 мс: прогон с паузами неполноценный, его надо повторить.
+  final int pauses;
 
   double get missedPct => frames + missedVsyncs == 0
       ? 0

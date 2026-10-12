@@ -183,7 +183,7 @@ class Benchmark extends ChangeNotifier {
     }
     b.writeln();
     b.writeln(
-      'Прогон | фаза | кадров | fps | vsync Гц | build p50/p95/max | raster p50/p95/max | дольше бюджета | пропущено vsync',
+      'Прогон | фаза | кадров | fps | vsync Гц | build p50/p95/max | raster p50/p95/max | дольше бюджета | пропущено vsync | паузы',
     );
     for (final r in results) {
       for (final e in r.phases.entries) {
@@ -193,9 +193,16 @@ class Benchmark extends ChangeNotifier {
           '${r.config.label} | ${e.key.label} | ${s.frames} | ${f(s.fps)} | '
           '${f(s.vsyncHz)} | ${f(s.buildP50)}/${f(s.buildP95)}/${f(s.buildMax)} мс | '
           '${f(s.rasterP50)}/${f(s.rasterP95)}/${f(s.rasterMax)} мс | '
-          '${s.overBudget} | ${s.missedVsyncs} (${f(s.missedPct)}%)',
+          '${s.overBudget} | ${s.missedVsyncs} (${f(s.missedPct)}%) | ${s.pauses}',
         );
       }
+    }
+    if (results.any((r) => r.phases.values.any((s) => s.pauses > 0))) {
+      b.writeln();
+      b.writeln(
+        'Были паузы дольше 100 мс: окно скрывали, сворачивали или переносили '
+        'на другой экран. Такие прогоны не показательны, замер лучше повторить.',
+      );
     }
     return b.toString();
   }

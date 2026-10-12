@@ -68,4 +68,18 @@ void main() {
     expect(s.overBudget, 1);
     expect(s.vsyncHz, closeTo(120, 0.5));
   });
+
+  test('пауза дольше 100 мс не считается дропом и не роняет fps', () {
+    final samples = <FrameSample>[];
+    var t = 0;
+    for (var i = 0; i < 240; i++) {
+      // Посередине окно было скрыто 5 минут.
+      t += i == 120 ? 300000000 : 8333;
+      samples.add(FrameSample(vsyncUs: t, buildMs: 1, rasterMs: 2, totalMs: 4));
+    }
+    final s = FrameSummary.of(samples, 120);
+    expect(s.pauses, 1);
+    expect(s.missedVsyncs, 0);
+    expect(s.fps, closeTo(120, 1));
+  });
 }
