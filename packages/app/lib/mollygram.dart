@@ -3,10 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_prototype/app_state.dart';
+import 'package:mollygram_prototype/chat/fake_data.dart';
 import 'package:mollygram_prototype/circle/circle_controller.dart';
 import 'package:mollygram_prototype/main.dart';
 
 import 'authorization_panel.dart';
+import 'prototype_chat_adapter.dart';
 import 'telegram_session_launcher.dart';
 
 class MollygramApp extends StatefulWidget {
@@ -44,18 +46,34 @@ class _MollygramAppState extends State<MollygramApp> {
         return StreamBuilder<AuthorizationStage>(
           stream: session.authorization.stages,
           initialData: session.authorization.currentStage,
-          builder: (context, state) => _shell(
-            state.data?.kind == AuthorizationStageKind.ready
-                ? null
-                : _Overlay(session: session, stage: state.data),
-          ),
+          builder: (context, state) {
+            if (state.data?.kind != AuthorizationStageKind.ready) {
+              return _shell(
+                foreground: _Overlay(session: session, stage: state.data),
+              );
+            }
+            return StreamBuilder<void>(
+              stream: session.chatLists.changes,
+              builder: (context, _) {
+                final chats = PrototypeChatAdapter.chatsFor(
+                  session.chatLists.store,
+                  const ChatListLocation.main(),
+                );
+                return _shell(chats: chats.isEmpty ? null : chats);
+              },
+            );
+          },
         );
       },
     );
   }
 
-  Widget _shell([Widget? foreground]) =>
-      PrototypeApp(app: _app, circle: _circle, foreground: foreground);
+  Widget _shell({Widget? foreground, List<FakeChat>? chats}) => PrototypeApp(
+    app: _app,
+    circle: _circle,
+    foreground: foreground,
+    chats: chats,
+  );
 }
 
 class _Overlay extends StatelessWidget {
