@@ -1,0 +1,27 @@
+{
+  "v": 3,
+  "createdOnFiles": {"v": 1, "at": "2026-10-12T20:20:00Z"},
+  "title": "Mollygram website options",
+  "launch": {"view": "canvas"},
+  "pages": [],
+  "boards": {
+    "Main.dc.html": {"x": 0, "y": 0, "w": 1440, "h": 5300, "title": "A. Window, light", "expand": "fill", "is_interactive": true},
+    "MainDark.dc.html": {"x": 1520, "y": 0, "w": 1440, "h": 5300, "title": "A. Window, dark", "expand": "fill", "is_interactive": true},
+    "Poster.dc.html": {"x": 3280, "y": 0, "w": 1440, "h": 3300, "title": "B. Poster, light", "expand": "fill", "is_interactive": true},
+    "PosterDark.dc.html": {"x": 4800, "y": 0, "w": 1440, "h": 3300, "title": "B. Poster, dark", "expand": "fill", "is_interactive": true},
+    "Manual.dc.html": {"x": 6560, "y": 0, "w": 1440, "h": 5900, "title": "C. Manual, light", "expand": "fill", "is_interactive": true},
+    "ManualDark.dc.html": {"x": 8080, "y": 0, "w": 1440, "h": 5900, "title": "C. Manual, dark", "expand": "fill", "is_interactive": true},
+    "Channel.dc.html": {"x": 9840, "y": 0, "w": 1440, "h": 900, "title": "D. Channel, light", "expand": "fill", "is_interactive": true},
+    "ChannelDark.dc.html": {"x": 11360, "y": 0, "w": 1440, "h": 900, "title": "D. Channel, dark", "expand": "fill", "is_interactive": true},
+    "AppShot.dc.html": {"x": 0, "y": 6600, "w": 1200, "h": 680, "title": "Shared app screen (Screen tweak: chat, palette, split, privacy, plugins)", "is_interactive": true, "radius": 12}
+  },
+  "order": ["Main.dc.html", "MainDark.dc.html", "Poster.dc.html", "PosterDark.dc.html", "Manual.dc.html", "ManualDark.dc.html", "Channel.dc.html", "ChannelDark.dc.html", "AppShot.dc.html"],
+  "notes": {
+    "a": {"x": 0, "y": -300, "text": "A. Window: the app itself sells it, calm and Mac-native", "kind": "title1", "maxW": 2960},
+    "b": {"x": 3280, "y": -300, "text": "B. Poster: the neon brand gives it a face people remember", "kind": "title1", "maxW": 2960},
+    "c": {"x": 6560, "y": -300, "text": "C. Manual: facts and specs win over power users", "kind": "title1", "maxW": 2960},
+    "d": {"x": 9840, "y": -300, "text": "D. Channel: the site is a Mollygram window you can click through", "kind": "title1", "maxW": 2960},
+    "shared": {"x": 0, "y": 6300, "text": "Real app screens used on every option", "kind": "title1", "maxW": 2960}
+  },
+  "designSystems": []
+}

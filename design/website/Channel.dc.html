@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mollygram, option D</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#C2255C}a:hover{color:#9A1B49}
+.wd{--fg:#1D1D1F;--fg2:#5A4A50;--accent:#C2255C;--in:#FFFFFF;--field:rgba(0,0,0,.055);--sep:rgba(0,0,0,.08);--av1:#A9ADB6;--av2:#878B94;--bshadow:0 1px 1px rgba(0,0,0,.07);--pill:rgba(90,20,45,.32);
+  --wp:radial-gradient(60% 55% at 12% 18%,#F8DCE5 0,transparent 70%),radial-gradient(55% 55% at 88% 12%,#E59AB4 0,transparent 70%),radial-gradient(60% 60% at 82% 88%,#F5CFDB 0,transparent 70%),radial-gradient(55% 60% at 18% 90%,#DB8EA9 0,transparent 70%),#EDBACB;
+  --glass:rgba(255,255,255,.42);--rim:rgba(255,255,255,.6);--hi:rgba(255,255,255,.95);--lo:rgba(255,255,255,.3);--glow:rgba(255,255,255,.35);--shadow:0 12px 34px rgba(90,20,45,.16);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;font-size:14px;color:var(--fg);background:var(--wp);-webkit-font-smoothing:antialiased}
+.wd.dark{--fg:#F5F5F7;--fg2:#C2AEB6;--accent:#FF6F9F;--in:#2A2226;--field:rgba(255,255,255,.07);--sep:rgba(255,255,255,.09);--av1:#71757E;--av2:#565A62;--bshadow:none;--pill:rgba(0,0,0,.35);
+  --wp:radial-gradient(60% 55% at 12% 18%,#4A2236 0,transparent 70%),radial-gradient(55% 55% at 88% 12%,#2E1422 0,transparent 70%),radial-gradient(60% 60% at 82% 88%,#552A3F 0,transparent 70%),radial-gradient(55% 60% at 18% 90%,#2A1220 0,transparent 70%),#22101A;
+  --glass:rgba(30,22,26,.42);--rim:rgba(255,255,255,.14);--hi:rgba(255,255,255,.22);--lo:rgba(255,255,255,.05);--glow:rgba(255,255,255,.04);--shadow:0 12px 34px rgba(0,0,0,.45)}
+.wd .glass{background:var(--glass);-webkit-backdrop-filter:blur(30px) saturate(190%);backdrop-filter:blur(30px) saturate(190%);border:1px solid var(--rim);box-shadow:inset 0 1px 0 var(--hi),inset 0 -1px 0 var(--lo),inset 0 0 18px var(--glow),0 0 0 .5px rgba(0,0,0,.06),var(--shadow)}
+.wd .av{display:grid;place-items:center;border-radius:50%;color:#FFFFFF;font-weight:600;background:linear-gradient(180deg,var(--av1),var(--av2));flex:none}
+.wd .row{border:0;width:100%;font:inherit;color:inherit;text-align:left;background:transparent;border-radius:10px;display:flex;gap:10px;align-items:center;padding:8px;cursor:pointer}
+.wd .row .s{color:var(--fg2)}
+.wd .row.on{background:var(--accent);color:#FFFFFF}
+.wd .row.on .s{color:rgba(255,255,255,.85)}
+.wd .row.on .av{background:rgba(255,255,255,.25)}
+.wd .post{background:var(--in);box-shadow:var(--bshadow);border-radius:18px 18px 18px 6px;overflow:hidden;width:100%;max-width:620px}
+.wd .post .tx{padding:12px 14px 4px;line-height:1.5}
+.wd .post .tx b{display:block;font-size:15px;margin-bottom:2px}
+.wd .meta{font-size:11.5px;color:var(--fg2);text-align:right;padding:0 14px 8px}
+.wd .kb{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;max-width:620px;width:100%;margin-top:4px}
+.wd .kb a{display:flex;align-items:center;justify-content:center;gap:6px;height:40px;border-radius:10px;background:var(--in);box-shadow:var(--bshadow);color:var(--accent);font-weight:600;text-decoration:none}
+.wd .kb a:hover{filter:brightness(.97)}
+.wd .crop{position:relative;overflow:hidden;background:var(--field)}
+.wd .crop > div{position:absolute}
+.wd .side{position:absolute;top:10px;left:10px;bottom:10px;width:300px;z-index:3}
+.wd .main{position:absolute;top:0;bottom:0;left:320px;right:0}
+.wd .pill{font-size:12px;font-weight:500;padding:3px 10px;border-radius:11px;background:var(--pill);color:#FFFFFF}
+@media (max-width:760px){.wd .side{position:relative;top:0;left:0;bottom:auto;width:auto;margin:10px}.wd .main{position:relative;left:0;height:900px}.wd .list{flex-direction:row!important;overflow-x:auto}.wd .list .row{width:auto;flex:none}.wd .list .row .s{display:none}}
+@media (prefers-reduced-transparency:reduce){.wd .glass{background:var(--in);-webkit-backdrop-filter:none;backdrop-filter:none}}
+</style>
+</helmet>
+<div class="wd {{theme}}" style="width: 100%; height: 100vh; min-height: 900px; position: relative; overflow: hidden">
+
+  <aside class="glass side" aria-label="Sections" style="border-radius: 18px; display: flex; flex-direction: column; overflow: hidden">
+    <div style="display: flex; align-items: center; gap: 10px; padding: 16px 16px 12px">
+      <svg width="30" height="30" viewBox="6 6 88 88" aria-hidden="true"><defs><linearGradient id="mgd" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FF6E9C"></stop><stop offset="1" stop-color="#D42A63"></stop></linearGradient></defs><rect x="6" y="6" width="88" height="88" rx="20" fill="url(#mgd)"></rect><path fill="#fff" d="M50 22c-17.7 0-31 11.6-31 26.5 0 8 3.8 15 10 19.9-.5 4.3-2.6 8.2-6 11 6.4.3 12-1.6 16.2-4.9 3.4 1 7 1.5 10.8 1.5 17.7 0 31-11.6 31-26.5S67.7 22 50 22z"></path><path fill="none" stroke="#D6336C" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round" d="M36 58V45.5a7 7 0 0 1 14 0V58M50 45.5a7 7 0 0 1 14 0V58"></path></svg>
+      <span style="display: flex; flex-direction: column"><span style="font-weight: 700; font-size: 15px">Mollygram</span><span style="font-size: 12px; color: var(--fg2)">Telegram client for macOS</span></span>
+    </div>
+    <nav class="list" style="flex: 1; overflow-y: auto; padding: 0 8px 8px; display: flex; flex-direction: column; gap: 1px">
+      <sc-for list="{{secs}}" as="c" hint-placeholder-count="8">
+        <button class="row {{c.cls}}" onClick="{{c.pick}}" aria-current="{{c.on}}">
+          <span class="av" style="width: 40px; height: 40px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{c.icon}}"></path></svg></span>
+          <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px">
+            <span style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{c.name}}</span>
+            <span class="s" style="font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{c.sub}}</span>
+          </span>
+        </button>
+      </sc-for>
+    </nav>
+    <div style="padding: 10px 16px 14px; font-size: 12px; color: var(--fg2); border-top: 1px solid var(--sep)">GPL-3.0 · Not affiliated with Telegram</div>
+  </aside>
+
+  <main class="main" aria-label="Mollygram channel">
+    <div style="position: absolute; inset: 0; overflow-y: auto">
+      <div style="max-width: 700px; width: 100%; margin: 0 auto; box-sizing: border-box; padding: 76px 24px 96px; display: flex; flex-direction: column; gap: 10px; align-items: flex-start">
+
+        <sc-if value="{{v.intro}}" hint-placeholder-val="{{ true }}">
+          <div style="align-self: center" class="pill">Pinned</div>
+          <article class="post">
+            <div class="crop" style="height: 330px"><div style="width: 1100px; left: -30px; top: -10px"><dc-import name="AppShot" appearance="{{appearance}}" screen="Chat" height="{{620}}" hint-size="1100px,620px"></dc-import></div></div>
+            <div class="tx"><b>Telegram, at home on your Mac.</b>Mollygram is a free, open source Telegram client. Tabs, a command palette, ghost mode, plugins and video messages at 120 fps, in a window that feels like the rest of macOS. Windows and Linux are next.</div>
+            <div class="meta">Oct 12</div>
+          </article>
+          <div class="kb"><a href="#download">Download for macOS</a><a href="https://github.com/mollybyte/mollygram">Source on GitHub</a></div>
+        </sc-if>
+
+        <sc-if value="{{v.video}}" hint-placeholder-val="{{ false }}">
+          <article class="post">
+            <div style="display: flex; gap: 24px; align-items: center; padding: 18px; flex-wrap: wrap; background: var(--field)">
+              <div style="position: relative; width: 200px; height: 200px; flex: none">
+                <div style="width: 200px; height: 200px; border-radius: 50%; background: radial-gradient(21% 24% at 50% 40%,#E2B897 0,#D3A483 70%,transparent 72%),radial-gradient(42% 30% at 50% 98%,#4D5D6E 0,#4D5D6E 80%,transparent 82%),radial-gradient(70% 60% at 85% 20%,#F6E3C4 0,transparent 70%),linear-gradient(160deg,#CDBBA2 0,#9B8B78 100%)"></div>
+                <svg width="200" height="200" viewBox="0 0 200 200" style="position: absolute; inset: 0" aria-hidden="true"><circle cx="100" cy="100" r="97" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="3"></circle><circle cx="100" cy="100" r="97" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-dasharray="610" stroke-dashoffset="400" transform="rotate(-90 100 100)"></circle></svg>
+                <span style="position: absolute; left: 14px; bottom: 16px; font-size: 11px; color: #FFFFFF; padding: 1px 7px; border-radius: 8px; background: rgba(0,0,0,.38)">0:04 / 0:12</span>
+              </div>
+              <dl style="margin: 0; display: grid; grid-template-columns: auto auto; gap: 8px 18px; font-size: 13.5px">
+                <dt style="color: var(--fg2)">Frame rate</dt><dd style="margin: 0">up to 120 fps</dd>
+                <dt style="color: var(--fg2)">Size</dt><dd style="margin: 0">384, 512 or 640 px</dd>
+                <dt style="color: var(--fg2)">Length</dt><dd style="margin: 0">up to 60 s</dd>
+                <dt style="color: var(--fg2)">Files</dt><dd style="margin: 0">original quality</dd>
+              </dl>
+            </div>
+            <div class="tx"><b>Video messages at 120 fps.</b>Round videos record and play at your display’s refresh rate. Photos and files go out in original quality when you ask for it.</div>
+            <div class="meta">Oct 12</div>
+          </article>
+        </sc-if>
+
+        <sc-if value="{{v.tabs}}" hint-placeholder-val="{{ false }}">
+          <article class="post">
+            <div class="crop" style="height: 300px"><div style="width: 1100px; left: -300px; top: 0"><dc-import name="AppShot" appearance="{{appearance}}" screen="Split" height="{{560}}" hint-size="1100px,560px"></dc-import></div></div>
+            <div class="tx"><b>Tabs and split view.</b>Keep chats open as tabs, put two side by side with ⌘\, and find them all again after a restart.</div>
+            <div class="meta">Oct 12</div>
+          </article>
+        </sc-if>
+
+        <sc-if value="{{v.palette}}" hint-placeholder-val="{{ false }}">
+          <article class="post">
+            <div class="crop" style="height: 320px"><div style="width: 1100px; left: -390px; top: -40px"><dc-import name="AppShot" appearance="{{appearance}}" screen="Palette" height="{{600}}" hint-size="1100px,600px"></dc-import></div></div>
+            <div class="tx"><b>Everything is ⌘K away.</b>Chats, messages, settings and commands in one search. Type &gt; for commands, @ for people, # for messages.</div>
+            <div class="meta">Oct 12</div>
+          </article>
+        </sc-if>
+
+        <sc-if value="{{v.privacy}}" hint-placeholder-val="{{ false }}">
+          <article class="post">
+            <div class="crop" style="height: 340px"><div style="width: 1100px; left: -330px; top: -170px"><dc-import name="AppShot" appearance="{{appearance}}" screen="Privacy" height="{{580}}" hint-size="1100px,580px"></dc-import></div></div>
+            <div class="tx"><b>Read without being seen.</b>Ghost mode hides your online status and read receipts. Deleted messages stay on your Mac, and every edit keeps its history. Each switch starts off.</div>
+            <div class="meta">Oct 12</div>
+          </article>
+        </sc-if>
+
+        <sc-if value="{{v.plugins}}" hint-placeholder-val="{{ false }}">
+          <article class="post">
+            <div class="crop" style="height: 330px"><div style="width: 900px; left: -150px; top: 0"><dc-import name="AppShot" appearance="{{appearance}}" screen="Plugins" height="{{520}}" hint-size="900px,520px"></dc-import></div></div>
+            <div class="tx"><b>Plugins that ask first.</b>Sandboxed TypeScript with a permission list you read before turning it on. Transcription, translation and filters are built in.</div>
+            <div class="meta">Oct 12</div>
+          </article>
+          <div class="kb" style="grid-template-columns: repeat(1, minmax(0, 1fr))"><a href="https://github.com/mollybyte/mollygram/blob/main/docs/plugins.md">Read the plugin guide</a></div>
+        </sc-if>
+
+        <sc-if value="{{v.source}}" hint-placeholder-val="{{ false }}">
+          <article class="post">
+            <div class="tx"><b>Free and open source.</b>Mollygram is GPL-3.0, built with Flutter on top of TDLib, Telegram’s own library. Every line is on GitHub, and so is every build.</div>
+            <div style="padding: 6px 14px 4px; display: flex; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--fg2)"><span>build passing</span><span>·</span><span>GPL-3.0</span></div>
+            <div class="meta">Oct 12</div>
+          </article>
+          <div class="kb"><a href="https://github.com/mollybyte/mollygram">GitHub</a><a href="https://github.com/mollybyte/mollygram/blob/main/CHANGELOG.md">Changelog</a></div>
+        </sc-if>
+
+        <sc-if value="{{v.download}}" hint-placeholder-val="{{ false }}">
+          <article class="post" id="download">
+            <div class="tx"><b>Download</b>macOS, Apple silicon and Intel. Windows comes next, then Linux.</div>
+            <div class="meta">Oct 12</div>
+          </article>
+          <div class="kb"><a href="#download">Download for macOS</a><a href="https://github.com/mollybyte/mollygram/releases">All releases</a></div>
+        </sc-if>
+      </div>
+    </div>
+
+    <div style="position: absolute; z-index: 2; top: 12px; left: 16px; right: 16px; display: flex; justify-content: space-between; align-items: center; gap: 8px">
+      <div class="glass" style="border-radius: 24px; display: flex; align-items: center; gap: 10px; padding: 5px 16px 5px 5px">
+        <span class="av" style="width: 34px; height: 34px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{cur.icon}}"></path></svg></span>
+        <span style="display: flex; flex-direction: column"><span style="font-weight: 600">{{cur.name}}</span><span style="font-size: 12px; color: var(--fg2)">{{cur.sub}}</span></span>
+      </div>
+      <div class="glass" style="border-radius: 24px; display: flex; align-items: center; gap: 4px; padding: 4px">
+        <a href="https://github.com/mollybyte/mollygram" aria-label="GitHub" style="width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; color: var(--fg)"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-3.2 19.5c.5.1.7-.2.7-.5v-1.7c-2.8.6-3.4-1.3-3.4-1.3-.5-1.2-1.1-1.5-1.1-1.5-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .9 1.5 2.3 1.1 2.9.8.1-.6.4-1.1.6-1.3-2.2-.3-4.6-1.1-4.6-5a3.9 3.9 0 0 1 1-2.7c-.1-.3-.5-1.3.1-2.7 0 0 .8-.3 2.8 1a9.6 9.6 0 0 1 5 0c1.9-1.3 2.8-1 2.8-1 .6 1.4.2 2.4.1 2.7a3.9 3.9 0 0 1 1 2.7c0 3.9-2.3 4.7-4.6 5 .4.3.7.9.7 1.9V21c0 .3.2.6.7.5A10 10 0 0 0 12 2z"></path></svg></a>
+        <a href="#download" style="height: 34px; padding: 0 14px; border-radius: 17px; display: inline-flex; align-items: center; background: var(--accent); color: #FFFFFF; font-weight: 600; font-size: 13px; text-decoration: none">Download</a>
+      </div>
+    </div>
+
+    <div style="position: absolute; z-index: 2; bottom: 14px; left: 0; right: 0; padding: 0 24px; display: flex; justify-content: center">
+      <div class="glass" style="width: 100%; max-width: 652px; border-radius: 24px; display: flex; align-items: center; gap: 10px; padding: 5px 5px 5px 18px; box-sizing: border-box">
+        <span style="flex: 1; color: var(--fg2)">Free for macOS. Windows and Linux are next.</span>
+        <a href="#download" style="height: 36px; padding: 0 16px; border-radius: 18px; display: inline-flex; align-items: center; background: var(--accent); color: #FFFFFF; font-weight: 600; text-decoration: none">Download for macOS</a>
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"appearance":{"editor":"enum","options":["Light","Dark"],"default":"Light"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { sec: 'all' };
+  }
+  renderVals() {
+    const appearance = this.props.appearance ?? 'Light';
+    const S = [
+      { id: 'all', name: 'Mollygram', sub: 'channel · 8 posts', icon: 'M4 5h16v11H9l-5 4z' },
+      { id: 'video', name: 'Video messages', sub: '120 fps circles, original files', icon: 'M3 7a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM16 10l5-3v10l-5-3' },
+      { id: 'tabs', name: 'Tabs and split', sub: 'two chats side by side', icon: 'M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM12 4v16' },
+      { id: 'palette', name: 'Command palette', sub: '⌘K for everything', icon: 'M9 6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3z' },
+      { id: 'privacy', name: 'Privacy', sub: 'ghost mode, kept messages', icon: 'M6 20V10a6 6 0 0 1 12 0v10l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5z' },
+      { id: 'plugins', name: 'Plugins', sub: 'sandboxed, with permissions', icon: 'M9 3v4M15 3v4M6 7h12v4a6 6 0 0 1-12 0zM12 17v4' },
+      { id: 'source', name: 'Open source', sub: 'GPL-3.0 on GitHub', icon: 'M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16' },
+      { id: 'download', name: 'Download', sub: 'macOS now, Windows next', icon: 'M12 4v12M7 11l5 5 5-5M5 20h14' }
+    ];
+    const sec = this.state.sec;
+    const secs = S.map((c) => ({ ...c, on: c.id === sec, cls: c.id === sec ? 'on' : '', pick: () => this.setState({ sec: c.id }) }));
+    const all = sec === 'all';
+    const v = {};
+    ['intro', 'video', 'tabs', 'palette', 'privacy', 'plugins', 'source', 'download'].forEach((k) => { v[k] = all || sec === k; });
+    v.intro = all;
+    return { appearance, theme: appearance === 'Dark' ? 'dark' : '', secs, v, cur: S.find((c) => c.id === sec) };
+  }
+}
+</script>
+</body>
+</html>
