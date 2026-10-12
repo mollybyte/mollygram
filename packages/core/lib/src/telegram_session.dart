@@ -24,6 +24,7 @@ final class TelegramSession {
   final TdlibInitializer _initializer;
   final AuthorizationController authorization;
   final ChatListController chatLists;
+  final _errors = StreamController<Object>.broadcast(sync: true);
   StreamSubscription<AuthorizationStage>? _stageSubscription;
   var _disposed = false;
 
@@ -48,8 +49,15 @@ final class TelegramSession {
     return session;
   }
 
+  /// Initialization and synchronization errors suitable for user-facing UI.
+  Stream<Object> get errors => _errors.stream;
+
   void _onStage(AuthorizationStage stage) {
-    unawaited(_reconcile(stage));
+    unawaited(
+      _reconcile(stage).onError((Object error, StackTrace stackTrace) {
+        _errors.add(error);
+      }),
+    );
   }
 
   Future<void> _reconcile(AuthorizationStage stage) async {
@@ -76,5 +84,6 @@ final class TelegramSession {
     await chatLists.dispose();
     await authorization.dispose();
     await _tdlib.close();
+    await _errors.close();
   }
 }

@@ -51,6 +51,27 @@ void main() {
       await session.dispose();
     },
   );
+
+  test(
+    'reports missing credentials without crashing the TDLib receive loop',
+    () async {
+      final session = await TelegramSession.attach(
+        tdlib,
+        parameters: TdlibParameters(
+          api: const TelegramApiConfig(apiId: 0, apiHash: ''),
+          databaseDirectory: '/tmp/mollygram/database',
+          filesDirectory: '/tmp/mollygram/files',
+          databaseEncryptionKey: Uint8List.fromList([1, 2, 3]),
+          systemLanguageCode: 'en',
+          deviceModel: 'Mac',
+          applicationVersion: '0.1.0',
+        ),
+      );
+
+    await expectLater(session.errors.first, completion(isA<StateError>()));
+      await session.dispose();
+    },
+  );
 }
 
 final class _FakeTdJson implements td.TdJson {
