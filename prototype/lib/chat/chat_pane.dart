@@ -17,12 +17,14 @@ class ChatPane extends StatefulWidget {
     required this.messages,
     required this.scroll,
     required this.circle,
+    this.onSend,
   });
 
   final FakeChat chat;
   final List<FakeMessage> messages;
   final ScrollController scroll;
   final CircleController circle;
+  final ValueChanged<String>? onSend;
 
   @override
   State<ChatPane> createState() => _ChatPaneState();
@@ -143,7 +145,7 @@ class _ChatPaneState extends State<ChatPane> {
           child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 712),
-              child: const _Composer(),
+              child: _Composer(onSend: widget.onSend),
             ),
           ),
         ),
@@ -181,7 +183,9 @@ class _ChatPaneState extends State<ChatPane> {
 }
 
 class _Composer extends StatefulWidget {
-  const _Composer();
+  const _Composer({this.onSend});
+
+  final ValueChanged<String>? onSend;
 
   @override
   State<_Composer> createState() => _ComposerState();
@@ -233,17 +237,23 @@ class _ComposerState extends State<_Composer> {
           const IconBtn(MgIcons.emoji, tooltip: 'Emoji and stickers', size: 18),
           const SizedBox(width: 2),
           if (hasDraft)
-            Container(
-              width: 32,
-              height: 32,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: c.accent,
-                shape: BoxShape.circle,
-              ),
-              child: const DefaultTextStyle(
-                style: TextStyle(color: Colors.white),
-                child: MgIcon(MgIcons.send, size: 16, stroke: 2.2),
+            GestureDetector(
+              onTap: () {
+                widget.onSend?.call(_text.text);
+                _text.clear();
+              },
+              child: Container(
+                width: 32,
+                height: 32,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: c.accent,
+                  shape: BoxShape.circle,
+                ),
+                child: const DefaultTextStyle(
+                  style: TextStyle(color: Colors.white),
+                  child: MgIcon(MgIcons.send, size: 16, stroke: 2.2),
+                ),
               ),
             )
           else
