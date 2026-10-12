@@ -19,6 +19,7 @@ final class PrototypeChatAdapter {
             '',
             '',
             unread: chat.unreadCount,
+            id: chat.id,
           ),
       ];
 

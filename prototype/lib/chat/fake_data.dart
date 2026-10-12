@@ -33,6 +33,7 @@ class FakeChat {
     this.unread = 0,
     this.muted = false,
     this.status = '',
+    this.id = 0,
   });
 
   final String name;
@@ -42,6 +43,7 @@ class FakeChat {
   final int unread;
   final bool muted;
   final String status;
+  final int id;
 }
 
 const _phrases = [

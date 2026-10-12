@@ -39,6 +39,7 @@ class PrototypeApp extends StatefulWidget {
     this.messages,
     this.folders,
     this.foreground,
+    this.onSend,
   });
 
   final AppState app;
@@ -47,6 +48,7 @@ class PrototypeApp extends StatefulWidget {
   final List<FakeMessage>? messages;
   final List<PrototypeFolder>? folders;
   final Widget? foreground;
+  final void Function(FakeChat chat, String text)? onSend;
 
   @override
   State<PrototypeApp> createState() => _PrototypeAppState();
@@ -137,6 +139,7 @@ class _PrototypeAppState extends State<PrototypeApp> {
                     messages: _messages,
                     scroll: _scroll,
                     circle: widget.circle,
+                    onSend: (text) => widget.onSend?.call(_chats[_chat], text),
                   ),
                   overlay: app.overlay
                       ? PerfOverlay(

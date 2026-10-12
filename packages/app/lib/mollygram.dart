@@ -70,6 +70,8 @@ class _MollygramAppState extends State<MollygramApp> {
                   folders: PrototypeChatAdapter.foldersFor(
                     session.chatLists.store,
                   ),
+                  onSend: (chat, text) =>
+                      unawaited(session.conversations.sendText(chat.id, text)),
                 );
               },
             );
@@ -83,12 +85,14 @@ class _MollygramAppState extends State<MollygramApp> {
     Widget? foreground,
     List<FakeChat>? chats,
     List<PrototypeFolder>? folders,
+    void Function(FakeChat chat, String text)? onSend,
   }) => PrototypeApp(
     app: _app,
     circle: _circle,
     foreground: foreground,
     chats: chats,
     folders: folders,
+    onSend: onSend,
   );
 }
 
