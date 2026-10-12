@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mollygram: a Telegram client for macOS</title>
+<meta name="description" content="Mollygram is a free, open source Telegram client for macOS with tabs, a command palette, private reading and video messages at 120 fps.">
+<link rel="canonical" href="{{SITE}}/">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mollygram">
+<meta property="og:url" content="{{SITE}}/">
+<meta property="og:title" content="Mollygram: Telegram, at home on your Mac">
+<meta property="og:description" content="Tabs, a command palette, private reading and video messages at 120 fps. Free and open source.">
+<meta property="og:image" content="{{SITE}}/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The Mollygram window with a chat list and a conversation.">
+<meta name="twitter:card" content="summary_large_image">
+<style>{{CSS}}</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="Mollygram, back to top">{{LOGO}}Mollygram</a>
+    <nav aria-label="Sections">
+      <a href="#features">Features</a>
+      <a href="#privacy">Privacy</a>
+      <a href="#plugins" class="opt">Plugins</a>
+      <a href="{{REPO}}" class="opt">GitHub</a>
+    </nav>
+    <a class="bt p sm" href="{{RELEASES}}">Download</a>
+  </div>
+</header>
+
+<main id="main">
+  <section id="top" class="hero">
+    <p class="kicker">A Telegram client for macOS. Windows and Linux are next.</p>
+    <h1>Telegram, at home on your Mac.</h1>
+    <p class="lead">Tabs, a command palette, private reading and video messages at 120 fps. Free and open source.</p>
+    <div class="cta">
+      <a class="bt p" href="{{RELEASES}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12M7 11l5 5 5-5M5 20h14"/></svg>Download for macOS</a>
+      <a class="bt s" href="{{REPO}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-3.2 19.5c.5.1.7-.2.7-.5v-1.7c-2.8.6-3.4-1.3-3.4-1.3-.5-1.2-1.1-1.5-1.1-1.5-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .9 1.5 2.3 1.1 2.9.8.1-.6.4-1.1.6-1.3-2.2-.3-4.6-1.1-4.6-5a3.9 3.9 0 0 1 1-2.7c-.1-.3-.5-1.3.1-2.7 0 0 .8-.3 2.8 1a9.6 9.6 0 0 1 5 0c1.9-1.3 2.8-1 2.8-1 .6 1.4.2 2.4.1 2.7a3.9 3.9 0 0 1 1 2.7c0 3.9-2.3 4.7-4.6 5 .4.3.7.9.7 1.9V21c0 .3.2.6.7.5A10 10 0 0 0 12 2z"/></svg>Source on GitHub</a>
+    </div>
+    <p class="fine">Apple silicon and Intel · GPL-3.0</p>
+    <div class="wrap hero-shot">{{SHOT:Chat:lg}}</div>
+  </section>
+
+  <section id="features" class="feat first" aria-labelledby="h-video">
+    <div class="wrap row">
+      <div class="txt">
+        <h2 id="h-video">Video messages at 120 fps.</h2>
+        <p class="lead">Round videos record and play at your display’s refresh rate, up to 640 by 640. Photos and files go out in original quality when you ask for it, not squeezed by default.</p>
+      </div>
+      <div class="shot rounds">
+        <div aria-hidden="true">{{ROUND}}</div>
+        <dl>
+          <dt>Frame rate</dt><dd>up to 120 fps</dd>
+          <dt>Size</dt><dd>384, 512 or 640 px</dd>
+          <dt>Length</dt><dd>up to 60 s</dd>
+          <dt>Codec</dt><dd>H.264</dd>
+          <dt>Files</dt><dd>original quality</dd>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <section class="feat" aria-labelledby="h-tabs">
+    <div class="wrap row rev">
+      <div class="txt">
+        <h2 id="h-tabs">Tabs and split view.</h2>
+        <p class="lead">Keep the chats you live in open as tabs, and put two side by side when you are copying, comparing or just talking to two people at once. Tabs come back after a restart.</p>
+      </div>
+      <div class="shot">{{SHOT:Split}}</div>
+    </div>
+  </section>
+
+  <section class="feat" aria-labelledby="h-palette">
+    <div class="wrap row">
+      <div class="txt">
+        <h2 id="h-palette">Everything is ⌘K away.</h2>
+        <p class="lead">Jump to a chat, a message or a setting without the mouse. Type &gt; for commands, @ for people and # to search messages.</p>
+      </div>
+      <div class="shot">{{SHOT:Palette}}</div>
+    </div>
+  </section>
+
+  <section id="privacy" class="band" aria-labelledby="h-privacy">
+    <div class="wrap row rev">
+      <div class="txt">
+        <h2 id="h-privacy">Read without being seen.</h2>
+        <p class="lead">Ghost mode hides your online status and read receipts. Deleted messages stay on your Mac, and every edit keeps its history.</p>
+        <p class="lead">Each option is its own switch, and all of them start off.</p>
+      </div>
+      <div class="shot">{{SHOT:Privacy}}</div>
+    </div>
+  </section>
+
+  <section id="plugins" class="feat" aria-labelledby="h-plugins">
+    <div class="wrap row">
+      <div class="txt">
+        <h2 id="h-plugins">Plugins that ask first.</h2>
+        <p class="lead">Plugins are small TypeScript programs that run in a sandbox. Each one lists what it can touch, and you see that list before you turn it on. Transcription, translation and filters ship built in.</p>
+        <p class="more"><a href="{{REPO}}/blob/main/docs/plugins.md">Write a plugin</a></p>
+      </div>
+      <div class="shot">{{SHOT:Plugins}}</div>
+    </div>
+  </section>
+
+  <section id="download" class="end" aria-labelledby="h-free">
+    <h2 id="h-free">Free, and yours to read.</h2>
+    <p class="lead">Mollygram is open source under GPL-3.0, built with Flutter on top of TDLib, Telegram’s own library. macOS comes first, Windows next, then Linux.</p>
+    <div class="cta">
+      <a class="bt p" href="{{RELEASES}}">Download for macOS</a>
+      <a class="bt s" href="{{REPO}}">Source on GitHub</a>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <strong>Mollygram</strong>
+    <a href="{{REPO}}">GitHub</a>
+    <a href="{{REPO}}/blob/main/CHANGELOG.md">Changelog</a>
+    <a href="{{REPO}}/blob/main/docs/plugins.md">Plugin docs</a>
+    <a href="{{REPO}}/security">Security</a>
+    <p>Not affiliated with Telegram. Telegram is a trademark of its owners.</p>
+  </div>
+</footer>
+</body>
+</html>

@@ -42,6 +42,7 @@ jobs:
             plugin_sdk
             prototype
             design
+            web
             docs
             ci
             deps

@@ -1,0 +1,10 @@
+{
+  "name": "mollygram-website",
+  "private": true,
+  "type": "module",
+  "description": "mollygram.dev, a static site with no runtime dependencies",
+  "scripts": {
+    "build": "node build.mjs",
+    "preview": "node build.mjs && npx --yes http-server dist -p 4321 -c-1"
+  }
+}
