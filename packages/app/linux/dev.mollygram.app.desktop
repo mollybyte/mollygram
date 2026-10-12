@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Mollygram
+GenericName=Telegram client
+Comment=Desktop Telegram client
+Exec=mollygram %u
+Icon=dev.mollygram.app
+Terminal=false
+Categories=Network;InstantMessaging;Chat;
+StartupWMClass=dev.mollygram.app
