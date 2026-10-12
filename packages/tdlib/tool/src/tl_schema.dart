@@ -1,10 +1,10 @@
-/// Разбор td_api.tl: типы, функции и документация из комментариев `//@`.
+/// Parses td_api.tl: types, functions and documentation from `//@` comments.
 library;
 
 final class TlSchema {
   TlSchema(this.abstractClasses, this.objects, this.functions);
 
-  /// Абстрактные типы, объявленные через `//@class`.
+  /// Abstract types declared via `//@class`.
   final Map<String, String> abstractClasses;
   final List<TlConstructor> objects;
   final List<TlConstructor> functions;
@@ -31,8 +31,10 @@ final class TlParam {
   final TlType type;
   final String description;
 
-  /// TDLib помечает необязательные объекты в описании, отдельного
-  /// синтаксиса для этого в схеме нет.
+  /// Whether the parameter may be null.
+  ///
+  /// TDLib marks optional objects in the description; the schema has no
+  /// dedicated syntax for this.
   bool get mayBeNull =>
       !type.isPrimitive && !type.isVector && _nullable.hasMatch(description);
 
@@ -45,10 +47,10 @@ final class TlParam {
 final class TlType {
   TlType(this.name, [this.item]);
 
-  /// `int32`, `string`, `vector`, имя типа и т.д.
+  /// `int32`, `string`, `vector`, a type name, etc.
   final String name;
 
-  /// Тип элемента для `vector<T>`.
+  /// The element type for `vector<T>`.
   final TlType? item;
 
   bool get isVector => name == 'vector';
@@ -72,7 +74,7 @@ final class TlType {
   }
 }
 
-/// Встроенные конструкторы в начале схемы, у них нет классов.
+/// Built-in constructors at the start of the schema; they have no classes.
 const _builtinResults = {
   'Double',
   'String',
@@ -149,7 +151,7 @@ TlSchema parseTlSchema(String source) {
     );
   }
 
-  // `//@class` стоит отдельным блоком перед своими конструкторами.
+  // `//@class` comes as a separate block before its constructors.
   for (final m in _classTag.allMatches(source)) {
     abstractClasses[m.group(1)!] = m.group(2)!.trim();
   }

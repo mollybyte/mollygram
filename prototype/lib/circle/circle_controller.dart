@@ -5,8 +5,8 @@ import 'package:video_player/video_player.dart';
 
 const circleAsset = 'assets/circle_640.mp4';
 
-/// Чем декодируется кружок: media_kit (libmpv) или системный AVFoundation
-/// через video_player. Сравниваем оба на одном и том же ролике 640x640.
+/// The decoder for video messages: media_kit (libmpv) or the system
+/// AVFoundation via video_player. Both are compared on the same 640x640 clip.
 enum CircleBackend {
   mediaKit('media_kit'),
   avFoundation('AVFoundation');
@@ -85,12 +85,12 @@ class _AvFoundationBackend implements _Backend {
   );
 }
 
-/// Один плеер на всё окно: кружок в ленте и плавающий кружок показывают
-/// одну и ту же текстуру.
+/// One player for the whole window: the video message in the list and the
+/// floating one show the same texture.
 class CircleController extends ChangeNotifier {
   CircleController({this.enabled = true});
 
-  /// false в виджет-тестах: нативных плагинов там нет.
+  /// False in widget tests, where native plugins are unavailable.
   final bool enabled;
 
   CircleBackend backend = CircleBackend.mediaKit;
@@ -101,7 +101,8 @@ class CircleController extends ChangeNotifier {
   int _inList = 0;
   bool _disposed = false;
 
-  /// Кружок из ленты сейчас построен (виден или рядом с экраном).
+  /// Whether the list video message is currently built (visible or near the
+  /// viewport).
   bool get inList => _inList > 0;
 
   Future<void> start() async {

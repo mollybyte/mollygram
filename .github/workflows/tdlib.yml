@@ -1,9 +1,9 @@
 name: TDLib
 
-# Собирает libtdjson для macOS (arm64 + x86_64 в одном universal dylib) из
-# коммита, закреплённого в packages/tdlib/tdlib.json. OpenSSL собирается
-# статически, чтобы библиотека не зависела от Homebrew на машине
-# пользователя. На main результат публикуется в релиз tdlib-<версия>.
+# Builds libtdjson for macOS (arm64 + x86_64 in one universal dylib) from the
+# commit pinned in packages/tdlib/tdlib.json. OpenSSL is linked statically so
+# the library does not depend on Homebrew on the user's machine. On main the
+# result is published to the tdlib-<version> release.
 
 on:
   workflow_dispatch:

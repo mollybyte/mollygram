@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'theme.dart';
 
-/// Четырёхточечные градиентные обои Telegram, как в макете: четыре
-/// эллиптических radial-gradient поверх базового цвета.
+/// The four-point Telegram gradient wallpaper, as in the mockup: four
+/// elliptical radial gradients over a base color.
 class Wallpaper extends StatelessWidget {
   const Wallpaper({super.key});
 
@@ -24,7 +24,7 @@ class _Spot {
   final double rx, ry, cx, cy;
 }
 
-// radial-gradient(60% 55% at 12% 18%, ...), и так далее по макету.
+// radial-gradient(60% 55% at 12% 18%, ...), and so on, per the mockup.
 const _spots = [
   _Spot(0.60, 0.55, 0.12, 0.18),
   _Spot(0.55, 0.55, 0.88, 0.12),
@@ -40,7 +40,7 @@ class _WallpaperPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     canvas.drawRect(Offset.zero & size, Paint()..color = base);
-    // В CSS первый слой лежит сверху, поэтому рисуем с конца.
+    // In CSS the first layer is on top, so paint from the last one.
     for (var i = _spots.length - 1; i >= 0; i--) {
       final s = _spots[i];
       final color = colors[i];

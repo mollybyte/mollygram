@@ -1,56 +1,56 @@
-# Прототип: стекло, длинная лента, кружки
+# Prototype: glass, long feed, video messages
 
-Отдельный Flutter-проект для проверки трёх рискованных мест до основной разработки:
+A standalone Flutter project for testing three risky areas before main development:
 
-- стеклянный плавающий слой (боковая панель, две капсулы шапки, поле ввода) поверх обоев Telegram, все панели в одном `BackdropGroup` через `BackdropFilter.grouped`;
-- лента из 5000 сообщений разной высоты, которая прокручивается под стеклом;
-- кружок 640x640, 60 fps, H.264, в двух плеерах: `media_kit` (libmpv) и системный AVFoundation через `video_player`.
+- a floating glass layer (sidebar, two header capsules, composer) over Telegram wallpaper, with all panels in one `BackdropGroup` via `BackdropFilter.grouped`;
+- a feed of 5000 messages of varying height scrolling under the glass;
+- a 640x640, 60 fps, H.264 round video message in two players: `media_kit` (libmpv) and the system AVFoundation via `video_player`.
 
-TDLib здесь нет, все данные фейковые. Код не переносится в приложение как есть, переносятся выводы.
+There is no TDLib here; all data is fake. The code is not moved into the app as is; only the findings are.
 
-## Запуск на Mac
+## Running on a Mac
 
-Нужны Xcode и [fvm](https://fvm.app). Версия Flutter закреплена в `.fvmrc` (3.47.7).
+Requires Xcode and [fvm](https://fvm.app). The Flutter version is pinned in `.fvmrc` (3.47.7).
 
 ```sh
-brew tap leoafarias/fvm && brew install fvm   # один раз
+brew tap leoafarias/fvm && brew install fvm   # once
 cd prototype
-fvm install          # ставит версию из .fvmrc
+fvm install          # installs the version from .fvmrc
 fvm flutter pub get
 fvm flutter run --profile -d macos
 ```
 
-Замерять только в `--profile` или `--release`: в debug цифры в разы хуже и ничего не значат. Окно лучше держать на встроенном экране MacBook Pro с ProMotion (120 Гц), без внешнего монитора.
+Measure only in `--profile` or `--release`: debug numbers are several times worse and mean nothing. Keep the window on the built-in display of a MacBook Pro with ProMotion (120 Hz), without an external monitor.
 
-Готовую profile-сборку без Xcode можно скачать из артефакта `mollygram-prototype-macos-profile` в прогоне workflow Prototype. Сборка не подписана: при первом запуске правый клик по приложению, «Открыть».
+A ready-made profile build can be downloaded without Xcode from the `mollygram-prototype-macos-profile` artifact of a Prototype workflow run. The build is unsigned: on first launch, right-click the app and choose "Open".
 
-## Как снять цифры
+## Taking measurements
 
-Справа сверху служебная панель (⌘⇧P скрывает её). В ней живые fps, build и raster p50/p95 и счётчики дропов.
+The debug panel is at the top right (⌘⇧P hides it). It shows live fps, build and raster p50/p95, and dropped-frame counters.
 
-1. Нажмите «Замер 1 мин» и не трогайте окно. Прогоняются три конфигурации по 20 секунд: media_kit со стеклом, AVFoundation со стеклом, media_kit без размытия.
-2. Каждый прогон: 6 секунд кружок играет в покое, затем 14 секунд лента едет вверх на 9000 px и обратно. Когда кружок уезжает за экран, он продолжает играть в углу, как в Telegram.
-3. Нажмите «Скопировать отчёт» и пришлите текст в тред.
+1. Press "Benchmark 1 min" and do not touch the window. Three configurations run for 20 seconds each: media_kit with glass, AVFoundation with glass, media_kit without blur.
+2. Each run: the video message plays for 6 seconds while idle, then for 14 seconds the feed scrolls up 9000 px and back. When the video message scrolls off screen, it keeps playing in a corner, as in Telegram.
+3. Press "Copy report" and post the text in the thread.
 
-То же одной командой, отчёт печатается в терминал и приложение закрывается:
+The same in one command; the report is printed to the terminal and the app exits:
 
 ```sh
 fvm flutter build macos --profile
 MG_AUTOBENCH=1 build/macos/Build/Products/Profile/mollygram_prototype.app/Contents/MacOS/mollygram_prototype
 ```
 
-## Что значат цифры
+## What the numbers mean
 
-- **fps** и **vsync Гц**: сколько кадров в секунду реально выходит. На ProMotion цель 120.
-- **build / raster p50/p95/max**: время UI-потока и GPU-потока на кадр. Бюджет при 120 Гц 8,3 мс.
-- **дольше бюджета**: кадры, у которых build или raster не уложились в один vsync.
-- **пропущено vsync**: настоящие дропы. Во время замера тикер просит кадр на каждом vsync, поэтому каждый пропуск между кадрами виден пользователю.
+- **fps** and **vsync Hz**: how many frames per second actually reach the screen. The target on ProMotion is 120.
+- **build / raster p50/p95/max**: UI thread and GPU thread time per frame. The budget at 120 Hz is 8.3 ms.
+- **over budget**: frames whose build or raster did not fit into one vsync.
+- **missed vsyncs**: real drops. During a benchmark the ticker requests a frame on every vsync, so every gap between frames is visible to the user.
 
-Критерий прототипа: 120 fps и меньше 1% пропущенных vsync при прокрутке под стеклом с играющим кружком. Если стекло не укладывается, сравнение с прогоном «без размытия» покажет, сколько стоит именно размытие.
+Prototype pass criterion: 120 fps and less than 1% missed vsyncs while scrolling under glass with a video message playing. If the glass does not fit the budget, comparing with the "without blur" run shows how much the blur itself costs.
 
-## Ролик
+## Test clip
 
-`assets/circle_640.mp4` сгенерирован ffmpeg: 640x640, 60 fps, 12 секунд, H.264 High, два квадрата едут с постоянной скоростью, по ним видны рывки.
+`assets/circle_640.mp4` was generated with ffmpeg: 640x640, 60 fps, 12 seconds, H.264 High, two squares moving at constant speed so that stutter is visible.
 
 ```sh
 ffmpeg -f lavfi -i "gradients=s=640x640:r=60:d=12:speed=0.015:n=4:c0=0xDBDDBB:c1=0x6BA587:c2=0xD5D88D:c3=0x88B884" \

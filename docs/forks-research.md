@@ -1,60 +1,60 @@
-# Что взять у форков Telegram
+# What to take from Telegram forks
 
-Обзор AyuGram, Kotatogram, Forkgram, Materialgram, 64Gram, Nagram/Nekogram, Octogram, Swiftgram, Unigram. Сведения из README на 2026-10-12; пункты, которые не удалось проверить, помечены «?». Сверено с планом и таблицей паритета (этапы 2–8).
+A review of AyuGram, Kotatogram, Forkgram, Materialgram, 64Gram, Nagram/Nekogram, Octogram, Swiftgram and Unigram. Based on their READMEs as of 2026-10-12; items that could not be verified are marked "?". Cross-checked against the plan and the parity table (stages 2–8).
 
-## Лицензии
+## Licenses
 
-Mollygram распространяется под GPL-3.0. Код форков не копируем, берём только идеи и пользовательское поведение, поэтому лицензионной проблемы нет. Если когда-нибудь понадобится взять код, учитываем:
+Mollygram is distributed under GPL-3.0. We do not copy fork code; we take only ideas and user-facing behavior, so there is no licensing issue. If we ever need to reuse code, keep in mind:
 
-- GPL-3.0 совместимы: tdesktop и его форки (AyuGram Desktop?, 64Gram, Materialgram, Forkgram?, Kotatogram?), Nagram, Unigram.
-- GPL-2.0-only (Nekogram, Octogram, AyuGram4A, macOS-клиент Telegram) с GPL-3.0 напрямую не совместима.
-- Торговые знаки: нельзя использовать имя и логотип Telegram, а у Nagram и ряда других есть требование переименовывать форки. Свой `api_id` обязателен, как и запланировано.
+- GPL-3.0 compatible: tdesktop and its forks (AyuGram Desktop?, 64Gram, Materialgram, Forkgram?, Kotatogram?), Nagram, Unigram.
+- GPL-2.0-only (Nekogram, Octogram, AyuGram4A, the Telegram macOS client) is not directly compatible with GPL-3.0.
+- Trademarks: the Telegram name and logo cannot be used, and Nagram and several others require forks to be renamed. Our own `api_id` is mandatory, as planned.
 
-## Список
+## Feature list
 
-Сложность: S до недели, M 1–3 недели, L больше.
+Effort: S up to a week, M 1–3 weeks, L more.
 
-| # | Фича | У кого | Зачем нам | Сложн. | Этап |
-|---|------|--------|-----------|--------|------|
-| 1 | Режим призрака: не отправлять прочтение, «печатает», «в сети» | AyuGram | Главный пункт приватности, уже в плане | M | 5 |
-| 2 | Чтение без отметки «прочитано» | AyuGram | Часть режима призрака, отдельный переключатель по чатам | S | 5 |
-| 3 | Сохранение удалённых сообщений с пометкой | AyuGram | В плане, своя БД | M | 5 |
-| 4 | История правок | AyuGram | В плане; нужны пометки «изменено/удалено» с настройкой вида | S | 5 |
-| 5 | Пересылка без автора и в несколько чатов сразу | Kotatogram, Forkgram, Cherrygram? | Ежедневная мелочь, которой нет в официальном клиенте | S | 3 |
-| 6 | Отправка и пересылка файлов без сжатия, настройка качества фото и битрейта голосовых | Materialgram, Nekogram? | Совпадает с приоритетом качества вложений | M | 6 |
-| 7 | Локальные папки чатов | Kotatogram | Папки без лимита и без сервера; ложатся на модель рабочего пространства | M | 4 |
-| 8 | Фильтры сообщений (скрыть рекламу, спам, по слову) | AyuGram4A | Хороший первый встроенный плагин на хуке `message.render` | M | 7 |
-| 9 | Перевод сообщений на месте | AyuGram, Swiftgram, Nagram | Premium-функция официального клиента, у нас бесплатно через плагин | M | 7 |
-| 10 | Скрытие номера телефона в профиле, настройках и заголовке | Materialgram | Мелочь для скриншотов, почти бесплатно | S | 5 |
-| 11 | Режим стримера: скрывать чувствительное при демонстрации экрана | AyuGram Desktop | Дополняет приватность и палитру | S | 5 |
-| 12 | Шрифт и размер интерфейса на выбор, компактный список чатов | AyuGram, Kotatogram | Часть настроек внешнего вида; по умолчанию остаётся наш дизайн | S | 3 |
-| 13 | Недавние чаты и «прыжок к первому сообщению», поиск выделенного текста из контекстного меню | Forkgram | Быстрые команды в реестре действий, видны в палитре ⌘K | S | 4 |
-| 14 | Удаление «для всех» по умолчанию, массовое удаление больше 100 сообщений | Forkgram, Materialgram (эксперим.) | Удобство; массовое удаление требует аккуратных лимитов API | S | 3 |
-| 15 | Шумоподавление и улучшение голоса при записи | Nagram | Укладывается в запись кружков и голосовых | L | 6 |
-| 16 | Каталог и каталог-бот плагинов | exteraGram? | Идея распространения: каталог плагинов с манифестом и правами; совместимость не берём | M | 7 |
-| 17 | Свои автозамены текста | Kotatogram | Простая настройка, пригодится в композере | S | 3 |
-| 18 | Синхронизация сохранённых удалённых, истории правок и состояния между устройствами (AyuSync) | AyuGram4A | Решено: делаем. Нужен сервер или самохостинг, шифрование на клиенте | L | после релиза |
+| # | Feature | Found in | Why we want it | Effort | Stage |
+|---|---------|----------|----------------|--------|-------|
+| 1 | Ghost mode: don't send read receipts, "typing", "online" | AyuGram | The main privacy item, already in the plan | M | 5 |
+| 2 | Reading without marking as read | AyuGram | Part of ghost mode, a separate per-chat toggle | S | 5 |
+| 3 | Keeping deleted messages, marked as deleted | AyuGram | In the plan, own database | M | 5 |
+| 4 | Edit history | AyuGram | In the plan; needs "edited/deleted" marks with a configurable style | S | 5 |
+| 5 | Forwarding without the author and to several chats at once | Kotatogram, Forkgram, Cherrygram? | A small everyday feature missing from the official client | S | 3 |
+| 6 | Sending and forwarding files uncompressed, photo quality and voice bitrate settings | Materialgram, Nekogram? | Matches our priority on attachment quality | M | 6 |
+| 7 | Local chat folders | Kotatogram | Folders with no limit and no server; fits the workspace model | M | 4 |
+| 8 | Message filters (hide ads, spam, by keyword) | AyuGram4A | A good first built-in plugin on the `message.render` hook | M | 7 |
+| 9 | Inline message translation | AyuGram, Swiftgram, Nagram | A Premium feature in the official client, free for us via a plugin | M | 7 |
+| 10 | Hiding the phone number in the profile, settings and header | Materialgram | Small, helps with screenshots, nearly free | S | 5 |
+| 11 | Streamer mode: hide sensitive data while screen sharing | AyuGram Desktop | Complements privacy and the command palette | S | 5 |
+| 12 | Choice of UI font and size, compact chat list | AyuGram, Kotatogram | Part of appearance settings; our design remains the default | S | 3 |
+| 13 | Recent chats, "jump to first message", search for selected text from the context menu | Forkgram | Quick commands in the action registry, shown in the ⌘K palette | S | 4 |
+| 14 | "Delete for everyone" by default, bulk deletion of more than 100 messages | Forkgram, Materialgram (experimental) | Convenience; bulk deletion needs careful handling of API limits | S | 3 |
+| 15 | Noise suppression and voice enhancement while recording | Nagram | Fits into video and voice message recording | L | 6 |
+| 16 | Plugin catalog and catalog bot | exteraGram? | Distribution idea: a plugin catalog with manifests and permissions; we do not adopt compatibility | M | 7 |
+| 17 | Custom text replacements | Kotatogram | A simple setting, useful in the composer | S | 3 |
+| 18 | Syncing saved deleted messages, edit history and state across devices (AyuSync) | AyuGram4A | Decided: we build it. Needs a server or self-hosting, client-side encryption | L | after release |
 
-## Рискованные, но берём
+## Risky, but we take them
 
-Решение владельца проекта: берём. Все функции клиентские, каждая за отдельным переключателем в настройках, по умолчанию выключена, с пояснением риска.
+Project owner's decision: we take them. All of them are client-side, each behind its own toggle in settings, off by default, with an explanation of the risk.
 
-| # | Фича | У кого | Заметка | Сложн. | Этап |
-|---|------|--------|---------|--------|------|
-| 19 | Локальный Premium: показывает премиум-интерфейс на клиенте | AyuGram | Серверные функции (лимиты, скорость, перевод) не заработают; в настройках так и пишем | S | 5 |
-| 20 | Скриншоты в секретных чатах | AyuGram4A | Собеседник защиту включил намеренно; показываем предупреждение | S | 5 |
-| 21 | Кнопка «истечь» для TTL-фото и видео, без обнаружения эмулятора | AyuGram4A | Обход ограничений клиента; эмулятор для десктопа неактуален | S | 5 |
+| # | Feature | Found in | Note | Effort | Stage |
+|---|---------|----------|------|--------|-------|
+| 19 | Local Premium: shows the Premium UI on the client | AyuGram | Server-side features (limits, speed, translation) will not work; the settings say so | S | 5 |
+| 20 | Screenshots in secret chats | AyuGram4A | The other party enabled protection on purpose; we show a warning | S | 5 |
+| 21 | "Expire" button for TTL photos and videos, without emulator detection | AyuGram4A | Bypasses client restrictions; emulator detection is irrelevant on desktop | S | 5 |
 
-## Не берём
+## Not taking
 
-- **Совместимость с плагинами exteraGram**: решено ранее.
+- **exteraGram plugin compatibility**: decided earlier.
 
-## Риски по ToS
+## ToS risks
 
-Не проверяли с Telegram напрямую; оценка по практике форков. Пункты 19–21 самые рискованные: Telegram может ограничить аккаунт или api_id, а функции вводят в заблуждение собеседников. Режим призрака, сохранение удалённых и скрытие прочтения могут считаться вмешательством в ожидаемое поведение, но их используют крупные форки с собственным `api_id`. Всё это делается на уровне клиента без изменения протокола. Рекомендация: честно писать в README, что это клиентские функции, и держать выключатель «безопасный режим» одним переключателем.
+Not verified with Telegram directly; assessed based on fork practice. Items 19–21 are the riskiest: Telegram may restrict the account or the api_id, and these features mislead the other party. Ghost mode, keeping deleted messages and hiding read receipts may be seen as interfering with expected behavior, but large forks with their own `api_id` ship them. All of this is done at the client level without changing the protocol. Recommendation: state plainly in the README that these are client-side features, and provide a single "safe mode" toggle.
 
-## Решения
+## Decisions
 
-1. Сохранённые удалённые сообщения синхронизируем между устройствами (п. 18), сервер или самохостинг, данные шифруются на клиенте.
-2. Локальный Premium и обход защит берём (п. 19–21), за выключенными по умолчанию переключателями.
-3. Фильтры и перевод делаем встроенными плагинами от нас (п. 8, 9).
+1. Saved deleted messages are synced across devices (item 18), via a server or self-hosting, with data encrypted on the client.
+2. Local Premium and protection bypasses are taken (items 19–21), behind toggles that are off by default.
+3. Filters and translation are built as our own built-in plugins (items 8, 9).

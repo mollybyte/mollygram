@@ -3,14 +3,15 @@
 </p>
 
 <p align="center">
-  Кастомный клиент Telegram для десктопа на Flutter: macOS, Windows, Linux.
+  A custom desktop Telegram client built with Flutter for macOS, Windows and Linux.
 </p>
 
 <p align="center">
   <a href="https://github.com/mollybyte/mollygram/actions/workflows/ci.yml"><img src="https://github.com/mollybyte/mollygram/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/mollybyte/mollygram?color=D6336C" alt="Лицензия"></a>
-  <a href="https://github.com/mollybyte/mollygram/commits/main"><img src="https://img.shields.io/github/last-commit/mollybyte/mollygram?color=D6336C" alt="Последний коммит"></a>
-  <img src="https://img.shields.io/badge/%D1%81%D1%82%D0%B0%D1%82%D1%83%D1%81-%D0%BF%D1%80%D0%BE%D1%82%D0%BE%D1%82%D0%B8%D0%BF-D6336C" alt="Статус: прототип">
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/mollybyte/mollygram?color=D6336C" alt="License"></a>
+  <a href="https://github.com/mollybyte/mollygram/commits/main"><img src="https://img.shields.io/github/last-commit/mollybyte/mollygram?color=D6336C" alt="Last commit"></a>
+  <img src="https://img.shields.io/badge/status-prototype-D6336C" alt="Status: prototype">
+  <a href="https://www.conventionalcommits.org"><img src="https://img.shields.io/badge/Conventional%20Commits-1.0.0-D6336C" alt="Conventional Commits"></a>
 </p>
 
 <p align="center">
@@ -24,87 +25,94 @@
 
 ---
 
-Раскладка как у официального Telegram Desktop, чтобы не переучиваться. Сверху liquid glass и то, чего не хватает в официальном клиенте.
+The layout follows the official Telegram Desktop, so there is nothing to relearn. On top of it: liquid glass and the features the official client is missing.
 
 > [!NOTE]
-> Ранняя стадия: есть макеты и основа проекта с привязкой к TDLib, интерфейса и входа в аккаунт пока нет.
+> Early stage: design mockups and the project foundation with TDLib bindings are in place. There is no UI or sign-in yet.
 
-## Что планируется
+## Planned features
 
 | | |
 |---|---|
-| **Плагины** | Песочница с явными правами в манифесте, в духе exteraGram. |
-| **Приватность** | Режим призрака: без отметок о прочтении, без «печатает» и статуса «в сети». Локальное сохранение удалённых сообщений и история правок. |
-| **Медиа** | Кружки в 120 кадров/с и до 1080p, фото и видео без сжатия по умолчанию. |
-| **Работа с чатами** | Вкладки, сплит на два чата, командная палитра по <kbd>⌘</kbd> <kbd>K</kbd>. |
-| **Внешний вид** | Liquid glass только на плавающем слое: боковая панель, шапка чата, поле ввода, палитра. Светлая и тёмная темы. |
+| **Plugins** | A sandbox with explicit permissions declared in the manifest, in the spirit of exteraGram. |
+| **Privacy** | Ghost mode: no read receipts, no "typing" and no "online" status. Locally saved deleted messages and edit history. |
+| **Media** | Video messages at 120 fps and up to 640×640, photos and videos sent uncompressed by default. |
+| **Chat workflow** | Tabs, a split view for two chats, a command palette on <kbd>⌘</kbd> <kbd>K</kbd>. |
+| **Look** | Liquid glass only on the floating layer: sidebar, chat header, composer, palette. Light and dark themes. |
 
-## Стек
+## Stack
 
-| Компонент | Что используем |
+| Component | Technology |
 |---|---|
-| UI | [Flutter](https://flutter.dev) desktop, канал stable |
-| Протокол | [TDLib](https://github.com/tdlib/td) через `dart:ffi` |
-| Платформы | macOS, Windows, Linux |
+| UI | [Flutter](https://flutter.dev) desktop, stable channel |
+| Protocol | [TDLib](https://github.com/tdlib/td) via `dart:ffi` |
+| Plugins | JavaScript and TypeScript on [QuickJS-ng](https://github.com/quickjs-ng/quickjs), see [`docs/plugins.md`](docs/plugins.md) |
+| Platforms | macOS, Windows, Linux |
 
-Первое, что нужно проверить: держит ли Flutter размытие под прокручиваемым чатом и воспроизведение кружков в 120 кадров/с.
+## Development
 
-## CI/CD
-
-| Workflow | Когда запускается | Что делает |
-|---|---|---|
-| [`ci.yml`](.github/workflows/ci.yml) | push в `main`, pull request | `dart format`, `flutter analyze`, `flutter test`, затем release-сборка под macOS, Windows и Linux |
-| [`release.yml`](.github/workflows/release.yml) | тег `v*` | Собирает три платформы с ключами из секретов и публикует архивы в GitHub Releases |
-| [`tdlib.yml`](.github/workflows/tdlib.yml) | смена версии TDLib, вручную | Собирает universal `libtdjson.dylib` для macOS и публикует в релиз `tdlib-<версия>` |
-
-## Разработка
-
-| Пакет | Что внутри |
+| Package | Contents |
 |---|---|
-| [`packages/tdlib`](packages/tdlib) | Привязка `dart:ffi` к td_json, цикл `td_receive` в фоновом изоляте, типы td_api из схемы |
-| `packages/core` | Модели и состояние поверх TDLib, без Flutter |
-| `packages/ui_kit` | Общие виджеты, стекло, тема |
-| `packages/media` | Видео, кружки, голосовые |
-| `packages/plugin_host` | Песочница плагинов |
-| `packages/app` | Само приложение |
+| [`packages/tdlib`](packages/tdlib) | `dart:ffi` bindings to td_json, the `td_receive` loop in a background isolate, td_api types generated from the schema |
+| `packages/core` | Models and state on top of TDLib, no Flutter dependency |
+| `packages/ui_kit` | Shared widgets, glass, theme |
+| `packages/media` | Video, video messages, voice messages |
+| [`packages/plugin_host`](packages/plugin_host) | Plugin sandbox |
+| `packages/plugin_sdk` | TypeScript types for plugin authors |
+| `packages/app` | The application itself |
 
-Flutter ставится через [fvm](https://fvm.app), версия зафиксирована в [`.fvmrc`](.fvmrc), её же использует CI. Проект идёт за последним стабильным Flutter.
+Flutter is installed with [fvm](https://fvm.app). The version is pinned in [`.fvmrc`](.fvmrc) and CI uses the same one. The project tracks the latest stable Flutter.
 
 ```sh
 fvm install
 fvm flutter pub get
 ```
 
-Монорепо на [pub workspaces](https://dart.dev/tools/pub/workspaces): `pub get` в корне ставит зависимости всех пакетов.
+The repository is a monorepo on [pub workspaces](https://dart.dev/tools/pub/workspaces): `pub get` at the root installs dependencies for every package.
 
-Ключи Telegram в репозиторий не попадают. Получите `api_id` и `api_hash` на [my.telegram.org](https://my.telegram.org), скопируйте [`config/telegram.example.json`](config/telegram.example.json) в `config/telegram.json` (он в `.gitignore`) и запускайте так:
+Telegram API keys never go into the repository. Get your `api_id` and `api_hash` at [my.telegram.org](https://my.telegram.org), copy [`config/telegram.example.json`](config/telegram.example.json) to `config/telegram.json` (it is in `.gitignore`) and run:
 
 ```sh
 cd packages/app
 fvm flutter run -d macos --dart-define-from-file=../../config/telegram.json
 ```
 
-Для релизов те же значения лежат в секретах репозитория `TELEGRAM_API_ID` и `TELEGRAM_API_HASH`.
+Release builds take the same values from the repository secrets `TELEGRAM_API_ID` and `TELEGRAM_API_HASH`.
 
-## Бренд
+## Contributing
 
-<img src="docs/assets/icon.svg" alt="Значок Mollygram" width="96" align="right">
+Contributions are welcome. Read [`CONTRIBUTING.md`](CONTRIBUTING.md) first: the project uses [Conventional Commits](https://www.conventionalcommits.org) and [Semantic Versioning](https://semver.org), and the changelog is generated from commit messages. Please follow the [Code of Conduct](CODE_OF_CONDUCT.md). Report vulnerabilities privately as described in [`SECURITY.md`](SECURITY.md).
 
-Значок: белый пузырь сообщения с буквой m на малиновом фоне. Неоновый вордмарк используется только в промо: README, лендинг, канал. В самом приложении неона нет.
+## CI/CD
 
-| Цвет | Светлая тема | Тёмная тема |
+| Workflow | Runs on | What it does |
 |---|---|---|
-| Акцент по умолчанию | ![](https://img.shields.io/badge/-%230071E3-0071E3) | ![](https://img.shields.io/badge/-%230A84FF-0A84FF) |
-| Малиновый акцент (опция) | ![](https://img.shields.io/badge/-%23D6336C-D6336C) | ![](https://img.shields.io/badge/-%23FF5C93-FF5C93) |
-| Исходящие, малиновая тема | ![](https://img.shields.io/badge/-%23FCE4EE-FCE4EE) | ![](https://img.shields.io/badge/-%235A2338-5A2338) |
-| Неон, только промо | ![](https://img.shields.io/badge/-%23FF2E88-FF2E88) | ![](https://img.shields.io/badge/-%2312070F-12070F) |
+| [`ci.yml`](.github/workflows/ci.yml) | push to `main`, pull requests | `dart format`, `flutter analyze`, `flutter test`, then release builds for macOS, Windows and Linux |
+| [`pr-title.yml`](.github/workflows/pr-title.yml) | pull requests | Checks that the PR title follows Conventional Commits |
+| [`release-please.yml`](.github/workflows/release-please.yml) | push to `main` | Keeps a release PR with the next version and `CHANGELOG.md` up to date; merging it tags `v*` and starts the release |
+| [`release.yml`](.github/workflows/release.yml) | `v*` tag, release PR merge | Builds all three platforms with keys from secrets and attaches the archives to the GitHub release |
+| [`plugin_host.yml`](.github/workflows/plugin_host.yml) | changes to the plugin packages | Builds QuickJS and runs the plugin host tests on all three platforms |
+| [`tdlib.yml`](.github/workflows/tdlib.yml) | TDLib version change, manual | Builds a universal `libtdjson.dylib` for macOS and publishes it to the `tdlib-<version>` release |
 
-Акцент в приложении по умолчанию системный синий, малиновый включается в настройках. Исходники значка лежат в [`docs/assets`](docs/assets).
+## Brand
 
-## Макеты
+<img src="docs/assets/icon.svg" alt="Mollygram icon" width="96" align="right">
 
-В `design/` лежат исходники интерактивных макетов: главное окно, медиа и файлы чата, плагины, командная палитра и настройки. Это формат дизайн-канваса (`.dc.html`), сам по себе в браузере он не откроется.
+The icon is a white speech bubble with the letter m on a raspberry background. The neon wordmark is for promo only: README, website, channel. The app itself has no neon.
 
-## Лицензия
+| Color | Light theme | Dark theme |
+|---|---|---|
+| Default accent | ![](https://img.shields.io/badge/-%230071E3-0071E3) | ![](https://img.shields.io/badge/-%230A84FF-0A84FF) |
+| Raspberry accent (optional) | ![](https://img.shields.io/badge/-%23D6336C-D6336C) | ![](https://img.shields.io/badge/-%23FF5C93-FF5C93) |
+| Outgoing bubbles, raspberry theme | ![](https://img.shields.io/badge/-%23FCE4EE-FCE4EE) | ![](https://img.shields.io/badge/-%235A2338-5A2338) |
+| Neon, promo only | ![](https://img.shields.io/badge/-%23FF2E88-FF2E88) | ![](https://img.shields.io/badge/-%2312070F-12070F) |
+
+The in-app accent defaults to system blue; raspberry can be turned on in settings. Icon sources live in [`docs/assets`](docs/assets).
+
+## Design mockups
+
+`design/` holds the sources of the interactive mockups: main window, chat media and files, plugins, command palette and settings. Each mockup can switch between English and Russian. They use the design canvas format (`.dc.html`) and do not open in a plain browser.
+
+## License
 
 [GPL-3.0](LICENSE)

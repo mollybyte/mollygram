@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Цвета из макета design/Main.dc.html (переменные .app и .app.dark).
+/// Colors from the design/Main.dc.html mockup (.app and .app.dark vars).
 @immutable
 class MgColors extends ThemeExtension<MgColors> {
   const MgColors({
@@ -40,7 +40,7 @@ class MgColors extends ThemeExtension<MgColors> {
   final Color muted;
   final Color glass;
 
-  /// Заливка стекла, когда размытие выключено (как prefers-reduced-transparency).
+  /// Glass fill when blur is off (like prefers-reduced-transparency).
   final Color glassSolid;
   final Color rim;
   final Color hi;
@@ -50,7 +50,7 @@ class MgColors extends ThemeExtension<MgColors> {
   final Color? bubbleShadow;
   final Color wallBase;
 
-  /// Четыре точки градиентных обоев Telegram, порядок как в макете.
+  /// The four points of the Telegram gradient wallpaper, in mockup order.
   final List<Color> wall;
 
   static const light = MgColors(
@@ -143,7 +143,7 @@ ThemeData buildTheme(MgColors c) {
   );
 }
 
-/// Базовый стиль текста: системный шрифт, 13 px.
+/// The base text style: system font, 13 px.
 TextStyle mgText(MgColors c, {double size = 13, FontWeight? weight}) =>
     TextStyle(
       fontSize: size,

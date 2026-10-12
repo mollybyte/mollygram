@@ -1,5 +1,5 @@
-# Общие правила анализа. Пакеты подключают этот файл и добавляют свой набор
-# линтов (lints для чистого Dart, flutter_lints для Flutter).
+# Shared analysis rules. Packages include this file and add their own lint set
+# (lints for pure Dart, flutter_lints for Flutter).
 analyzer:
   language:
     strict-casts: true

@@ -1,31 +1,34 @@
 import 'package:yaml/yaml.dart';
 
-/// Какие сообщения плагин может читать.
+/// Which messages a plugin can read.
 enum MessagesScope {
   none,
 
-  /// Только текущий чат и только во время команды, которую вызвал
-  /// пользователь.
+  /// Only the current chat, and only during a command the user invoked.
   onCommand,
 
-  /// Только чаты, которые пользователь выбрал в настройках плагина.
+  /// Only the chats the user selected in the plugin settings.
   chats,
 
-  /// Все чаты. На экране установки показывается отдельным предупреждением.
+  /// All chats.
+  ///
+  /// The install screen shows a separate warning for this scope.
   all,
 }
 
 enum MediaKind { voice, round, photo, video, document }
 
-/// Особый адрес в `net`: адрес, который пользователь вписал сам (например,
-/// свой сервер модели). До этого сеть закрыта.
+/// A special `net` entry for an address the user enters themselves (for
+/// example, their own model server). Until then, the network is closed.
 const userEndpoint = 'user_endpoint';
 
-/// Максимум хранилища, который может попросить плагин.
+/// The maximum storage a plugin can request.
 const maxStorageBytes = 50 << 20;
 
-/// Права из секции `permissions` манифеста. Неизвестное право делает
-/// манифест невалидным: молча игнорировать его нельзя.
+/// Permissions from the manifest's `permissions` section.
+///
+/// An unknown permission makes the manifest invalid: it must never be
+/// silently ignored.
 final class PermissionSet {
   const PermissionSet({
     this.messagesRead = MessagesScope.none,
@@ -41,7 +44,7 @@ final class PermissionSet {
   final MessagesScope messagesRead;
   final bool composerWrite;
 
-  /// Точные имена хостов, только https. Маски и IP не принимаются.
+  /// Exact host names, https only. Wildcards and IPs are not accepted.
   final Set<String> net;
   final int storageBytes;
   final bool notificationsManage;
@@ -55,7 +58,7 @@ final class PermissionSet {
   factory PermissionSet.parse(Object? raw) {
     if (raw == null) return none;
     if (raw is! YamlMap && raw is! Map) {
-      throw const FormatException('permissions должен быть объектом');
+      throw const FormatException('permissions must be an object');
     }
     final map = raw as Map;
     final errors = <String>[];
@@ -76,56 +79,56 @@ final class PermissionSet {
             _ => null,
           };
           if (scope == null) {
-            errors.add('messages.read: on_command, chats[] или all');
+            errors.add('messages.read: on_command, chats[] or all');
           } else {
             messages = scope;
           }
         case 'composer.write':
-          if (value is! bool) errors.add('composer.write: true или false');
+          if (value is! bool) errors.add('composer.write: true or false');
           composer = value == true;
         case 'notifications.manage':
           if (value is! bool) {
-            errors.add('notifications.manage: true или false');
+            errors.add('notifications.manage: true or false');
           }
           notifications = value == true;
         case 'net':
           if (value is! List) {
-            errors.add('net должен быть списком хостов');
+            errors.add('net must be a list of hosts');
             break;
           }
           for (final h in value) {
             if (h is String && (h == userEndpoint || _host.hasMatch(h))) {
               net.add(h);
             } else {
-              errors.add('net: "$h" не похоже на имя хоста');
+              errors.add('net: "$h" does not look like a host name');
             }
           }
         case 'storage':
           final m = value is String ? _size.firstMatch(value.trim()) : null;
           if (m == null) {
-            errors.add('storage: размер вида 512kb или 5mb');
+            errors.add('storage: a size like 512kb or 5mb');
             break;
           }
           final n = int.parse(m[1]!);
           storage = m[2]!.toLowerCase() == 'kb' ? n << 10 : n << 20;
           if (storage > maxStorageBytes) {
-            errors.add('storage: не больше ${maxStorageBytes >> 20}mb');
+            errors.add('storage: at most ${maxStorageBytes >> 20}mb');
           }
         case 'media.read':
           if (value is! List) {
-            errors.add('media.read должен быть списком типов');
+            errors.add('media.read must be a list of kinds');
             break;
           }
           for (final k in value) {
             final kind = MediaKind.values.asNameMap()[k];
             if (kind == null) {
-              errors.add('media.read: неизвестный тип "$k"');
+              errors.add('media.read: unknown kind "$k"');
             } else {
               media.add(kind);
             }
           }
         default:
-          errors.add('неизвестное право "$key"');
+          errors.add('unknown permission "$key"');
       }
     }
     if (errors.isNotEmpty) throw FormatException(errors.join('; '));
@@ -139,8 +142,10 @@ final class PermissionSet {
     );
   }
 
-  /// Права, которых не было в [previous]. Если список не пуст, обновление
-  /// плагина не включается, пока пользователь не согласится заново.
+  /// Returns the permissions that were not in [previous].
+  ///
+  /// If the list is not empty, the plugin update stays disabled until the
+  /// user consents again.
   List<String> escalationsFrom(PermissionSet previous) => [
     if (messagesRead.index > previous.messagesRead.index)
       'messages.read: ${messagesRead.name}',
@@ -153,50 +158,50 @@ final class PermissionSet {
       'media.read: ${k.name}',
   ];
 
-  /// Строки для блока «Доступ» на экране плагина.
+  /// Returns the rows for the "Access" section of the plugin screen.
   List<({String title, String detail})> describe() => [
     if (messagesRead != MessagesScope.none)
       switch (messagesRead) {
         MessagesScope.onCommand => (
-          title: 'Сообщения текущего чата',
-          detail: 'Только когда вы вызываете команду',
+          title: 'Messages in the current chat',
+          detail: 'Only when you run a command',
         ),
         MessagesScope.chats => (
-          title: 'Сообщения выбранных чатов',
-          detail: 'Список чатов задаёте вы',
+          title: 'Messages in selected chats',
+          detail: 'You choose the chats',
         ),
-        _ => (title: 'Все сообщения', detail: 'Во всех чатах'),
+        _ => (title: 'All messages', detail: 'In all chats'),
       },
     if (composerWrite)
-      (title: 'Поле ввода', detail: 'Может вставлять и менять черновик'),
+      (title: 'Composer', detail: 'Can insert and change the draft'),
     if (net.isNotEmpty)
       (
-        title: 'Сеть',
+        title: 'Network',
         detail: net
-            .map((h) => h == userEndpoint ? 'адрес, который вы укажете' : h)
+            .map((h) => h == userEndpoint ? 'an address you provide' : h)
             .join(', '),
       ),
     if (storageBytes > 0)
-      (title: 'Хранилище', detail: 'До ${_formatSize(storageBytes)}'),
+      (title: 'Storage', detail: 'Up to ${_formatSize(storageBytes)}'),
     if (notificationsManage)
-      (title: 'Уведомления', detail: 'Откладывать и группировать'),
+      (title: 'Notifications', detail: 'Defer and group'),
     if (mediaRead.isNotEmpty)
-      (title: 'Медиа', detail: mediaRead.map((k) => _mediaNames[k]).join(', ')),
+      (title: 'Media', detail: mediaRead.map((k) => _mediaNames[k]).join(', ')),
   ];
 
   static const _mediaNames = {
-    MediaKind.voice: 'голосовые',
-    MediaKind.round: 'кружки',
-    MediaKind.photo: 'фото',
-    MediaKind.video: 'видео',
-    MediaKind.document: 'файлы',
+    MediaKind.voice: 'voice messages',
+    MediaKind.round: 'round videos',
+    MediaKind.photo: 'photos',
+    MediaKind.video: 'videos',
+    MediaKind.document: 'files',
   };
 
   static String _formatSize(int bytes) =>
-      bytes >= 1 << 20 ? '${bytes >> 20} МБ' : '${bytes >> 10} КБ';
+      bytes >= 1 << 20 ? '${bytes >> 20} MB' : '${bytes >> 10} KB';
 }
 
-/// Событие, на которое плагин может подписаться через `mg.on`.
+/// An event a plugin can subscribe to with `mg.on`.
 enum PluginEvent {
   appReady('app.ready', EventKind.observe),
   chatOpened('chat.opened', EventKind.observe),
@@ -204,16 +209,18 @@ enum PluginEvent {
   messageEdited('message.edited', EventKind.observe),
   messageDeleted('message.deleted', EventKind.observe),
 
-  /// Перехват отправки: можно изменить текст или отменить отправку.
+  /// Intercepts sending: the plugin can change the text or cancel it.
   messageSending('message.sending', EventKind.intercept),
 
-  /// Отрисовка дополнительного блока под сообщением. Плагин получает только
-  /// свой фрагмент (блок кода, голосовое), а возвращает декларативный UI.
+  /// Renders an extra block below a message.
+  ///
+  /// The plugin receives only its own fragment (a code block, a voice
+  /// message) and returns declarative UI.
   messageRenderCode('message.render.code', EventKind.render),
   messageRenderVoice('message.render.voice', EventKind.render),
   messageRenderRound('message.render.round', EventKind.render),
 
-  /// Нажатие на кнопку, которую нарисовал сам плагин.
+  /// A tap on a button the plugin rendered itself.
   uiAction('ui.action', EventKind.render),
   notificationIncoming('notification.incoming', EventKind.intercept),
   settingsChanged('settings.changed', EventKind.observe);
@@ -225,12 +232,12 @@ enum PluginEvent {
 
   static final byName = {for (final e in values) e.id: e};
 
-  /// Какого права не хватает для подписки, или null, если хватает.
+  /// Returns the permission missing for a subscription, or null if none.
   String? requires(PermissionSet p) => switch (this) {
     chatOpened || messageIncoming || messageEdited || messageDeleted
         when p.messagesRead == MessagesScope.none ||
             p.messagesRead == MessagesScope.onCommand =>
-      'messages.read: chats[] или all',
+      'messages.read: chats[] or all',
     messageSending when !p.composerWrite => 'composer.write',
     messageRenderVoice when !p.mediaRead.contains(MediaKind.voice) =>
       'media.read: [voice]',
@@ -242,12 +249,12 @@ enum PluginEvent {
 }
 
 enum EventKind {
-  /// Только наблюдение, результат игнорируется.
+  /// Observation only; the result is ignored.
   observe,
 
-  /// Результат `{cancel: true}` или `{modify: ...}` меняет действие.
+  /// A `{cancel: true}` or `{modify: ...}` result changes the action.
   intercept,
 
-  /// Результат: список узлов декларативного UI.
+  /// The result is a list of declarative UI nodes.
   render,
 }

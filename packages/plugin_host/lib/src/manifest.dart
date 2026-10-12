@@ -2,8 +2,10 @@ import 'package:yaml/yaml.dart';
 
 import 'permissions.dart';
 
-/// Версия API, которую реализует этот хост. Плагин указывает диапазон в
-/// поле `sdk`, совместимость проверяется по старшей цифре.
+/// The API version this host implements.
+///
+/// A plugin specifies a range in the `sdk` field; compatibility is checked
+/// against the major version.
 const hostSdkVersion = (major: 1, minor: 0);
 
 final class ManifestException implements Exception {
@@ -12,13 +14,15 @@ final class ManifestException implements Exception {
   final List<String> errors;
 
   @override
-  String toString() => 'Некорректный манифест:\n- ${errors.join('\n- ')}';
+  String toString() => 'Invalid manifest:\n- ${errors.join('\n- ')}';
 }
 
 final class PluginCommand {
   const PluginCommand({required this.name, required this.title, this.shortcut});
 
-  /// Например `/summary`. Палитра ⌘K показывает команды всех плагинов.
+  /// The command name, for example `/summary`.
+  ///
+  /// The ⌘K palette shows the commands of all plugins.
   final String name;
   final String title;
   final String? shortcut;
@@ -40,12 +44,14 @@ final class PluginSetting {
   final String label;
   final Object? defaultValue;
 
-  /// Для `select`: пары значение — подпись.
+  /// For `select`: value and label pairs.
   final List<({String value, String label})> options;
 }
 
-/// Разобранный `manifest.yaml`. Всё, что плагин может делать, видно здесь:
-/// права, хуки, команды и параметры. Хост не даёт больше, чем объявлено.
+/// A parsed `manifest.yaml`.
+///
+/// Everything a plugin can do is visible here: permissions, hooks, commands
+/// and settings. The host never grants more than is declared.
 final class PluginManifest {
   const PluginManifest({
     required this.id,
@@ -101,22 +107,22 @@ final class PluginManifest {
     } on YamlException catch (e) {
       throw ManifestException(['YAML: ${e.message}']);
     }
-    if (doc is! YamlMap) throw ManifestException(['ожидался объект']);
+    if (doc is! YamlMap) throw ManifestException(['expected an object']);
     final YamlMap map = doc;
     final errors = <String>[];
 
     for (final key in map.keys) {
-      if (!_knownKeys.contains(key)) errors.add('неизвестное поле "$key"');
+      if (!_knownKeys.contains(key)) errors.add('unknown field "$key"');
     }
 
     String? str(String key, {bool required = true}) {
       final v = map[key];
       if (v == null) {
-        if (required) errors.add('нет поля "$key"');
+        if (required) errors.add('missing field "$key"');
         return null;
       }
       if (v is! String || v.trim().isEmpty) {
-        errors.add('"$key" должно быть непустой строкой');
+        errors.add('"$key" must be a non-empty string');
         return null;
       }
       return v.trim();
@@ -125,35 +131,35 @@ final class PluginManifest {
     final id = str('id');
     if (id != null && !_idPattern.hasMatch(id)) {
       errors.add(
-        'id "$id" должен быть в обратной доменной записи, '
-        'например dev.example.plugin',
+        'id "$id" must be in reverse domain notation, '
+        'for example dev.example.plugin',
       );
     }
     final name = str('name');
     if (name != null && name.length > 40) {
-      errors.add('name длиннее 40 символов');
+      errors.add('name is longer than 40 characters');
     }
     final version = str('version');
     if (version != null && !_semver.hasMatch(version)) {
-      errors.add('version "$version" не semver');
+      errors.add('version "$version" is not semver');
     }
     final runtime = str('runtime');
     if (runtime != null && runtime != 'js') {
       errors.add(
-        'runtime "$runtime" не поддерживается: плагины только на JS, '
-        'нативный код не загружается',
+        'runtime "$runtime" is not supported: plugins are JS only, '
+        'native code is never loaded',
       );
     }
     final sdk = str('sdk');
     if (sdk != null) {
       final m = _sdkRange.firstMatch(sdk);
       if (m == null) {
-        errors.add('sdk должен быть диапазоном вида ^1.0');
+        errors.add('sdk must be a range like ^1.0');
       } else {
         final major = int.parse(m[1]!), minor = int.parse(m[2]!);
         if (major != hostSdkVersion.major || minor > hostSdkVersion.minor) {
           errors.add(
-            'плагин требует SDK $sdk, хост реализует '
+            'plugin requires SDK $sdk, host implements '
             '${hostSdkVersion.major}.${hostSdkVersion.minor}',
           );
         }
@@ -161,7 +167,7 @@ final class PluginManifest {
     }
     final main = str('main', required: false) ?? 'index.js';
     if (!_main.hasMatch(main) || main.split('/').contains('..')) {
-      errors.add('main "$main" должен быть относительным путём к .js');
+      errors.add('main "$main" must be a relative path to a .js file');
     }
 
     PermissionSet permissions = PermissionSet.none;
@@ -175,17 +181,17 @@ final class PluginManifest {
     final rawHooks = map['hooks'];
     if (rawHooks != null) {
       if (rawHooks is! YamlList) {
-        errors.add('hooks должен быть списком');
+        errors.add('hooks must be a list');
       } else {
         for (final h in rawHooks) {
           final event = h is String ? PluginEvent.byName[h] : null;
           if (event == null) {
-            errors.add('неизвестный хук "$h"');
+            errors.add('unknown hook "$h"');
             continue;
           }
           final missing = event.requires(permissions);
           if (missing != null) {
-            errors.add('хук "$h" требует права $missing');
+            errors.add('hook "$h" requires permission $missing');
           }
           hooks.add(h as String);
         }
@@ -196,18 +202,18 @@ final class PluginManifest {
     final rawCommands = map['commands'];
     if (rawCommands != null) {
       if (rawCommands is! YamlList) {
-        errors.add('commands должен быть списком');
+        errors.add('commands must be a list');
       } else {
         for (final c in rawCommands) {
           if (c is! YamlMap || c['name'] is! String || c['title'] is! String) {
-            errors.add('команда должна иметь name и title');
+            errors.add('a command must have name and title');
             continue;
           }
           final cname = c['name'] as String;
           if (!_command.hasMatch(cname)) {
             errors.add(
-              'команда "$cname" должна начинаться с / и состоять из '
-              'латиницы в нижнем регистре',
+              'command "$cname" must start with / and consist of '
+              'lowercase Latin letters',
             );
           }
           commands.add(
@@ -225,7 +231,7 @@ final class PluginManifest {
     final rawSettings = map['settings'];
     if (rawSettings != null) {
       if (rawSettings is! YamlList) {
-        errors.add('settings должен быть списком');
+        errors.add('settings must be a list');
       } else {
         for (final s in rawSettings) {
           final parsed = _parseSetting(s, errors);
@@ -252,13 +258,13 @@ final class PluginManifest {
 
   static PluginSetting? _parseSetting(Object? s, List<String> errors) {
     if (s is! YamlMap || s['key'] is! String || s['label'] is! String) {
-      errors.add('параметр должен иметь key и label');
+      errors.add('a setting must have key and label');
       return null;
     }
     final key = s['key'] as String;
     final type = SettingType.values.asNameMap()[s['type']];
     if (type == null) {
-      errors.add('параметр "$key": type должен быть toggle, select или text');
+      errors.add('setting "$key": type must be toggle, select or text');
       return null;
     }
     final def = s['default'];
@@ -266,7 +272,7 @@ final class PluginManifest {
     if (type == SettingType.select) {
       final raw = s['options'];
       if (raw is! YamlList || raw.isEmpty) {
-        errors.add('параметр "$key": у select нужны options');
+        errors.add('setting "$key": select requires options');
         return null;
       }
       for (final o in raw) {
@@ -276,7 +282,7 @@ final class PluginManifest {
             label: o['label'] as String,
           ));
         } else {
-          errors.add('параметр "$key": вариант должен иметь value и label');
+          errors.add('setting "$key": an option must have value and label');
         }
       }
     }
@@ -285,7 +291,7 @@ final class PluginManifest {
       SettingType.text => def == null || def is String,
       SettingType.select => def == null || options.any((o) => o.value == def),
     };
-    if (!defOk) errors.add('параметр "$key": default не подходит к типу');
+    if (!defOk) errors.add('setting "$key": default does not match the type');
     return PluginSetting(
       key: key,
       type: type,

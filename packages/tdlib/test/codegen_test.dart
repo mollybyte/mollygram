@@ -41,7 +41,7 @@ draw shapes:vector<vector<Shape>> description:string label:string = Ok;
 void main() {
   final schema = parseTlSchema(_sample);
 
-  test('разбирает типы, функции и документацию', () {
+  test('parses types, functions and documentation', () {
     expect(schema.abstractClasses, {'Shape': 'A shape'});
     expect(
       [for (final o in schema.objects) o.name],
@@ -56,11 +56,11 @@ void main() {
     final draw = schema.functions.single;
     expect(draw.params[0].type.item!.item!.name, 'Shape');
     expect(draw.params[1].description, 'Description');
-    // Строки не бывают null, даже если так сказано в описании.
+    // Strings are never null, even if the description says so.
     expect(draw.params[2].mayBeNull, isFalse);
   });
 
-  test('генерирует sealed-классы и переименовывает конфликты', () {
+  test('generates sealed classes and renames clashes', () {
     final code = emitLibrary(schema, version: '1.0.0', commit: 'abc');
     expect(code, contains('sealed class Shape extends TdObject'));
     expect(code, contains('final class ShapeCircle extends Shape'));
@@ -71,7 +71,7 @@ void main() {
     expect(code, contains("'y': y.toString()"));
   });
 
-  test('имена полей в camelCase', () {
+  test('field names are camelCase', () {
     expect(fieldName('last_read_inbox_message_id'), 'lastReadInboxMessageId');
     expect(className('authorizationStateReady'), 'AuthorizationStateReady');
   });

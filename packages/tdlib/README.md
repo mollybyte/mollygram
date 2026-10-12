@@ -1,11 +1,11 @@
 # mollygram_tdlib
 
-Тонкая привязка к TDLib через JSON-интерфейс `td_json`.
+A thin binding to TDLib through the `td_json` JSON interface.
 
-- `TdJsonFfi` вызывает четыре функции C API через `dart:ffi`.
-- `td_receive` крутится в фоновом изоляте, там же разбираются JSON и объекты td_api, в UI-изолят приходят готовые пачки событий.
-- `Td` держит одну библиотеку и любое число клиентов (по одному на аккаунт), `TdClient.send` сопоставляет ответы с запросами по `@extra`.
-- Типы td_api (sealed-классы, `fromJson`/`toJson`) генерируются из `schema/td_api.tl`.
+- `TdJsonFfi` calls the four C API functions via `dart:ffi`.
+- `td_receive` runs in a background isolate, which also parses JSON into td_api objects; the UI isolate receives ready-made batches of events.
+- `Td` holds one library instance and any number of clients (one per account); `TdClient.send` matches responses to requests by `@extra`.
+- td_api types (sealed classes, `fromJson`/`toJson`) are generated from `schema/td_api.tl`.
 
 ```dart
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
@@ -16,21 +16,21 @@ client.updates.listen(print);
 final state = await client.send(const td.GetAuthorizationState());
 ```
 
-## Версия TDLib
+## TDLib version
 
-Версия и коммит закреплены в [`tdlib.json`](tdlib.json). `Td.start` сверяет версию загруженной библиотеки со схемой и бросает `TdVersionMismatch`, если они разные.
+The version and commit are pinned in [`tdlib.json`](tdlib.json). `Td.start` checks the loaded library's version against the schema and throws `TdVersionMismatch` if they differ.
 
-Чтобы обновить TDLib:
+To update TDLib:
 
-1. Поменять `version` и `commit` в `tdlib.json`.
-2. `dart run tool/generate.dart --fetch` скачает схему этого коммита и перегенерирует `lib/src/generated/td_api.dart`.
-3. Закоммитить всё вместе. Workflow [`tdlib.yml`](../../.github/workflows/tdlib.yml) соберёт новую `libtdjson.dylib`.
+1. Change `version` and `commit` in `tdlib.json`.
+2. Run `dart run tool/generate.dart --fetch` to download the schema for that commit and regenerate `lib/src/generated/td_api.dart`.
+3. Commit everything together. The [`tdlib.yml`](../../.github/workflows/tdlib.yml) workflow builds the new `libtdjson.dylib`.
 
-CI проверяет, что сгенерированный код совпадает со схемой.
+CI checks that the generated code matches the schema.
 
-## Тесты
+## Tests
 
-`dart test` гоняет всё на подменённом `TdJson`. Проверка на настоящей библиотеке:
+`dart test` runs everything against a fake `TdJson`. To test against the real library:
 
 ```sh
 TDJSON_PATH=/path/to/libtdjson.dylib dart test test/native_test.dart

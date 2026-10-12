@@ -1,7 +1,7 @@
-// Типы SDK плагинов Mollygram, версия 1.0.
-// Плагин выполняется в quickjs-ng без DOM, Node, fetch и таймеров.
-// Всё, что выходит наружу, идёт через глобальный объект `mg` и проверяется
-// по правам из manifest.yaml. Спецификация: docs/plugins.md.
+// Mollygram plugin SDK types, version 1.0.
+// A plugin runs in quickjs-ng without DOM, Node, fetch or timers.
+// Everything that reaches the outside goes through the global `mg` object and
+// is checked against the permissions in manifest.yaml. Spec: docs/plugins.md.
 
 declare namespace Mg {
   type ChatId = number;
@@ -9,7 +9,7 @@ declare namespace Mg {
 
   interface MediaRef {
     kind: "voice" | "round" | "photo" | "video" | "document";
-    /** Непрозрачный идентификатор файла, годится только для вызовов mg.media. */
+    /** Opaque file identifier, usable only in mg.media calls. */
     fileId: string;
     duration?: number;
   }
@@ -37,7 +37,7 @@ declare namespace Mg {
     body: string;
   }
 
-  // --- Декларативный UI ---
+  // --- Declarative UI ---
 
   type CodeToken = "plain" | "keyword" | "string" | "number" | "comment" | "function" | "type" | "punctuation";
 
@@ -49,7 +49,7 @@ declare namespace Mg {
     | { type: "row" | "column"; children: UiNode[] }
     | { type: "code"; language?: string; spans: { text: string; token?: CodeToken }[] };
 
-  // --- События ---
+  // --- Events ---
 
   type Awaitable<T> = T | Promise<T>;
   type InterceptResult<T> = void | { cancel: true } | { modify: T };
@@ -77,7 +77,7 @@ declare namespace Mg {
   interface FetchInit {
     method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
     headers?: Record<string, string>;
-    /** Строка уходит как есть, объект как JSON. */
+    /** A string is sent as is, an object as JSON. */
     body?: string | object;
   }
 
@@ -87,50 +87,50 @@ declare namespace Mg {
     text: string;
   }
 
-  /** Ошибка из хоста; `code` например "permission_denied". */
+  /** An error from the host; `code` is, for example, "permission_denied". */
   interface HostError extends Error { code: string }
 }
 
 declare const mg: {
-  /** Подписка на событие. Только при загрузке; событие должно быть в `hooks` манифеста. */
+  /** Subscribes to an event. Only during load; the event must be in the manifest's `hooks`. */
   on<E extends keyof Mg.Events>(
     event: E,
     handler: (payload: Mg.Events[E][0]) => Mg.Awaitable<Mg.Events[E][1]>,
   ): void;
 
-  /** Обработчик команды из `commands` манифеста. */
+  /** Registers a handler for a command from the manifest's `commands`. */
   command(name: `/${string}`, handler: (args: unknown) => Mg.Awaitable<unknown>): void;
 
   readonly settings: {
-    /** Значение параметра из `settings` манифеста. */
+    /** Returns the value of a setting from the manifest's `settings`. */
     get<T = unknown>(key: string): T;
   };
 
-  /** Личное хранилище плагина. Требует `storage`. */
+  /** The plugin's private storage. Requires `storage`. */
   readonly storage: {
     get<T = unknown>(key: string): Promise<T | null>;
     set(key: string, value: unknown): Promise<void>;
     delete(key: string): Promise<void>;
   };
 
-  /** Требует `messages.read`. */
+  /** Requires `messages.read`. */
   readonly messages: {
     get(chatId: Mg.ChatId, messageId: Mg.MessageId): Promise<Mg.Message | null>;
     history(chatId: Mg.ChatId, options?: { limit?: number; before?: Mg.MessageId }): Promise<Mg.Message[]>;
   };
 
-  /** Требует `composer.write`. */
+  /** Requires `composer.write`. */
   readonly composer: {
     insert(text: string): Promise<void>;
   };
 
-  /** Требует `media.read` для нужного типа. */
+  /** Requires `media.read` for the given kind. */
   readonly media: {
-    /** Распознавание речи на устройстве средствами приложения. */
+    /** On-device speech recognition provided by the app. */
     transcribe(media: Mg.MediaRef, options?: { language?: string }): Promise<{ text: string; language: string }>;
   };
 
-  /** Только https и только хосты из `net`. Без cookie и без редиректов на другие хосты. */
+  /** https only, and only hosts from `net`. No cookies and no redirects to other hosts. */
   readonly net: {
     fetch(url: string, init?: Mg.FetchInit): Promise<Mg.FetchResponse>;
   };

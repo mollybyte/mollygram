@@ -1,8 +1,8 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Медиа и файлы чата</title>
+<title>Chat media and files</title>
 <script src="./support.js"></script>
 </head>
 <body>
@@ -36,14 +36,14 @@ a{color:#0071E3}a:hover{color:#0058B0}
 </helmet>
 <div class="app {{theme}}" style="width: 100%; height: 100vh; min-height: 900px; position: relative; overflow: hidden">
 
-  <aside class="glass" aria-label="Чаты" style="position: absolute; z-index: 3; top: 8px; left: 8px; bottom: 8px; width: 304px; border-radius: 16px; display: flex; flex-direction: column; overflow: hidden">
+  <aside class="glass" aria-label="{{L.chats}}" style="position: absolute; z-index: 3; top: 8px; left: 8px; bottom: 8px; width: 304px; border-radius: 16px; display: flex; flex-direction: column; overflow: hidden">
     <div style="height: 44px; display: flex; align-items: center; padding: 0 8px 0 16px">
       <span aria-hidden="true" style="display: flex; gap: 8px"><span style="width: 12px; height: 12px; border-radius: 50%; background: #FF5F57"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #FEBC2E"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #28C840"></span></span>
     </div>
     <div style="padding: 0 12px 10px">
       <label style="display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 9px; border-radius: 8px; background: var(--field); color: var(--fg2)">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
-        <input placeholder="Поиск" aria-label="Поиск" style="flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--fg); font: inherit">
+        <input placeholder="{{L.search}}" aria-label="{{L.search}}" style="flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--fg); font: inherit">
       </label>
     </div>
     <div class="scroll" style="flex: 1; overflow-y: auto; padding: 0 6px 8px; display: flex; flex-direction: column; gap: 1px">
@@ -59,7 +59,7 @@ a{color:#0071E3}a:hover{color:#0058B0}
     </div>
   </aside>
 
-  <main aria-label="Медиа и файлы" style="position: absolute; top: 0; bottom: 0; left: 320px; right: 0">
+  <main aria-label="{{L.mediaFiles}}" style="position: absolute; top: 0; bottom: 0; left: 320px; right: 0">
     <div class="scroll" style="position: absolute; inset: 0; overflow-y: auto">
       <div style="max-width: 960px; margin: 0 auto; padding: 68px 24px 96px; display: flex; flex-direction: column; gap: 6px">
 
@@ -110,7 +110,7 @@ a{color:#0071E3}a:hover{color:#0058B0}
           <div style="background: var(--surface); border-radius: 12px; overflow: hidden; margin-top: 8px">
             <sc-for list="{{voices}}" as="v" hint-placeholder-count="5">
               <div style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-top: {{v.bt}}">
-                <button class="press" aria-label="Воспроизвести" style="flex: none; width: 34px; height: {{v.size}}; border-radius: 50%; border: 0; padding: 0; background: var(--accent); display: grid; place-items: center"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" fill="#FFFFFF"></path></svg></button>
+                <button class="press" aria-label="{{L.play}}" style="flex: none; width: 34px; height: {{v.size}}; border-radius: 50%; border: 0; padding: 0; background: var(--accent); display: grid; place-items: center"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" fill="#FFFFFF"></path></svg></button>
                 <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px"><span style="font-weight: 500">{{v.who}}</span><span style="font-size: 12px; color: var(--fg2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{v.text}}</span></span>
                 <span style="font-size: 11.5px; color: var(--fg2)">{{v.d}}</span>
               </div>
@@ -123,24 +123,24 @@ a{color:#0071E3}a:hover{color:#0058B0}
     <div style="position: absolute; z-index: 2; top: 10px; left: 14px; right: 14px; display: flex; justify-content: space-between; align-items: center; gap: 8px; pointer-events: none">
       <a href="Main.dc.html" class="glass press" style="pointer-events: auto; border-radius: 22px; text-decoration: none; color: var(--fg); display: flex; align-items: center; gap: 8px; padding: 5px 14px 5px 8px; height: 32px">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
-        <span class="av" style="width: 26px; height: 26px; font-size: 11px">АМ</span>
-        <span style="font-weight: 600; font-size: 13.5px">Аня Морозова</span>
+        <span class="av" style="width: 26px; height: 26px; font-size: 11px">{{L.peerIni}}</span>
+        <span style="font-weight: 600; font-size: 13.5px">{{L.peerName}}</span>
       </a>
-      <div class="glass" role="tablist" aria-label="Тип вложений" style="pointer-events: auto; border-radius: 22px; display: flex; gap: 2px; padding: 4px">
+      <div class="glass" role="tablist" aria-label="{{L.attachmentType}}" style="pointer-events: auto; border-radius: 22px; display: flex; gap: 2px; padding: 4px">
         <sc-for list="{{tabs}}" as="t" hint-placeholder-count="4">
           <button role="tab" aria-selected="{{t.on}}" class="seg press {{t.cls}}" onClick="{{t.pick}}">{{t.label}} <span style="color: var(--fg2); font-weight: 400">{{t.n}}</span></button>
         </sc-for>
       </div>
       <div class="glass" style="pointer-events: auto; border-radius: 22px; display: flex; gap: 2px; padding: 4px">
-        <button class="ib press" aria-label="Поиск по вложениям"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg></button>
-        <button class="ib press" aria-label="Скачать всё"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"></path></svg></button>
+        <button class="ib press" aria-label="{{L.searchAttachments}}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg></button>
+        <button class="ib press" aria-label="{{L.downloadAll}}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"></path></svg></button>
       </div>
     </div>
 
     <div style="position: absolute; z-index: 2; bottom: 12px; left: 0; right: 0; display: flex; justify-content: center; pointer-events: none">
       <div class="glass" style="pointer-events: auto; width: 420px; border-radius: 22px; padding: 8px 8px 8px 16px; display: flex; align-items: center; gap: 12px">
         <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px">
-          <div style="display: flex; justify-content: space-between; font-size: 12px"><span style="font-weight: 500">{{dlTitle}}</span><span style="color: var(--fg2)">42 из 118 МБ</span></div>
+          <div style="display: flex; justify-content: space-between; font-size: 12px"><span style="font-weight: 500">{{dlTitle}}</span><span style="color: var(--fg2)">{{L.dlProgress}}</span></div>
           <span style="height: 3px; border-radius: 2px; background: var(--field); overflow: hidden"><span style="display: block; height: 3px; width: 36%; background: {{dlBar}}"></span></span>
         </div>
         <button class="ib press" onClick="{{togglePause}}" aria-label="{{pauseLabel}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="{{pauseIcon}}"></path></svg></button>
@@ -149,7 +149,7 @@ a{color:#0071E3}a:hover{color:#0058B0}
   </main>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"appearance":{"editor":"enum","options":["светлая","тёмная"],"default":"светлая"},"$preview":{"width":1440,"height":900}}'>
+<script type="text/x-dc" data-dc-script data-props='{"appearance":{"editor":"enum","options":["Light","Dark"],"default":"Light"},"language":{"editor":"enum","options":["English","Русский"],"default":"English"},"$preview":{"width":1440,"height":900}}'>
 class Component extends DCLogic {
   constructor(props) {
     super(props);
@@ -157,55 +157,77 @@ class Component extends DCLogic {
   }
   renderVals() {
     const s = this.state;
-    const chats = [
-      { ini: 'КП', name: 'Команда продукта', last: 'Вика: ок, тогда созвон в 16:30', time: '14:12' },
-      { ini: 'АМ', name: 'Аня Морозова', last: 'Голосовое сообщение', time: '14:03', on: true },
-      { ini: 'Д', name: 'Денис', last: 'Вы: спасибо, вернул', time: '13:20' },
-      { ini: 'П', name: 'Папа', last: 'Позвони, как будет минутка', time: '12:47' },
-      { ini: 'КК', name: 'Книжный клуб', last: 'Ира: голосуем за книгу на ноябрь', time: '11:30' },
-      { ini: 'И', name: 'Избранное', last: 'договор_аренды.pdf', time: 'вчера' },
-      { ini: 'FD', name: 'Flutter Dev', last: 'Что нового на десктопе в 3.38', time: 'вчера' }
-    ].map((c) => ({ ...c, cls: c.on ? 'on' : '' }));
+    const lang = (this.props.language ?? 'English') === 'Русский' ? 'ru' : 'en';
+    const I18N = {
+      en: {
+        chats: 'Chats', search: 'Search', mediaFiles: 'Media and files', play: 'Play', peerIni: 'AM', peerName: 'Anna Morris',
+        attachmentType: 'Attachment type', searchAttachments: 'Search attachments', downloadAll: 'Download all',
+        dlProgress: '42 of 118 MB', dlPaused: 'Download paused', dlActive: 'Downloading IMG_2043.MOV',
+        resume: 'Resume', pause: 'Pause', open: 'Open', download: 'Download', video: 'Video', photo: 'Photo',
+        months: ['October', 'September'],
+        tabs: { photos: 'Photos and videos', files: 'Files', links: 'Links', voice: 'Voice' }
+      },
+      ru: {
+        chats: 'Чаты', search: 'Поиск', mediaFiles: 'Медиа и файлы', play: 'Воспроизвести', peerIni: 'АМ', peerName: 'Аня Морозова',
+        attachmentType: 'Тип вложений', searchAttachments: 'Поиск по вложениям', downloadAll: 'Скачать всё',
+        dlProgress: '42 из 118 МБ', dlPaused: 'Загрузка на паузе', dlActive: 'Загружается IMG_2043.MOV',
+        resume: 'Продолжить', pause: 'Пауза', open: 'Открыть', download: 'Скачать', video: 'Видео', photo: 'Фото',
+        months: ['Октябрь', 'Сентябрь'],
+        tabs: { photos: 'Фото и видео', files: 'Файлы', links: 'Ссылки', voice: 'Голосовые' }
+      }
+    };
+    const L = I18N[lang];
+    const pick = (list) => list.map(({ en, ru, ...x }) => ({ ...x, ...(lang === 'ru' ? ru : en) }));
+    const chats = pick([
+      { time: '14:12', en: { ini: 'PT', name: 'Product team', last: 'Vicky: OK, call at 16:30 then' }, ru: { ini: 'КП', name: 'Команда продукта', last: 'Вика: ок, тогда созвон в 16:30' } },
+      { time: '14:03', on: true, en: { ini: 'AM', name: 'Anna Morris', last: 'Voice message' }, ru: { ini: 'АМ', name: 'Аня Морозова', last: 'Голосовое сообщение' } },
+      { time: '13:20', en: { ini: 'D', name: 'Dennis', last: 'You: thanks, sent it back' }, ru: { ini: 'Д', name: 'Денис', last: 'Вы: спасибо, вернул' } },
+      { time: '12:47', en: { ini: 'D', name: 'Dad', last: 'Call me when you have a minute' }, ru: { ini: 'П', name: 'Папа', last: 'Позвони, как будет минутка' } },
+      { time: '11:30', en: { ini: 'BC', name: 'Book club', last: 'Irene: voting on the November book' }, ru: { ini: 'КК', name: 'Книжный клуб', last: 'Ира: голосуем за книгу на ноябрь' } },
+      { en: { ini: 'S', name: 'Saved Messages', last: 'lease_agreement.pdf', time: 'Yesterday' }, ru: { ini: 'И', name: 'Избранное', last: 'договор_аренды.pdf', time: 'вчера' } },
+      { en: { ini: 'FD', name: 'Flutter Dev', last: 'What’s new on desktop in 3.38', time: 'Yesterday' }, ru: { ini: 'FD', name: 'Flutter Dev', last: 'Что нового на десктопе в 3.38', time: 'вчера' } }
+    ]).map((c) => ({ ...c, cls: c.on ? 'on' : '' }));
     const P = ['#B9A68F', '#8FA2B3', '#A6B497', '#C3B2A4', '#9AA7A0', '#B7A9B9', '#8E9A93', '#C9B79C', '#A3AFBF', '#B4A08A', '#99A88E', '#BFB4AA'];
     const mk = (n, off, vids) => Array.from({ length: n }, (_, i) => {
       const v = vids[i];
-      return { c: P[(i + off) % P.length], isVideo: !!v, dur: v || '', label: v ? 'Видео ' + v : 'Фото' };
+      return { c: P[(i + off) % P.length], isVideo: !!v, dur: v || '', label: v ? L.video + ' ' + v : L.photo };
     });
     const months = [
-      { title: 'Октябрь', tiles: mk(10, 0, { 2: '0:12', 7: '1:04' }) },
-      { title: 'Сентябрь', tiles: mk(18, 5, { 4: '0:38', 11: '2:15' }) }
+      { title: L.months[0], tiles: mk(10, 0, { 2: '0:12', 7: '1:04' }) },
+      { title: L.months[1], tiles: mk(18, 5, { 4: '0:38', 11: '2:15' }) }
     ];
     const DL = 'M12 5v12M7 12l5 5 5-5';
     const OPEN = 'M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5';
-    const files = [
-      { ext: 'HEIC', c: '#8E8E93', name: 'IMG_2041.HEIC', meta: '6,8 МБ · сегодня', icon: OPEN, action: 'Открыть' },
-      { ext: 'MOV', c: '#5E5CE6', name: 'IMG_2043.MOV', loading: true, pct: 36, prog: '42 из 118 МБ', icon: 'M8 6h3v12H8zM13 6h3v12h-3z', action: 'Пауза' },
-      { ext: 'PDF', c: '#E5484D', name: 'Билеты_Казань.pdf', meta: '412 КБ · 3 окт', icon: OPEN, action: 'Открыть' },
-      { ext: 'ZIP', c: '#B07D3A', name: 'фото_дача_2026.zip', meta: '1,2 ГБ · 21 сен', icon: DL, action: 'Скачать' },
-      { ext: 'DOC', c: '#2F6FDE', name: 'Список гостей.docx', meta: '38 КБ · 14 сен', icon: OPEN, action: 'Открыть' },
-      { ext: 'MP3', c: '#30A46C', name: 'плейлист в машину.mp3', meta: '9,4 МБ · 2 сен', icon: DL, action: 'Скачать' }
-    ].map((f, i) => ({ ...f, loading: !!f.loading, idle: !f.loading, bt: i ? '.5px solid var(--sep)' : '0' }));
-    const links = [
-      { l: 'К', t: 'Квест «Тайна маяка» — бронь', u: 'quest-mayak.ru/booking', d: '9 окт' },
-      { l: 'Я', t: 'Маршрут до дачи', u: 'yandex.ru/maps', d: '28 сен' },
-      { l: 'A', t: 'Настолка, которую хотели', u: 'hobbygames.ru', d: '21 сен' },
-      { l: 'Y', t: 'Видео с концерта', u: 'youtu.be/…', d: '2 сен' }
-    ].map((x, i) => ({ ...x, bt: i ? '.5px solid var(--sep)' : '0' }));
-    const voices = [
-      { who: 'Аня Морозова', text: 'Короче, вечером в субботу собираемся у Лёши…', d: '0:18 · сегодня', size: '34px' },
-      { who: 'Аня Морозова · кружок', text: '0:12 · 120 кадров/с', d: 'сегодня', size: '34px' },
-      { who: 'Вы', text: 'Я уже еду, буду минут через двадцать', d: '0:07 · 9 окт', size: '34px' },
-      { who: 'Аня Морозова', text: 'Слушай, а ты не помнишь, как называлось то кафе…', d: '0:41 · 3 окт', size: '34px' }
-    ].map((x, i) => ({ ...x, bt: i ? '.5px solid var(--sep)' : '0' }));
-    const T = [{ id: 'photos', label: 'Фото и видео', n: 28 }, { id: 'files', label: 'Файлы', n: 6 }, { id: 'links', label: 'Ссылки', n: 4 }, { id: 'voice', label: 'Голосовые', n: 4 }];
-    const tabs = T.map((t) => ({ ...t, on: t.id === s.tab, cls: t.id === s.tab ? 'on' : '', pick: () => this.setState({ tab: t.id }) }));
+    const files = pick([
+      { ext: 'HEIC', c: '#8E8E93', name: 'IMG_2041.HEIC', icon: OPEN, act: 'open', en: { meta: '6.8 MB · today' }, ru: { meta: '6,8 МБ · сегодня' } },
+      { ext: 'MOV', c: '#5E5CE6', name: 'IMG_2043.MOV', loading: true, pct: 36, icon: 'M8 6h3v12H8zM13 6h3v12h-3z', act: 'pause', en: { prog: '42 of 118 MB' }, ru: { prog: '42 из 118 МБ' } },
+      { ext: 'PDF', c: '#E5484D', icon: OPEN, act: 'open', en: { name: 'Tickets_Boston.pdf', meta: '412 KB · Oct 3' }, ru: { name: 'Билеты_Казань.pdf', meta: '412 КБ · 3 окт' } },
+      { ext: 'ZIP', c: '#B07D3A', icon: DL, act: 'download', en: { name: 'cabin_photos_2026.zip', meta: '1.2 GB · Sep 21' }, ru: { name: 'фото_дача_2026.zip', meta: '1,2 ГБ · 21 сен' } },
+      { ext: 'DOC', c: '#2F6FDE', icon: OPEN, act: 'open', en: { name: 'Guest list.docx', meta: '38 KB · Sep 14' }, ru: { name: 'Список гостей.docx', meta: '38 КБ · 14 сен' } },
+      { ext: 'MP3', c: '#30A46C', icon: DL, act: 'download', en: { name: 'road trip playlist.mp3', meta: '9.4 MB · Sep 2' }, ru: { name: 'плейлист в машину.mp3', meta: '9,4 МБ · 2 сен' } }
+    ]).map((f, i) => ({ ...f, action: L[f.act], loading: !!f.loading, idle: !f.loading, bt: i ? '.5px solid var(--sep)' : '0' }));
+    const links = pick([
+      { en: { l: 'L', t: 'Lighthouse Mystery escape room — booking', u: 'lighthouse-quest.com/booking', d: 'Oct 9' }, ru: { l: 'К', t: 'Квест «Тайна маяка» — бронь', u: 'quest-mayak.ru/booking', d: '9 окт' } },
+      { en: { l: 'G', t: 'Directions to the cabin', u: 'maps.google.com', d: 'Sep 28' }, ru: { l: 'Я', t: 'Маршрут до дачи', u: 'yandex.ru/maps', d: '28 сен' } },
+      { en: { l: 'B', t: 'The board game we wanted', u: 'boardgamegeek.com', d: 'Sep 21' }, ru: { l: 'A', t: 'Настолка, которую хотели', u: 'hobbygames.ru', d: '21 сен' } },
+      { en: { l: 'Y', t: 'Concert video', u: 'youtu.be/…', d: 'Sep 2' }, ru: { l: 'Y', t: 'Видео с концерта', u: 'youtu.be/…', d: '2 сен' } }
+    ]).map((x, i) => ({ ...x, bt: i ? '.5px solid var(--sep)' : '0' }));
+    const voices = pick([
+      { size: '34px', en: { who: 'Anna Morris', text: 'So, we’re meeting at Alex’s on Saturday evening…', d: '0:18 · today' }, ru: { who: 'Аня Морозова', text: 'Короче, вечером в субботу собираемся у Лёши…', d: '0:18 · сегодня' } },
+      { size: '34px', en: { who: 'Anna Morris · video message', text: '0:12 · 120 fps', d: 'today' }, ru: { who: 'Аня Морозова · кружок', text: '0:12 · 120 кадров/с', d: 'сегодня' } },
+      { size: '34px', en: { who: 'You', text: 'I’m on my way, will be there in about twenty minutes', d: '0:07 · Oct 9' }, ru: { who: 'Вы', text: 'Я уже еду, буду минут через двадцать', d: '0:07 · 9 окт' } },
+      { size: '34px', en: { who: 'Anna Morris', text: 'Hey, do you remember what that café was called…', d: '0:41 · Oct 3' }, ru: { who: 'Аня Морозова', text: 'Слушай, а ты не помнишь, как называлось то кафе…', d: '0:41 · 3 окт' } }
+    ]).map((x, i) => ({ ...x, bt: i ? '.5px solid var(--sep)' : '0' }));
+    const T = [{ id: 'photos', n: 28 }, { id: 'files', n: 6 }, { id: 'links', n: 4 }, { id: 'voice', n: 4 }];
+    const tabs = T.map((t) => ({ ...t, label: L.tabs[t.id], on: t.id === s.tab, cls: t.id === s.tab ? 'on' : '', pick: () => this.setState({ tab: t.id }) }));
     return {
-      theme: (this.props.appearance ?? 'светлая') === 'тёмная' ? 'dark' : '',
+      theme: (this.props.appearance ?? 'Light') === 'Dark' ? 'dark' : '',
+      L,
       chats, months, files, links, voices, tabs,
       isPhotos: s.tab === 'photos', isFiles: s.tab === 'files', isLinks: s.tab === 'links', isVoice: s.tab === 'voice',
-      dlTitle: s.paused ? 'Загрузка на паузе' : 'Загружается IMG_2043.MOV',
+      dlTitle: s.paused ? L.dlPaused : L.dlActive,
       dlBar: s.paused ? 'var(--fg2)' : 'var(--accent)',
-      pauseLabel: s.paused ? 'Продолжить' : 'Пауза',
+      pauseLabel: s.paused ? L.resume : L.pause,
       pauseIcon: s.paused ? 'M8 5v14l11-7z' : 'M7 5h4v14H7zM13 5h4v14h-4z',
       togglePause: () => this.setState({ paused: !s.paused })
     };

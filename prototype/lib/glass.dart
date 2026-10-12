@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 
 import 'theme.dart';
 
-/// Настройки стекла, которые переключаются из оверлея замера.
+/// Glass settings toggled from the benchmark overlay.
 class GlassSettings extends InheritedWidget {
   const GlassSettings({super.key, required this.blur, required super.child});
 
-  /// false: размытие выключено, остаётся только полупрозрачная заливка.
+  /// When false, blur is off and only the translucent fill remains.
   final bool blur;
 
   static bool blurOf(BuildContext context) =>
@@ -18,7 +18,7 @@ class GlassSettings extends InheritedWidget {
   bool updateShouldNotify(GlassSettings old) => old.blur != blur;
 }
 
-/// saturate(190%) из CSS как цветовая матрица.
+/// CSS saturate(190%) as a color matrix.
 List<double> _saturate(double s) => [
   0.213 + 0.787 * s, 0.715 - 0.715 * s, 0.072 - 0.072 * s, 0, 0, //
   0.213 - 0.213 * s, 0.715 + 0.285 * s, 0.072 - 0.072 * s, 0, 0, //
@@ -26,15 +26,15 @@ List<double> _saturate(double s) => [
   0, 0, 0, 1, 0, //
 ];
 
-/// blur(30px) saturate(190%): в CSS радиус blur и есть сигма.
+/// blur(30px) saturate(190%): in CSS the blur radius is the sigma.
 final ui.ImageFilter glassFilter = ui.ImageFilter.compose(
   outer: ui.ColorFilter.matrix(_saturate(1.9)),
   inner: ui.ImageFilter.blur(sigmaX: 30, sigmaY: 30, tileMode: TileMode.clamp),
 );
 
-/// Стеклянная поверхность плавающего слоя. Все экземпляры читают фон
-/// через один общий BackdropGroup (см. main.dart), поэтому подложка
-/// снимается один раз на кадр, а не на каждую панель.
+/// A glass surface of the floating layer. All instances read the backdrop
+/// through one shared BackdropGroup (see main.dart), so the backdrop is
+/// captured once per frame rather than once per panel.
 class Glass extends StatelessWidget {
   const Glass({
     super.key,
@@ -101,8 +101,8 @@ class _GlassBodyPainter extends CustomPainter {
       old.fill != fill || old.radius != radius;
 }
 
-/// Светлый ободок 1 px, блик сверху, тень снизу и внутреннее свечение
-/// (inset-тени из макета, которых нет в BoxShadow).
+/// A light 1 px rim, a top highlight, a bottom shadow and an inner glow
+/// (the mockup's inset shadows, which BoxShadow does not support).
 class _GlassRimPainter extends CustomPainter {
   _GlassRimPainter({
     required this.radius,
@@ -175,8 +175,8 @@ class _GlassRimPainter extends CustomPainter {
       old.radius != radius;
 }
 
-/// Внешняя тень рисуется только снаружи формы, чтобы не темнить стекло
-/// (BoxShadow во Flutter закрашивает и область под самим блоком).
+/// Paints the outer shadow only outside the shape so it does not darken
+/// the glass (Flutter's BoxShadow also fills the area under the box).
 class _OuterShadowPainter extends CustomPainter {
   _OuterShadowPainter({required this.radius, required this.color});
   final double radius;

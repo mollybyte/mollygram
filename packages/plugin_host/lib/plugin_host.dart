@@ -1,5 +1,5 @@
-/// Песочница для JS-плагинов Mollygram: манифест, права, quickjs-ng,
-/// декларативный UI. Спецификация: docs/plugins.md.
+/// Sandbox for Mollygram JS plugins: manifest, permissions, quickjs-ng and
+/// declarative UI. Specification: docs/plugins.md.
 library;
 
 export 'src/bundle.dart' show PluginBundle, maxSourceBytes;

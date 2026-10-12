@@ -3,8 +3,8 @@ import 'package:hooks/hooks.dart';
 import 'package:logging/logging.dart';
 import 'package:native_toolchain_c/native_toolchain_c.dart';
 
-/// Собирает quickjs-ng вместе с нашей обёрткой src/mg_qjs.c в одну
-/// динамическую библиотеку. Других нативных зависимостей у пакета нет.
+/// Builds quickjs-ng together with our src/mg_qjs.c wrapper into a single
+/// dynamic library. The package has no other native dependencies.
 void main(List<String> args) async {
   await build(args, (input, output) async {
     if (!input.config.buildCodeAssets) return;
@@ -29,8 +29,8 @@ void main(List<String> args) async {
         } else
           '_GNU_SOURCE': null,
       },
-      // Флаги как в CMakeLists.txt quickjs-ng: движок рассчитывает на
-      // беззнаковый char и на C11-атомики в MSVC.
+      // Same flags as quickjs-ng's CMakeLists.txt: the engine relies on
+      // unsigned char and on C11 atomics in MSVC.
       flags: os == OS.windows
           ? ['/experimental:c11atomics', '/J', '/wd4996']
           : ['-funsigned-char'],

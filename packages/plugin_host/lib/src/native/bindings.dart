@@ -1,4 +1,4 @@
-// Привязки к src/mg_qjs.c. Библиотеку собирает hook/build.dart.
+// Bindings to src/mg_qjs.c. The library is built by hook/build.dart.
 // ignore_for_file: non_constant_identifier_names
 @DefaultAsset('package:plugin_host/src/native/bindings.dart')
 library;

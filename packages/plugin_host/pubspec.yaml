@@ -1,5 +1,5 @@
 name: plugin_host
-description: Песочница для JS-плагинов Mollygram на quickjs-ng.
+description: Sandbox for Mollygram JS plugins on quickjs-ng.
 publish_to: none
 version: 0.1.0
 

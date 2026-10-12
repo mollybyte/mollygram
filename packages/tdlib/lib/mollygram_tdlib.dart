@@ -1,7 +1,7 @@
-/// Привязка к TDLib через td_json и типы td_api.
+/// Binding to TDLib via td_json, plus the td_api types.
 ///
-/// Типов в td_api больше двух тысяч, и часть имён совпадает с Flutter
-/// (`Text`, `Animation`, `Image` и т.д.), поэтому импортируйте с префиксом:
+/// td_api has more than two thousand types, and some names clash with Flutter
+/// (`Text`, `Animation`, `Image`, etc.), so import it with a prefix:
 ///
 /// ```dart
 /// import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;

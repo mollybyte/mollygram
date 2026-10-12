@@ -1,2 +1,2 @@
-/// Медиа Mollygram. Пока пустой каркас.
+/// Mollygram media. An empty skeleton for now.
 library;

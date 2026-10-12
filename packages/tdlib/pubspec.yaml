@@ -1,5 +1,5 @@
 name: mollygram_tdlib
-description: Тонкая привязка dart:ffi к td_json и типы td_api, сгенерированные из схемы.
+description: Thin dart:ffi binding to td_json and td_api types generated from the schema.
 publish_to: none
 resolution: workspace
 

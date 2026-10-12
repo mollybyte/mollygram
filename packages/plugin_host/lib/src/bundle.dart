@@ -2,11 +2,11 @@ import 'dart:io';
 
 import 'manifest.dart';
 
-/// Максимальный размер кода плагина. Больше обычно значит, что внутрь
-/// затащили что-то лишнее.
+/// The maximum size of a plugin's code. Anything larger usually means
+/// something unnecessary got bundled in.
 const maxSourceBytes = 2 << 20;
 
-/// Плагин на диске: папка с `manifest.yaml` и одним собранным JS-файлом.
+/// A plugin on disk: a folder with `manifest.yaml` and one bundled JS file.
 final class PluginBundle {
   PluginBundle._(this.directory, this.manifest, this.source);
 
@@ -17,23 +17,21 @@ final class PluginBundle {
   static Future<PluginBundle> load(Directory directory) async {
     final manifestFile = File('${directory.path}/manifest.yaml');
     if (!await manifestFile.exists()) {
-      throw ManifestException(['нет manifest.yaml в ${directory.path}']);
+      throw ManifestException(['no manifest.yaml in ${directory.path}']);
     }
     final manifest = PluginManifest.parse(await manifestFile.readAsString());
     final root = await directory.resolveSymbolicLinks();
     final main = File('${directory.path}/${manifest.main}');
     if (!await main.exists()) {
-      throw ManifestException(['нет файла ${manifest.main}']);
+      throw ManifestException(['file ${manifest.main} not found']);
     }
-    // Ссылка наружу из папки плагина считается ошибкой.
+    // A link pointing outside the plugin folder is an error.
     final resolved = await main.resolveSymbolicLinks();
     if (!resolved.startsWith('$root${Platform.pathSeparator}')) {
-      throw ManifestException([
-        '${manifest.main} указывает за пределы плагина',
-      ]);
+      throw ManifestException(['${manifest.main} points outside the plugin']);
     }
     if (await main.length() > maxSourceBytes) {
-      throw ManifestException(['${manifest.main} больше 2 МБ']);
+      throw ManifestException(['${manifest.main} is larger than 2 MB']);
     }
     return PluginBundle._(directory, manifest, await main.readAsString());
   }

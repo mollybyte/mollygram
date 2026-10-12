@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-// Пустое окно. Интерфейс и вход в аккаунт появятся на следующем этапе.
+// An empty window. The UI and sign-in will arrive in the next stage.
 void main() {
   runApp(const ColoredBox(color: Color(0xFFFFFFFF)));
 }

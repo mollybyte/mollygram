@@ -1,17 +1,18 @@
-/// Интерфейс td_json: четыре функции C API TDLib.
+/// The td_json interface: the four functions of the TDLib C API.
 ///
-/// Есть реализация через dart:ffi ([TdJsonFfi]) и подмены в тестах.
+/// Implemented via dart:ffi ([TdJsonFfi]) and by fakes in tests.
 abstract interface class TdJson {
   /// `td_create_client_id`.
   int createClientId();
 
-  /// `td_send`. Потокобезопасна, вызывается из любого изолята.
+  /// `td_send`. Thread-safe; may be called from any isolate.
   void send(int clientId, String request);
 
-  /// `td_receive`. Блокирует поток до [timeout] секунд, поэтому вызывается
-  /// только из фонового изолята. `null`, если за это время ничего не пришло.
+  /// `td_receive`. Blocks the thread for up to [timeout] seconds, so it is
+  /// called only from a background isolate. Returns `null` if nothing arrived
+  /// in that time.
   String? receive(double timeout);
 
-  /// `td_execute`, синхронные запросы, которые не требуют клиента.
+  /// `td_execute`: synchronous requests that need no client.
   String? execute(String request);
 }

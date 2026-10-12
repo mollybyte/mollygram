@@ -7,7 +7,7 @@ import 'package:mollygram_prototype/main.dart';
 import 'package:mollygram_prototype/perf/frame_stats.dart';
 
 void main() {
-  testWidgets('окно строится, лента прокручивается, переключатели работают', (
+  testWidgets('window builds, message list scrolls, toggles work', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(1440, 900);
@@ -20,8 +20,8 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.text('Аня Морозова'), findsWidgets);
-    expect(find.text('Сообщение'), findsOneWidget);
+    expect(find.text('Anna Morris'), findsWidgets);
+    expect(find.text('Message'), findsOneWidget);
     expect(find.textContaining('640 · media_kit'), findsOneWidget);
 
     await tester.fling(find.byType(ListView).last, const Offset(0, 3000), 4000);
@@ -36,10 +36,10 @@ void main() {
 
     app.toggleOverlay();
     await tester.pump();
-    expect(find.text('Замер 1 мин'), findsNothing);
+    expect(find.text('Benchmark 1 min'), findsNothing);
   });
 
-  test('лента детерминирована и содержит живой кружок', () {
+  test('message list is deterministic and has a live video message', () {
     final a = buildMessages(5000);
     final b = buildMessages(5000);
     expect(a.length, 5000);
@@ -47,8 +47,8 @@ void main() {
     expect([for (final m in a) m.text], [for (final m in b) m.text]);
   });
 
-  test('сводка считает пропущенные vsync', () {
-    // 120 Гц: шаг 8333 мкс, один кадр пропущен (двойной интервал).
+  test('summary counts missed vsyncs', () {
+    // 120 Hz: 8333 us step, one frame missed (a double interval).
     final samples = <FrameSample>[];
     var t = 0;
     for (var i = 0; i < 100; i++) {
@@ -69,11 +69,11 @@ void main() {
     expect(s.vsyncHz, closeTo(120, 0.5));
   });
 
-  test('пауза дольше 100 мс не считается дропом и не роняет fps', () {
+  test('pause longer than 100 ms is not a drop and does not lower fps', () {
     final samples = <FrameSample>[];
     var t = 0;
     for (var i = 0; i < 240; i++) {
-      // Посередине окно было скрыто 5 минут.
+      // The window was hidden for 5 minutes midway.
       t += i == 120 ? 300000000 : 8333;
       samples.add(FrameSample(vsyncUs: t, buildMs: 1, rasterMs: 2, totalMs: 4));
     }

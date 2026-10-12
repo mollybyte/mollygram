@@ -6,7 +6,7 @@ import 'icons.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
-/// Плавающий стеклянный остров со списком чатов.
+/// A floating glass island with the chat list.
 class Sidebar extends StatefulWidget {
   const Sidebar({super.key, required this.selected, required this.onSelect});
 
@@ -21,10 +21,10 @@ class _SidebarState extends State<Sidebar> {
   int _folder = 0;
 
   static const _folders = [
-    ('Все', 0),
-    ('Личные', 2),
-    ('Работа', 3),
-    ('Каналы', 0),
+    ('All', 0),
+    ('Personal', 2),
+    ('Work', 3),
+    ('Channels', 0),
   ];
 
   @override
@@ -40,10 +40,10 @@ class _SidebarState extends State<Sidebar> {
               height: 44,
               child: Row(
                 children: [
-                  // Место под системные кнопки окна.
+                  // Room for the system window buttons.
                   const SizedBox(width: 76, child: WindowDragArea()),
                   const Expanded(child: WindowDragArea()),
-                  IconBtn(MgIcons.compose, tooltip: 'Новое сообщение'),
+                  IconBtn(MgIcons.compose, tooltip: 'New message'),
                   const SizedBox(width: 8),
                 ],
               ),
@@ -73,7 +73,7 @@ class _SidebarState extends State<Sidebar> {
                         style: mgText(c),
                         cursorHeight: 15,
                         decoration: InputDecoration.collapsed(
-                          hintText: 'Поиск',
+                          hintText: 'Search',
                           hintStyle: mgText(c).copyWith(color: c.fg2),
                         ),
                       ),
