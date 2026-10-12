@@ -6,6 +6,7 @@ import 'package:mollygram_prototype/app_state.dart';
 import 'package:mollygram_prototype/chat/fake_data.dart';
 import 'package:mollygram_prototype/circle/circle_controller.dart';
 import 'package:mollygram_prototype/main.dart';
+import 'package:mollygram_prototype/sidebar.dart';
 
 import 'authorization_panel.dart';
 import 'prototype_chat_adapter.dart';
@@ -59,7 +60,12 @@ class _MollygramAppState extends State<MollygramApp> {
                   session.chatLists.store,
                   const ChatListLocation.main(),
                 );
-                return _shell(chats: chats.isEmpty ? null : chats);
+                return _shell(
+                  chats: chats.isEmpty ? null : chats,
+                  folders: PrototypeChatAdapter.foldersFor(
+                    session.chatLists.store,
+                  ),
+                );
               },
             );
           },
@@ -68,11 +74,16 @@ class _MollygramAppState extends State<MollygramApp> {
     );
   }
 
-  Widget _shell({Widget? foreground, List<FakeChat>? chats}) => PrototypeApp(
+  Widget _shell({
+    Widget? foreground,
+    List<FakeChat>? chats,
+    List<PrototypeFolder>? folders,
+  }) => PrototypeApp(
     app: _app,
     circle: _circle,
     foreground: foreground,
     chats: chats,
+    folders: folders,
   );
 }
 
