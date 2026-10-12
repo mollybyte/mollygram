@@ -1,8 +1,16 @@
 name: Release
 
+# Runs when release-please creates a release (called from
+# release-please.yml) or when a v* tag is pushed by hand.
 on:
   push:
     tags: ['v*']
+  workflow_call:
+    inputs:
+      tag:
+        description: Release tag to build, e.g. v0.2.0
+        type: string
+        required: true
 
 permissions:
   contents: write
@@ -27,6 +35,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
       # The project uses a single Flutter version, taken from .fvmrc.
       - name: Read Flutter version
         shell: bash
@@ -75,5 +85,7 @@ jobs:
       - run: cd dist && for d in */; do zip -qr "${d%/}.zip" "$d"; done
       - uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ inputs.tag || github.ref_name }}
           files: dist/*.zip
-          generate_release_notes: true
+          # release-please already wrote the notes from CHANGELOG.md.
+          generate_release_notes: ${{ inputs.tag == '' }}
