@@ -15,9 +15,13 @@ final class AuthorizationController {
   final td.TdClient _client;
   final _stages = StreamController<AuthorizationStage>.broadcast(sync: true);
   StreamSubscription<td.TdObject>? _subscription;
+  AuthorizationStage? _currentStage;
 
   /// The current and subsequent user-facing authorization stages.
   Stream<AuthorizationStage> get stages => _stages.stream;
+
+  /// The latest stage received from TDLib, if [start] has completed.
+  AuthorizationStage? get currentStage => _currentStage;
 
   /// Starts observing TDLib and publishes its current authorization state.
   Future<void> start() async {
@@ -52,7 +56,9 @@ final class AuthorizationController {
 
   void _publish(td.TdObject object) {
     if (object is td.AuthorizationState) {
-      _stages.add(AuthorizationStage.from(object));
+      final stage = AuthorizationStage.from(object);
+      _currentStage = stage;
+      _stages.add(stage);
     }
   }
 }

@@ -47,6 +47,7 @@ void main() {
     await controller.start();
 
     expect(stages.single.kind, AuthorizationStageKind.phoneNumber);
+    expect(controller.currentStage, stages.single);
     await subscription.cancel();
   });
 
