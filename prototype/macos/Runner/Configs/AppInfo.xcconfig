@@ -8,7 +8,7 @@
 PRODUCT_NAME = mollygram_prototype
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = dev.mollygram.mollygramPrototype
+PRODUCT_BUNDLE_IDENTIFIER = dev.mollygram.prototype
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2026 dev.mollygram. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2026 Mollygram contributors. Licensed under GPL-3.0.

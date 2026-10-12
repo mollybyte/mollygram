@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "dev.mollygram" "\0"
-            VALUE "FileDescription", "mollygram" "\0"
+            VALUE "CompanyName", "Mollygram" "\0"
+            VALUE "FileDescription", "Mollygram" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "mollygram" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 dev.mollygram. All rights reserved." "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 Mollygram contributors. Licensed under GPL-3.0." "\0"
             VALUE "OriginalFilename", "mollygram.exe" "\0"
-            VALUE "ProductName", "mollygram" "\0"
+            VALUE "ProductName", "Mollygram" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

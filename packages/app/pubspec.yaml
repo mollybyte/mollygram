@@ -1,5 +1,5 @@
 name: mollygram
-description: Desktop-клиент Telegram.
+description: Mollygram, a desktop Telegram client.
 publish_to: none
 version: 0.1.0+1
 resolution: workspace
