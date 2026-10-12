@@ -19,11 +19,22 @@ void main() {
       final version = td.execute(const GetOption(name: 'version'));
       expect((version as OptionValueString).value, tdlibVersion);
 
+      final undecodable = <TdUndecodable>[];
+      td.undecodable.listen(undecodable.add);
       final client = td.createClient();
+      final updates = <TdObject>[];
+      client.updates.listen(updates.add);
       final state = await client.send(const GetAuthorizationState());
       expect(state, isA<AuthorizationStateWaitTdlibParameters>());
 
       await td.close();
+      // Стартовые updateOption и прочие обновления разбираются без потерь.
+      expect(updates, isNotEmpty);
+      expect(undecodable, isEmpty);
+      expect(
+        (updates.last as UpdateAuthorizationState).authorizationState,
+        isA<AuthorizationStateClosed>(),
+      );
     },
     skip: path == null ? 'TDJSON_PATH не задан' : false,
     timeout: const Timeout(Duration(seconds: 30)),
