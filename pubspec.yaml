@@ -2,7 +2,7 @@ name: mollygram_workspace
 publish_to: none
 
 environment:
-  sdk: ^3.9.0
+  sdk: ^3.13.0
 
 # Монорепо на pub workspaces: один pubspec.lock и одно разрешение зависимостей
 # на все пакеты. Каталог prototype/ сюда не входит, у него свой pubspec.

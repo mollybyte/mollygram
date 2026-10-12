@@ -68,13 +68,20 @@
 | `packages/plugin_host` | Песочница плагинов |
 | `packages/app` | Само приложение |
 
-Монорепо на [pub workspaces](https://dart.dev/tools/pub/workspaces): `flutter pub get` в корне ставит зависимости всех пакетов.
+Flutter ставится через [fvm](https://fvm.app), версия зафиксирована в [`.fvmrc`](.fvmrc), её же использует CI. Проект идёт за последним стабильным Flutter.
+
+```sh
+fvm install
+fvm flutter pub get
+```
+
+Монорепо на [pub workspaces](https://dart.dev/tools/pub/workspaces): `pub get` в корне ставит зависимости всех пакетов.
 
 Ключи Telegram в репозиторий не попадают. Получите `api_id` и `api_hash` на [my.telegram.org](https://my.telegram.org), скопируйте [`config/telegram.example.json`](config/telegram.example.json) в `config/telegram.json` (он в `.gitignore`) и запускайте так:
 
 ```sh
 cd packages/app
-flutter run -d macos --dart-define-from-file=../../config/telegram.json
+fvm flutter run -d macos --dart-define-from-file=../../config/telegram.json
 ```
 
 Для релизов те же значения лежат в секретах репозитория `TELEGRAM_API_ID` и `TELEGRAM_API_HASH`.

@@ -7,8 +7,6 @@ on:
 permissions:
   contents: write
 
-env:
-  FLUTTER_VERSION: 3.47.7
 
 jobs:
   build:
@@ -29,6 +27,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      # Версия Flutter одна на проект и берётся из .fvmrc.
+      - name: Read Flutter version
+        shell: bash
+        run: echo "FLUTTER_VERSION=$(jq -r .flutter .fvmrc)" >> "$GITHUB_ENV"
+        working-directory: .
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
