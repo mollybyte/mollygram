@@ -28,7 +28,7 @@ A ready-made profile build can be downloaded without Xcode from the `mollygram-p
 
 The debug panel is at the top right (⌘⇧P hides it). It shows live fps, build and raster p50/p95, and dropped-frame counters.
 
-1. Press "1-min benchmark" and do not touch the window. Three configurations run for 20 seconds each: media_kit with glass, AVFoundation with glass, media_kit without blur.
+1. Press "Benchmark 1 min" and do not touch the window. Three configurations run for 20 seconds each: media_kit with glass, AVFoundation with glass, media_kit without blur.
 2. Each run: the video message plays for 6 seconds while idle, then for 14 seconds the feed scrolls up 9000 px and back. When the video message scrolls off screen, it keeps playing in a corner, as in Telegram.
 3. Press "Copy report" and post the text in the thread.
 
