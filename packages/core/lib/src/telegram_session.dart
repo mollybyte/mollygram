@@ -5,6 +5,7 @@ import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 import 'authorization_controller.dart';
 import 'authorization_stage.dart';
 import 'chat_list_controller.dart';
+import 'conversation_controller.dart';
 import 'tdlib_initializer.dart';
 
 /// Owns one TDLib instance and coordinates its initial authorization flow.
@@ -17,6 +18,7 @@ final class TelegramSession {
     required this._tdlib,
     required this.authorization,
     required this.chatLists,
+    required this.conversations,
     required this._initializer,
   });
 
@@ -24,6 +26,7 @@ final class TelegramSession {
   final TdlibInitializer _initializer;
   final AuthorizationController authorization;
   final ChatListController chatLists;
+  final ConversationController conversations;
   final _errors = StreamController<Object>.broadcast(sync: true);
   StreamSubscription<AuthorizationStage>? _stageSubscription;
   var _disposed = false;
@@ -38,13 +41,16 @@ final class TelegramSession {
   }) async {
     final client = tdlib.createClient();
     final authorization = AuthorizationController(client);
+    final conversations = ConversationController(client);
     final session = TelegramSession._(
       tdlib: tdlib,
       authorization: authorization,
       chatLists: ChatListController(client),
+      conversations: conversations,
       initializer: TdlibInitializer(client, parameters: parameters),
     );
     session._stageSubscription = authorization.stages.listen(session._onStage);
+    await conversations.start();
     await authorization.start();
     return session;
   }
@@ -82,6 +88,7 @@ final class TelegramSession {
     _disposed = true;
     await _stageSubscription?.cancel();
     await chatLists.dispose();
+    await conversations.dispose();
     await authorization.dispose();
     await _tdlib.close();
     await _errors.close();

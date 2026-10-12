@@ -48,6 +48,7 @@ void main() {
       await pumpEventQueue();
 
       expect(json.sent.last['@type'], 'loadChats');
+      expect(session.conversations, isA<ConversationController>());
       await session.dispose();
     },
   );
@@ -68,7 +69,7 @@ void main() {
         ),
       );
 
-    await expectLater(session.errors.first, completion(isA<StateError>()));
+      await expectLater(session.errors.first, completion(isA<StateError>()));
       await session.dispose();
     },
   );
