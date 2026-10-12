@@ -55,9 +55,8 @@ final class JsLimits {
 ///
 /// Не потокобезопасен: живёт в том изоляте, где создан.
 final class JsVm {
-  JsVm({required JsHostHandler host, this.limits = const JsLimits()})
-    : _host = host,
-      _id = _nextId++ {
+  JsVm({required this._host, this.limits = const JsLimits()})
+    : _id = _nextId++ {
     _callback ??= NativeCallable<MgHostFnNative>.isolateLocal(_dispatchHost);
     final ptr = mg_vm_new(
       _id,

@@ -4,7 +4,8 @@
 
 ```sh
 git submodule update --init
-dart test
+flutter pub get   # из корня репозитория: пакет входит в pub workspace
+cd packages/plugin_host && dart test
 ```
 
 Нативная библиотека (quickjs-ng и `src/mg_qjs.c`) собирается build hook'ом при первом `dart test` или сборке приложения; нужен C-компилятор (Xcode, MSVC или clang/gcc).

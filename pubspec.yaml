@@ -1,0 +1,15 @@
+name: mollygram_workspace
+publish_to: none
+
+environment:
+  sdk: ^3.13.0
+
+# Монорепо на pub workspaces: один pubspec.lock и одно разрешение зависимостей
+# на все пакеты. Каталог prototype/ сюда не входит, у него свой pubspec.
+workspace:
+  - packages/tdlib
+  - packages/core
+  - packages/ui_kit
+  - packages/media
+  - packages/app
+  - packages/plugin_host

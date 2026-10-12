@@ -33,7 +33,7 @@ const codeTokens = {
 List<Map<String, Object?>> validateUi(Object? raw) {
   var count = 0;
 
-  String text(Map m, String key, {bool required = true}) {
+  String text(Map<Object?, Object?> m, String key, {bool required = true}) {
     final v = m[key];
     if (v == null && !required) return '';
     if (v is! String) throw UiException('"$key" должно быть строкой');

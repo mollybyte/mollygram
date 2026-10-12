@@ -7,6 +7,7 @@ on:
 permissions:
   contents: write
 
+
 jobs:
   build:
     name: Build ${{ matrix.target }}
@@ -16,26 +17,48 @@ jobs:
         include:
           - os: macos-latest
             target: macos
-            path: build/macos/Build/Products/Release
+            path: packages/app/build/macos/Build/Products/Release
           - os: windows-latest
             target: windows
-            path: build/windows/x64/runner/Release
+            path: packages/app/build/windows/x64/runner/Release
           - os: ubuntu-latest
             target: linux
-            path: build/linux/x64/release/bundle
+            path: packages/app/build/linux/x64/release/bundle
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      # Версия Flutter одна на проект и берётся из .fvmrc.
+      - name: Read Flutter version
+        shell: bash
+        run: echo "FLUTTER_VERSION=$(jq -r .flutter .fvmrc)" >> "$GITHUB_ENV"
+        working-directory: .
       - uses: subosito/flutter-action@v2
         with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
       - if: matrix.target == 'linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y ninja-build libgtk-3-dev
+      # api_id и api_hash берутся из секретов репозитория TELEGRAM_API_ID и
+      # TELEGRAM_API_HASH и попадают только в файл на раннере.
+      - name: Write Telegram API keys
+        shell: bash
+        env:
+          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
+        run: |
+          if [ -z "$TELEGRAM_API_ID" ] || [ -z "$TELEGRAM_API_HASH" ]; then
+            echo "::error::Secrets TELEGRAM_API_ID and TELEGRAM_API_HASH are not set"
+            exit 1
+          fi
+          jq -n --arg id "$TELEGRAM_API_ID" --arg hash "$TELEGRAM_API_HASH" \
+            '{TELEGRAM_API_ID: $id, TELEGRAM_API_HASH: $hash}' > config/telegram.json
       - run: flutter pub get
-      - run: flutter build ${{ matrix.target }} --release
+        working-directory: packages/app
+      - run: flutter build ${{ matrix.target }} --release --dart-define-from-file=../../config/telegram.json
+        working-directory: packages/app
       - uses: actions/upload-artifact@v4
         with:
           name: mollygram-${{ matrix.target }}

@@ -61,10 +61,10 @@ final class PermissionSet {
     final errors = <String>[];
     var messages = MessagesScope.none;
     var composer = false;
-    var net = <String>{};
+    final net = <String>{};
     var storage = 0;
     var notifications = false;
-    var media = <MediaKind>{};
+    final media = <MediaKind>{};
 
     for (final MapEntry(:key, :value) in map.entries) {
       switch (key) {

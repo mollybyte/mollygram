@@ -104,15 +104,20 @@ final class PluginWorker {
 
   void _onMessage(Object? msg, Completer<SendPort> ready) {
     switch (msg) {
-      case SendPort port:
+      case final SendPort port:
         ready.complete(port);
-      case ('reply', int id, Object? value, Object? error):
+      case ('reply', final int id, final Object? value, final Object? error):
         final c = _replies.remove(id);
         if (c == null) return;
         error == null ? c.complete(value) : c.completeError(error);
-      case ('status', PluginStatus s, String? reason):
+      case ('status', final PluginStatus s, final String? reason):
         _setStatus(s, reason);
-      case ('service', int id, String method, Map<String, Object?> args):
+      case (
+        'service',
+        final int id,
+        final String method,
+        final Map<String, Object?> args,
+      ):
         _services
             .call(manifest.id, method, args)
             .then(
@@ -200,15 +205,23 @@ void _workerMain(_WorkerArgs args) {
 
   inbox.listen((msg) {
     switch (msg) {
-      case ('start', int id, _):
+      case ('start', final int id, _):
         reply(id, () async => plugin.start(args.source));
-      case ('dispatch', int id, (PluginEvent e, Map<String, Object?> p)):
+      case (
+        'dispatch',
+        final int id,
+        (final PluginEvent e, final Map<String, Object?> p),
+      ):
         reply(id, () => plugin.dispatch(e, p));
-      case ('command', int id, (String n, int? chat, Object? a)):
+      case (
+        'command',
+        final int id,
+        (final String n, final int? chat, final Object? a),
+      ):
         reply(id, () => plugin.runCommand(n, chatId: chat, args: a));
-      case ('setting', int id, (String k, Object? v)):
+      case ('setting', final int id, (final String k, final Object? v)):
         reply(id, () => plugin.updateSetting(k, v));
-      case ('service.done', int id, Object? v, HostError? e):
+      case ('service.done', final int id, final Object? v, final HostError? e):
         services.complete(id, v, e);
         // Ответ сервиса мог доиграть отложенный промис и выключить плагин.
         scheduleMicrotask(reportStatus);

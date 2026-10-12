@@ -105,12 +105,11 @@ final class EventHandled extends EventOutcome {
 final class PluginInstance {
   PluginInstance({
     required this.manifest,
-    required PluginServices services,
+    required this._services,
     this.grants = const PluginGrants(),
     this.policy = const PluginPolicy(),
     Map<String, Object?> settings = const {},
-  }) : _services = services,
-       _settings = {
+  }) : _settings = {
          for (final s in manifest.settings) s.key: s.defaultValue,
          ...settings,
        };

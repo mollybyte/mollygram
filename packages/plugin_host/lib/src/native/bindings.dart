@@ -9,8 +9,11 @@ import 'package:ffi/ffi.dart';
 
 final class MgVm extends Opaque {}
 
-typedef MgHostFnNative =
-    Void Function(Int64 vmId, Pointer<Utf8> method, Pointer<Utf8> argsJson);
+typedef MgHostFnNative = Void Function(
+  Int64 vmId,
+  Pointer<Utf8> method,
+  Pointer<Utf8> argsJson,
+);
 
 @Native<
   Pointer<MgVm> Function(
