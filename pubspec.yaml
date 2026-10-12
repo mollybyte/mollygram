@@ -12,3 +12,4 @@ workspace:
   - packages/ui_kit
   - packages/media
   - packages/app
+  - packages/plugin_host

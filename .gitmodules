@@ -1,0 +1,3 @@
+[submodule "packages/plugin_host/third_party/quickjs-ng"]
+	path = packages/plugin_host/third_party/quickjs-ng
+	url = https://github.com/quickjs-ng/quickjs
