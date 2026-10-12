@@ -54,14 +54,13 @@ void main() {
       );
       await tester.pump();
       await tester.runAsync(() async {
-        final boundary =
-            tester.renderObject(find.byKey(const Key('shot')))
-                as RenderRepaintBoundary;
+        final boundary = tester.renderObject(
+          find.byKey(const Key('shot')),
+        ) as RenderRepaintBoundary;
         final image = await boundary.toImage(pixelRatio: 2);
         final png = await image.toByteData(format: ui.ImageByteFormat.png);
-        File(
-          '$dir/window_${dark ? 'dark' : 'light'}.png',
-        ).writeAsBytesSync(png!.buffer.asUint8List());
+        File('$dir/window_${dark ? 'dark' : 'light'}.png')
+            .writeAsBytesSync(png!.buffer.asUint8List());
       });
     }, skip: dir == null);
   }
