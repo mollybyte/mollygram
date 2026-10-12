@@ -1,16 +1,16 @@
 # plugin_host
 
-Песочница для JS-плагинов Mollygram на quickjs-ng: манифест, права, события, декларативный UI, лимиты памяти и времени, запуск в отдельном изоляте. Спецификация: [docs/plugins.md](../../docs/plugins.md).
+Sandbox for Mollygram JS plugins on quickjs-ng: manifest, permissions, events, declarative UI, memory and time limits, execution in a separate isolate. Specification: [docs/plugins.md](../../docs/plugins.md).
 
 ```sh
 git submodule update --init
-flutter pub get   # из корня репозитория: пакет входит в pub workspace
+flutter pub get   # from the repository root: the package is part of the pub workspace
 cd packages/plugin_host && dart test
 ```
 
-Нативная библиотека (quickjs-ng и `src/mg_qjs.c`) собирается build hook'ом при первом `dart test` или сборке приложения; нужен C-компилятор (Xcode, MSVC или clang/gcc).
+The native library (quickjs-ng and `src/mg_qjs.c`) is built by a build hook on the first `dart test` or app build; a C compiler is required (Xcode, MSVC, or clang/gcc).
 
-Пересобрать пример после правки `example/transcribe/src/index.ts`:
+To rebuild the example after editing `example/transcribe/src/index.ts`:
 
 ```sh
 cd example/transcribe && npx -p typescript@5.9 tsc -p .

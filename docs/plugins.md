@@ -1,146 +1,146 @@
-# Плагины: спецификация v1
+# Plugins: specification v1
 
-Плагины Mollygram пишутся на TypeScript или JavaScript и выполняются в песочнице quickjs-ng. Нативный код плагины не загружают, совместимости с exteraGram нет. Реализация: `packages/plugin_host`, типы для авторов: `packages/plugin_sdk`, пример: `packages/plugin_host/example/transcribe`.
+Mollygram plugins are written in TypeScript or JavaScript and run in a quickjs-ng sandbox. Plugins cannot load native code, and there is no exteraGram compatibility. Implementation: `packages/plugin_host`; types for authors: `packages/plugin_sdk`; example: `packages/plugin_host/example/transcribe`.
 
-## Что подсмотрели у других
+## Prior art
 
-| Где | Как устроено | Что берём | Чего избегаем |
-|-----|--------------|-----------|---------------|
-| exteraGram (Android) | Python через Chaquopy и хуки на Java-методы. Хуки `pre_request_hook`, `post_request_hook`, `on_update_hook`, `on_send_message_hook`, результат `HookResult` со стратегиями `CANCEL`/`MODIFY`/`MODIFY_FINAL`. Меню через `add_menu_item`, настройки через `create_settings()`. Метаданные `__id__`, `__name__`, `__sdk_version__` | Перехват отправки с отменой и изменением, приоритет обработчиков, декларативные настройки, диапазон версии SDK | Прав нет вообще, плагин видит весь процесс и сессию. Имена TL-схемы как API ломаются при каждом обновлении. `MODIFY_FINAL` позволяет одному плагину отключить остальные |
-| AyuGram, Nekogram, Swiftgram, десктопные форки tdesktop | Плагинов нет, всё зашито в код и переключатели | Список функций, которые хорошо ложатся на плагины: фильтры, перевод (см. `forks-research.md`, п. 8, 9) | |
-| Figma | Код плагина в голом JS без DOM, `fetch` и таймеров; UI отдельно; `networkAccess` в манифесте | Голый движок, всё через API хоста, белый список хостов, пользователь может остановить плагин | |
-| Chrome MV3 | Права заранее в манифесте, обновление с новыми правами выключает расширение до согласия | Повторное согласие при расширении прав | |
-| VS Code, Obsidian, Vencord | Полный доступ к Node или к внутренностям клиента | Ленивая активация по объявленным событиям | Доверие вместо прав, патчи внутренностей |
+| Where | How it works | What we take | What we avoid |
+|-------|--------------|--------------|---------------|
+| exteraGram (Android) | Python via Chaquopy with hooks on Java methods. Hooks `pre_request_hook`, `post_request_hook`, `on_update_hook`, `on_send_message_hook`; a `HookResult` with `CANCEL`/`MODIFY`/`MODIFY_FINAL` strategies. Menus via `add_menu_item`, settings via `create_settings()`. Metadata `__id__`, `__name__`, `__sdk_version__` | Intercepting sends with cancel and modify, handler priority, declarative settings, SDK version range | No permissions at all: a plugin sees the whole process and the session. TL schema names used as the API break on every update. `MODIFY_FINAL` lets one plugin disable all others |
+| AyuGram, Nekogram, Swiftgram, tdesktop desktop forks | No plugins; everything is built in and toggled by switches | A list of features that fit plugins well: filters, translation (see `forks-research.md`, items 8, 9) | |
+| Figma | Plugin code is bare JS with no DOM, `fetch` or timers; UI is separate; `networkAccess` in the manifest | A bare engine with everything going through the host API, a host allowlist, the user can stop a plugin | |
+| Chrome MV3 | Permissions declared up front in the manifest; an update that adds permissions disables the extension until the user consents | Re-consent when permissions expand | |
+| VS Code, Obsidian, Vencord | Full access to Node or to the client internals | Lazy activation on declared events | Trust instead of permissions, patching internals |
 
-Источники: plugins.exteragram.app/docs, docs.ayugram.one, developers.figma.com/docs/plugins/how-plugins-run, developer.chrome.com/docs/extensions/develop/concepts/permission-warnings.
+Sources: plugins.exteragram.app/docs, docs.ayugram.one, developers.figma.com/docs/plugins/how-plugins-run, developer.chrome.com/docs/extensions/develop/concepts/permission-warnings.
 
-## Пакет плагина
+## Plugin package
 
-Папка с двумя файлами:
+A folder with two files:
 
 ```
 manifest.yaml
-index.js        # один файл, собранный из TS любым бандлером в формат script (IIFE)
+index.js        # a single file, bundled from TS by any bundler as a script (IIFE)
 ```
 
-`import`, `require` и модули не поддерживаются. Размер кода до 2 МБ. `main` не может указывать за пределы папки, симлинки наружу отклоняются.
+`import`, `require` and modules are not supported. Code size is limited to 2 MB. `main` cannot point outside the folder; symlinks leading outside are rejected.
 
-## Манифест
+## Manifest
 
 ```yaml
-id: dev.mollygram.transcribe   # обратная доменная запись, минимум три части
-name: Расшифровка              # до 40 символов
+id: dev.mollygram.transcribe   # reverse domain notation, at least three parts
+name: Transcribe               # up to 40 characters
 version: 1.0.0                 # semver
 author: Mollygram
-description: Расшифровывает голосовые и кружки на устройстве.
-runtime: js                    # единственное допустимое значение
-sdk: ^1.0                      # совместимость по старшей цифре
-main: index.js                 # по умолчанию index.js
+description: Transcribes voice and video messages on device.
+runtime: js                    # the only allowed value
+sdk: ^1.0                      # compatible within the major version
+main: index.js                 # defaults to index.js
 permissions:
   media.read: [voice, round]
   storage: 1mb
 hooks: [message.render.voice, message.render.round]
 commands:
-  - { name: /summary, title: Сводка по текущему чату, shortcut: cmd+shift+s }
+  - { name: /summary, title: Summarize current chat, shortcut: cmd+shift+s }
 settings:
-  - { key: auto, type: toggle, label: Расшифровывать сразу, default: false }
+  - { key: auto, type: toggle, label: Transcribe automatically, default: false }
   - key: language
     type: select
-    label: Язык
+    label: Language
     default: auto
-    options: [{ value: auto, label: Автоматически }, { value: ru, label: Русский }]
+    options: [{ value: auto, label: Auto-detect }, { value: en, label: English }]
 ```
 
-Неизвестное поле, право или хук делают манифест невалидным: молча ничего не игнорируем. Ошибки собираются списком и показываются при установке.
+An unknown field, permission or hook makes the manifest invalid: nothing is silently ignored. Errors are collected into a list and shown at install time.
 
-## Права
+## Permissions
 
-| Право | Значения | Что разрешает | Строка на экране «Доступ» |
-|-------|----------|---------------|---------------------------|
-| `messages.read` | `on_command` | Читать текущий чат, пока выполняется команда, которую вызвал пользователь | Сообщения текущего чата. Только когда вы вызываете команду |
-| | `chats[]` | Читать чаты из списка, который пользователь задаёт в настройках плагина | Сообщения выбранных чатов |
-| | `all` | Все чаты; отдельное предупреждение при установке | Все сообщения |
-| `composer.write` | `true` | Вставлять текст в поле ввода и перехватывать отправку | Поле ввода |
-| `net` | список хостов, `user_endpoint` | `https` к точным именам хостов; `user_endpoint` открывает адрес, который пользователь впишет сам. Маски и IP запрещены | Сеть: api.deepl.com |
-| `storage` | `512kb` … `50mb` | Личное хранилище ключ-значение | Хранилище. До 5 МБ |
-| `notifications.manage` | `true` | Откладывать и группировать уведомления | Уведомления |
-| `media.read` | `[voice, round, photo, video, document]` | Обрабатывать медиа этих типов через API хоста | Медиа: голосовые, кружки |
+| Permission | Values | What it allows | Line on the "Access" screen |
+|------------|--------|----------------|-----------------------------|
+| `messages.read` | `on_command` | Read the current chat while a user-invoked command is running | Messages in the current chat. Only when you run a command |
+| | `chats[]` | Read chats from a list the user sets in the plugin's settings | Messages in selected chats |
+| | `all` | All chats; a separate warning is shown at install time | All messages |
+| `composer.write` | `true` | Insert text into the composer and intercept sending | Composer |
+| `net` | list of hosts, `user_endpoint` | `https` to exact host names; `user_endpoint` allows an address the user enters themselves. Wildcards and IPs are not allowed | Network: api.deepl.com |
+| `storage` | `512kb` … `50mb` | Private key-value storage | Storage. Up to 5 MB |
+| `notifications.manage` | `true` | Defer and group notifications | Notifications |
+| `media.read` | `[voice, round, photo, video, document]` | Process media of these types through the host API | Media: voice messages, video messages |
 
-Никогда не доступны: ключи и сессия TDLib, сырой MTProto, файловая система, другие плагины, другие аккаунты, cookie.
+Never available: TDLib keys and session, raw MTProto, the file system, other plugins, other accounts, cookies.
 
-Согласие даётся при установке на весь список. Если обновление добавляет права (`PermissionSet.escalationsFrom`), новая версия не включается, пока пользователь не согласится заново. Автообновление с новыми правами запрещено.
+Consent is given at install time for the whole list. If an update adds permissions (`PermissionSet.escalationsFrom`), the new version stays disabled until the user consents again. Auto-updates that add permissions are not allowed.
 
-## События
+## Events
 
-Плагин подписывается через `mg.on(event, handler)` только во время загрузки и только на события из `hooks` манифеста (кроме `ui.action`, `settings.changed`, `app.ready`, которые доступны всем). Обработчики одного плагина выполняются по порядку; плагины между собой вызываются в порядке установки, и ни один не может запретить вызов следующих.
+A plugin subscribes with `mg.on(event, handler)`, only during load and only to events listed in the manifest's `hooks` (except `ui.action`, `settings.changed` and `app.ready`, which are available to everyone). Handlers within one plugin run in order; plugins are called in install order, and none of them can prevent the next ones from being called.
 
-| Событие | Вид | Нужное право | Данные | Ответ |
-|---------|-----|--------------|--------|-------|
-| `app.ready` | наблюдение | | | |
-| `chat.opened` | наблюдение | `messages.read: chats[]` или `all` | `{chatId}` | |
-| `message.incoming` | наблюдение | то же | `{message}` | |
-| `message.edited` | наблюдение | то же | `{message, oldText}` | |
-| `message.deleted` | наблюдение | то же | `{chatId, messageIds}` | |
-| `message.sending` | перехват | `composer.write` | черновик `{chatId, text, replyTo}` | `{modify: draft}` или `{cancel: true}` |
-| `message.render.code` | отрисовка | | `{message, language, code}` | список узлов UI |
-| `message.render.voice` | отрисовка | `media.read: [voice]` | `{message}` | список узлов UI |
-| `message.render.round` | отрисовка | `media.read: [round]` | `{message}` | список узлов UI |
-| `ui.action` | отрисовка | | `{action, payload, message}` после нажатия кнопки плагина | список узлов UI на месте старых |
-| `notification.incoming` | перехват | `notifications.manage` | `{chatId, messageId, title, body}` | `{cancel}`, `{modify}` или `{defer: секунды}` |
-| `settings.changed` | наблюдение | | `{key, value}` | |
+| Event | Kind | Required permission | Data | Response |
+|-------|------|---------------------|------|----------|
+| `app.ready` | observe | | | |
+| `chat.opened` | observe | `messages.read: chats[]` or `all` | `{chatId}` | |
+| `message.incoming` | observe | same | `{message}` | |
+| `message.edited` | observe | same | `{message, oldText}` | |
+| `message.deleted` | observe | same | `{chatId, messageIds}` | |
+| `message.sending` | intercept | `composer.write` | draft `{chatId, text, replyTo}` | `{modify: draft}` or `{cancel: true}` |
+| `message.render.code` | render | | `{message, language, code}` | list of UI nodes |
+| `message.render.voice` | render | `media.read: [voice]` | `{message}` | list of UI nodes |
+| `message.render.round` | render | `media.read: [round]` | `{message}` | list of UI nodes |
+| `ui.action` | render | | `{action, payload, message}` after a plugin button is pressed | list of UI nodes replacing the old ones |
+| `notification.incoming` | intercept | `notifications.manage` | `{chatId, messageId, title, body}` | `{cancel}`, `{modify}` or `{defer: seconds}` |
+| `settings.changed` | observe | | `{key, value}` | |
 
-Запланировано на этап 7, под встроенные плагины из `forks-research.md`: `message.filter` (перехват показа: скрыть или свернуть сообщение; нужен `messages.read`) для фильтров рекламы и `message.render.text` (блок под текстом) для перевода. Добавятся минорной версией SDK 1.1 без изменения существующих событий.
+Planned for stage 7, for the built-in plugins from `forks-research.md`: `message.filter` (intercepts display to hide or collapse a message; requires `messages.read`) for ad filters, and `message.render.text` (a block below the text) for translation. They will ship in SDK minor version 1.1 without changing existing events.
 
-## API для плагина
+## Plugin API
 
-Глобальный объект `mg` заморожен, подменить его нельзя. Полные типы: `packages/plugin_sdk/index.d.ts`.
+The global `mg` object is frozen and cannot be replaced. Full types: `packages/plugin_sdk/index.d.ts`.
 
 ```ts
-mg.on(event, handler)                     // при загрузке
-mg.command("/name", handler)              // команда из манифеста, видна в палитре ⌘K
-mg.settings.get(key)                      // синхронно
-mg.storage.get / set / delete             // Promise, право storage
-mg.messages.get(chatId, id) / history()   // Promise, право messages.read
-mg.composer.insert(text)                  // Promise, право composer.write
-mg.media.transcribe(media, {language})    // Promise, право media.read; распознаёт приложение на устройстве
-mg.net.fetch(url, {method, headers, body})// Promise, только https и хосты из net, без cookie и редиректов на чужие хосты
+mg.on(event, handler)                     // during load
+mg.command("/name", handler)              // a command from the manifest, shown in the ⌘K palette
+mg.settings.get(key)                      // synchronous
+mg.storage.get / set / delete             // Promise, storage permission
+mg.messages.get(chatId, id) / history()   // Promise, messages.read permission
+mg.composer.insert(text)                  // Promise, composer.write permission
+mg.media.transcribe(media, {language})    // Promise, media.read permission; the app does on-device recognition
+mg.net.fetch(url, {method, headers, body})// Promise, https and hosts from net only, no cookies, no redirects to other hosts
 mg.ui.toast(text)
-mg.log(...) и console.log/info/warn/error  // журнал плагина на его экране
+mg.log(...) and console.log/info/warn/error  // plugin log, shown on the plugin's screen
 ```
 
-Ошибка хоста приходит как исключение с полем `code`: `permission_denied`, `bad_argument`, `no_method`, `host_failure` или код сервиса.
+Host errors are thrown as exceptions with a `code` field: `permission_denied`, `bad_argument`, `no_method`, `host_failure`, or a service-specific code.
 
-## Декларативный UI
+## Declarative UI
 
-Плагин не рисует сам, а возвращает дерево узлов; приложение рисует его своими виджетами в нашем стиле. Так плагин не может подделать системное окно и не выбивается из дизайна.
+A plugin does not draw anything itself; it returns a node tree, and the app renders it with its own widgets in the app's style. This way a plugin cannot fake a system dialog and does not break the design.
 
-| Узел | Поля |
-|------|------|
+| Node | Fields |
+|------|--------|
 | `text` | `text`, `style: body \| secondary \| mono` |
 | `button` | `label`, `action`, `payload` |
 | `toggle` | `label`, `action`, `value` |
 | `progress` | `label` |
 | `row`, `column` | `children` |
-| `code` | `language`, `spans: [{text, token}]`, токены только из темы: `keyword`, `string`, `number`, `comment`, `function`, `type`, `punctuation`, `plain` |
+| `code` | `language`, `spans: [{text, token}]`; tokens come from the theme only: `keyword`, `string`, `number`, `comment`, `function`, `type`, `punctuation`, `plain` |
 
-Лимиты: 200 узлов, вложенность 8, строка до 4000 символов. Цветов, размеров, картинок и HTML нет. Неверное дерево отбрасывается и считается сбоем.
+Limits: 200 nodes, nesting depth 8, strings up to 4000 characters. No colors, sizes, images or HTML. An invalid tree is discarded and counts as a failure.
 
-## Изоляция и лимиты
+## Isolation and limits
 
-- **Отдельная VM.** Каждый плагин получает свой `JSRuntime` quickjs-ng без `quickjs-libc`: нет файлов, сети, таймеров, `require`, `std`, `os`. Единственный выход наружу — функция хоста, которую прелюдия прячет в замыкание до запуска кода плагина.
-- **Отдельный изолят.** `PluginWorker` запускает VM в своём изоляте Dart. JS никогда не выполняется в UI-изоляте, поэтому даже плагин, упирающийся в лимит времени, не роняет частоту кадров. Сервисы (TDLib, хранилище, распознавание) вызываются в изоляте приложения, туда приходят только уже разрешённые вызовы.
-- **Память.** 32 МБ кучи на плагин (`JS_SetMemoryLimit`). Превышение сразу выключает плагин и освобождает VM.
-- **Стек.** 512 КБ (`JS_SetMaxStackSize`); глубокая рекурсия даёт исключение, а не падение процесса. Перед каждым входом в JS обновляется вершина стека, потому что изолят может переехать на другой поток.
-- **Время.** Бюджет процессорного времени на один заход в JS: 500 мс на загрузку, 100 мс на обработчик или прогон промисов. Считается по CPU-времени потока, чтобы нагрузка на систему не наказывала честные плагины. Асинхронный обработчик ждём 5 с, команду и нажатие кнопки 60 с (там бывает распознавание речи).
-- **Сбои.** Исключение, тайм-аут или неверный UI — страйк, результат события как будто плагина нет. Три страйка подряд выключают плагин до ручного включения, причина видна на его экране. Успешный вызов сбрасывает счётчик.
-- **Что не закрыто.** Ошибка в самом quickjs-ng (порча памяти) уронит процесс, потому что VM живёт в нашем процессе. Если на этапе 7 это окажется реальным риском, тот же протокол воркера переносится в отдельный процесс-хост без изменений для плагинов.
+- **Separate VM.** Each plugin gets its own quickjs-ng `JSRuntime` without `quickjs-libc`: no files, network, timers, `require`, `std` or `os`. The only way out is a host function that the prelude hides in a closure before the plugin's code runs.
+- **Separate isolate.** `PluginWorker` runs the VM in its own Dart isolate. JS never runs on the UI isolate, so even a plugin that hits its time limit does not drop frames. Services (TDLib, storage, speech recognition) are called on the app isolate, which only receives calls that have already been authorized.
+- **Memory.** 32 MB heap per plugin (`JS_SetMemoryLimit`). Exceeding it disables the plugin immediately and frees the VM.
+- **Stack.** 512 KB (`JS_SetMaxStackSize`); deep recursion throws an exception instead of crashing the process. The stack top is updated before every entry into JS, because the isolate may move to another thread.
+- **Time.** CPU time budget per entry into JS: 500 ms for loading, 100 ms for a handler or a promise job run. Measured as thread CPU time, so system load does not penalize well-behaved plugins. An async handler is awaited for up to 5 s; a command or button press for up to 60 s (it may involve speech recognition).
+- **Failures.** An exception, timeout or invalid UI is a strike, and the event result is as if the plugin were not installed. Three consecutive strikes disable the plugin until it is re-enabled manually; the reason is shown on its screen. A successful call resets the counter.
+- **Not covered.** A bug in quickjs-ng itself (memory corruption) will crash the process, because the VM lives in our process. If this turns out to be a real risk in stage 7, the same worker protocol can move to a separate host process with no changes for plugins.
 
-## Распространение
+## Distribution
 
-v1: установка из файла и встроенные плагины от нас. Каталог (п. 16 исследования форков) позже: подписанный индекс, перед установкой показываем права, без загрузки кода из сети в рантайме.
+v1: install from a file, plus built-in plugins shipped by us. A catalog (item 16 of the forks research) comes later: a signed index, permissions shown before install, no code loaded from the network at runtime.
 
-## Пример: «Расшифровка»
+## Example: "Transcribe"
 
-`packages/plugin_host/example/transcribe`. Под голосовым и кружком показывает кнопку «Расшифровать», по нажатию просит приложение распознать речь на устройстве, кэширует текст в хранилище плагина и показывает его. С параметром «Расшифровывать сразу» делает это при отрисовке. Права: `media.read: [voice, round]` и `storage: 1mb`, сети нет.
+`packages/plugin_host/example/transcribe`. Shows a "Transcribe" button under voice and video messages; when pressed, it asks the app to recognize speech on device, caches the text in plugin storage and displays it. With the "Transcribe automatically" setting enabled, it does this at render time. Permissions: `media.read: [voice, round]` and `storage: 1mb`; no network.
 
-В макете `design/Plugins.dc.html` у этого плагина стоял `runtime: native`; исправлено на `js`, распознавание делает приложение, а не код плагина.
+The `design/Plugins.dc.html` mockup had `runtime: native` for this plugin; it has been corrected to `js`, since recognition is done by the app, not by plugin code.
