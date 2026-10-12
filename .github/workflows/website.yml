@@ -1,0 +1,73 @@
+name: Website
+
+# Builds website/ and deploys it to Cloudflare Pages: production from main,
+# a preview for every pull request. Needs the repository secrets
+# CLOUDFLARE_API_TOKEN (Account > Cloudflare Pages > Edit) and
+# CLOUDFLARE_ACCOUNT_ID. Without them the site is only built.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - website/**
+      - docs/assets/icon.svg
+      - .github/workflows/website.yml
+  pull_request:
+    paths:
+      - website/**
+      - docs/assets/icon.svg
+      - .github/workflows/website.yml
+  workflow_dispatch:
+
+concurrency:
+  group: website-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  deployments: write
+
+env:
+  PROJECT: mollygram
+
+jobs:
+  build-deploy:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref == 'refs/heads/main' && 'website' || 'website-preview' }}
+      url: ${{ steps.deploy.outputs.url }}
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Build
+        working-directory: website
+        run: node build.mjs
+      - name: Check the build
+        working-directory: website/dist
+        run: |
+          test -s index.html && test -s 404.html && test -s og.png && test -s favicon.ico
+          if grep -n '{{' index.html 404.html; then echo "Unreplaced placeholder"; exit 1; fi
+      - name: Deploy to Cloudflare Pages
+        id: deploy
+        if: env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != ''
+        working-directory: website
+        env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          # The first run creates the Pages project.
+          if ! npx --yes wrangler@4 pages project list | grep -qw "$PROJECT"; then
+            npx --yes wrangler@4 pages project create "$PROJECT" --production-branch main
+          fi
+          npx --yes wrangler@4 pages deploy dist --project-name "$PROJECT" --branch "$BRANCH" | tee deploy.log
+          url=$(grep -oE 'https://[a-zA-Z0-9.-]+\.pages\.dev' deploy.log | tail -n 1)
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Deployed $BRANCH to $url" >> "$GITHUB_STEP_SUMMARY"
+      - name: Note skipped deploy
+        if: steps.deploy.outcome == 'skipped'
+        run: echo "Cloudflare secrets are not set, so the site was built but not deployed." >> "$GITHUB_STEP_SUMMARY"

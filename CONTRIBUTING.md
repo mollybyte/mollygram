@@ -71,7 +71,7 @@ Mollygram follows [Conventional Commits 1.0.0](https://www.conventionalcommits.o
   | `chore` | Anything else that does not touch shipped code | none |
   | `revert` | Reverting an earlier commit | depends |
 
-- **scope** is optional and names the area: `app`, `core`, `tdlib`, `ui_kit`, `media`, `plugin_host`, `plugin_sdk`, `prototype`, `design`, `docs`, `ci`, `deps`, `release`.
+- **scope** is optional and names the area: `app`, `core`, `tdlib`, `ui_kit`, `media`, `plugin_host`, `plugin_sdk`, `prototype`, `design`, `web`, `docs`, `ci`, `deps`, `release`.
 - **description** is imperative, lowercase, without a trailing period: `add split view for two chats`, not `Added split view.`
 - A gitmoji may follow the colon if you like: `feat(app): ✨ add split view for two chats`. Keep the type first, because the changelog and release tooling read it.
 - Breaking changes add `!` after the type or scope and explain the change in a `BREAKING CHANGE:` footer.
