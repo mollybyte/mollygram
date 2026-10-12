@@ -164,7 +164,7 @@ class Component extends DCLogic {
   constructor(props) {
     super(props);
     this.state = {
-      sec: 'media', fps: '120', res: '720', codec: 'HEVC', photo: 'Без сжатия', video: '1080p', voice: '64 кбит/с', dbl: 'Ответ',
+      sec: 'media', fps: '120', res: '640', codec: 'H.264', photo: 'Без сжатия', video: '1080p', voice: '64 кбит/с', dbl: 'Ответ',
       bitrate: 6, threads: 6,
       t: { exif: true, sort: true, ghost: false, read: true, typing: true, online: true, stories: true, deleted: true, edits: true, utm: true, tabs: true, split: true, silent: false, ids: true, call: true }
     };
@@ -193,7 +193,7 @@ class Component extends DCLogic {
       nav, title: titles[s.sec],
       isMedia: s.sec === 'media', isGhost: s.sec === 'ghost', isWin: s.sec === 'win',
       t: { exif: sw('exif'), sort: sw('sort'), ghost: sw('ghost') },
-      fpsOpts: seg('fps', ['30', '60', '120']), resOpts: seg('res', ['384', '512', '720', '1080']), codecOpts: seg('codec', ['H.264', 'HEVC', 'AV1']),
+      fpsOpts: seg('fps', ['30', '60', '120']), resOpts: seg('res', ['384', '512', '640']), codecOpts: seg('codec', ['H.264', 'HEVC', 'AV1']),
       photoOpts: seg('photo', ['Сжатое', '2560 px', 'Без сжатия']), videoOpts: seg('video', ['720p', '1080p', 'Исходное']), voiceOpts: seg('voice', ['32 кбит/с', '64 кбит/с', '128 кбит/с']),
       dblOpts: seg('dbl', ['Ответ', 'Реакция', 'Правка']),
       fps: s.fps, res: s.res, codec: s.codec, bitrate: s.bitrate, threads: s.threads,
