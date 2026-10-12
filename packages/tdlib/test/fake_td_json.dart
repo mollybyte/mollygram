@@ -3,11 +3,10 @@ import 'dart:convert';
 
 import 'package:mollygram_tdlib/mollygram_tdlib.dart';
 
-typedef FakeHandler =
-    List<Map<String, Object?>> Function(
-      int clientId,
-      Map<String, Object?> request,
-    );
+typedef FakeHandler = List<Map<String, Object?>> Function(
+  int clientId,
+  Map<String, Object?> request,
+);
 
 /// [TdJson] в памяти: на каждый `send` отвечает тем, что вернёт [handler],
 /// с подставленными `@client_id` и `@extra`.

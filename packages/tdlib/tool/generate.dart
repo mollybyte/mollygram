@@ -14,9 +14,9 @@ import 'src/tl_schema.dart';
 
 Future<void> main(List<String> args) async {
   final root = File.fromUri(Platform.script).parent.parent;
-  final pin =
-      jsonDecode(File('${root.path}/tdlib.json').readAsStringSync())
-          as Map<String, Object?>;
+  final pin = jsonDecode(
+    File('${root.path}/tdlib.json').readAsStringSync(),
+  ) as Map<String, Object?>;
   final version = pin['version']! as String;
   final commit = pin['commit']! as String;
   final schemaFile = File('${root.path}/schema/td_api.tl');

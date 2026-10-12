@@ -10,8 +10,7 @@ void main() {
       jsonDecode('''
         {"@type": "updateChatReadInbox", "chat_id": -1001234567890,
          "last_read_inbox_message_id": 1048576, "unread_count": 3}
-      ''')
-          as Map<String, Object?>,
+      ''') as Map<String, Object?>,
     );
     expect((update as UpdateChatReadInbox).chatId, -1001234567890);
     expect(update.toJson()['chat_id'], -1001234567890);
@@ -25,20 +24,18 @@ void main() {
   });
 
   test('вложенные объекты и списки разбираются по @type', () {
-    final text =
-        tdFromJson({
-              '@type': 'formattedText',
-              'text': 'hello',
-              'entities': [
-                {
-                  '@type': 'textEntity',
-                  'offset': 0,
-                  'length': 5,
-                  'type': {'@type': 'textEntityTypeBold'},
-                },
-              ],
-            })
-            as FormattedText;
+    final text = tdFromJson({
+      '@type': 'formattedText',
+      'text': 'hello',
+      'entities': [
+        {
+          '@type': 'textEntity',
+          'offset': 0,
+          'length': 5,
+          'type': {'@type': 'textEntityTypeBold'},
+        },
+      ],
+    }) as FormattedText;
     expect(text.text, 'hello');
     expect(text.entities.single.type, isA<TextEntityTypeBold>());
     expect(
