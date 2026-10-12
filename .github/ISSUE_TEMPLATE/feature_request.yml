@@ -1,0 +1,31 @@
+name: Feature request
+description: Suggest an idea or an improvement
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What are you trying to do, and what gets in the way?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: How you would like it to work.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: Other clients or plugins that already do this, workarounds you use.
+  - type: dropdown
+    id: plugin
+    attributes:
+      label: Could this be a plugin?
+      options:
+        - Not sure
+        - "Yes"
+        - "No, it needs to be built in"
