@@ -1,8 +1,8 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Командная палитра</title>
+<title>Command palette</title>
 <script src="./support.js"></script>
 </head>
 <body>
@@ -29,7 +29,7 @@ a{color:#0071E3}a:hover{color:#0058B0}
 </helmet>
 <div class="app {{theme}}" style="width: 100%; height: 100vh; min-height: 900px; position: relative; overflow: hidden">
 
-  <!-- Окно под палитрой -->
+  <!-- Window behind the palette -->
   <div aria-hidden="true" style="position: absolute; inset: 0">
     <div class="glass" style="position: absolute; top: 8px; left: 8px; bottom: 8px; width: 304px; border-radius: 16px; padding: 52px 10px 0; box-sizing: border-box; display: flex; flex-direction: column; gap: 4px">
       <sc-for list="{{bgRows}}" as="r" hint-placeholder-count="10">
@@ -49,17 +49,17 @@ a{color:#0071E3}a:hover{color:#0058B0}
     </div>
   </div>
 
-  <!-- Палитра -->
-  <div class="pal" role="dialog" aria-modal="true" aria-label="Командная палитра" style="position: absolute; left: calc(50% + 160px); top: 120px; transform: translateX(-50%); width: min(640px, calc(100% - 32px)); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column">
+  <!-- Palette -->
+  <div class="pal" role="dialog" aria-modal="true" aria-label="{{L.palette}}" style="position: absolute; left: calc(50% + 160px); top: 120px; transform: translateX(-50%); width: min(640px, calc(100% - 32px)); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column">
     <div style="display: flex; align-items: center; gap: 10px; padding: 0 16px; height: 52px">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--fg2)" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
-      <input value="{{q}}" onInput="{{onQ}}" onKeyDown="{{onKey}}" placeholder="Чаты, сообщения и команды" aria-label="Поиск по палитре" style="flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--fg); font: inherit; font-size: 18px">
+      <input value="{{q}}" onInput="{{onQ}}" onKeyDown="{{onKey}}" placeholder="{{L.placeholder}}" aria-label="{{L.searchLabel}}" style="flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--fg); font: inherit; font-size: 18px">
       <sc-if value="{{hasMode}}" hint-placeholder-val="{{ false }}"><span style="font-size: 12px; color: var(--fg2)">{{modeLabel}}</span></sc-if>
     </div>
     <div style="height: .5px; background: var(--sep)"></div>
-    <div class="scroll" role="listbox" aria-label="Результаты" style="max-height: 440px; overflow-y: auto; padding: 6px">
+    <div class="scroll" role="listbox" aria-label="{{L.results}}" style="max-height: 440px; overflow-y: auto; padding: 6px">
       <sc-if value="{{empty}}" hint-placeholder-val="{{ false }}">
-        <div style="padding: 28px 12px; text-align: center; color: var(--fg2)">Ничего не нашлось</div>
+        <div style="padding: 28px 12px; text-align: center; color: var(--fg2)">{{L.empty}}</div>
       </sc-if>
       <sc-for list="{{groups}}" as="gr" hint-placeholder-count="3">
         <div style="font-size: 11px; font-weight: 600; color: var(--fg2); padding: 8px 10px 3px">{{gr.title}}</div>
@@ -75,14 +75,14 @@ a{color:#0071E3}a:hover{color:#0058B0}
     </div>
     <div style="height: .5px; background: var(--sep)"></div>
     <div style="display: flex; gap: 16px; padding: 0 16px; height: 34px; align-items: center; font-size: 12px; color: var(--fg2)">
-      <span>⏎ открыть</span><span>⌘⏎ в сплите</span><span>⌥⏎ во вкладке</span>
+      <span>{{L.hintOpen}}</span><span>{{L.hintSplit}}</span><span>{{L.hintTab}}</span>
       <span style="flex: 1"></span>
-      <span>&gt; команды · @ люди · # сообщения</span>
+      <span>{{L.hintPrefixes}}</span>
     </div>
   </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"appearance":{"editor":"enum","options":["светлая","тёмная"],"default":"светлая"},"$preview":{"width":1440,"height":900}}'>
+<script type="text/x-dc" data-dc-script data-props='{"appearance":{"editor":"enum","options":["Light","Dark"],"default":"Light"},"language":{"editor":"enum","options":["English","Русский"],"default":"English"},"$preview":{"width":1440,"height":900}}'>
 class Component extends DCLogic {
   constructor(props) {
     super(props);
@@ -90,35 +90,60 @@ class Component extends DCLogic {
   }
   renderVals() {
     const s = this.state;
+    const lang = (this.props.language ?? 'English') === 'Русский' ? 'ru' : 'en';
+    const I18N = {
+      en: {
+        palette: 'Command palette', placeholder: 'Chats, messages and commands', searchLabel: 'Search the palette', results: 'Results',
+        empty: 'Nothing found', hintOpen: '⏎ open', hintSplit: '⌘⏎ in split view', hintTab: '⌥⏎ in a new tab',
+        hintPrefixes: '> commands · @ people · # messages',
+        groups: { recent: 'Recent', msg: 'Messages', cmd: 'Commands', people: 'People' }
+      },
+      ru: {
+        palette: 'Командная палитра', placeholder: 'Чаты, сообщения и команды', searchLabel: 'Поиск по палитре', results: 'Результаты',
+        empty: 'Ничего не нашлось', hintOpen: '⏎ открыть', hintSplit: '⌘⏎ в сплите', hintTab: '⌥⏎ во вкладке',
+        hintPrefixes: '> команды · @ люди · # сообщения',
+        groups: { recent: 'Недавние', msg: 'Сообщения', cmd: 'Команды', people: 'Люди' }
+      }
+    };
+    const L = I18N[lang];
+    // Each item carries both languages; `g` is a group id, labels come from L.groups.
     const ALL = [
-      { g: 'Недавние', k: 'chat', title: 'Аня Морозова', sub: '', ini: 'АМ', kbd: '' },
-      { g: 'Недавние', k: 'chat', title: 'Команда продукта', sub: '3 новых', ini: 'КП', kbd: '⌘1' },
-      { g: 'Недавние', k: 'chat', title: 'Папа', sub: '', ini: 'П', kbd: '' },
-      { g: 'Сообщения', k: 'msg', title: 'договор_аренды.pdf', sub: 'Избранное', icon: 'M7 3h7l5 5v13H7zM14 3v5h5', kbd: '' },
-      { g: 'Сообщения', k: 'msg', title: '«возьми ту настолку»', sub: 'Аня Морозова', icon: 'M4 5h16v11H9l-5 4z', kbd: '' },
-      { g: 'Команды', k: 'cmd', title: 'Сводка непрочитанного', sub: 'Сводка', icon: 'M17 5H7l6 7-6 7h10', kbd: '⌘⇧S' },
-      { g: 'Команды', k: 'cmd', title: 'Перевести черновик', sub: 'Переводчик', icon: 'M4 6h9M8.5 4v2M6 6c0 4 3 7 6 8M11 6c0 3-2 6-6 8M13 20l4-9 4 9M14.5 17h5', kbd: '⌘⇧T' },
-      { g: 'Команды', k: 'cmd', title: 'Режим призрака', sub: '', icon: 'M6 20V10a6 6 0 0 1 12 0v10l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5z', kbd: '⌘⇧G' },
-      { g: 'Команды', k: 'cmd', title: 'Открыть второй чат в сплите', sub: '', icon: 'M3 4h18v16H3zM12 4v16', kbd: '⌘\\' },
-      { g: 'Команды', k: 'cmd', title: 'Прочитать всё в папке', sub: 'Каналы', icon: 'M2 13l4 4 7-8M10 16l1 1 7-8', kbd: '' },
-      { g: 'Люди', k: 'user', title: 'Артём Литвинов', sub: '@artlit', ini: 'АЛ', kbd: '' },
-      { g: 'Люди', k: 'user', title: 'Вика Соколова', sub: '@vsokol', ini: 'ВС', kbd: '' }
+      { g: 'recent', k: 'chat', en: { title: 'Anna Morris', sub: '', ini: 'AM' }, ru: { title: 'Аня Морозова', sub: '', ini: 'АМ' }, kbd: '' },
+      { g: 'recent', k: 'chat', en: { title: 'Product team', sub: '3 new', ini: 'PT' }, ru: { title: 'Команда продукта', sub: '3 новых', ini: 'КП' }, kbd: '⌘1' },
+      { g: 'recent', k: 'chat', en: { title: 'Dad', sub: '', ini: 'D' }, ru: { title: 'Папа', sub: '', ini: 'П' }, kbd: '' },
+      { g: 'msg', k: 'msg', en: { title: 'lease_agreement.pdf', sub: 'Saved Messages' }, ru: { title: 'договор_аренды.pdf', sub: 'Избранное' }, icon: 'M7 3h7l5 5v13H7zM14 3v5h5', kbd: '' },
+      { g: 'msg', k: 'msg', en: { title: '“bring that board game”', sub: 'Anna Morris' }, ru: { title: '«возьми ту настолку»', sub: 'Аня Морозова' }, icon: 'M4 5h16v11H9l-5 4z', kbd: '' },
+      { g: 'cmd', k: 'cmd', en: { title: 'Summarize unread', sub: 'Summary' }, ru: { title: 'Сводка непрочитанного', sub: 'Сводка' }, icon: 'M17 5H7l6 7-6 7h10', kbd: '⌘⇧S' },
+      { g: 'cmd', k: 'cmd', en: { title: 'Translate draft', sub: 'Translator' }, ru: { title: 'Перевести черновик', sub: 'Переводчик' }, icon: 'M4 6h9M8.5 4v2M6 6c0 4 3 7 6 8M11 6c0 3-2 6-6 8M13 20l4-9 4 9M14.5 17h5', kbd: '⌘⇧T' },
+      { g: 'cmd', k: 'cmd', en: { title: 'Ghost mode', sub: '' }, ru: { title: 'Режим призрака', sub: '' }, icon: 'M6 20V10a6 6 0 0 1 12 0v10l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5z', kbd: '⌘⇧G' },
+      { g: 'cmd', k: 'cmd', en: { title: 'Open second chat in split view', sub: '' }, ru: { title: 'Открыть второй чат в сплите', sub: '' }, icon: 'M3 4h18v16H3zM12 4v16', kbd: '⌘\\' },
+      { g: 'cmd', k: 'cmd', en: { title: 'Mark folder as read', sub: 'Channels' }, ru: { title: 'Прочитать всё в папке', sub: 'Каналы' }, icon: 'M2 13l4 4 7-8M10 16l1 1 7-8', kbd: '' },
+      { g: 'people', k: 'user', en: { title: 'Adam Lewis', sub: '@adamlew', ini: 'AL' }, ru: { title: 'Артём Литвинов', sub: '@artlit', ini: 'АЛ' }, kbd: '' },
+      { g: 'people', k: 'user', en: { title: 'Vicky Stone', sub: '@vstone', ini: 'VS' }, ru: { title: 'Вика Соколова', sub: '@vsokol', ini: 'ВС' }, kbd: '' }
     ];
-    const modes = { '>': ['cmd', 'Команды'], '@': ['user', 'Люди'], '#': ['msg', 'Сообщения'] };
+    // Prefixes are language-neutral: > commands, @ people (and chats), # messages.
+    const modes = { '>': ['cmd', 'cmd'], '@': ['user', 'people'], '#': ['msg', 'msg'] };
     let q = s.q.trim().toLowerCase();
     let mode = null;
     if (q && modes[q[0]]) { mode = modes[q[0]]; q = q.slice(1).trim(); }
-    const list = ALL.filter((it) => (!mode || it.k === mode[0] || (mode[0] === 'user' && it.k === 'chat')) && (mode || q || it.k !== 'user') && (!q || (it.title + ' ' + it.sub).toLowerCase().includes(q)));
+    // Search matches either language, so a query typed in English or Russian works in both UI languages.
+    const hay = (it) => [it.en.title, it.en.sub, it.ru.title, it.ru.sub].join(' ').toLowerCase();
+    const list = ALL.filter((it) => (!mode || it.k === mode[0] || (mode[0] === 'user' && it.k === 'chat')) && (mode || q || it.k !== 'user') && (!q || hay(it).includes(q)));
     const idx = Math.min(s.idx, Math.max(list.length - 1, 0));
-    const dec = list.map((it, i) => ({ ...it, on: i === idx, cls: i === idx ? 'on' : '', isPerson: !!it.ini, isIcon: !it.ini,
-      pick: () => this.setState({ idx: i }), hover: () => { if (this.state.idx !== i) this.setState({ idx: i }); } }));
+    const dec = list.map((it, i) => {
+      const tx = it[lang];
+      return { g: it.g, k: it.k, icon: it.icon || '', kbd: it.kbd, title: tx.title, sub: tx.sub, ini: tx.ini || '',
+        on: i === idx, cls: i === idx ? 'on' : '', isPerson: !!tx.ini, isIcon: !tx.ini,
+        pick: () => this.setState({ idx: i }), hover: () => { if (this.state.idx !== i) this.setState({ idx: i }); } };
+    });
     const order = [], by = {};
     dec.forEach((it) => { if (!by[it.g]) { by[it.g] = []; order.push(it.g); } by[it.g].push(it); });
     const bgRows = Array.from({ length: 10 }, (_, i) => ({ bg: i === 1 ? 'var(--accent)' : 'transparent', w: (40 + (i * 13) % 40) + '%', bar: i === 1 ? 'rgba(255,255,255,.7)' : 'var(--field)', bar2: i === 1 ? 'rgba(255,255,255,.45)' : 'var(--field)' }));
     return {
-      theme: (this.props.appearance ?? 'светлая') === 'тёмная' ? 'dark' : '',
-      q: s.q, groups: order.map((g) => ({ title: g, items: by[g] })), empty: list.length === 0, bgRows,
-      hasMode: !!mode, modeLabel: mode ? mode[1] : '',
+      theme: (this.props.appearance ?? 'Light') === 'Dark' ? 'dark' : '',
+      L,
+      q: s.q, groups: order.map((g) => ({ title: L.groups[g], items: by[g] })), empty: list.length === 0, bgRows,
+      hasMode: !!mode, modeLabel: mode ? L.groups[mode[1]] : '',
       onQ: (e) => this.setState({ q: e.target.value, idx: 0 }),
       onKey: (e) => {
         if (e.key === 'ArrowDown') { e.preventDefault(); this.setState({ idx: Math.min(idx + 1, list.length - 1) }); }

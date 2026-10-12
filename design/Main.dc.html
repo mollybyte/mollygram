@@ -1,8 +1,8 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Главное окно</title>
+<title>Main window</title>
 <script src="./support.js"></script>
 </head>
 <body>
@@ -45,20 +45,20 @@ a{color:#0071E3}a:hover{color:#0058B0}
 </helmet>
 <div class="app {{theme}}" style="width: 100%; height: 100vh; min-height: 900px; position: relative; overflow: hidden">
 
-  <!-- Плавающий сайдбар -->
-  <aside class="glass" aria-label="Чаты" style="position: absolute; z-index: 3; top: 8px; left: 8px; bottom: 8px; width: 304px; border-radius: 16px; display: flex; flex-direction: column; overflow: hidden">
+  <!-- Floating sidebar -->
+  <aside class="glass" aria-label="{{L.chats}}" style="position: absolute; z-index: 3; top: 8px; left: 8px; bottom: 8px; width: 304px; border-radius: 16px; display: flex; flex-direction: column; overflow: hidden">
     <div style="height: 44px; display: flex; align-items: center; padding: 0 8px 0 16px; gap: 8px">
       <span aria-hidden="true" style="display: flex; gap: 8px"><span style="width: 12px; height: 12px; border-radius: 50%; background: #FF5F57"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #FEBC2E"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #28C840"></span></span>
       <span style="flex: 1"></span>
-      <button class="ib press" aria-label="Новое сообщение"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6"></path><path d="M17.5 3.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4z"></path></svg></button>
+      <button class="ib press" aria-label="{{L.newMessage}}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6"></path><path d="M17.5 3.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4z"></path></svg></button>
     </div>
     <div style="padding: 0 12px 8px">
       <label style="display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 9px; border-radius: 8px; background: var(--field); color: var(--fg2)">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
-        <input placeholder="Поиск" aria-label="Поиск" style="flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--fg); font: inherit">
+        <input placeholder="{{L.search}}" aria-label="{{L.search}}" style="flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--fg); font: inherit">
       </label>
     </div>
-    <div role="tablist" aria-label="Папки" style="display: flex; gap: 2px; padding: 0 10px 6px">
+    <div role="tablist" aria-label="{{L.folders}}" style="display: flex; gap: 2px; padding: 0 10px 6px">
       <sc-for list="{{folders}}" as="f" hint-placeholder-count="4">
         <button role="tab" aria-selected="{{f.on}}" class="tabf press {{f.cls}}" onClick="{{f.pick}}">{{f.label}}<sc-if value="{{f.hasN}}" hint-placeholder-val="{{ false }}"><span class="n">{{f.n}}</span></sc-if></button>
       </sc-for>
@@ -82,24 +82,24 @@ a{color:#0071E3}a:hover{color:#0058B0}
     </div>
   </aside>
 
-  <!-- Чат: контент уходит под плавающие шапку и поле ввода -->
-  <main aria-label="Переписка" style="position: absolute; top: 0; bottom: 0; left: 320px; right: 0">
+  <!-- Chat: content scrolls under the floating header and composer -->
+  <main aria-label="{{L.conversation}}" style="position: absolute; top: 0; bottom: 0; left: 320px; right: 0">
     <div class="scroll" style="position: absolute; inset: 0; overflow-y: auto; display: flex; flex-direction: column-reverse">
       <div style="max-width: 760px; width: 100%; margin: 0 auto; box-sizing: border-box; padding: 72px 24px 88px; display: flex; flex-direction: column; gap: 4px">
 
         <div class="bin" style="max-width: 420px; padding: 7px 11px 5px">
-          <div style="line-height: 1.4">Ты в субботу во сколько освободишься?</div>
-          <div class="meta" style="text-align: right">вчера, 21:04</div>
+          <div style="line-height: 1.4">{{L.m1}}</div>
+          <div class="meta" style="text-align: right">{{L.yesterdayAt}}</div>
         </div>
         <div class="bout" style="align-self: flex-end; max-width: 420px; padding: 7px 11px 5px; margin-top: 6px">
-          <div style="line-height: 1.4">Часам к трём, потом свободна</div>
+          <div style="line-height: 1.4">{{L.m2}}</div>
           <div class="meta" style="text-align: right">21:10 ✓✓</div>
         </div>
 
-        <div style="align-self: center; font-size: 12px; font-weight: 500; padding: 3px 10px; border-radius: 11px; background: rgba(0,0,0,.18); color: #FFFFFF; margin: 14px 0 10px">Сегодня</div>
+        <div style="align-self: center; font-size: 12px; font-weight: 500; padding: 3px 10px; border-radius: 11px; background: rgba(0,0,0,.18); color: #FFFFFF; margin: 14px 0 10px">{{L.today}}</div>
 
         <div class="bin" style="max-width: 420px; padding: 7px 11px 5px">
-          <div style="line-height: 1.4">Привет! Скинула фотки с выходных, там есть пара хороших</div>
+          <div style="line-height: 1.4">{{L.m3}}</div>
           <div class="meta" style="text-align: right">13:55</div>
         </div>
         <div class="bin" style="width: 360px; padding: 3px; border-radius: 16px 16px 16px 5px; position: relative">
@@ -113,21 +113,21 @@ a{color:#0071E3}a:hover{color:#0058B0}
         </div>
 
         <div class="bout" style="align-self: flex-end; max-width: 420px; padding: 7px 11px 5px; margin-top: 6px">
-          <div style="line-height: 1.4">Вторая прям хорошая. Можешь кинуть её без сжатия? Хочу распечатать</div>
+          <div style="line-height: 1.4">{{L.m4}}</div>
           <div class="meta" style="text-align: right">13:58 ✓✓</div>
         </div>
 
         <div class="bin" style="width: 280px; padding: 9px 11px 6px; margin-top: 6px; display: flex; gap: 10px; align-items: center">
-          <button class="press" aria-label="Скачать IMG_2041.HEIC" style="flex: none; width: 42px; height: 42px; border-radius: 50%; border: 0; padding: 0; background: var(--accent); display: grid; place-items: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v12M7 12l5 5 5-5"></path></svg></button>
+          <button class="press" aria-label="{{L.downloadFile}}" style="flex: none; width: 42px; height: 42px; border-radius: 50%; border: 0; padding: 0; background: var(--accent); display: grid; place-items: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v12M7 12l5 5 5-5"></path></svg></button>
           <div style="flex: 1; min-width: 0">
             <div style="font-weight: 500">IMG_2041.HEIC</div>
-            <div class="meta" style="display: flex; justify-content: space-between"><span>6,8 МБ</span><span>14:01</span></div>
+            <div class="meta" style="display: flex; justify-content: space-between"><span>{{L.fileSize}}</span><span>14:01</span></div>
           </div>
         </div>
 
         <div class="bin" style="max-width: 420px; padding: 7px 11px 5px; margin-top: 6px; opacity: .55">
-          <div style="line-height: 1.4">ой не тот чат</div>
-          <div class="meta" style="display: flex; justify-content: space-between; gap: 12px"><span>удалено</span><span>14:01</span></div>
+          <div style="line-height: 1.4">{{L.m5}}</div>
+          <div class="meta" style="display: flex; justify-content: space-between; gap: 12px"><span>{{L.deleted}}</span><span>14:01</span></div>
         </div>
 
         <div style="position: relative; width: 200px; height: 200px; margin-top: 6px">
@@ -138,23 +138,23 @@ a{color:#0071E3}a:hover{color:#0058B0}
 
         <div class="bin" style="width: 300px; padding: 8px 10px 6px; margin-top: 6px">
           <div style="display: flex; gap: 9px; align-items: center">
-            <button class="press" aria-label="Воспроизвести голосовое" style="flex: none; width: 36px; height: 36px; border-radius: 50%; border: 0; padding: 0; background: var(--accent); display: grid; place-items: center"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" fill="#FFFFFF"></path></svg></button>
+            <button class="press" aria-label="{{L.playVoice}}" style="flex: none; width: 36px; height: 36px; border-radius: 50%; border: 0; padding: 0; background: var(--accent); display: grid; place-items: center"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" fill="#FFFFFF"></path></svg></button>
             <div style="flex: 1; display: flex; flex-direction: column; gap: 3px">
               <div style="display: flex; align-items: center; gap: 2px; height: 20px" aria-hidden="true">
                 <sc-for list="{{wave}}" as="w" hint-placeholder-count="34"><span style="width: 2.5px; border-radius: 2px; height: {{w.h}}px; background: var(--accent); opacity: {{w.o}}"></span></sc-for>
               </div>
               <div class="meta" style="display: flex; justify-content: space-between"><span>0:18</span><span>14:03</span></div>
             </div>
-            <button class="press" onClick="{{toggleTr}}" aria-pressed="{{tr}}" aria-label="Расшифровать голосовое" style="flex: none; width: 28px; height: 28px; border-radius: 8px; border: 0; padding: 0; font: inherit; font-size: 11.5px; font-weight: 600; background: var(--field); color: var(--accent)">А</button>
+            <button class="press" onClick="{{toggleTr}}" aria-pressed="{{tr}}" aria-label="{{L.transcribe}}" style="flex: none; width: 28px; height: 28px; border-radius: 8px; border: 0; padding: 0; font: inherit; font-size: 11.5px; font-weight: 600; background: var(--field); color: var(--accent)">{{L.transcribeGlyph}}</button>
           </div>
           <sc-if value="{{tr}}" hint-placeholder-val="{{ true }}">
-            <div style="line-height: 1.4; margin-top: 6px">Короче, вечером в субботу собираемся у Лёши, возьми, пожалуйста, ту настолку, если не сложно</div>
+            <div style="line-height: 1.4; margin-top: 6px">{{L.transcript}}</div>
           </sc-if>
         </div>
 
         <div style="align-self: flex-end; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; margin-top: 6px">
           <div class="bout" style="max-width: 420px; padding: 7px 11px 5px">
-            <div style="line-height: 1.4">Спасибо! Ок, возьму</div>
+            <div style="line-height: 1.4">{{L.m6}}</div>
             <div class="meta" style="text-align: right">14:05 ✓</div>
           </div>
           <button class="react press {{heartCls}}" onClick="{{toggleHeart}}" aria-pressed="{{heart}}"><span aria-hidden="true">❤️</span>{{heartN}}</button>
@@ -162,7 +162,7 @@ a{color:#0071E3}a:hover{color:#0058B0}
       </div>
     </div>
 
-    <!-- Шапка: две стеклянные капсулы -->
+    <!-- Header: two glass capsules -->
     <div style="position: absolute; z-index: 2; top: 10px; left: 14px; right: 14px; display: flex; justify-content: space-between; align-items: center; gap: 8px; pointer-events: none">
       <button class="glass press" style="pointer-events: auto; border-radius: 22px; font: inherit; color: var(--fg); display: flex; align-items: center; gap: 9px; padding: 5px 14px 5px 5px">
         <span class="av" style="width: 32px; height: 32px; font-size: 12.5px">{{cur.ini}}</span>
@@ -172,31 +172,31 @@ a{color:#0071E3}a:hover{color:#0058B0}
         </span>
       </button>
       <div class="glass" style="pointer-events: auto; border-radius: 22px; display: flex; align-items: center; gap: 2px; padding: 4px">
-        <button class="ib press" aria-label="Поиск в чате"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg></button>
-        <button class="ib press" aria-label="Позвонить"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"></path></svg></button>
-        <button class="ib press {{ghostCls}}" onClick="{{toggleGhost}}" aria-pressed="{{ghost}}" aria-label="Режим призрака"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M6 20V10a6 6 0 0 1 12 0v10l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5z"></path><path d="M10 10h.01M14 10h.01" stroke-width="2.4" stroke-linecap="round"></path></svg></button>
-        <button class="ib press" aria-label="Информация о чате"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"></rect><path d="M15 4v16"></path></svg></button>
+        <button class="ib press" aria-label="{{L.searchChat}}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg></button>
+        <button class="ib press" aria-label="{{L.call}}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"></path></svg></button>
+        <button class="ib press {{ghostCls}}" onClick="{{toggleGhost}}" aria-pressed="{{ghost}}" aria-label="{{L.ghost}}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M6 20V10a6 6 0 0 1 12 0v10l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5z"></path><path d="M10 10h.01M14 10h.01" stroke-width="2.4" stroke-linecap="round"></path></svg></button>
+        <button class="ib press" aria-label="{{L.chatInfo}}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"></rect><path d="M15 4v16"></path></svg></button>
       </div>
     </div>
 
-    <!-- Поле ввода -->
+    <!-- Composer -->
     <div style="position: absolute; z-index: 2; bottom: 12px; left: 0; right: 0; padding: 0 24px; display: flex; justify-content: center">
       <div class="glass" style="width: 100%; max-width: 712px; border-radius: 22px; display: flex; align-items: center; gap: 2px; padding: 4px 4px 4px 6px">
-        <button class="ib press" aria-label="Прикрепить"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5 12.5 20a5 5 0 0 1-7-7l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7L10.2 17.7a1.7 1.7 0 0 1-2.4-2.4L15.5 7.6"></path></svg></button>
-        <input value="{{draft}}" onInput="{{onDraft}}" placeholder="Сообщение" aria-label="Сообщение" style="flex: 1; min-width: 0; height: 32px; border: 0; outline: 0; background: transparent; color: var(--fg); font: inherit; font-size: 13.5px">
-        <button class="ib press" aria-label="Эмодзи и стикеры"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M8.5 14.5a4 4 0 0 0 7 0M9 9.5h.01M15 9.5h.01"></path></svg></button>
+        <button class="ib press" aria-label="{{L.attach}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5 12.5 20a5 5 0 0 1-7-7l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7L10.2 17.7a1.7 1.7 0 0 1-2.4-2.4L15.5 7.6"></path></svg></button>
+        <input value="{{draft}}" onInput="{{onDraft}}" placeholder="{{L.message}}" aria-label="{{L.message}}" style="flex: 1; min-width: 0; height: 32px; border: 0; outline: 0; background: transparent; color: var(--fg); font: inherit; font-size: 13.5px">
+        <button class="ib press" aria-label="{{L.emoji}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M8.5 14.5a4 4 0 0 0 7 0M9 9.5h.01M15 9.5h.01"></path></svg></button>
         <sc-if value="{{hasDraft}}" hint-placeholder-val="{{ false }}">
-          <button class="press" aria-label="Отправить" style="width: 32px; height: 32px; border-radius: 50%; border: 0; padding: 0; background: var(--accent); display: grid; place-items: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"></path></svg></button>
+          <button class="press" aria-label="{{L.send}}" style="width: 32px; height: 32px; border-radius: 50%; border: 0; padding: 0; background: var(--accent); display: grid; place-items: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"></path></svg></button>
         </sc-if>
         <sc-if value="{{noDraft}}" hint-placeholder-val="{{ true }}">
-          <button class="ib press" aria-label="Записать голосовое или кружок"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg></button>
+          <button class="ib press" aria-label="{{L.record}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg></button>
         </sc-if>
       </div>
     </div>
   </main>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"appearance":{"editor":"enum","options":["светлая","тёмная"],"default":"светлая"},"$preview":{"width":1440,"height":900}}'>
+<script type="text/x-dc" data-dc-script data-props='{"appearance":{"editor":"enum","options":["Light","Dark"],"default":"Light"},"language":{"editor":"enum","options":["English","Русский"],"default":"English"},"$preview":{"width":1440,"height":900}}'>
 class Component extends DCLogic {
   constructor(props) {
     super(props);
@@ -204,30 +204,78 @@ class Component extends DCLogic {
   }
   renderVals() {
     const s = this.state;
+    const lang = (this.props.language ?? 'English') === 'Русский' ? 'ru' : 'en';
+    const I18N = {
+      en: {
+        chats: 'Chats', newMessage: 'New message', search: 'Search', folders: 'Folders', conversation: 'Conversation',
+        m1: 'What time are you free on Saturday?', yesterdayAt: 'Yesterday, 21:04', m2: 'Around three, free after that',
+        today: 'Today', m3: 'Hi! Sent the photos from the weekend, a couple of them are good',
+        m4: 'The second one is really good. Can you send it uncompressed? I want to print it',
+        downloadFile: 'Download IMG_2041.HEIC', fileSize: '6.8 MB', m5: 'oops, wrong chat', deleted: 'deleted',
+        playVoice: 'Play voice message', transcribe: 'Transcribe voice message', transcribeGlyph: 'A',
+        transcript: 'So, we’re meeting at Alex’s on Saturday evening, please bring that board game if it’s no trouble',
+        m6: 'Thanks! OK, I’ll bring it', searchChat: 'Search in chat', call: 'Call', ghost: 'Ghost mode', chatInfo: 'Chat info',
+        attach: 'Attach', message: 'Message', emoji: 'Emoji and stickers', send: 'Send', record: 'Record voice or video message',
+        invisible: 'you’re invisible'
+      },
+      ru: {
+        chats: 'Чаты', newMessage: 'Новое сообщение', search: 'Поиск', folders: 'Папки', conversation: 'Переписка',
+        m1: 'Ты в субботу во сколько освободишься?', yesterdayAt: 'вчера, 21:04', m2: 'Часам к трём, потом свободна',
+        today: 'Сегодня', m3: 'Привет! Скинула фотки с выходных, там есть пара хороших',
+        m4: 'Вторая прям хорошая. Можешь кинуть её без сжатия? Хочу распечатать',
+        downloadFile: 'Скачать IMG_2041.HEIC', fileSize: '6,8 МБ', m5: 'ой не тот чат', deleted: 'удалено',
+        playVoice: 'Воспроизвести голосовое', transcribe: 'Расшифровать голосовое', transcribeGlyph: 'А',
+        transcript: 'Короче, вечером в субботу собираемся у Лёши, возьми, пожалуйста, ту настолку, если не сложно',
+        m6: 'Спасибо! Ок, возьму', searchChat: 'Поиск в чате', call: 'Позвонить', ghost: 'Режим призрака', chatInfo: 'Информация о чате',
+        attach: 'Прикрепить', message: 'Сообщение', emoji: 'Эмодзи и стикеры', send: 'Отправить', record: 'Записать голосовое или кружок',
+        invisible: 'вы невидимы'
+      }
+    };
+    const L = I18N[lang];
     const F = [
-      { id: 'all', label: 'Все', n: 0 }, { id: 'me', label: 'Личные', n: 2 },
-      { id: 'work', label: 'Работа', n: 3 }, { id: 'ch', label: 'Каналы', n: 0 }
+      { id: 'all', en: 'All', ru: 'Все', n: 0 }, { id: 'me', en: 'Personal', ru: 'Личные', n: 2 },
+      { id: 'work', en: 'Work', ru: 'Работа', n: 3 }, { id: 'ch', en: 'Channels', ru: 'Каналы', n: 0 }
     ];
+    // Demo chats: per-language name/initials/last message/time/status.
     const C = [
-      { id: 'team', f: 'work', name: 'Команда продукта', ini: 'КП', last: 'Вика: ок, тогда созвон в 16:30', time: '14:12', unread: 3, status: '8 участников' },
-      { id: 'anya', f: 'me', name: 'Аня Морозова', ini: 'АМ', last: 'Голосовое сообщение', time: '14:03', unread: 0, status: 'в сети' },
-      { id: 'denis', f: 'me', name: 'Денис', ini: 'Д', last: 'Вы: спасибо, вернул', time: '13:20', unread: 0, status: 'был недавно' },
-      { id: 'dad', f: 'me', name: 'Папа', ini: 'П', last: 'Позвони, как будет минутка', time: '12:47', unread: 2, status: 'был в 12:50' },
-      { id: 'book', f: 'me', name: 'Книжный клуб', ini: 'КК', last: 'Ира: голосуем за книгу на ноябрь', time: '11:30', unread: 12, muted: true, status: '23 участника' },
-      { id: 'saved', f: 'me', name: 'Избранное', ini: 'И', last: 'договор_аренды.pdf', time: 'вчера', unread: 0, status: '' },
-      { id: 'flutter', f: 'ch', name: 'Flutter Dev', ini: 'FD', last: 'Что нового на десктопе в 3.38', time: 'вчера', unread: 4, muted: true, status: '18 400 подписчиков' },
-      { id: 'house', f: 'me', name: 'Дом, 2-й подъезд', ini: 'Д2', last: 'Завтра отключат горячую воду', time: 'пн', unread: 28, muted: true, status: '61 участник' },
-      { id: 'pm', f: 'work', name: 'Оля Ким', ini: 'ОК', last: 'Посмотришь макеты до вечера?', time: 'пн', unread: 0, status: 'в сети' }
-    ];
-    const folders = F.map((f) => ({ ...f, on: f.id === s.folder, cls: f.id === s.folder ? 'on' : '', hasN: f.n > 0, pick: () => this.setState({ folder: f.id }) }));
+      { id: 'team', f: 'work', unread: 3,
+        en: { name: 'Product team', ini: 'PT', last: 'Vicky: OK, call at 16:30 then', time: '14:12', status: '8 members' },
+        ru: { name: 'Команда продукта', ini: 'КП', last: 'Вика: ок, тогда созвон в 16:30', time: '14:12', status: '8 участников' } },
+      { id: 'anya', f: 'me', unread: 0,
+        en: { name: 'Anna Morris', ini: 'AM', last: 'Voice message', time: '14:03', status: 'online' },
+        ru: { name: 'Аня Морозова', ini: 'АМ', last: 'Голосовое сообщение', time: '14:03', status: 'в сети' } },
+      { id: 'denis', f: 'me', unread: 0,
+        en: { name: 'Dennis', ini: 'D', last: 'You: thanks, sent it back', time: '13:20', status: 'last seen recently' },
+        ru: { name: 'Денис', ini: 'Д', last: 'Вы: спасибо, вернул', time: '13:20', status: 'был недавно' } },
+      { id: 'dad', f: 'me', unread: 2,
+        en: { name: 'Dad', ini: 'D', last: 'Call me when you have a minute', time: '12:47', status: 'last seen at 12:50' },
+        ru: { name: 'Папа', ini: 'П', last: 'Позвони, как будет минутка', time: '12:47', status: 'был в 12:50' } },
+      { id: 'book', f: 'me', unread: 12, muted: true,
+        en: { name: 'Book club', ini: 'BC', last: 'Irene: voting on the November book', time: '11:30', status: '23 members' },
+        ru: { name: 'Книжный клуб', ini: 'КК', last: 'Ира: голосуем за книгу на ноябрь', time: '11:30', status: '23 участника' } },
+      { id: 'saved', f: 'me', unread: 0,
+        en: { name: 'Saved Messages', ini: 'S', last: 'lease_agreement.pdf', time: 'Yesterday', status: '' },
+        ru: { name: 'Избранное', ini: 'И', last: 'договор_аренды.pdf', time: 'вчера', status: '' } },
+      { id: 'flutter', f: 'ch', unread: 4, muted: true,
+        en: { name: 'Flutter Dev', ini: 'FD', last: 'What’s new on desktop in 3.38', time: 'Yesterday', status: '18,400 subscribers' },
+        ru: { name: 'Flutter Dev', ini: 'FD', last: 'Что нового на десктопе в 3.38', time: 'вчера', status: '18 400 подписчиков' } },
+      { id: 'house', f: 'me', unread: 28, muted: true,
+        en: { name: 'Building, entrance 2', ini: 'B2', last: 'Hot water will be off tomorrow', time: 'Mon', status: '61 members' },
+        ru: { name: 'Дом, 2-й подъезд', ini: 'Д2', last: 'Завтра отключат горячую воду', time: 'пн', status: '61 участник' } },
+      { id: 'pm', f: 'work', unread: 0,
+        en: { name: 'Olivia Kim', ini: 'OK', last: 'Could you review the mockups by tonight?', time: 'Mon', status: 'online' },
+        ru: { name: 'Оля Ким', ini: 'ОК', last: 'Посмотришь макеты до вечера?', time: 'пн', status: 'в сети' } }
+    ].map((c) => ({ id: c.id, f: c.f, unread: c.unread, muted: !!c.muted, ...c[lang] }));
+    const folders = F.map((f) => ({ id: f.id, n: f.n, label: f[lang], on: f.id === s.folder, cls: f.id === s.folder ? 'on' : '', hasN: f.n > 0, pick: () => this.setState({ folder: f.id }) }));
     const chats = C.filter((c) => s.folder === 'all' || c.f === s.folder).map((c) => ({ ...c, cls: c.id === s.chat ? 'on' : '', hasUnread: c.unread > 0, bcls: c.muted ? 'm' : '', pick: () => this.setState({ chat: c.id }) }));
     const cur = C.find((c) => c.id === s.chat) || C[1];
     const H = [5,8,13,10,16,12,7,14,18,12,8,11,15,9,6,13,17,10,7,12,15,9,6,10,14,8,11,7,9,6,8,5,7,4];
     const wave = H.map((h, i) => ({ h, o: i < 14 ? 1 : .35 }));
     return {
-      theme: (this.props.appearance ?? 'светлая') === 'тёмная' ? 'dark' : '',
+      theme: (this.props.appearance ?? 'Light') === 'Dark' ? 'dark' : '',
+      L,
       folders, chats, cur, wave,
-      statusLine: s.ghost ? cur.status + ' · вы невидимы' : cur.status,
+      statusLine: s.ghost ? (cur.status ? cur.status + ' · ' : '') + L.invisible : cur.status,
       ghost: s.ghost, ghostCls: s.ghost ? 'on' : '', toggleGhost: () => this.setState({ ghost: !s.ghost }),
       tr: s.tr, toggleTr: () => this.setState({ tr: !s.tr }),
       heart: s.heart, heartCls: s.heart ? 'on' : '', heartN: s.heart ? 1 : '', toggleHeart: () => this.setState({ heart: !s.heart }),

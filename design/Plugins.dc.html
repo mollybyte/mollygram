@@ -1,8 +1,8 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Плагины</title>
+<title>Plugins</title>
 <script src="./support.js"></script>
 </head>
 <body>
@@ -41,14 +41,14 @@ a{color:#0071E3}a:hover{color:#0058B0}
 </helmet>
 <div class="app {{theme}}" style="width: 100%; height: 100vh; min-height: 900px; position: relative; overflow: hidden">
 
-  <aside class="glass" aria-label="Список плагинов" style="position: absolute; z-index: 2; top: 8px; left: 8px; bottom: 8px; width: 260px; border-radius: 16px; display: flex; flex-direction: column; overflow: hidden">
+  <aside class="glass" aria-label="{{L.pluginList}}" style="position: absolute; z-index: 2; top: 8px; left: 8px; bottom: 8px; width: 260px; border-radius: 16px; display: flex; flex-direction: column; overflow: hidden">
     <div style="height: 44px; display: flex; align-items: center; padding: 0 16px">
       <span aria-hidden="true" style="display: flex; gap: 8px"><span style="width: 12px; height: 12px; border-radius: 50%; background: #FF5F57"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #FEBC2E"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #28C840"></span></span>
     </div>
     <div style="padding: 0 12px 10px">
       <label style="display: flex; align-items: center; gap: 6px; height: 28px; padding: 0 9px; border-radius: 8px; background: var(--field); color: var(--fg2)">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
-        <input placeholder="Поиск" aria-label="Поиск плагинов" style="flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--fg); font: inherit">
+        <input placeholder="{{L.search}}" aria-label="{{L.searchPlugins}}" style="flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--fg); font: inherit">
       </label>
     </div>
     <div class="scroll" style="flex: 1; overflow-y: auto; padding: 0 8px 10px">
@@ -64,7 +64,7 @@ a{color:#0071E3}a:hover{color:#0058B0}
       </sc-for>
     </div>
     <div style="padding: 10px 12px; border-top: .5px solid var(--sep)">
-      <button class="btn press" style="width: 100%; background: var(--field); color: var(--fg)">Установить из файла…</button>
+      <button class="btn press" style="width: 100%; background: var(--field); color: var(--fg)">{{L.installFromFile}}</button>
     </div>
   </aside>
 
@@ -78,17 +78,17 @@ a{color:#0071E3}a:hover{color:#0058B0}
           <div style="color: var(--fg2); margin-top: 1px">{{sel.author}} · {{sel.ver}}</div>
         </div>
         <sc-if value="{{installed}}" hint-placeholder-val="{{ true }}">
-          <button class="sw press" role="switch" aria-checked="{{enabled}}" aria-label="Включить плагин" onClick="{{toggleEnabled}}" style="background: {{enBg}}; justify-content: {{enJc}}"><span></span></button>
+          <button class="sw press" role="switch" aria-checked="{{enabled}}" aria-label="{{L.enablePlugin}}" onClick="{{toggleEnabled}}" style="background: {{enBg}}; justify-content: {{enJc}}"><span></span></button>
         </sc-if>
         <sc-if value="{{notInstalled}}" hint-placeholder-val="{{ false }}">
-          <button class="btn press" onClick="{{install}}" style="background: var(--accent); color: #FFFFFF">Установить</button>
+          <button class="btn press" onClick="{{install}}" style="background: var(--accent); color: #FFFFFF">{{L.install}}</button>
         </sc-if>
       </div>
 
       <div style="line-height: 1.5; color: var(--fg)">{{sel.about}}</div>
 
       <section>
-        <div class="cap">Доступ</div>
+        <div class="cap">{{L.access}}</div>
         <div class="grp">
           <sc-for list="{{sel.perms}}" as="r" hint-placeholder-count="3">
             <div class="ln">
@@ -101,7 +101,7 @@ a{color:#0071E3}a:hover{color:#0058B0}
 
       <sc-if value="{{hasOpts}}" hint-placeholder-val="{{ true }}">
         <section>
-          <div class="cap">Параметры</div>
+          <div class="cap">{{L.options}}</div>
           <div class="grp">
             <sc-for list="{{opts}}" as="o" hint-placeholder-count="3">
               <div class="ln"><span style="flex: 1">{{o.label}}</span><button class="sw press" role="switch" aria-checked="{{o.on}}" aria-label="{{o.label}}" onClick="{{o.toggle}}" style="background: {{o.bg}}; justify-content: {{o.jc}}"><span></span></button></div>
@@ -112,7 +112,7 @@ a{color:#0071E3}a:hover{color:#0058B0}
 
       <sc-if value="{{hasCmds}}" hint-placeholder-val="{{ true }}">
         <section>
-          <div class="cap">Команды</div>
+          <div class="cap">{{L.commands}}</div>
           <div class="grp">
             <sc-for list="{{sel.cmds}}" as="k" hint-placeholder-count="2">
               <div class="ln"><span class="mono" style="width: 110px; flex: none">{{k.c}}</span><span style="flex: 1; color: var(--fg2)">{{k.d}}</span><span class="mono" style="font-size: 11.5px; color: var(--fg2)">{{k.k}}</span></div>
@@ -123,7 +123,7 @@ a{color:#0071E3}a:hover{color:#0058B0}
 
       <section>
         <button class="press" onClick="{{toggleManifest}}" aria-expanded="{{showManifest}}" style="border: 0; background: transparent; font: inherit; color: var(--fg2); font-size: 12px; font-weight: 600; padding: 0 4px 6px; display: flex; align-items: center; gap: 4px">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform: {{chev}}; transition: transform 160ms cubic-bezier(.23,1,.32,1)"><path d="M9 5l7 7-7 7"></path></svg>Манифест
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform: {{chev}}; transition: transform 160ms cubic-bezier(.23,1,.32,1)"><path d="M9 5l7 7-7 7"></path></svg>{{L.manifest}}
         </button>
         <sc-if value="{{showManifest}}" hint-placeholder-val="{{ false }}">
           <pre class="mono" style="margin: 0; padding: 12px 14px; border-radius: 10px; background: var(--code); font-size: 11.5px; line-height: 1.6; white-space: pre-wrap">{{sel.manifest}}</pre>
@@ -132,15 +132,15 @@ a{color:#0071E3}a:hover{color:#0058B0}
 
       <sc-if value="{{installed}}" hint-placeholder-val="{{ true }}">
         <div style="display: flex; justify-content: space-between; align-items: center; color: var(--fg2); font-size: 12px">
-          <span>Обновлён {{sel.updated}}</span>
-          <button class="btn press" onClick="{{uninstall}}" style="background: transparent; color: #E5484D; padding: 0">Удалить плагин…</button>
+          <span>{{L.updated}} {{sel.updated}}</span>
+          <button class="btn press" onClick="{{uninstall}}" style="background: transparent; color: #E5484D; padding: 0">{{L.uninstall}}</button>
         </div>
       </sc-if>
     </div>
   </main>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;appearance&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;светлая&quot;,&quot;тёмная&quot;],&quot;default&quot;:&quot;тёмная&quot;},&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900}}">
+<script type="text/x-dc" data-dc-script data-props="{&quot;appearance&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Light&quot;,&quot;Dark&quot;],&quot;default&quot;:&quot;Dark&quot;},&quot;language&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;English&quot;,&quot;Русский&quot;],&quot;default&quot;:&quot;English&quot;},&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900}}">
 class Component extends DCLogic {
   constructor(props) {
     super(props);
@@ -148,51 +148,107 @@ class Component extends DCLogic {
   }
   renderVals() {
     const s = this.state;
+    const lang = (this.props.language ?? 'English') === 'Русский' ? 'ru' : 'en';
+    const I18N = {
+      en: {
+        pluginList: 'Plugin list', search: 'Search', searchPlugins: 'Search plugins', installFromFile: 'Install from file…',
+        enablePlugin: 'Enable plugin', install: 'Install', access: 'Access', options: 'Options', commands: 'Commands',
+        manifest: 'Manifest', updated: 'Updated', uninstall: 'Uninstall plugin…', off: 'off', installedGroup: 'Installed', available: 'Available',
+        opts: { menu: 'Button in chat menu', auto: 'Summarize when opening a folder', mentions: 'Highlight mentions' }
+      },
+      ru: {
+        pluginList: 'Список плагинов', search: 'Поиск', searchPlugins: 'Поиск плагинов', installFromFile: 'Установить из файла…',
+        enablePlugin: 'Включить плагин', install: 'Установить', access: 'Доступ', options: 'Параметры', commands: 'Команды',
+        manifest: 'Манифест', updated: 'Обновлён', uninstall: 'Удалить плагин…', off: 'выкл', installedGroup: 'Установленные', available: 'Доступно',
+        opts: { menu: 'Кнопка в меню чата', auto: 'Сводка при открытии папки', mentions: 'Выделять упоминания' }
+      }
+    };
+    const L = I18N[lang];
     const MSG = 'M4 5h16v11H9l-5 4z', NET = 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18', DB = 'M5 6c0-1.7 3.1-3 7-3s7 1.3 7 3-3.1 3-7 3-7-1.3-7-3zM5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6', BELL = 'M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 20h4', MIC = 'M9 3h6v11H9zM5 11a7 7 0 0 0 14 0M12 18v3', EYE = 'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6';
+    // Language-neutral fields at the top level; user-visible text under en/ru (perms/cmds are index-aligned with `icons`/`keys`).
     const P = [
-      { id: 'summary', name: 'Сводка', glyph: 'Σ', c: '#5E5CE6', author: 'tgplug.dev', ver: '2.3.0', updated: '3 дня назад',
-        about: 'Пересказывает непрочитанное в чате или папке: что решили, что спросили у вас, где упомянули. Работает с локальной моделью или с вашим ключом API.',
-        perms: [{ icon: MSG, t: 'Сообщения текущего чата', d: 'Только когда вы вызываете команду' }, { icon: NET, t: 'Сеть', d: 'Только адрес модели, который вы укажете' }, { icon: DB, t: 'Хранилище', d: 'До 5 МБ, кэш последних сводок' }],
-        cmds: [{ c: '/summary', d: 'Сводка по текущему чату', k: '⌘⇧S' }, { c: '/summary папка', d: 'По всей папке', k: '' }],
-        manifest: 'id: dev.tgplug.summary\nversion: 2.3.0\nruntime: js\npermissions:\n  messages.read: on_command\n  net: [user_endpoint]\n  storage: 5mb\ncommands: [/summary]' },
-      { id: 'translate', name: 'Переводчик', glyph: 'A', c: '#0A84FF', author: 'linguo', ver: '5.1.2', updated: 'вчера',
-        about: 'Переводит входящие сообщения в выбранных чатах и ваш черновик перед отправкой. DeepL, Google или офлайн-модель.',
-        perms: [{ icon: MSG, t: 'Сообщения выбранных чатов', d: 'Список чатов задаёте вы' }, { icon: NET, t: 'Сеть', d: 'api.deepl.com' }],
-        cmds: [{ c: '/tr', d: 'Перевести черновик', k: '⌘⇧T' }],
-        manifest: 'id: io.linguo.translate\nversion: 5.1.2\nruntime: js\npermissions:\n  messages.read: chats[]\n  composer.write: true\n  net: [api.deepl.com]' },
-      { id: 'quiet', name: 'Тихие часы', glyph: 'Z', c: '#8E8E93', author: 'calm.tools', ver: '1.4.0', updated: '2 нед. назад',
-        about: 'Откладывает уведомления по расписанию и присылает их одной пачкой. Избранные контакты приходят всегда.',
-        perms: [{ icon: BELL, t: 'Уведомления', d: 'Откладывать и группировать' }], cmds: [],
-        manifest: 'id: tools.calm.quiet\nversion: 1.4.0\nruntime: js\npermissions:\n  notifications.manage: true' },
-      { id: 'code', name: 'Подсветка кода', glyph: '{', c: '#30A46C', author: 'shiki-tg', ver: '3.0.0', updated: 'месяц назад',
-        about: 'Подсвечивает блоки кода в цветах темы, добавляет номера строк и копирование.',
-        perms: [{ icon: EYE, t: 'Отображение сообщений', d: 'Только блоки кода' }], cmds: [],
-        manifest: 'id: tg.shiki.code\nversion: 3.0.0\nruntime: js\nhooks: [message.render.code]' },
-      { id: 'voice', name: 'Расшифровка', glyph: '≈', c: '#E5484D', author: 'whisperkit', ver: '1.8.0', updated: '5 дней назад',
-        about: 'Расшифровывает голосовые и кружки на устройстве, без сети и без Premium.',
-        perms: [{ icon: MIC, t: 'Голосовые и кружки', d: 'Обработка на устройстве' }], cmds: [],
-        manifest: 'id: kit.whisper.voice\nversion: 1.8.0\nruntime: js\npermissions:\n  media.read: [voice, round]\n  storage: 1mb\nhooks: [message.render.voice, message.render.round]' },
-      { id: 'links', name: 'Карточки ссылок', glyph: '↗', c: '#B07D3A', author: 'unfurl', ver: '0.9.8', updated: '',
-        about: 'Показывает вместо обычного превью карточку: статус PR на GitHub, кадр из Figma, таймкод YouTube.',
-        perms: [{ icon: NET, t: 'Сеть', d: 'github.com, figma.com, youtube.com, без ваших cookie' }], cmds: [],
-        manifest: 'id: dev.unfurl.cards\nversion: 0.9.8\nruntime: js\npermissions:\n  net: [github.com, figma.com, youtube.com]' },
-      { id: 'stats', name: 'Статистика чата', glyph: '▤', c: '#636366', author: 'graphy', ver: '0.6.1', updated: '',
-        about: 'Строит графики активности по локальной истории. Ничего не отправляет наружу.',
-        perms: [{ icon: MSG, t: 'История выбранного чата', d: 'Локально, без сети' }], cmds: [{ c: '/stats', d: 'Открыть статистику', k: '' }],
-        manifest: 'id: io.graphy.stats\nversion: 0.6.1\nruntime: js\npermissions:\n  messages.read: chats[]\n  net: []' }
-    ];
-    const item = (p) => ({ ...p, cls: p.id === s.sel ? 'on' : '', state: s.inst[p.id] ? (s.off[p.id] ? 'выкл' : '') : '', pick: () => this.setState({ sel: p.id, manifest: false }) });
+      { id: 'summary', glyph: 'Σ', c: '#5E5CE6', author: 'tgplug.dev', ver: '2.3.0', icons: [MSG, NET, DB],
+        cmdKeys: [{ c: '/summary', k: '⌘⇧S' }, { c: { en: '/summary folder', ru: '/summary папка' }, k: '' }],
+        manifest: 'id: dev.tgplug.summary\nversion: 2.3.0\nruntime: js\npermissions:\n  messages.read: on_command\n  net: [user_endpoint]\n  storage: 5mb\ncommands: [/summary]',
+        en: { name: 'Summary', updated: '3 days ago',
+          about: 'Recaps unread messages in a chat or folder: what was decided, what you were asked, where you were mentioned. Works with a local model or your own API key.',
+          perms: [{ t: 'Messages in the current chat', d: 'Only when you run the command' }, { t: 'Network', d: 'Only the model endpoint you specify' }, { t: 'Storage', d: 'Up to 5 MB, cache of recent summaries' }],
+          cmds: ['Summary of the current chat', 'For the whole folder'] },
+        ru: { name: 'Сводка', updated: '3 дня назад',
+          about: 'Пересказывает непрочитанное в чате или папке: что решили, что спросили у вас, где упомянули. Работает с локальной моделью или с вашим ключом API.',
+          perms: [{ t: 'Сообщения текущего чата', d: 'Только когда вы вызываете команду' }, { t: 'Сеть', d: 'Только адрес модели, который вы укажете' }, { t: 'Хранилище', d: 'До 5 МБ, кэш последних сводок' }],
+          cmds: ['Сводка по текущему чату', 'По всей папке'] } },
+      { id: 'translate', glyph: 'A', c: '#0A84FF', author: 'linguo', ver: '5.1.2', icons: [MSG, NET],
+        cmdKeys: [{ c: '/tr', k: '⌘⇧T' }],
+        manifest: 'id: io.linguo.translate\nversion: 5.1.2\nruntime: js\npermissions:\n  messages.read: chats[]\n  composer.write: true\n  net: [api.deepl.com]',
+        en: { name: 'Translator', updated: 'yesterday',
+          about: 'Translates incoming messages in selected chats and your draft before sending. DeepL, Google or an offline model.',
+          perms: [{ t: 'Messages in selected chats', d: 'You choose the list of chats' }, { t: 'Network', d: 'api.deepl.com' }],
+          cmds: ['Translate draft'] },
+        ru: { name: 'Переводчик', updated: 'вчера',
+          about: 'Переводит входящие сообщения в выбранных чатах и ваш черновик перед отправкой. DeepL, Google или офлайн-модель.',
+          perms: [{ t: 'Сообщения выбранных чатов', d: 'Список чатов задаёте вы' }, { t: 'Сеть', d: 'api.deepl.com' }],
+          cmds: ['Перевести черновик'] } },
+      { id: 'quiet', glyph: 'Z', c: '#8E8E93', author: 'calm.tools', ver: '1.4.0', icons: [BELL], cmdKeys: [],
+        manifest: 'id: tools.calm.quiet\nversion: 1.4.0\nruntime: js\npermissions:\n  notifications.manage: true',
+        en: { name: 'Quiet hours', updated: '2 weeks ago',
+          about: 'Holds notifications on a schedule and delivers them in a single batch. Favorite contacts always get through.',
+          perms: [{ t: 'Notifications', d: 'Defer and group' }], cmds: [] },
+        ru: { name: 'Тихие часы', updated: '2 нед. назад',
+          about: 'Откладывает уведомления по расписанию и присылает их одной пачкой. Избранные контакты приходят всегда.',
+          perms: [{ t: 'Уведомления', d: 'Откладывать и группировать' }], cmds: [] } },
+      { id: 'code', glyph: '{', c: '#30A46C', author: 'shiki-tg', ver: '3.0.0', icons: [EYE], cmdKeys: [],
+        manifest: 'id: tg.shiki.code\nversion: 3.0.0\nruntime: js\nhooks: [message.render.code]',
+        en: { name: 'Code highlighting', updated: 'a month ago',
+          about: 'Highlights code blocks in theme colors, adds line numbers and a copy button.',
+          perms: [{ t: 'Message rendering', d: 'Code blocks only' }], cmds: [] },
+        ru: { name: 'Подсветка кода', updated: 'месяц назад',
+          about: 'Подсвечивает блоки кода в цветах темы, добавляет номера строк и копирование.',
+          perms: [{ t: 'Отображение сообщений', d: 'Только блоки кода' }], cmds: [] } },
+      { id: 'voice', glyph: '≈', c: '#E5484D', author: 'whisperkit', ver: '1.8.0', icons: [MIC], cmdKeys: [],
+        manifest: 'id: kit.whisper.voice\nversion: 1.8.0\nruntime: js\npermissions:\n  media.read: [voice, round]\n  storage: 1mb\nhooks: [message.render.voice, message.render.round]',
+        en: { name: 'Transcription', updated: '5 days ago',
+          about: 'Transcribes voice and video messages on device, with no network and no Premium.',
+          perms: [{ t: 'Voice and video messages', d: 'Processed on device' }], cmds: [] },
+        ru: { name: 'Расшифровка', updated: '5 дней назад',
+          about: 'Расшифровывает голосовые и кружки на устройстве, без сети и без Premium.',
+          perms: [{ t: 'Голосовые и кружки', d: 'Обработка на устройстве' }], cmds: [] } },
+      { id: 'links', glyph: '↗', c: '#B07D3A', author: 'unfurl', ver: '0.9.8', icons: [NET], cmdKeys: [],
+        manifest: 'id: dev.unfurl.cards\nversion: 0.9.8\nruntime: js\npermissions:\n  net: [github.com, figma.com, youtube.com]',
+        en: { name: 'Link cards', updated: '',
+          about: 'Shows a card instead of the regular preview: GitHub PR status, a Figma frame, a YouTube timestamp.',
+          perms: [{ t: 'Network', d: 'github.com, figma.com, youtube.com, without your cookies' }], cmds: [] },
+        ru: { name: 'Карточки ссылок', updated: '',
+          about: 'Показывает вместо обычного превью карточку: статус PR на GitHub, кадр из Figma, таймкод YouTube.',
+          perms: [{ t: 'Сеть', d: 'github.com, figma.com, youtube.com, без ваших cookie' }], cmds: [] } },
+      { id: 'stats', glyph: '▤', c: '#636366', author: 'graphy', ver: '0.6.1', icons: [MSG], cmdKeys: [{ c: '/stats', k: '' }],
+        manifest: 'id: io.graphy.stats\nversion: 0.6.1\nruntime: js\npermissions:\n  messages.read: chats[]\n  net: []',
+        en: { name: 'Chat statistics', updated: '',
+          about: 'Builds activity charts from local history. Sends nothing out.',
+          perms: [{ t: 'History of the selected chat', d: 'Local, no network' }], cmds: ['Open statistics'] },
+        ru: { name: 'Статистика чата', updated: '',
+          about: 'Строит графики активности по локальной истории. Ничего не отправляет наружу.',
+          perms: [{ t: 'История выбранного чата', d: 'Локально, без сети' }], cmds: ['Открыть статистику'] } }
+    ].map((p) => {
+      const tx = p[lang];
+      return { id: p.id, glyph: p.glyph, c: p.c, author: p.author, ver: p.ver, manifest: p.manifest,
+        name: tx.name, updated: tx.updated, about: tx.about,
+        perms: tx.perms.map((r, i) => ({ icon: p.icons[i], t: r.t, d: r.d })),
+        cmds: p.cmdKeys.map((k, i) => ({ c: typeof k.c === 'string' ? k.c : k.c[lang], d: tx.cmds[i], k: k.k })) };
+    });
+    const item = (p) => ({ ...p, cls: p.id === s.sel ? 'on' : '', state: s.inst[p.id] ? (s.off[p.id] ? L.off : '') : '', pick: () => this.setState({ sel: p.id, manifest: false }) });
     const groups = [
-      { title: 'Установленные', items: P.filter((p) => s.inst[p.id]).map(item) },
-      { title: 'Доступно', items: P.filter((p) => !s.inst[p.id]).map(item) }
+      { title: L.installedGroup, items: P.filter((p) => s.inst[p.id]).map(item) },
+      { title: L.available, items: P.filter((p) => !s.inst[p.id]).map(item) }
     ];
     const sel = P.find((p) => p.id === s.sel) || P[0];
     const installed = !!s.inst[sel.id];
     const enabled = installed && !s.off[sel.id];
-    const O = [{ k: 'menu', label: 'Кнопка в меню чата' }, { k: 'auto', label: 'Сводка при открытии папки' }, { k: 'mentions', label: 'Выделять упоминания' }];
+    const O = ['menu', 'auto', 'mentions'].map((k) => ({ k, label: L.opts[k] }));
     const opts = O.map((o) => ({ ...o, on: s.opts[o.k], bg: s.opts[o.k] ? 'var(--accent)' : 'var(--off)', jc: s.opts[o.k] ? 'flex-end' : 'flex-start', toggle: () => this.setState({ opts: { ...s.opts, [o.k]: !s.opts[o.k] } }) }));
     return {
-      theme: (this.props.appearance ?? 'светлая') === 'тёмная' ? 'dark' : '',
+      theme: (this.props.appearance ?? 'Light') === 'Dark' ? 'dark' : '',
+      L,
       groups, sel, opts, installed, notInstalled: !installed, enabled,
       hasOpts: sel.id === 'summary' && installed, hasCmds: sel.cmds.length > 0,
       enBg: enabled ? 'var(--accent)' : 'var(--off)', enJc: enabled ? 'flex-end' : 'flex-start',

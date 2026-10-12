@@ -1,20 +1,20 @@
 {
   "v": 3,
   "createdOnFiles": {"v": 1, "at": "2026-10-12T12:00:00Z"},
-  "title": "Telegram Desktop — кастомный клиент",
+  "title": "Mollygram — desktop Telegram client",
   "launch": {"view": "canvas"},
   "pages": [],
   "boards": {
-    "Main.dc.html": {"x": 0, "y": 0, "w": 1440, "h": 900, "title": "Главное окно", "expand": "fill", "is_interactive": true, "radius": 14},
-    "Media.dc.html": {"x": 1520, "y": 0, "w": 1440, "h": 900, "title": "Медиа и файлы чата", "expand": "fill", "is_interactive": true, "radius": 14},
-    "Plugins.dc.html": {"x": 0, "y": 1340, "w": 1440, "h": 900, "title": "Плагины", "expand": "fill", "is_interactive": true, "radius": 14},
-    "Palette.dc.html": {"x": 1520, "y": 1340, "w": 1440, "h": 900, "title": "Командная палитра ⌘K", "expand": "fill", "is_interactive": true, "radius": 14},
-    "Features.dc.html": {"x": 3040, "y": 1340, "w": 1440, "h": 900, "title": "Настройки: медиа, призрак, окна", "expand": "fill", "is_interactive": true, "radius": 14}
+    "Main.dc.html": {"x": 0, "y": 0, "w": 1440, "h": 900, "title": "Main window", "expand": "fill", "is_interactive": true, "radius": 14},
+    "Media.dc.html": {"x": 1520, "y": 0, "w": 1440, "h": 900, "title": "Chat media and files", "expand": "fill", "is_interactive": true, "radius": 14},
+    "Plugins.dc.html": {"x": 0, "y": 1340, "w": 1440, "h": 900, "title": "Plugins", "expand": "fill", "is_interactive": true, "radius": 14},
+    "Palette.dc.html": {"x": 1520, "y": 1340, "w": 1440, "h": 900, "title": "Command palette ⌘K", "expand": "fill", "is_interactive": true, "radius": 14},
+    "Features.dc.html": {"x": 3040, "y": 1340, "w": 1440, "h": 900, "title": "Settings: media, ghost mode, windows", "expand": "fill", "is_interactive": true, "radius": 14}
   },
   "order": ["Main.dc.html", "Media.dc.html", "Plugins.dc.html", "Palette.dc.html", "Features.dc.html"],
   "notes": {
-    "row1": {"x": 0, "y": -300, "text": "Окно и чат", "kind": "title1", "maxW": 2960},
-    "row2": {"x": 0, "y": 1040, "text": "Плагины, палитра, настройки", "kind": "title1", "maxW": 4480}
+    "row1": {"x": 0, "y": -300, "text": "Window and chat", "kind": "title1", "maxW": 2960},
+    "row2": {"x": 0, "y": 1040, "text": "Plugins, palette, settings", "kind": "title1", "maxW": 4480}
   },
   "designSystems": []
 }
