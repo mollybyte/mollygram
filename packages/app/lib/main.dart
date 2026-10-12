@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
+import 'package:mollygram/mollygram.dart';
+import 'package:mollygram_core/mollygram_core.dart';
 
-// An empty window. The UI and sign-in will arrive in the next stage.
 void main() {
-  runApp(const ColoredBox(color: Color(0xFFFFFFFF)));
+  runApp(const MollygramApp(config: TelegramApiConfig.fromEnvironment));
 }
