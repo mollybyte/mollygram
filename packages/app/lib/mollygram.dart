@@ -42,6 +42,11 @@ class _MollygramAppState extends State<MollygramApp> {
     return FutureBuilder<TelegramSession>(
       future: future,
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return _shell(
+            foreground: _StartupError(message: snapshot.error.toString()),
+          );
+        }
         final session = snapshot.data;
         if (session == null) return _shell();
         return StreamBuilder<AuthorizationStage>(
@@ -103,6 +108,22 @@ class _Overlay extends StatelessWidget {
       submitCode: (value) => unawaited(session.authorization.submitCode(value)),
       submitPassword: (value) =>
           unawaited(session.authorization.submitPassword(value)),
+    ),
+  );
+}
+
+class _StartupError extends StatelessWidget {
+  const _StartupError({required this.message});
+  final String message;
+
+  @override
+  Widget build(BuildContext context) => ColoredBox(
+    color: const Color(0x66000000),
+    child: Center(
+      child: Material(
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(padding: const EdgeInsets.all(24), child: Text(message)),
+      ),
     ),
   );
 }
