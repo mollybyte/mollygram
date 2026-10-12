@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'package:mollygram_tdlib/mollygram_tdlib.dart';
 import 'package:test/test.dart';
 
-/// [TdJson], созданный внутри фонового изолята: отдаёт заданные строки,
-/// потом блокирует `receive` на таймаут, как настоящий td_receive.
+/// A [TdJson] created inside the background isolate: returns the given
+/// strings, then blocks `receive` for the timeout like the real td_receive.
 final class _ScriptedTdJson implements TdJson {
   _ScriptedTdJson(this._script);
 
@@ -32,7 +32,7 @@ final class _ScriptedTdJson implements TdJson {
 }
 
 void main() {
-  test('изолят разбирает объекты и останавливается по close', () async {
+  test('isolate decodes objects and stops on close', () async {
     final script = [
       for (var i = 0; i < 200; i++)
         jsonEncode({
@@ -72,7 +72,7 @@ void main() {
     expect(last.object, isA<Ok>());
   });
 
-  test('ошибка при старте изолята не вешает spawn', () async {
+  test('an isolate startup error does not hang spawn', () async {
     await expectLater(
       IsolateTdEventSource.spawn(() => throw StateError('no libtdjson')),
       throwsA(isA<StateError>()),

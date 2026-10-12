@@ -1,11 +1,11 @@
-// Генерирует lib/src/generated/td_api.dart из schema/td_api.tl.
+// Generates lib/src/generated/td_api.dart from schema/td_api.tl.
 //
-//   dart run tool/generate.dart          из закреплённой копии схемы
-//   dart run tool/generate.dart --fetch  сначала скачать схему для коммита
-//                                        из tdlib.json
+//   dart run tool/generate.dart          from the pinned copy of the schema
+//   dart run tool/generate.dart --fetch  first download the schema for the
+//                                        commit in tdlib.json
 //
-// Версия TDLib меняется только в tdlib.json, затем --fetch и коммит
-// схемы вместе со сгенерированным кодом.
+// The TDLib version is changed only in tdlib.json, followed by --fetch and a
+// commit of the schema together with the generated code.
 import 'dart:convert';
 import 'dart:io';
 

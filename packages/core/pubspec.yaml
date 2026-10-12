@@ -1,5 +1,5 @@
 name: mollygram_core
-description: Модели и состояние Mollygram поверх TDLib, без Flutter.
+description: Mollygram models and state on top of TDLib, without Flutter.
 publish_to: none
 resolution: workspace
 

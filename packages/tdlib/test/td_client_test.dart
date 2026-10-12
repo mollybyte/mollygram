@@ -58,7 +58,7 @@ void main() {
 
   tearDown(() => td.close());
 
-  test('ответ сопоставляется с запросом по @extra', () async {
+  test('response is matched to its request by @extra', () async {
     final client = td.createClient();
     final results = await Future.wait([
       client.send(const TestCallString(x: 'a')),
@@ -70,7 +70,7 @@ void main() {
     expect(extras, hasLength(3));
   });
 
-  test('ошибка TDLib приходит как TdException', () async {
+  test('TDLib error arrives as TdException', () async {
     final client = td.createClient();
     await expectLater(
       client.send(const GetMe()),
@@ -82,7 +82,7 @@ void main() {
     );
   });
 
-  test('ответ неожиданного типа даёт TdDecodeException', () async {
+  test('response of an unexpected type gives TdDecodeException', () async {
     final client = td.createClient();
     await expectLater(
       client.send(TestCallBytes(x: Uint8List(0))),
@@ -90,7 +90,7 @@ void main() {
     );
   });
 
-  test('обновления идут в поток своего клиента', () async {
+  test('updates go to their own client stream', () async {
     final first = td.createClient();
     final second = td.createClient();
     final firstUpdates = <TdObject>[];
@@ -106,24 +106,27 @@ void main() {
     expect((secondUpdates.single as UpdateOption).name, 'y');
   });
 
-  test('битая строка от TDLib не роняет цикл приёма', () async {
-    final client = td.createClient();
-    final bad = <TdUndecodable>[];
-    td.undecodable.listen(bad.add);
-    json.pushRaw('{not json');
-    json.push(client.id, {'@type': 'updateSomethingFromTheFuture'});
-    final result = await client.send(const TestCallString(x: 'ok'));
-    expect(result.value, 'ok');
-    expect(bad, hasLength(2));
-  });
+  test(
+    'a malformed string from TDLib does not crash the receive loop',
+    () async {
+      final client = td.createClient();
+      final bad = <TdUndecodable>[];
+      td.undecodable.listen(bad.add);
+      json.pushRaw('{not json');
+      json.push(client.id, {'@type': 'updateSomethingFromTheFuture'});
+      final result = await client.send(const TestCallString(x: 'ok'));
+      expect(result.value, 'ok');
+      expect(bad, hasLength(2));
+    },
+  );
 
   test(
-    'close ждёт authorizationStateClosed и отменяет ожидающие запросы',
+    'close waits for authorizationStateClosed and cancels pending requests',
     () async {
       final client = td.createClient();
       final states = <TdObject>[];
       client.updates.listen(states.add);
-      // На этот запрос фейк ничего не ответит, ответ должен прийти от close.
+      // The fake never answers this request; the response must come from close.
       final hanging = Completer<void>();
       final silent = FakeTdJson((_, _) => []);
       final silentTd = Td.custom(silent, InlineTdEventSource(silent));
@@ -149,7 +152,7 @@ void main() {
     },
   );
 
-  test('execute работает синхронно', () {
+  test('execute works synchronously', () {
     final version = td.execute(const GetOption(name: 'version'));
     expect((version as OptionValueString).value, '1.8.68');
   });

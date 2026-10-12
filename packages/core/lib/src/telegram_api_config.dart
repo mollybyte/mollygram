@@ -1,13 +1,13 @@
-/// api_id и api_hash приложения Telegram.
+/// The Telegram application's api_id and api_hash.
 ///
-/// Значения не хранятся в репозитории: они приходят при сборке через
-/// `--dart-define-from-file=config/telegram.json` (локально) или из
-/// GitHub Secrets (в релизной сборке). Шаблон файла лежит в
+/// The values are not stored in the repository: they are supplied at build
+/// time via `--dart-define-from-file=config/telegram.json` (locally) or from
+/// GitHub Secrets (in release builds). A template for the file lives in
 /// `config/telegram.example.json`.
 final class TelegramApiConfig {
   const TelegramApiConfig({required this.apiId, required this.apiHash});
 
-  /// Значения, переданные при сборке.
+  /// The values passed in at build time.
   static const TelegramApiConfig fromEnvironment = TelegramApiConfig(
     apiId: int.fromEnvironment('TELEGRAM_API_ID'),
     apiHash: String.fromEnvironment('TELEGRAM_API_HASH'),
@@ -16,7 +16,7 @@ final class TelegramApiConfig {
   final int apiId;
   final String apiHash;
 
-  /// `false`, если сборка запущена без файла с ключами.
+  /// Whether the keys were provided; `false` if built without the keys file.
   bool get isConfigured => apiId > 0 && apiHash.length == 32;
 
   @override

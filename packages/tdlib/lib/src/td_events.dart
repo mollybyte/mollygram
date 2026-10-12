@@ -6,25 +6,27 @@ import 'generated/td_api.dart';
 import 'td_json.dart';
 import 'td_object.dart';
 
-/// Объект, полученный из `td_receive`.
+/// An object received from `td_receive`.
 sealed class TdEvent {
   const TdEvent(this.clientId, this.requestId);
 
-  /// `@client_id`; 0, если TDLib его не указал.
+  /// The `@client_id`, or 0 if TDLib did not specify one.
   final int clientId;
 
-  /// `@extra` запроса, на который это ответ; `null` для обновлений.
+  /// The `@extra` of the request this responds to, or `null` for updates.
   final int? requestId;
 }
 
-/// Ответ или обновление, разобранное в объект td_api.
+/// A response or update decoded into a td_api object.
 final class TdReceived extends TdEvent {
   const TdReceived(super.clientId, super.requestId, this.object);
 
   final TdObject object;
 }
 
-/// Строку от TDLib не удалось разобрать. Цикл приёма при этом не падает.
+/// A string from TDLib that could not be decoded.
+///
+/// The receive loop keeps running when this happens.
 final class TdUndecodable extends TdEvent {
   const TdUndecodable(super.clientId, super.requestId, this.raw, this.error);
 
@@ -32,8 +34,9 @@ final class TdUndecodable extends TdEvent {
   final String error;
 }
 
-/// Разбирает строку от `td_receive`. Не бросает исключений: всё, что не
-/// удалось разобрать, становится [TdUndecodable].
+/// Decodes a string from `td_receive`.
+///
+/// Never throws: anything that cannot be decoded becomes a [TdUndecodable].
 TdEvent decodeTdEvent(String raw) {
   var clientId = 0;
   int? requestId;
@@ -47,9 +50,11 @@ TdEvent decodeTdEvent(String raw) {
   }
 }
 
-/// Цикл `td_receive`: читает пачки до [batchSize] объектов, разбирает их
-/// и отдаёт в [emit]. Между итерациями уступает очередь событий, чтобы
-/// изолят мог получить команду остановки.
+/// Runs the `td_receive` loop.
+///
+/// Reads batches of up to [batchSize] objects, decodes them and passes them
+/// to [emit]. Yields to the event loop between iterations so the isolate can
+/// receive the stop command.
 Future<void> runTdReceiveLoop(
   TdJson td,
   void Function(List<TdEvent>) emit, {
@@ -75,16 +80,18 @@ Future<void> runTdReceiveLoop(
   }
 }
 
-/// Источник событий TDLib.
+/// A source of TDLib events.
 abstract interface class TdEventSource {
   Stream<List<TdEvent>> get events;
 
-  /// Останавливает приём. После завершения событий больше не будет.
+  /// Stops receiving. Once this completes, no more events arrive.
   Future<void> close();
 }
 
-/// Цикл приёма в отдельном изоляте: `td_receive` блокирует поток, а JSON
-/// и объекты td_api разбираются там же, вне UI-изолята.
+/// Runs the receive loop in a separate isolate.
+///
+/// `td_receive` blocks its thread, and JSON and td_api objects are decoded
+/// there as well, off the UI isolate.
 final class IsolateTdEventSource implements TdEventSource {
   IsolateTdEventSource._(
     this._isolate,
@@ -93,9 +100,11 @@ final class IsolateTdEventSource implements TdEventSource {
     this._done,
   );
 
-  /// Запускает изолят. [open] вызывается внутри него и должен быть
-  /// передаваемым между изолятами: функция верхнего уровня или замыкание
-  /// над простыми значениями, например путём к библиотеке.
+  /// Spawns the isolate.
+  ///
+  /// [open] is called inside it and must be sendable between isolates: a
+  /// top-level function or a closure over simple values, such as the library
+  /// path.
   static Future<IsolateTdEventSource> spawn(
     TdJson Function() open, {
     double timeout = 1.0,
@@ -159,7 +168,9 @@ final class IsolateTdEventSource implements TdEventSource {
     return _done.future;
   }
 
-  /// Убить изолят, не дожидаясь `td_receive`. Только на случай аварии.
+  /// Kills the isolate without waiting for `td_receive`.
+  ///
+  /// For emergencies only.
   void kill() => _isolate.kill(priority: Isolate.immediate);
 
   static Future<void> _main((SendPort, TdJson Function(), double) args) async {
@@ -170,8 +181,8 @@ final class IsolateTdEventSource implements TdEventSource {
       stopped = true;
       control.close();
     });
-    // Библиотека открывается до ответа, чтобы ошибка загрузки дошла до
-    // spawn, а не потерялась в потоке событий.
+    // The library is opened before replying so that a load error reaches
+    // spawn instead of getting lost in the event stream.
     final td = open();
     out.send(control.sendPort);
     await runTdReceiveLoop(
@@ -180,11 +191,13 @@ final class IsolateTdEventSource implements TdEventSource {
       isStopped: () => stopped,
       timeout: timeout,
     );
-    // Выход изолята пришлёт null через onExit.
+    // The isolate exit sends null via onExit.
   }
 }
 
-/// Цикл приёма в текущем изоляте без блокировки: для тестов и утилит.
+/// Runs the receive loop in the current isolate without blocking.
+///
+/// Intended for tests and tools.
 final class InlineTdEventSource implements TdEventSource {
   InlineTdEventSource(
     TdJson td, {

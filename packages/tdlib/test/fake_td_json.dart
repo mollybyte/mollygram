@@ -8,8 +8,8 @@ typedef FakeHandler = List<Map<String, Object?>> Function(
   Map<String, Object?> request,
 );
 
-/// [TdJson] в памяти: на каждый `send` отвечает тем, что вернёт [handler],
-/// с подставленными `@client_id` и `@extra`.
+/// An in-memory [TdJson] that answers each `send` with whatever [handler]
+/// returns, with `@client_id` and `@extra` filled in.
 final class FakeTdJson implements TdJson {
   FakeTdJson(this.handler, {this.executeHandler});
 
@@ -41,11 +41,11 @@ final class FakeTdJson implements TdJson {
     }
   }
 
-  /// Положить в очередь объект без `@extra`, как обновление.
+  /// Queues an object without `@extra`, as an update.
   void push(int clientId, Map<String, Object?> update) =>
       _queue.add(jsonEncode({...update, '@client_id': clientId}));
 
-  /// Положить в очередь произвольную строку.
+  /// Queues an arbitrary string.
   void pushRaw(String raw) => _queue.add(raw);
 
   @override
@@ -60,7 +60,8 @@ final class FakeTdJson implements TdJson {
   }
 }
 
-/// Ответ без `@extra`, то есть обновление, отправленное в ответ на запрос.
+/// Marks a response as having no `@extra`, i.e. an update sent in reply to a
+/// request.
 Map<String, Object?> asUpdate(Map<String, Object?> json) => {
   ...json,
   '@extra': false,

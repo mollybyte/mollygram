@@ -5,7 +5,7 @@ import 'package:mollygram_tdlib/mollygram_tdlib.dart';
 import 'package:test/test.dart';
 
 void main() {
-  test('int64 приходит строкой и уходит строкой, int53 числом', () {
+  test('int64 comes in and goes out as a string, int53 as a number', () {
     final update = tdFromJson(
       jsonDecode('''
         {"@type": "updateChatReadInbox", "chat_id": -1001234567890,
@@ -23,7 +23,7 @@ void main() {
     expect(photo.toJson()['chat_photo_id'], '9223372036854775807');
   });
 
-  test('вложенные объекты и списки разбираются по @type', () {
+  test('nested objects and lists are decoded by @type', () {
     final text = tdFromJson({
       '@type': 'formattedText',
       'text': 'hello',
@@ -44,7 +44,7 @@ void main() {
     );
   });
 
-  test('sealed-иерархия даёт исчерпывающий switch', () {
+  test('sealed hierarchy allows an exhaustive switch', () {
     String describe(AuthorizationState state) => switch (state) {
       AuthorizationStateReady() => 'ready',
       AuthorizationStateWaitPhoneNumber() => 'phone',
@@ -58,7 +58,7 @@ void main() {
     );
   });
 
-  test('bytes передаются в base64', () {
+  test('bytes are sent as base64', () {
     final credentials = EncryptedCredentials(
       data: Uint8List.fromList([1, 2, 3, 250]),
       hash: Uint8List(0),
@@ -71,7 +71,7 @@ void main() {
     expect(back.secret, [0]);
   });
 
-  test('null-поля опускаются, отсутствующие примитивы получают ноль', () {
+  test('null fields are omitted, missing primitives default to zero', () {
     final send = SendMessage(
       chatId: 1,
       inputMessageContent: InputMessageText(
@@ -93,7 +93,7 @@ void main() {
     expect(option.value, 0);
   });
 
-  test('неизвестный @type и неверный тип дают TdDecodeException', () {
+  test('unknown @type and wrong type throw TdDecodeException', () {
     expect(
       () => tdFromJson({'@type': 'definitelyNotATdType'}),
       throwsA(isA<TdDecodeException>()),
@@ -104,14 +104,14 @@ void main() {
     );
   });
 
-  test('конфликтующие с dart:core имена получают префикс Td', () {
+  test('names clashing with dart:core get the Td prefix', () {
     expect(
       tdFromJson({'@type': 'error', 'code': 400, 'message': 'BAD'}),
       isA<TdError>(),
     );
   });
 
-  test('версия схемы закреплена', () {
+  test('schema version is pinned', () {
     expect(tdlibVersion, matches(RegExp(r'^\d+\.\d+\.\d+$')));
     expect(tdlibCommit, hasLength(40));
   });

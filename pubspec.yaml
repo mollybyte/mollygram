@@ -4,8 +4,9 @@ publish_to: none
 environment:
   sdk: ^3.13.0
 
-# Монорепо на pub workspaces: один pubspec.lock и одно разрешение зависимостей
-# на все пакеты. Каталог prototype/ сюда не входит, у него свой pubspec.
+# A monorepo on pub workspaces: one pubspec.lock and one dependency resolution
+# for all packages. The prototype/ directory is not included; it has its own
+# pubspec.
 workspace:
   - packages/tdlib
   - packages/core

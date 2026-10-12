@@ -1,5 +1,5 @@
 name: mollygram_media
-description: Воспроизведение и запись медиа в Mollygram (видео, кружки, голосовые).
+description: Media playback and recording in Mollygram (video, video messages, voice messages).
 publish_to: none
 resolution: workspace
 

@@ -24,7 +24,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: 3.47.7  # как в prototype/.fvmrc
+          flutter-version: 3.47.7  # as in prototype/.fvmrc
           cache: true
       - run: flutter pub get
       - run: dart format --output=none --set-exit-if-changed lib test
@@ -39,7 +39,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: 3.47.7  # как в prototype/.fvmrc
+          flutter-version: 3.47.7  # as in prototype/.fvmrc
           cache: true
       - run: flutter pub get
       - run: flutter build macos --profile
@@ -49,8 +49,8 @@ jobs:
         with:
           name: mollygram-prototype-macos-profile
           path: prototype/mollygram_prototype.zip
-      # Виртуальная машина без 120 Гц и с виртуальным GPU: цифры только для
-      # проверки, что замер работает. Настоящие снимаются на Mac.
+      # A virtual machine without 120 Hz and with a virtual GPU: the numbers only
+      # check that the measurement works. Real ones are taken on a Mac.
       - name: Frame benchmark (CI VM)
         continue-on-error: true
         run: |
@@ -59,15 +59,15 @@ jobs:
             > bench.log 2>&1 || true
           sed -n '/MG_BENCH_REPORT_BEGIN/,/MG_BENCH_REPORT_END/p' bench.log | sed '1d;$d' > report.txt
           if [ -s report.txt ]; then
-            { echo '### Замер кадров на CI (виртуальная машина)'; echo '```'; cat report.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+            { echo '### Frame timing on CI (virtual machine)'; echo '```'; cat report.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
             cat report.txt
           else
-            echo "Отчёт не получен, последние строки лога:"
+            echo "No report produced, last lines of the log:"
             tail -40 bench.log
             sleep 5
             crash=$(ls -t ~/Library/Logs/DiagnosticReports/mollygram_prototype* 2>/dev/null | head -1)
             if [ -n "$crash" ]; then
-              echo "Отчёт о падении: $crash"
+              echo "Crash report: $crash"
               head -c 20000 "$crash"
             fi
             exit 1

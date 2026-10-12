@@ -11,8 +11,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # Пакеты монорепо, которые проверяет этот workflow. plugin_host
-  # проверяется своим job'ом.
+  # Monorepo packages checked by this workflow. plugin_host
+  # is checked by its own job.
   PACKAGES: tdlib core ui_kit media app
 
 jobs:
@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # Версия Flutter одна на проект и берётся из .fvmrc.
+      # The project uses a single Flutter version, taken from .fvmrc.
       - name: Read Flutter version
         shell: bash
         run: echo "FLUTTER_VERSION=$(jq -r .flutter .fvmrc)" >> "$GITHUB_ENV"
@@ -76,7 +76,7 @@ jobs:
         working-directory: packages/app
     steps:
       - uses: actions/checkout@v4
-      # Версия Flutter одна на проект и берётся из .fvmrc.
+      # The project uses a single Flutter version, taken from .fvmrc.
       - name: Read Flutter version
         shell: bash
         run: echo "FLUTTER_VERSION=$(jq -r .flutter .fvmrc)" >> "$GITHUB_ENV"
@@ -91,5 +91,5 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ninja-build libgtk-3-dev
       - run: flutter pub get
-      # В CI ключей нет: сборка проверяет только, что приложение собирается.
+      # CI has no keys: the build only checks that the app compiles.
       - run: flutter build ${{ matrix.target }} --release --dart-define-from-file=../../config/telegram.example.json

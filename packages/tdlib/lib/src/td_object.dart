@@ -1,28 +1,30 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-/// Любой объект td_api: тип, обновление или функция.
+/// Any td_api object: a type, an update or a function.
 abstract base class TdObject {
   const TdObject();
 
-  /// Имя конструктора в схеме, значение поля `@type` в JSON.
+  /// The constructor name in the schema; the value of the `@type` JSON field.
   String get tdType;
 
-  /// JSON в формате td_json, с полем `@type`.
+  /// JSON in td_json format, with the `@type` field.
   Map<String, Object?> toJson();
 
   @override
   String toString() => '$tdType${toJson()}';
 }
 
-/// Функция td_api, результат которой имеет тип [R].
+/// A td_api function whose result has type [R].
 abstract base class TdFunction<R extends TdObject> extends TdObject {
   const TdFunction();
 }
 
-/// Ответ TDLib не удалось разобрать: неизвестный `@type`, нет обязательного
-/// поля или поле другого типа. Обычно значит, что схема и libtdjson разных
-/// версий.
+/// Thrown when a TDLib response cannot be decoded.
+///
+/// Causes include an unknown `@type`, a missing required field, or a field of
+/// the wrong type. Usually this means the schema and libtdjson have different
+/// versions.
 final class TdDecodeException implements Exception {
   const TdDecodeException(this.message);
 
@@ -32,8 +34,8 @@ final class TdDecodeException implements Exception {
   String toString() => 'TdDecodeException: $message';
 }
 
-// Помощники для сгенерированного кода. TDLib пропускает поля со значением
-// null, а int64 передаёт строкой, поэтому чтение терпит и то и другое.
+// Helpers for the generated code. TDLib omits fields whose value is null and
+// sends int64 as a string, so the readers tolerate both.
 
 int tdInt(Object? v) => v == null ? 0 : (v as num).toInt();
 

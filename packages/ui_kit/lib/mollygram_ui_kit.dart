@@ -1,2 +1,2 @@
-/// Общие виджеты Mollygram. Пока пустой каркас.
+/// Shared Mollygram widgets. An empty skeleton for now.
 library;

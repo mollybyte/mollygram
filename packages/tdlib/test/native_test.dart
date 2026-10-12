@@ -1,4 +1,4 @@
-// Проверка на настоящей libtdjson. Запускается, только если задан путь:
+// A check against the real libtdjson. Runs only if the path is set:
 //   TDJSON_PATH=/path/to/libtdjson.dylib dart test test/native_test.dart
 @TestOn('vm')
 library;
@@ -12,7 +12,7 @@ void main() {
   final path = Platform.environment['TDJSON_PATH'];
 
   test(
-    'libtdjson совпадает со схемой и отвечает клиенту',
+    'libtdjson matches the schema and responds to a client',
     () async {
       final td = await Td.start(libraryPath: path);
       td.execute(const SetLogVerbosityLevel(newVerbosityLevel: 1));
@@ -28,7 +28,7 @@ void main() {
       expect(state, isA<AuthorizationStateWaitTdlibParameters>());
 
       await td.close();
-      // Стартовые updateOption и прочие обновления разбираются без потерь.
+      // Startup updateOption and other updates decode without loss.
       expect(updates, isNotEmpty);
       expect(undecodable, isEmpty);
       expect(
@@ -36,7 +36,7 @@ void main() {
         isA<AuthorizationStateClosed>(),
       );
     },
-    skip: path == null ? 'TDJSON_PATH не задан' : false,
+    skip: path == null ? 'TDJSON_PATH is not set' : false,
     timeout: const Timeout(Duration(seconds: 30)),
   );
 }

@@ -7,7 +7,7 @@ import 'td_json.dart';
 import 'td_json_ffi.dart';
 import 'td_object.dart';
 
-/// Ошибка, которую вернул TDLib (объект `error`).
+/// An error returned by TDLib (an `error` object).
 final class TdException implements Exception {
   const TdException(this.code, this.message);
 
@@ -18,7 +18,8 @@ final class TdException implements Exception {
   String toString() => 'TdException($code): $message';
 }
 
-/// libtdjson другой версии, чем схема, из которой сгенерированы типы.
+/// Thrown when libtdjson has a different version than the schema the types
+/// were generated from.
 final class TdVersionMismatch implements Exception {
   const TdVersionMismatch(this.expected, this.actual);
 
@@ -29,7 +30,7 @@ final class TdVersionMismatch implements Exception {
   String toString() => 'TdVersionMismatch: libtdjson $actual, schema $expected';
 }
 
-/// Клиент закрыт, ответа на запрос уже не будет.
+/// Thrown when the client is closed and a request will never get a response.
 final class TdClientClosed implements Exception {
   const TdClientClosed();
 
@@ -37,18 +38,18 @@ final class TdClientClosed implements Exception {
   String toString() => 'TdClientClosed';
 }
 
-/// Экземпляр TDLib в процессе: одна libtdjson, один цикл `td_receive`
-/// и сколько угодно клиентов (по одному на аккаунт).
+/// An in-process TDLib instance: one libtdjson, one `td_receive` loop and any
+/// number of clients (one per account).
 final class Td {
   Td._(this._json, this._source) {
     _subscription = _source.events.listen(_dispatch, onError: _errors.add);
   }
 
-  /// Запускает TDLib с циклом приёма в фоновом изоляте.
+  /// Starts TDLib with the receive loop in a background isolate.
   ///
-  /// [libraryPath] задаёт путь к libtdjson; без него библиотека ищется по
-  /// стандартному имени. Если [checkVersion], версия библиотеки сверяется
-  /// с [tdlibVersion].
+  /// [libraryPath] sets the path to libtdjson; without it the library is
+  /// looked up by its standard name. If [checkVersion] is true, the library
+  /// version is checked against [tdlibVersion].
   static Future<Td> start({
     String? libraryPath,
     bool checkVersion = true,
@@ -61,8 +62,9 @@ final class Td {
     return Td._(json, source);
   }
 
-  /// TDLib с заданными [json] и [source]. Для тестов и нестандартных
-  /// загрузчиков.
+  /// Creates a TDLib instance with the given [json] and [source].
+  ///
+  /// Intended for tests and custom loaders.
   factory Td.custom(TdJson json, TdEventSource source) => Td._(json, source);
 
   final TdJson _json;
@@ -74,13 +76,13 @@ final class Td {
   var _nextRequestId = 0;
   var _closed = false;
 
-  /// Ответы и обновления, которые не удалось разобрать.
+  /// Responses and updates that could not be decoded.
   Stream<TdUndecodable> get undecodable => _undecodable.stream;
 
-  /// Ошибки цикла приёма.
+  /// Errors from the receive loop.
   Stream<Object> get errors => _errors.stream;
 
-  /// Создаёт клиента. TDLib запускает его при первом запросе.
+  /// Creates a client. TDLib starts it on the first request.
   TdClient createClient() {
     if (_closed) throw StateError('Td is closed');
     final client = TdClient._(this, _json.createClientId());
@@ -88,13 +90,14 @@ final class Td {
     return client;
   }
 
-  /// Синхронный запрос, не требующий клиента (`td_execute`). Работает
-  /// только для функций, которые в документации TDLib помечены как
-  /// «can be called synchronously».
+  /// Executes a synchronous request that needs no client (`td_execute`).
+  ///
+  /// Works only for functions that the TDLib documentation marks as
+  /// "can be called synchronously".
   R execute<R extends TdObject>(TdFunction<R> function) =>
       _execute(_json, function);
 
-  /// Закрывает всех клиентов и останавливает цикл приёма.
+  /// Closes all clients and stops the receive loop.
   Future<void> close() async {
     if (_closed) return;
     await Future.wait([for (final c in _clients.values.toList()) c.close()]);
@@ -134,13 +137,13 @@ final class Td {
   }
 }
 
-/// Один клиент TDLib, обычно один аккаунт.
+/// A single TDLib client, usually one account.
 final class TdClient {
   TdClient._(this._td, this.id);
 
   final Td _td;
 
-  /// `@client_id` в TDLib.
+  /// The TDLib `@client_id`.
   final int id;
 
   final _updates = StreamController<TdObject>.broadcast(sync: true);
@@ -148,11 +151,13 @@ final class TdClient {
   Completer<void>? _closing;
   var _closed = false;
 
-  /// Обновления и прочие объекты без `@extra`.
+  /// Updates and other objects without `@extra`.
   Stream<TdObject> get updates => _updates.stream;
 
-  /// Отправляет запрос и ждёт ответа. Ошибка TDLib приходит как
-  /// [TdException], закрытие клиента до ответа как [TdClientClosed].
+  /// Sends a request and waits for the response.
+  ///
+  /// A TDLib error arrives as a [TdException]; closing the client before the
+  /// response arrives completes with a [TdClientClosed].
   Future<R> send<R extends TdObject>(TdFunction<R> function) {
     if (_closed) return Future.error(const TdClientClosed());
     final requestId = _td._requestId();
@@ -163,8 +168,10 @@ final class TdClient {
     return pending.completer.future;
   }
 
-  /// Закрывает клиента: отправляет `close` и ждёт
-  /// `authorizationStateClosed`. Повторные вызовы ждут того же.
+  /// Closes the client by sending `close` and waiting for
+  /// `authorizationStateClosed`.
+  ///
+  /// Repeated calls wait for the same result.
   Future<void> close() async {
     if (_closing != null) return _closing!.future;
     final closing = _closing = Completer<void>();
@@ -175,10 +182,10 @@ final class TdClient {
     try {
       await send(const Close());
     } on TdException {
-      // Клиент мог и не стартовать, тогда закрывать нечего.
+      // The client may never have started; then there is nothing to close.
       _finish();
     } on TdClientClosed {
-      // authorizationStateClosed пришёл раньше ответа на close.
+      // authorizationStateClosed arrived before the response to close.
     }
     return closing.future;
   }

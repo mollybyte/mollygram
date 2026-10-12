@@ -26,17 +26,17 @@ build/
 # Linux
 **/linux/flutter/ephemeral/
 
-# Секреты: api_id / api_hash Telegram и локальные сессии TDLib
+# Secrets: Telegram api_id / api_hash and local TDLib sessions
 .env
 *.env
 secrets.json
 tdlib-db/
 tdlib-files/
 
-# Ключи Telegram для --dart-define-from-file (шаблон: config/telegram.example.json)
+# Telegram keys for --dart-define-from-file (template: config/telegram.example.json)
 config/telegram.json
 
-# libtdjson, собранная локально или скачанная из CI
+# libtdjson, built locally or downloaded from CI
 packages/tdlib/native/
 *.dylib
 
