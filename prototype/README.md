@@ -10,12 +10,14 @@ TDLib здесь нет, все данные фейковые. Код не пе�
 
 ## Запуск на Mac
 
-Нужны Xcode и Flutter stable (проверено на 3.47).
+Нужны Xcode и [fvm](https://fvm.app). Версия Flutter закреплена в `.fvmrc` (3.47.7).
 
 ```sh
+brew tap leoafarias/fvm && brew install fvm   # один раз
 cd prototype
-flutter pub get
-flutter run --profile -d macos
+fvm install          # ставит версию из .fvmrc
+fvm flutter pub get
+fvm flutter run --profile -d macos
 ```
 
 Замерять только в `--profile` или `--release`: в debug цифры в разы хуже и ничего не значат. Окно лучше держать на встроенном экране MacBook Pro с ProMotion (120 Гц), без внешнего монитора.
@@ -33,6 +35,7 @@ flutter run --profile -d macos
 То же одной командой, отчёт печатается в терминал и приложение закрывается:
 
 ```sh
+fvm flutter build macos --profile
 MG_AUTOBENCH=1 build/macos/Build/Products/Profile/mollygram_prototype.app/Contents/MacOS/mollygram_prototype
 ```
 
