@@ -37,12 +37,14 @@ class PrototypeApp extends StatefulWidget {
     required this.circle,
     this.chats,
     this.messages,
+    this.foreground,
   });
 
   final AppState app;
   final CircleController circle;
   final List<FakeChat>? chats;
   final List<FakeMessage>? messages;
+  final Widget? foreground;
 
   @override
   State<PrototypeApp> createState() => _PrototypeAppState();
@@ -141,6 +143,7 @@ class _PrototypeAppState extends State<PrototypeApp> {
                           app: app,
                         )
                       : null,
+                  foreground: widget.foreground,
                 ),
               ),
             ),
@@ -155,11 +158,17 @@ class _PrototypeAppState extends State<PrototypeApp> {
 /// BackdropGroup covers the whole window so all glass panels share a single
 /// backdrop read.
 class _Window extends StatelessWidget {
-  const _Window({required this.sidebar, required this.chat, this.overlay});
+  const _Window({
+    required this.sidebar,
+    required this.chat,
+    this.overlay,
+    this.foreground,
+  });
 
   final Widget sidebar;
   final Widget chat;
   final Widget? overlay;
+  final Widget? foreground;
 
   @override
   Widget build(BuildContext context) {
@@ -170,6 +179,7 @@ class _Window extends StatelessWidget {
           Positioned(top: 0, bottom: 0, left: 320, right: 0, child: chat),
           Positioned(top: 8, left: 8, bottom: 8, width: 304, child: sidebar),
           if (overlay != null) Positioned(top: 64, right: 14, child: overlay!),
+          if (foreground != null) Positioned.fill(child: foreground!),
         ],
       ),
     );
