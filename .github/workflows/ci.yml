@@ -10,43 +10,52 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
-jobs:
-  detect:
-    name: Detect Flutter project
-    runs-on: ubuntu-latest
-    outputs:
-      flutter: ${{ steps.check.outputs.flutter }}
-    steps:
-      - uses: actions/checkout@v4
-      - id: check
-        run: |
-          if [ -f pubspec.yaml ]; then
-            echo "flutter=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "flutter=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::pubspec.yaml not found yet, Flutter jobs are skipped."
-          fi
+env:
+  FLUTTER_VERSION: 3.47.7
+  # Пакеты монорепо, которые проверяет этот workflow. plugin_host
+  # проверяется своим job'ом.
+  PACKAGES: tdlib core ui_kit media app
 
+jobs:
   analyze:
     name: Analyze and test
-    needs: detect
-    if: needs.detect.outputs.flutter == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
       - run: flutter pub get
-      - run: dart format --output=none --set-exit-if-changed .
-      - run: flutter analyze
-      - run: flutter test
+      - name: Format
+        run: |
+          for p in $PACKAGES; do dirs="$dirs packages/$p"; done
+          dart format --output=none --set-exit-if-changed $dirs
+      - name: Analyze
+        run: |
+          for p in $PACKAGES; do dirs="$dirs packages/$p"; done
+          flutter analyze $dirs
+      - name: Generated td_api is up to date
+        run: |
+          dart run packages/tdlib/tool/generate.dart
+          git diff --exit-code packages/tdlib/lib/src/generated
+      - name: Test
+        run: |
+          for p in $PACKAGES; do
+            [ -d "packages/$p/test" ] || continue
+            echo "::group::$p"
+            if grep -q 'sdk: flutter' "packages/$p/pubspec.yaml"; then
+              (cd "packages/$p" && flutter test)
+            else
+              (cd "packages/$p" && dart test)
+            fi
+            echo "::endgroup::"
+          done
 
   build:
     name: Build ${{ matrix.target }}
-    needs: [detect, analyze]
-    if: needs.detect.outputs.flutter == 'true'
+    needs: analyze
     strategy:
       fail-fast: false
       matrix:
@@ -58,10 +67,14 @@ jobs:
           - os: ubuntu-latest
             target: linux
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: packages/app
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
       - if: matrix.target == 'linux'
@@ -69,4 +82,5 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ninja-build libgtk-3-dev
       - run: flutter pub get
-      - run: flutter build ${{ matrix.target }} --release
+      # В CI ключей нет: сборка проверяет только, что приложение собирается.
+      - run: flutter build ${{ matrix.target }} --release --dart-define-from-file=../../config/telegram.example.json

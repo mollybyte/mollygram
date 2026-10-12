@@ -1,0 +1,180 @@
+name: TDLib
+
+# Собирает libtdjson для macOS (arm64 + x86_64 в одном universal dylib) из
+# коммита, закреплённого в packages/tdlib/tdlib.json. OpenSSL собирается
+# статически, чтобы библиотека не зависела от Homebrew на машине
+# пользователя. На main результат публикуется в релиз tdlib-<версия>.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - packages/tdlib/tdlib.json
+      - .github/workflows/tdlib.yml
+  pull_request:
+    paths:
+      - packages/tdlib/tdlib.json
+      - .github/workflows/tdlib.yml
+
+concurrency:
+  group: tdlib-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  OPENSSL_VERSION: 3.5.9
+  OPENSSL_SHA256: 603f5602e2eef00d77fbd429d34dcd5822bb301757a1bc9cdb24c670f1eb859a
+  MACOSX_DEPLOYMENT_TARGET: '11.0'
+
+jobs:
+  pin:
+    name: Read pinned version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.pin.outputs.version }}
+      commit: ${{ steps.pin.outputs.commit }}
+      short: ${{ steps.pin.outputs.short }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: pin
+        run: |
+          echo "version=$(jq -r .version packages/tdlib/tdlib.json)" >> "$GITHUB_OUTPUT"
+          commit=$(jq -r .commit packages/tdlib/tdlib.json)
+          echo "commit=$commit" >> "$GITHUB_OUTPUT"
+          echo "short=${commit:0:7}" >> "$GITHUB_OUTPUT"
+
+  macos:
+    name: macOS ${{ matrix.arch }}
+    needs: pin
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            os: macos-15
+            openssl_target: darwin64-arm64-cc
+          - arch: x86_64
+            os: macos-15-intel
+            openssl_target: darwin64-x86_64-cc
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Cache build
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: out/libtdjson.dylib
+          key: tdjson-macos-${{ matrix.arch }}-${{ needs.pin.outputs.commit }}-openssl-${{ env.OPENSSL_VERSION }}-${{ env.MACOSX_DEPLOYMENT_TARGET }}
+
+      - name: Install tools
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: brew install gperf
+
+      - name: Build OpenSSL
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          curl -fsSL -o openssl.tar.gz \
+            "https://github.com/openssl/openssl/releases/download/openssl-$OPENSSL_VERSION/openssl-$OPENSSL_VERSION.tar.gz"
+          echo "$OPENSSL_SHA256  openssl.tar.gz" | shasum -a 256 -c -
+          tar -xzf openssl.tar.gz
+          cd "openssl-$OPENSSL_VERSION"
+          ./Configure ${{ matrix.openssl_target }} no-shared no-tests no-docs \
+            -mmacosx-version-min=$MACOSX_DEPLOYMENT_TARGET \
+            --prefix="$GITHUB_WORKSPACE/openssl" --libdir=lib
+          make -j"$(sysctl -n hw.ncpu)"
+          make install_sw
+
+      - name: Checkout TDLib
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          git init td
+          cd td
+          git remote add origin https://github.com/tdlib/td.git
+          git fetch --depth 1 origin ${{ needs.pin.outputs.commit }}
+          git checkout FETCH_HEAD
+          grep -q "project(TDLib VERSION ${{ needs.pin.outputs.version }} " CMakeLists.txt
+
+      - name: Build libtdjson
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          cmake -S td -B td/build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=$MACOSX_DEPLOYMENT_TARGET \
+            -DOPENSSL_ROOT_DIR="$GITHUB_WORKSPACE/openssl" \
+            -DOPENSSL_USE_STATIC_LIBS=ON
+          cmake --build td/build --target tdjson -j"$(sysctl -n hw.ncpu)"
+          mkdir -p out
+          cp -L td/build/libtdjson.dylib out/libtdjson.dylib
+          install_name_tool -id @rpath/libtdjson.dylib out/libtdjson.dylib
+          strip -x out/libtdjson.dylib
+
+      - name: Check linkage
+        run: |
+          otool -L out/libtdjson.dylib
+          if otool -L out/libtdjson.dylib | tail -n +2 | grep -v -E '^[[:space:]]+(/usr/lib/|/System/|@rpath/libtdjson)'; then
+            echo "::error::libtdjson links to libraries outside the system"
+            exit 1
+          fi
+          lipo -archs out/libtdjson.dylib | grep -qx ${{ matrix.arch }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: libtdjson-macos-${{ matrix.arch }}
+          path: out/libtdjson.dylib
+          if-no-files-found: error
+
+  universal:
+    name: macOS universal
+    needs: [pin, macos]
+    runs-on: macos-15
+    permissions:
+      contents: write
+    env:
+      TAG: tdlib-${{ needs.pin.outputs.version }}-${{ needs.pin.outputs.short }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: libtdjson-macos-*
+      - name: Create universal dylib
+        run: |
+          mkdir -p dist
+          lipo -create \
+            libtdjson-macos-arm64/libtdjson.dylib \
+            libtdjson-macos-x86_64/libtdjson.dylib \
+            -output dist/libtdjson.dylib
+          lipo -archs dist/libtdjson.dylib
+      - name: Smoke test
+        run: |
+          version=$(python3 - <<'PY'
+          import ctypes, json
+          lib = ctypes.CDLL("dist/libtdjson.dylib")
+          lib.td_execute.restype = ctypes.c_char_p
+          lib.td_execute.argtypes = [ctypes.c_char_p]
+          request = json.dumps({"@type": "getOption", "name": "version"}).encode()
+          print(json.loads(lib.td_execute(request))["value"])
+          PY
+          )
+          echo "libtdjson reports $version"
+          test "$version" = "${{ needs.pin.outputs.version }}"
+      - name: Package
+        run: |
+          cd dist
+          zip -q libtdjson-macos-universal.zip libtdjson.dylib
+          shasum -a 256 libtdjson-macos-universal.zip > libtdjson-macos-universal.zip.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: libtdjson-macos-universal
+          path: dist/libtdjson-macos-universal.zip*
+          if-no-files-found: error
+      - name: Publish
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG }}
+          target_commitish: ${{ github.sha }}
+          name: TDLib ${{ needs.pin.outputs.version }}
+          body: |
+            libtdjson ${{ needs.pin.outputs.version }} for macOS (arm64 + x86_64), built from tdlib/td@${{ needs.pin.outputs.commit }} with OpenSSL ${{ env.OPENSSL_VERSION }} linked statically. Minimum macOS ${{ env.MACOSX_DEPLOYMENT_TARGET }}.
+          files: |
+            dist/libtdjson-macos-universal.zip
+            dist/libtdjson-macos-universal.zip.sha256
+          make_latest: false

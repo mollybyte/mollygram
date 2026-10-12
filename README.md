@@ -27,7 +27,7 @@
 Раскладка как у официального Telegram Desktop, чтобы не переучиваться. Сверху liquid glass и то, чего не хватает в официальном клиенте.
 
 > [!NOTE]
-> Пока только макеты, кода нет. CI уже настроен и включится, как только в репозитории появится Flutter-проект.
+> Ранняя стадия: есть макеты и основа проекта с привязкой к TDLib, интерфейса и входа в аккаунт пока нет.
 
 ## Что планируется
 
@@ -54,7 +54,30 @@
 | Workflow | Когда запускается | Что делает |
 |---|---|---|
 | [`ci.yml`](.github/workflows/ci.yml) | push в `main`, pull request | `dart format`, `flutter analyze`, `flutter test`, затем release-сборка под macOS, Windows и Linux |
-| [`release.yml`](.github/workflows/release.yml) | тег `v*` | Собирает три платформы и публикует архивы в GitHub Releases |
+| [`release.yml`](.github/workflows/release.yml) | тег `v*` | Собирает три платформы с ключами из секретов и публикует архивы в GitHub Releases |
+| [`tdlib.yml`](.github/workflows/tdlib.yml) | смена версии TDLib, вручную | Собирает universal `libtdjson.dylib` для macOS и публикует в релиз `tdlib-<версия>` |
+
+## Разработка
+
+| Пакет | Что внутри |
+|---|---|
+| [`packages/tdlib`](packages/tdlib) | Привязка `dart:ffi` к td_json, цикл `td_receive` в фоновом изоляте, типы td_api из схемы |
+| `packages/core` | Модели и состояние поверх TDLib, без Flutter |
+| `packages/ui_kit` | Общие виджеты, стекло, тема |
+| `packages/media` | Видео, кружки, голосовые |
+| `packages/plugin_host` | Песочница плагинов |
+| `packages/app` | Само приложение |
+
+Монорепо на [pub workspaces](https://dart.dev/tools/pub/workspaces): `flutter pub get` в корне ставит зависимости всех пакетов.
+
+Ключи Telegram в репозиторий не попадают. Получите `api_id` и `api_hash` на [my.telegram.org](https://my.telegram.org), скопируйте [`config/telegram.example.json`](config/telegram.example.json) в `config/telegram.json` (он в `.gitignore`) и запускайте так:
+
+```sh
+cd packages/app
+flutter run -d macos --dart-define-from-file=../../config/telegram.json
+```
+
+Для релизов те же значения лежат в секретах репозитория `TELEGRAM_API_ID` и `TELEGRAM_API_HASH`.
 
 ## Бренд
 
