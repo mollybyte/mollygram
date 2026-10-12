@@ -1,0 +1,68 @@
+name: Prototype
+
+on:
+  pull_request:
+    paths: ['prototype/**', '.github/workflows/prototype.yml']
+  push:
+    branches: [main]
+    paths: ['prototype/**', '.github/workflows/prototype.yml']
+  workflow_dispatch:
+
+concurrency:
+  group: prototype-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: prototype
+
+jobs:
+  check:
+    name: Analyze and test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: dart format --output=none --set-exit-if-changed lib test
+      - run: flutter analyze
+      - run: flutter test
+
+  macos:
+    name: Build macOS and run frame benchmark
+    needs: check
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter build macos --profile
+      - name: Pack app
+        run: ditto -c -k --keepParent build/macos/Build/Products/Profile/mollygram_prototype.app mollygram_prototype.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mollygram-prototype-macos-profile
+          path: prototype/mollygram_prototype.zip
+      # Виртуальная машина без 120 Гц и с виртуальным GPU: цифры только для
+      # проверки, что замер работает. Настоящие снимаются на Mac.
+      - name: Frame benchmark (CI VM)
+        continue-on-error: true
+        run: |
+          MG_AUTOBENCH=1 perl -e 'alarm 240; exec @ARGV' \
+            build/macos/Build/Products/Profile/mollygram_prototype.app/Contents/MacOS/mollygram_prototype \
+            > bench.log 2>&1 || true
+          sed -n '/MG_BENCH_REPORT_BEGIN/,/MG_BENCH_REPORT_END/p' bench.log | sed '1d;$d' > report.txt
+          if [ -s report.txt ]; then
+            { echo '### Замер кадров на CI (виртуальная машина)'; echo '```'; cat report.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+            cat report.txt
+          else
+            echo "Отчёт не получен, последние строки лога:"
+            tail -40 bench.log
+            exit 1
+          fi
