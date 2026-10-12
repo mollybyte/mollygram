@@ -1,24 +1,30 @@
 name: Plugin host
 
+# Pull requests test on Linux only. The native QuickJS build on macOS and
+# Windows runs on main, on manual runs, and on pull requests labelled
+# `full-ci`.
+
 on:
   push:
     branches: [main]
-    paths: [packages/plugin_host/**, packages/plugin_sdk/**, pubspec.yaml, pubspec.lock, .fvmrc, .github/workflows/plugin_host.yml]
+    paths: [packages/plugin_host/**, packages/plugin_sdk/**, pubspec.yaml, pubspec.lock, .fvmrc, .gitmodules, .github/workflows/plugin_host.yml]
   pull_request:
-    paths: [packages/plugin_host/**, packages/plugin_sdk/**, pubspec.yaml, pubspec.lock, .fvmrc, .github/workflows/plugin_host.yml]
+    types: [opened, synchronize, reopened, labeled]
+    paths: [packages/plugin_host/**, packages/plugin_sdk/**, pubspec.yaml, pubspec.lock, .fvmrc, .gitmodules, .github/workflows/plugin_host.yml]
   workflow_dispatch:
 
 concurrency:
-  group: plugin-host-${{ github.ref }}
-  cancel-in-progress: true
+  group: plugin-host-${{ github.event.pull_request.number || github.ref }}${{ github.event.action == 'labeled' && github.event.label.name != 'full-ci' && format('-{0}', github.run_id) || '' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   test:
     name: Test on ${{ matrix.os }}
+    if: github.event.action != 'labeled' || github.event.label.name == 'full-ci'
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: ${{ fromJSON((github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-ci')) && '["ubuntu-latest", "macos-latest", "windows-latest"]' || '["ubuntu-latest"]') }}
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -48,6 +54,7 @@ jobs:
 
   sdk:
     name: Typecheck SDK and example
+    if: github.event.action != 'labeled' || github.event.label.name == 'full-ci'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -1,7 +1,12 @@
 name: Prototype
 
+# Pull requests get analyze and tests only. The macOS build and frame
+# benchmark run on main, on manual runs, and on pull requests labelled
+# `full-ci`.
+
 on:
   pull_request:
+    types: [opened, synchronize, reopened, labeled]
     paths: ['prototype/**', '.github/workflows/prototype.yml']
   push:
     branches: [main]
@@ -9,8 +14,8 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: prototype-${{ github.ref }}
-  cancel-in-progress: true
+  group: prototype-${{ github.event.pull_request.number || github.ref }}${{ github.event.action == 'labeled' && github.event.label.name != 'full-ci' && format('-{0}', github.run_id) || '' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 defaults:
   run:
@@ -19,6 +24,7 @@ defaults:
 jobs:
   check:
     name: Analyze and test
+    if: github.event.action != 'labeled' || github.event.label.name == 'full-ci'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -34,6 +40,7 @@ jobs:
   macos:
     name: Build macOS and run frame benchmark
     needs: check
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-ci')
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
