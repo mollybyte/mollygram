@@ -6,16 +6,25 @@ import 'icons.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
+class PrototypeFolder {
+  const PrototypeFolder(this.label, {this.count = 0});
+
+  final String label;
+  final int count;
+}
+
 /// A floating glass island with the chat list.
 class Sidebar extends StatefulWidget {
   const Sidebar({
     super.key,
     required this.chats,
+    this.folders,
     required this.selected,
     required this.onSelect,
   });
 
   final List<FakeChat> chats;
+  final List<PrototypeFolder>? folders;
   final int selected;
   final ValueChanged<int> onSelect;
 
@@ -26,16 +35,17 @@ class Sidebar extends StatefulWidget {
 class _SidebarState extends State<Sidebar> {
   int _folder = 0;
 
-  static const _folders = [
-    ('All', 0),
-    ('Personal', 2),
-    ('Work', 3),
-    ('Channels', 0),
+  static const _defaultFolders = [
+    PrototypeFolder('All'),
+    PrototypeFolder('Personal', count: 2),
+    PrototypeFolder('Work', count: 3),
+    PrototypeFolder('Channels'),
   ];
 
   @override
   Widget build(BuildContext context) {
     final c = MgColors.of(context);
+    final folders = widget.folders ?? _defaultFolders;
     return Glass(
       radius: 16,
       child: DefaultTextStyle.merge(
@@ -93,10 +103,10 @@ class _SidebarState extends State<Sidebar> {
               padding: const EdgeInsets.fromLTRB(10, 0, 10, 6),
               child: Row(
                 children: [
-                  for (var i = 0; i < _folders.length; i++)
+                  for (var i = 0; i < folders.length; i++)
                     _FolderTab(
-                      label: _folders[i].$1,
-                      count: _folders[i].$2,
+                      label: folders[i].label,
+                      count: folders[i].count,
                       on: i == _folder,
                       onTap: () => setState(() => _folder = i),
                     ),

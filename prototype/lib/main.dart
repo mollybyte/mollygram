@@ -37,6 +37,7 @@ class PrototypeApp extends StatefulWidget {
     required this.circle,
     this.chats,
     this.messages,
+    this.folders,
     this.foreground,
   });
 
@@ -44,6 +45,7 @@ class PrototypeApp extends StatefulWidget {
   final CircleController circle;
   final List<FakeChat>? chats;
   final List<FakeMessage>? messages;
+  final List<PrototypeFolder>? folders;
   final Widget? foreground;
 
   @override
@@ -126,6 +128,7 @@ class _PrototypeAppState extends State<PrototypeApp> {
                 child: _Window(
                   sidebar: Sidebar(
                     chats: _chats,
+                    folders: widget.folders,
                     selected: _chat,
                     onSelect: (i) => setState(() => _chat = i),
                   ),
