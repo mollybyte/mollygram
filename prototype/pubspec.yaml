@@ -1,5 +1,5 @@
 name: mollygram_prototype
-description: "Mollygram: прототип стекла, длинной ленты и кружков с замером кадров."
+description: "Mollygram: a prototype of glass, a long message list and video messages with frame timing."
 publish_to: 'none'
 version: 0.1.0+1
 

@@ -9,7 +9,7 @@ import 'fake_data.dart';
 
 const _maxBubble = 420.0;
 
-/// Одна строка ленты. Сообщения сплошные, без стекла.
+/// A single row of the message list. Messages are opaque, not glass.
 class MessageView extends StatelessWidget {
   const MessageView({
     super.key,
@@ -20,7 +20,8 @@ class MessageView extends StatelessWidget {
 
   final FakeMessage msg;
 
-  /// Следующее (более новое) сообщение от того же отправителя: малый отступ.
+  /// Whether the next (newer) message is from the same sender, which uses
+  /// a smaller gap.
   final bool newerSameSide;
   final CircleController circle;
 
@@ -89,7 +90,7 @@ class _Meta extends StatelessWidget {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('удалено', style: style),
+          Text('deleted', style: style),
           const SizedBox(width: 12),
           Text(msg.time, style: style),
         ],
@@ -110,8 +111,9 @@ class _TextBubble extends StatelessWidget {
       constraints: const BoxConstraints(maxWidth: _maxBubble),
       padding: const EdgeInsets.fromLTRB(11, 7, 11, 5),
       decoration: _bubble(c, msg.out),
-      // Время в правом нижнем углу, текст обтекает его, как в Telegram:
-      // в конец текста добавляется невидимый отступ под ширину метки.
+      // The time sits in the bottom-right corner and the text flows around
+      // it, as in Telegram: an invisible spacer the width of the label is
+      // appended to the text.
       child: Stack(
         children: [
           Text.rich(
@@ -234,8 +236,7 @@ class _FileBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = MgColors.of(context);
-    final size =
-        '${(msg.text.length * 0.37).toStringAsFixed(1).replaceAll('.', ',')} МБ';
+    final size = '${(msg.text.length * 0.37).toStringAsFixed(1)} MB';
     return Container(
       width: 280,
       padding: const EdgeInsets.fromLTRB(11, 9, 11, 6),
@@ -361,7 +362,7 @@ class _WavePainter extends CustomPainter {
       old.wave != wave || old.color != color;
 }
 
-/// Не проигрывающийся кружок: заливка и кольцо прогресса.
+/// A video message that does not play: a fill and a progress ring.
 class _StaticCircle extends StatelessWidget {
   const _StaticCircle(this.msg);
   final FakeMessage msg;
@@ -390,7 +391,7 @@ class _StaticCircle extends StatelessWidget {
   }
 }
 
-/// Кружок 640x640, который реально проигрывается. Клик: пуск и пауза.
+/// A 640x640 video message that actually plays. Click to play or pause.
 class LiveCircle extends StatefulWidget {
   const LiveCircle({super.key, required this.controller, this.size = 240});
 
@@ -419,7 +420,8 @@ class _LiveCircleState extends State<LiveCircle> {
       CircleVideo(controller: widget.controller, size: widget.size);
 }
 
-/// Сама текстура кружка: используется и в ленте, и в плавающем режиме.
+/// The video message texture itself, used both in the list and when
+/// floating.
 class CircleVideo extends StatelessWidget {
   const CircleVideo({super.key, required this.controller, required this.size});
 
@@ -472,7 +474,7 @@ class CircleVideo extends StatelessWidget {
                   bottom: size * 0.07,
                   child: _OnMediaPill(
                     controller.error != null
-                        ? 'ошибка плеера'
+                        ? 'player error'
                         : '640 · ${controller.backend.label}',
                   ),
                 ),

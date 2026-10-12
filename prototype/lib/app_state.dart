@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Переключатели прототипа, которыми управляет оверлей замера.
+/// Prototype toggles controlled by the benchmark overlay.
 class AppState extends ChangeNotifier {
   bool blur = true;
   ThemeMode themeMode = ThemeMode.system;

@@ -8,7 +8,8 @@ import '../theme.dart';
 import 'benchmark.dart';
 import 'frame_stats.dart';
 
-/// Служебная панель замера. Не часть дизайна, поэтому сплошная и мелкая.
+/// The benchmark utility panel. Not part of the design, so it is opaque
+/// and small.
 class PerfOverlay extends StatefulWidget {
   const PerfOverlay({
     super.key,
@@ -44,7 +45,7 @@ class _PerfOverlayState extends State<PerfOverlay> {
   }
 
   void _onFrames() {
-    // Обновляем цифры не чаще двух раз в секунду, чтобы не мерить себя.
+    // Refresh the numbers at most twice a second to avoid measuring ourselves.
     final now = DateTime.now();
     if (now.difference(_last) < const Duration(milliseconds: 500)) return;
     _last = now;
@@ -91,27 +92,27 @@ class _PerfOverlayState extends State<PerfOverlay> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Кадры · ${hz > 0 ? '${hz.toStringAsFixed(0)} Гц' : 'частота ?'}'
+                  'Frames · ${hz > 0 ? '${hz.toStringAsFixed(0)} Hz' : 'rate ?'}'
                   '${kDebugMode ? ' · debug' : ''}',
                   style: style.copyWith(fontWeight: FontWeight.w600),
                 ),
                 if (kDebugMode)
                   Text(
-                    'Цифры показательны только в --profile',
+                    'Numbers are representative only in --profile',
                     style: style.copyWith(color: c.fg2),
                   ),
                 if (live != null && live.frames > 1) ...[
                   Text(
-                    '${f(live.fps)} fps, vsync ${f(live.vsyncHz)} Гц, '
-                    'бюджет ${f(live.budgetMs)} мс',
+                    '${f(live.fps)} fps, vsync ${f(live.vsyncHz)} Hz, '
+                    'budget ${f(live.budgetMs)} ms',
                   ),
                   Text(
-                    'build ${f(live.buildP50)} / ${f(live.buildP95)} мс, '
-                    'raster ${f(live.rasterP50)} / ${f(live.rasterP95)} мс',
+                    'build ${f(live.buildP50)} / ${f(live.buildP95)} ms, '
+                    'raster ${f(live.rasterP50)} / ${f(live.rasterP95)} ms',
                   ),
                   Text(
-                    'дольше бюджета ${live.overBudget}, '
-                    'пропущено vsync ${live.missedVsyncs}',
+                    'over budget ${live.overBudget}, '
+                    'missed vsyncs ${live.missedVsyncs}',
                     style: style.copyWith(color: c.fg2),
                   ),
                 ],
@@ -121,18 +122,18 @@ class _PerfOverlayState extends State<PerfOverlay> {
                   runSpacing: 6,
                   children: [
                     _Chip(
-                      bench.running ? 'Идёт замер' : 'Замер 1 мин',
+                      bench.running ? 'Benchmark running' : 'Benchmark 1 min',
                       onTap: bench.running ? null : () => bench.runSuite(),
                       primary: true,
                     ),
                     _Chip(
-                      circle.playing ? 'Пауза' : 'Пуск кружка',
+                      circle.playing ? 'Pause' : 'Play video message',
                       onTap: bench.running
                           ? null
                           : () => circle.setPlaying(!circle.playing),
                     ),
                     _Chip(
-                      'Плеер: ${circle.backend.label}',
+                      'Player: ${circle.backend.label}',
                       onTap: bench.running
                           ? null
                           : () => circle.setBackend(
@@ -142,16 +143,16 @@ class _PerfOverlayState extends State<PerfOverlay> {
                             ),
                     ),
                     _Chip(
-                      'Размытие: ${app.blur ? 'вкл' : 'выкл'}',
+                      'Blur: ${app.blur ? 'on' : 'off'}',
                       onTap: bench.running
                           ? null
                           : () => app.setBlur(!app.blur),
                     ),
                     _Chip(
-                      'Тема: ${switch (app.themeMode) {
-                        ThemeMode.system => 'система',
-                        ThemeMode.light => 'светлая',
-                        ThemeMode.dark => 'тёмная',
+                      'Theme: ${switch (app.themeMode) {
+                        ThemeMode.system => 'system',
+                        ThemeMode.light => 'light',
+                        ThemeMode.dark => 'dark',
                       }}',
                       onTap: app.cycleTheme,
                     ),
@@ -164,7 +165,7 @@ class _PerfOverlayState extends State<PerfOverlay> {
                 if (circle.error != null) ...[
                   const SizedBox(height: 8),
                   Text(
-                    'Плеер: ${circle.error}',
+                    'Player: ${circle.error}',
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                     style: style.copyWith(color: const Color(0xFFD70015)),
@@ -175,13 +176,13 @@ class _PerfOverlayState extends State<PerfOverlay> {
                   _Results(bench: bench),
                   const SizedBox(height: 6),
                   _Chip(
-                    'Скопировать отчёт',
+                    'Copy report',
                     onTap: () =>
                         Clipboard.setData(ClipboardData(text: bench.report!)),
                   ),
                 ],
                 const SizedBox(height: 6),
-                Text('⌘⇧P скрыть панель', style: style.copyWith(color: c.fg2)),
+                Text('⌘⇧P to hide panel', style: style.copyWith(color: c.fg2)),
               ],
             ),
           ),
@@ -210,9 +211,9 @@ class _Results extends StatelessWidget {
           for (final e in r.phases.entries)
             Text(
               '${e.key.label}: ${f(e.value.fps)} fps, '
-              'raster p95 ${f(e.value.rasterP95)} мс, '
-              'дропов ${e.value.missedVsyncs} (${f(e.value.missedPct)}%)'
-              '${e.value.pauses > 0 ? ', прерван, повторите' : ''}',
+              'raster p95 ${f(e.value.rasterP95)} ms, '
+              'drops ${e.value.missedVsyncs} (${f(e.value.missedPct)}%)'
+              '${e.value.pauses > 0 ? ', interrupted, rerun' : ''}',
               style: TextStyle(
                 color: e.value.pauses > 0 ? const Color(0xFFD70015) : c.fg2,
               ),

@@ -17,8 +17,9 @@ import 'sidebar.dart';
 import 'theme.dart';
 import 'wallpaper.dart';
 
-/// MG_AUTOBENCH=1 в окружении (или --dart-define=MG_AUTOBENCH=true):
-/// сразу прогнать замер, напечатать отчёт в stdout и выйти.
+/// With MG_AUTOBENCH=1 in the environment (or
+/// --dart-define=MG_AUTOBENCH=true), runs the benchmark right away, prints
+/// the report to stdout and exits.
 final autobench =
     const bool.fromEnvironment('MG_AUTOBENCH') ||
     Platform.environment['MG_AUTOBENCH'] == '1';
@@ -138,8 +139,9 @@ class _PrototypeAppState extends State<PrototypeApp> {
   }
 }
 
-/// Раскладка окна: обои, лента, плавающий слой. Один BackdropGroup на всё
-/// окно, чтобы все стеклянные панели делили одно чтение подложки.
+/// The window layout: wallpaper, message list and floating layer. One
+/// BackdropGroup covers the whole window so all glass panels share a single
+/// backdrop read.
 class _Window extends StatelessWidget {
   const _Window({required this.sidebar, required this.chat, this.overlay});
 

@@ -3,7 +3,7 @@ import 'dart:ui';
 
 import 'package:flutter/scheduler.dart';
 
-/// Один кадр из FrameTiming, в миллисекундах.
+/// A single frame from FrameTiming, in milliseconds.
 class FrameSample {
   const FrameSample({
     required this.vsyncUs,
@@ -24,7 +24,7 @@ class FrameSample {
   final double totalMs;
 }
 
-/// Сводка по набору кадров.
+/// A summary of a set of frames.
 class FrameSummary {
   FrameSummary._({
     required this.frames,
@@ -42,8 +42,9 @@ class FrameSummary {
     required this.pauses,
   });
 
-  /// [refreshHz] из display.refreshRate; 0, если система его не сообщила,
-  /// тогда частота берётся из медианного интервала между vsync.
+  /// [refreshHz] comes from display.refreshRate, or is 0 if the system did
+  /// not report it, in which case the rate is taken from the median vsync
+  /// interval.
   factory FrameSummary.of(List<FrameSample> s, double refreshHz) {
     if (s.isEmpty) {
       return FrameSummary._(
@@ -68,8 +69,8 @@ class FrameSummary {
     var pausedMs = 0.0;
     for (var i = 1; i < sorted.length; i++) {
       final g = (sorted[i].vsyncUs - sorted[i - 1].vsyncUs) / 1000;
-      // Паузы дольше 100 мс — не дроп, а простой: окно скрыли, свернули
-      // или увели на другой экран. Их считаем отдельно.
+      // Pauses longer than 100 ms are idle time, not drops: the window was
+      // hidden, minimized or moved to another display. Count them separately.
       if (g >= 100) {
         pauses++;
         pausedMs += g;
@@ -113,7 +114,7 @@ class FrameSummary {
   final int frames;
   final double fps;
 
-  /// Частота по медианному интервалу между кадрами.
+  /// The rate derived from the median interval between frames.
   final double vsyncHz;
   final double budgetMs;
   final double buildP50;
@@ -123,13 +124,14 @@ class FrameSummary {
   final double rasterP95;
   final double rasterMax;
 
-  /// Кадры, у которых build или raster дольше бюджета одного vsync.
+  /// Frames whose build or raster time exceeds the budget of one vsync.
   final int overBudget;
 
-  /// Пропущенные vsync при непрерывной анимации: настоящие дропы.
+  /// Vsyncs missed during continuous animation: real drops.
   final int missedVsyncs;
 
-  /// Паузы дольше 100 мс: прогон с паузами неполноценный, его надо повторить.
+  /// Pauses longer than 100 ms. A run with pauses is incomplete and should
+  /// be repeated.
   final int pauses;
 
   double get missedPct => frames + missedVsyncs == 0
@@ -143,8 +145,8 @@ double _pct(List<double> values, double p) {
   return v[i.clamp(0, v.length - 1)];
 }
 
-/// Подписка на FrameTiming: скользящее окно для живых цифр и записи
-/// для замеров.
+/// A FrameTiming subscription: a sliding window for live numbers and
+/// recordings for benchmarks.
 class FrameStats {
   FrameStats() {
     SchedulerBinding.instance.addTimingsCallback(_onTimings);
@@ -171,7 +173,7 @@ class FrameStats {
     }
   }
 
-  /// Начать запись всех кадров; вернуть список, который пополняется.
+  /// Starts recording all frames and returns the list being filled.
   List<FrameSample> record() {
     final list = <FrameSample>[];
     _recorders.add(list);

@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'icons.dart';
 import 'theme.dart';
 
-/// Серая монограмма, как .av в макете.
+/// A gray monogram avatar, like .av in the mockup.
 class Avatar extends StatelessWidget {
   const Avatar(this.initials, {super.key, required this.size});
 
@@ -39,7 +39,7 @@ class Avatar extends StatelessWidget {
   }
 }
 
-/// Круглая кнопка 32 px с иконкой (.ib), подсветка при наведении.
+/// A round 32 px icon button (.ib) that highlights on hover.
 class IconBtn extends StatefulWidget {
   const IconBtn(
     this.icon, {
@@ -94,7 +94,7 @@ class _IconBtnState extends State<IconBtn> {
 
 const _window = MethodChannel('mollygram/window');
 
-/// Пустое место шапки, за которое можно тащить окно (titlebar скрыт).
+/// Empty header space that drags the window (the title bar is hidden).
 class WindowDragArea extends StatelessWidget {
   const WindowDragArea({super.key, this.child});
 

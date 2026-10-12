@@ -8,7 +8,8 @@ import '../widgets.dart';
 import 'fake_data.dart';
 import 'message_view.dart';
 
-/// Переписка: лента уходит под плавающие шапку и поле ввода.
+/// The conversation: the message list scrolls under the floating header
+/// and composer.
 class ChatPane extends StatefulWidget {
   const ChatPane({
     super.key,
@@ -66,7 +67,7 @@ class _ChatPaneState extends State<ChatPane> {
             ),
           ),
         ),
-        // Шапка: две стеклянные капсулы.
+        // Header: two glass capsules.
         Positioned(
           top: 10,
           left: 14,
@@ -96,7 +97,7 @@ class _ChatPaneState extends State<ChatPane> {
                         ),
                         Text(
                           _ghost && widget.chat.status.isNotEmpty
-                              ? '${widget.chat.status} · вы невидимы'
+                              ? '${widget.chat.status} · you are invisible'
                               : widget.chat.status,
                           style: TextStyle(
                             fontSize: 11.5,
@@ -116,25 +117,25 @@ class _ChatPaneState extends State<ChatPane> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const IconBtn(MgIcons.search, tooltip: 'Поиск в чате'),
+                    const IconBtn(MgIcons.search, tooltip: 'Search in chat'),
                     const SizedBox(width: 2),
-                    const IconBtn(MgIcons.call, tooltip: 'Позвонить'),
+                    const IconBtn(MgIcons.call, tooltip: 'Call'),
                     const SizedBox(width: 2),
                     IconBtn(
                       MgIcons.ghost,
-                      tooltip: 'Режим призрака',
+                      tooltip: 'Ghost mode',
                       on: _ghost,
                       onTap: () => setState(() => _ghost = !_ghost),
                     ),
                     const SizedBox(width: 2),
-                    const IconBtn(MgIcons.panel, tooltip: 'Информация о чате'),
+                    const IconBtn(MgIcons.panel, tooltip: 'Chat info'),
                   ],
                 ),
               ),
             ],
           ),
         ),
-        // Поле ввода.
+        // Composer.
         Positioned(
           left: 24,
           right: 24,
@@ -146,7 +147,8 @@ class _ChatPaneState extends State<ChatPane> {
             ),
           ),
         ),
-        // Кружок продолжает играть в углу, когда его сообщение уехало.
+        // The video message keeps playing in a corner once its message scrolls
+        // away.
         Positioned(
           right: 24,
           bottom: 72,
@@ -209,7 +211,7 @@ class _ComposerState extends State<_Composer> {
       padding: const EdgeInsets.fromLTRB(6, 4, 4, 4),
       child: Row(
         children: [
-          const IconBtn(MgIcons.attach, tooltip: 'Прикрепить', size: 18),
+          const IconBtn(MgIcons.attach, tooltip: 'Attach', size: 18),
           const SizedBox(width: 2),
           Expanded(
             child: SizedBox(
@@ -220,7 +222,7 @@ class _ComposerState extends State<_Composer> {
                   style: mgText(c, size: 13.5),
                   cursorHeight: 16,
                   decoration: InputDecoration.collapsed(
-                    hintText: 'Сообщение',
+                    hintText: 'Message',
                     hintStyle: mgText(c, size: 13.5).copyWith(color: c.fg2),
                   ),
                 ),
@@ -228,7 +230,7 @@ class _ComposerState extends State<_Composer> {
             ),
           ),
           const SizedBox(width: 2),
-          const IconBtn(MgIcons.emoji, tooltip: 'Эмодзи и стикеры', size: 18),
+          const IconBtn(MgIcons.emoji, tooltip: 'Emoji and stickers', size: 18),
           const SizedBox(width: 2),
           if (hasDraft)
             Container(
@@ -247,7 +249,7 @@ class _ComposerState extends State<_Composer> {
           else
             const IconBtn(
               MgIcons.mic,
-              tooltip: 'Записать голосовое или кружок',
+              tooltip: 'Record a voice or video message',
               size: 18,
             ),
         ],

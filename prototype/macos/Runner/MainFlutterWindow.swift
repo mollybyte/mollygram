@@ -6,8 +6,8 @@ class MainFlutterWindow: NSWindow {
     let flutterViewController = FlutterViewController()
     self.contentViewController = flutterViewController
 
-    // Контент под прозрачной строкой заголовка: кнопки окна остаются
-    // системными и ложатся на стеклянную боковую панель.
+    // Content extends under a transparent title bar: the window buttons stay
+    // native and sit on top of the glass sidebar.
     self.titlebarAppearsTransparent = true
     self.titleVisibility = .hidden
     self.styleMask.insert(.fullSizeContentView)
@@ -15,8 +15,8 @@ class MainFlutterWindow: NSWindow {
     self.setContentSize(NSSize(width: 1440, height: 900))
     self.center()
 
-    // Flutter забирает все события мыши, поэтому окно перетаскивается
-    // по запросу из Dart с пустых мест шапок.
+    // Flutter takes all mouse events, so Dart asks the window to start a
+    // drag when an empty header area is pressed.
     let channel = FlutterMethodChannel(
       name: "mollygram/window",
       binaryMessenger: flutterViewController.engine.binaryMessenger)

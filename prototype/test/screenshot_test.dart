@@ -9,8 +9,9 @@ import 'package:mollygram_prototype/app_state.dart';
 import 'package:mollygram_prototype/circle/circle_controller.dart';
 import 'package:mollygram_prototype/main.dart';
 
-/// Снимок окна для глаз, не golden-тест: MG_SHOT_DIR=/путь flutter test
-/// test/screenshot_test.dart. Без переменной пропускается.
+/// A window screenshot for visual review, not a golden test:
+/// MG_SHOT_DIR=/path flutter test test/screenshot_test.dart. Skipped when the
+/// variable is not set.
 void main() {
   final dir = Platform.environment['MG_SHOT_DIR'];
 
@@ -32,7 +33,7 @@ void main() {
   }
 
   for (final dark in [false, true]) {
-    testWidgets('снимок, ${dark ? 'тёмная' : 'светлая'}', (tester) async {
+    testWidgets('screenshot, ${dark ? 'dark' : 'light'}', (tester) async {
       tester.view.physicalSize = const Size(2880, 1800);
       tester.view.devicePixelRatio = 2;
       addTearDown(tester.view.reset);
