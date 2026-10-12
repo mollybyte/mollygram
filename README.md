@@ -1,27 +1,75 @@
-# mollygram
+<p align="center">
+  <img src="docs/assets/banner.png" alt="mollygram" width="840">
+</p>
 
-Кастомный клиент Telegram для десктопа на Flutter: macOS, Windows, Linux.
+<p align="center">
+  Кастомный клиент Telegram для десктопа на Flutter: macOS, Windows, Linux.
+</p>
 
-Раскладка как у официального Telegram Desktop, чтобы не переучиваться. Сверху — liquid glass и то, чего не хватает в официальном клиенте.
+<p align="center">
+  <a href="https://github.com/mollybyte/mollygram/actions/workflows/ci.yml"><img src="https://github.com/mollybyte/mollygram/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/mollybyte/mollygram?color=D6336C" alt="Лицензия"></a>
+  <a href="https://github.com/mollybyte/mollygram/commits/main"><img src="https://img.shields.io/github/last-commit/mollybyte/mollygram?color=D6336C" alt="Последний коммит"></a>
+  <img src="https://img.shields.io/badge/%D1%81%D1%82%D0%B0%D1%82%D1%83%D1%81-%D0%BF%D1%80%D0%BE%D1%82%D0%BE%D1%82%D0%B8%D0%BF-D6336C" alt="Статус: прототип">
+</p>
 
-## Статус
+<p align="center">
+  <a href="https://flutter.dev"><img src="https://img.shields.io/badge/Flutter-stable-02569B?logo=flutter&logoColor=white" alt="Flutter"></a>
+  <a href="https://dart.dev"><img src="https://img.shields.io/badge/Dart-3-0175C2?logo=dart&logoColor=white" alt="Dart"></a>
+  <a href="https://github.com/tdlib/td"><img src="https://img.shields.io/badge/TDLib-FFI-26A5E4?logo=telegram&logoColor=white" alt="TDLib"></a>
+  <img src="https://img.shields.io/badge/macOS-000000?logo=apple&logoColor=white" alt="macOS">
+  <img src="https://img.shields.io/badge/Windows-0078D4?logo=windows11&logoColor=white" alt="Windows">
+  <img src="https://img.shields.io/badge/Linux-FCC624?logo=linux&logoColor=black" alt="Linux">
+</p>
 
-Пока только макеты, кода нет.
+---
+
+Раскладка как у официального Telegram Desktop, чтобы не переучиваться. Сверху liquid glass и то, чего не хватает в официальном клиенте.
+
+> [!NOTE]
+> Пока только макеты, кода нет. CI уже настроен и включится, как только в репозитории появится Flutter-проект.
 
 ## Что планируется
 
-- Плагины в песочнице с явными правами, в духе exteraGram.
-- Режим призрака: без отметок о прочтении, без «печатает» и статуса «в сети».
-- Локальное сохранение удалённых сообщений и история правок.
-- Кружки в 120 кадров/с и до 1080p, фото и видео без сжатия по умолчанию.
-- Вкладки, сплит на два чата, командная палитра по ⌘K.
+| | |
+|---|---|
+| **Плагины** | Песочница с явными правами в манифесте, в духе exteraGram. |
+| **Приватность** | Режим призрака: без отметок о прочтении, без «печатает» и статуса «в сети». Локальное сохранение удалённых сообщений и история правок. |
+| **Медиа** | Кружки в 120 кадров/с и до 1080p, фото и видео без сжатия по умолчанию. |
+| **Работа с чатами** | Вкладки, сплит на два чата, командная палитра по <kbd>⌘</kbd> <kbd>K</kbd>. |
+| **Внешний вид** | Liquid glass только на плавающем слое: боковая панель, шапка чата, поле ввода, палитра. Светлая и тёмная темы. |
 
 ## Стек
 
-- Flutter desktop.
-- [TDLib](https://github.com/tdlib/td) через FFI.
+| Компонент | Что используем |
+|---|---|
+| UI | [Flutter](https://flutter.dev) desktop, канал stable |
+| Протокол | [TDLib](https://github.com/tdlib/td) через `dart:ffi` |
+| Платформы | macOS, Windows, Linux |
 
 Первое, что нужно проверить: держит ли Flutter размытие под прокручиваемым чатом и воспроизведение кружков в 120 кадров/с.
+
+## CI/CD
+
+| Workflow | Когда запускается | Что делает |
+|---|---|---|
+| [`ci.yml`](.github/workflows/ci.yml) | push в `main`, pull request | `dart format`, `flutter analyze`, `flutter test`, затем release-сборка под macOS, Windows и Linux |
+| [`release.yml`](.github/workflows/release.yml) | тег `v*` | Собирает три платформы и публикует архивы в GitHub Releases |
+
+## Бренд
+
+<img src="docs/assets/icon.svg" alt="Значок Mollygram" width="96" align="right">
+
+Значок: белый пузырь сообщения с буквой m на малиновом фоне. Неоновый вордмарк используется только в промо: README, лендинг, канал. В самом приложении неона нет.
+
+| Цвет | Светлая тема | Тёмная тема |
+|---|---|---|
+| Акцент по умолчанию | ![](https://img.shields.io/badge/-%230071E3-0071E3) | ![](https://img.shields.io/badge/-%230A84FF-0A84FF) |
+| Малиновый акцент (опция) | ![](https://img.shields.io/badge/-%23D6336C-D6336C) | ![](https://img.shields.io/badge/-%23FF5C93-FF5C93) |
+| Исходящие, малиновая тема | ![](https://img.shields.io/badge/-%23FCE4EE-FCE4EE) | ![](https://img.shields.io/badge/-%235A2338-5A2338) |
+| Неон, только промо | ![](https://img.shields.io/badge/-%23FF2E88-FF2E88) | ![](https://img.shields.io/badge/-%2312070F-12070F) |
+
+Акцент в приложении по умолчанию системный синий, малиновый включается в настройках. Исходники значка лежат в [`docs/assets`](docs/assets).
 
 ## Макеты
 
