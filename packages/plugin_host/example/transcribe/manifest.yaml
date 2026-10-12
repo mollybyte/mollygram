@@ -1,9 +1,10 @@
 id: dev.mollygram.transcribe
-name: Расшифровка
+name: Transcribe
 version: 1.0.0
 author: Mollygram
 description: >-
-  Расшифровывает голосовые и кружки на устройстве, без сети и без Premium.
+  Transcribes voice and round video messages on the device, with no network
+  and no Premium.
 runtime: js
 sdk: ^1.0
 main: index.js
@@ -16,13 +17,13 @@ hooks:
 settings:
   - key: auto
     type: toggle
-    label: Расшифровывать сразу
+    label: Transcribe automatically
     default: false
   - key: language
     type: select
-    label: Язык
+    label: Language
     default: auto
     options:
-      - { value: auto, label: Определять автоматически }
-      - { value: ru, label: Русский }
-      - { value: en, label: Английский }
+      - { value: auto, label: Detect automatically }
+      - { value: ru, label: Russian }
+      - { value: en, label: English }

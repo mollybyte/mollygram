@@ -1,6 +1,7 @@
-/// JS, который выполняется в каждой VM до кода плагина. Он прячет
-/// `__mg_host`, создаёт замороженный объект `mg` и диспетчер событий.
-/// Типы для авторов лежат в packages/plugin_sdk.
+/// JS that runs in every VM before the plugin code.
+///
+/// It hides `__mg_host` and creates the frozen `mg` object and the event
+/// dispatcher. Types for plugin authors live in packages/plugin_sdk.
 const prelude = r'''
 "use strict";
 (() => {
@@ -12,7 +13,7 @@ const prelude = r'''
   const commands = new Map();
   let ready = false;
 
-  // Вызов хоста. Ответ: {ok}, {error} или {pending: id} для асинхронных.
+  // Calls the host. Reply: {ok}, {error}, or {pending: id} for async calls.
   function request(method, args) {
     const raw = host(method, JSON.stringify(args === undefined ? null : args));
     const res = raw == null ? { ok: null } : JSON.parse(raw);
@@ -43,14 +44,14 @@ const prelude = r'''
 
   const mg = {
     on(event, fn) {
-      if (ready) throw new Error("mg.on можно вызывать только при загрузке");
+      if (ready) throw new Error("mg.on can only be called during load");
       if (typeof fn !== "function") throw new TypeError("mg.on(event, fn)");
       requestSync("hooks.check", { event });
       if (!handlers.has(event)) handlers.set(event, []);
       handlers.get(event).push(fn);
     },
     command(name, fn) {
-      if (ready) throw new Error("mg.command можно вызывать только при загрузке");
+      if (ready) throw new Error("mg.command can only be called during load");
       requestSync("commands.check", { name });
       commands.set(name, fn);
     },
@@ -97,8 +98,8 @@ const prelude = r'''
     return { done: false, id };
   }
 
-  // Обработчики одного события выполняются по порядку. Для перехвата
-  // {modify} передаёт изменённые данные следующему, {cancel} останавливает.
+  // Handlers of one event run in order. For interception, {modify} passes
+  // the modified data to the next handler and {cancel} stops the chain.
   async function runHandlers(list, payload) {
     const results = [];
     for (const fn of list) {
@@ -122,7 +123,7 @@ const prelude = r'''
       }
       case "command": {
         const fn = commands.get(msg.name);
-        if (!fn) throw new Error("нет команды " + msg.name);
+        if (!fn) throw new Error("no command " + msg.name);
         return finish(fn(msg.args));
       }
       case "settle": {
@@ -139,7 +140,7 @@ const prelude = r'''
         return { done: true, value: null };
       }
     }
-    throw new Error("неизвестное сообщение " + msg.kind);
+    throw new Error("unknown message " + msg.kind);
   }
   Object.defineProperty(globalThis, "__mg_dispatch", { value: dispatch });
 })();

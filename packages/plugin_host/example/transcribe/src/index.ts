@@ -1,5 +1,5 @@
-// Расшифровка голосовых и кружков. Распознаёт речь приложение на
-// устройстве, плагин решает, когда это делать, и рисует результат.
+// Transcribes voice and round video messages. The app recognizes speech on
+// the device; the plugin decides when to do it and renders the result.
 
 const cacheKey = (m: Mg.Message) => `t:${m.chatId}:${m.id}`;
 
@@ -17,7 +17,7 @@ async function render({ message }: Mg.RenderPayload): Promise<Mg.UiNode[]> {
   const cached = await mg.storage.get<string>(cacheKey(message));
   if (cached != null) return [{ type: "text", text: cached, style: "secondary" }];
   if (mg.settings.get<boolean>("auto")) return transcribe(message);
-  return [{ type: "button", label: "Расшифровать", action: "transcribe" }];
+  return [{ type: "button", label: "Transcribe", action: "transcribe" }];
 }
 
 mg.on("message.render.voice", render);
@@ -28,7 +28,7 @@ mg.on("ui.action", async ({ action, message }) => {
   try {
     return await transcribe(message);
   } catch (e) {
-    mg.log("не удалось расшифровать", String(e));
-    return [{ type: "text", text: "Не удалось расшифровать", style: "secondary" }];
+    mg.log("transcription failed", String(e));
+    return [{ type: "text", text: "Transcription failed", style: "secondary" }];
   }
 });

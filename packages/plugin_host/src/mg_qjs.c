@@ -1,9 +1,9 @@
-// Тонкая обёртка над quickjs-ng для plugin_host.
+// A thin wrapper around quickjs-ng for plugin_host.
 //
-// Наружу торчат только строки JSON: Dart никогда не видит JSValue, а плагин
-// никогда не видит ничего, кроме того, что хост отдал через __mg_host.
-// Лимиты: память (JS_SetMemoryLimit), стек (JS_SetMaxStackSize) и время
-// (дедлайн, который проверяет обработчик прерываний).
+// Only JSON strings cross the boundary: Dart never sees a JSValue, and the
+// plugin never sees anything except what the host handed over via __mg_host.
+// Limits: memory (JS_SetMemoryLimit), stack (JS_SetMaxStackSize) and time
+// (a deadline checked by the interrupt handler).
 
 #include <stdlib.h>
 #include <string.h>
@@ -26,8 +26,9 @@ enum {
   MG_BAD_ARGUMENT = 4,
 };
 
-// Хост получает имя метода и аргументы в JSON и обязан синхронно вызвать
-// mg_vm_set_host_result (или ничего, тогда плагин получит null).
+// The host receives the method name and JSON arguments and must
+// synchronously call mg_vm_set_host_result (or nothing, in which case the
+// plugin gets null).
 typedef void (*MgHostFn)(int64_t vm_id, const char *method,
                          const char *args_json);
 
@@ -37,13 +38,13 @@ typedef struct MgVm {
   int64_t id;
   MgHostFn host;
   int64_t memory_limit;
-  int64_t deadline_ns;  // 0 = без ограничения
+  int64_t deadline_ns;  // 0 = no limit
   int interrupted;
   char *host_result;
 } MgVm;
 
-// Бюджет считается по процессорному времени потока, а не по настенным
-// часам: под нагрузкой системы честный плагин не должен получать отказ.
+// The budget is measured in thread CPU time, not wall-clock time: a
+// well-behaved plugin must not be rejected just because the system is busy.
 static int64_t mg_now_ns(void) {
 #if defined(_WIN32)
   FILETIME creation, exit, kernel, user;
@@ -95,8 +96,8 @@ static JSValue mg_host_call(JSContext *ctx, JSValueConst this_val, int argc,
   }
   free(vm->host_result);
   vm->host_result = NULL;
-  // Время, проведённое в хосте, не должно съедать бюджет плагина
-  // непредсказуемо, но и не продлевает его: дедлайн остаётся прежним.
+  // Time spent in the host must not eat into the plugin's budget
+  // unpredictably, but it does not extend it either: the deadline stays.
   vm->host(vm->id, method, args);
   JS_FreeCString(ctx, method);
   JS_FreeCString(ctx, args);
@@ -149,7 +150,7 @@ MG_EXPORT void mg_vm_set_host_result(MgVm *vm, const char *json) {
   vm->host_result = json == NULL ? NULL : mg_strdup(json, strlen(json));
 }
 
-// Задаёт бюджет времени на следующие вызовы; 0 снимает ограничение.
+// Sets the time budget for subsequent calls; 0 removes the limit.
 MG_EXPORT void mg_vm_set_budget_ms(MgVm *vm, int64_t ms) {
   vm->deadline_ns = ms <= 0 ? 0 : mg_now_ns() + ms * 1000000LL;
   vm->interrupted = 0;
@@ -163,7 +164,7 @@ MG_EXPORT int64_t mg_vm_memory_used(MgVm *vm) {
 
 MG_EXPORT void mg_free(void *p) { free(p); }
 
-// Превращает текущее исключение в строку и код статуса.
+// Converts the pending exception into a string and a status code.
 static int mg_take_exception(MgVm *vm, char **out) {
   JSContext *ctx = vm->ctx;
   JSValue exc = JS_GetException(ctx);
@@ -172,8 +173,9 @@ static int mg_take_exception(MgVm *vm, char **out) {
   const char *msg = JS_ToCString(ctx, exc);
   if (msg != NULL && strstr(msg, "out of memory") != NULL)
     status = MG_OUT_OF_MEMORY;
-  // Если памяти не хватило даже на объект ошибки, QuickJS бросает null.
-  // Отличаем это от `throw null` в плагине по заполненности кучи.
+  // If there was not even enough memory for the error object, QuickJS
+  // throws null. Tell this apart from `throw null` in the plugin by heap
+  // usage.
   if (status == MG_EXCEPTION && JS_IsNull(exc) &&
       mg_vm_memory_used(vm) > vm->memory_limit / 10 * 9)
     status = MG_OUT_OF_MEMORY;
@@ -200,7 +202,8 @@ static int mg_take_exception(MgVm *vm, char **out) {
       len = strlen(msg);
       text = mg_strdup(msg, len);
     } else {
-      // Когда памяти нет даже на сообщение, отдаём статус без текста.
+      // When there is no memory even for the message, return the status
+      // without text.
       if (status == MG_EXCEPTION && !vm->interrupted) status = MG_OUT_OF_MEMORY;
       text = mg_strdup("", 0);
     }
@@ -211,8 +214,8 @@ static int mg_take_exception(MgVm *vm, char **out) {
   return status;
 }
 
-// Изолят Dart может между событиями переехать на другой поток ОС, поэтому
-// перед каждым входом в JS обновляем вершину стека для проверки рекурсии.
+// A Dart isolate may move to another OS thread between events, so update
+// the stack top for the recursion check before every entry into JS.
 static void mg_enter(MgVm *vm) { JS_UpdateStackTop(vm->rt); }
 
 static int mg_stringify(MgVm *vm, JSValue val, char **out) {
@@ -236,8 +239,8 @@ static int mg_stringify(MgVm *vm, JSValue val, char **out) {
   return MG_OK;
 }
 
-// Выполняет скрипт. В *out кладёт JSON результата или текст ошибки;
-// строку освобождает вызывающий через mg_free.
+// Evaluates a script. Stores the result JSON or error text in *out; the
+// caller frees the string with mg_free.
 MG_EXPORT int mg_vm_eval(MgVm *vm, const char *code, int64_t len,
                          const char *filename, char **out) {
   mg_enter(vm);
@@ -249,7 +252,7 @@ MG_EXPORT int mg_vm_eval(MgVm *vm, const char *code, int64_t len,
   return status;
 }
 
-// Вызывает глобальную функцию fn с одним аргументом, разобранным из JSON.
+// Calls the global function fn with one argument parsed from JSON.
 MG_EXPORT int mg_vm_call(MgVm *vm, const char *fn, const char *arg_json,
                          char **out) {
   JSContext *ctx = vm->ctx;
@@ -276,7 +279,7 @@ MG_EXPORT int mg_vm_call(MgVm *vm, const char *fn, const char *arg_json,
   return status;
 }
 
-// Прогоняет очередь промисов. Возвращает MG_OK, когда очередь пуста.
+// Runs the promise job queue. Returns MG_OK when the queue is empty.
 MG_EXPORT int mg_vm_run_jobs(MgVm *vm, char **out) {
   JSContext *job_ctx;
   mg_enter(vm);

@@ -24,30 +24,30 @@ void main() {
     return p;
   }
 
-  test('ошибка при загрузке выключает плагин, а не приложение', () {
-    final p = load('throw new Error("сломалось")');
+  test('a load error disables the plugin, not the app', () {
+    final p = load('throw new Error("broken")');
     expect(p.status, PluginStatus.disabled);
-    expect(p.disabledReason, contains('сломалось'));
+    expect(p.disabledReason, contains('broken'));
   });
 
-  test('зависание при загрузке прерывается', () {
+  test('a hang during load is interrupted', () {
     final p = load('for (;;) {}');
     expect(p.status, PluginStatus.disabled);
   });
 
-  test('нельзя подписаться на хук, которого нет в манифесте', () {
+  test('cannot subscribe to a hook missing from the manifest', () {
     final p = load('mg.on("message.render.code", () => [])');
     expect(p.status, PluginStatus.disabled);
-    expect(p.disabledReason, contains('не объявлен'));
+    expect(p.disabledReason, contains('is not declared'));
   });
 
-  test('mg нельзя подменить', () {
+  test('mg cannot be replaced', () {
     final p = load('mg.storage = 1; globalThis.mg = 2;');
     expect(p.status, PluginStatus.disabled);
     expect(p.disabledReason, contains('read-only'));
   });
 
-  test('без права storage вызов отклоняется в JS', () async {
+  test('without storage permission the call is rejected in JS', () async {
     final p = load('''
       mg.on("ui.action", async () => {
         try { await mg.storage.set("a", 1); return [{type: "text", text: "ok"}]; }
@@ -59,7 +59,7 @@ void main() {
     expect(services.calls, isEmpty);
   });
 
-  test('сеть только на объявленные хосты', () async {
+  test('network only to declared hosts', () async {
     final p = load(
       '''
       mg.command("/go", async (url) => {
@@ -85,7 +85,7 @@ void main() {
   });
 
   test(
-    'messages.read: on_command пускает только в текущий чат команды',
+    'messages.read: on_command allows only the current command chat',
     () async {
       final p = load(
         '''
@@ -106,10 +106,10 @@ void main() {
     },
   );
 
-  test('перехват отправки: modify и cancel', () async {
+  test('send interception: modify and cancel', () async {
     final p = load(
       '''
-      mg.on("message.sending", (d) => d.text === "стоп" ? {cancel: true} : {modify: {...d, text: d.text + "!"}});
+      mg.on("message.sending", (d) => d.text === "stop" ? {cancel: true} : {modify: {...d, text: d.text + "!"}});
       mg.on("message.sending", (d) => ({modify: {...d, text: d.text.toUpperCase()}}));
     ''',
       m: manifest(
@@ -119,26 +119,26 @@ void main() {
     );
     final r = await p.dispatch(PluginEvent.messageSending, {
       'chatId': 1,
-      'text': 'привет',
+      'text': 'hello',
     });
-    expect((r as EventHandled).payload, {'chatId': 1, 'text': 'ПРИВЕТ!'});
+    expect((r as EventHandled).payload, {'chatId': 1, 'text': 'HELLO!'});
     expect(
       await p.dispatch(PluginEvent.messageSending, {
         'chatId': 1,
-        'text': 'стоп',
+        'text': 'stop',
       }),
       isA<EventCancelled>(),
     );
   });
 
-  test('неверный UI не доходит до приложения', () async {
+  test('invalid UI never reaches the app', () async {
     final p = load('mg.on("ui.action", () => [{type: "iframe", src: "x"}])');
     final r = await p.dispatch(PluginEvent.uiAction, {'action': 'x'});
     expect(r, isA<EventSkipped>());
   });
 
-  test('три сбоя подряд выключают плагин', () async {
-    final p = load('mg.on("ui.action", () => { throw new Error("нет") })');
+  test('three failures in a row disable the plugin', () async {
+    final p = load('mg.on("ui.action", () => { throw new Error("no") })');
     for (var i = 0; i < 3; i++) {
       expect(await p.dispatch(PluginEvent.uiAction, {}), isA<EventSkipped>());
     }
@@ -146,7 +146,7 @@ void main() {
     expect(await p.dispatch(PluginEvent.uiAction, {}), isA<EventSkipped>());
   });
 
-  test('синхронное зависание в обработчике прерывается', () async {
+  test('a synchronous hang in a handler is interrupted', () async {
     final p = load('mg.on("ui.action", () => { for (;;) {} })');
     final sw = Stopwatch()..start();
     expect(await p.dispatch(PluginEvent.uiAction, {}), isA<EventSkipped>());
@@ -154,29 +154,26 @@ void main() {
     expect(p.status, PluginStatus.running);
   });
 
-  test(
-    'промис, который никогда не завершится, обрывается по тайм-ауту',
-    () async {
-      final p = load(
-        'mg.on("ui.action", () => new Promise(() => {}))',
-        policy: const PluginPolicy(actionTimeout: Duration(milliseconds: 100)),
-      );
-      expect(await p.dispatch(PluginEvent.uiAction, {}), isA<EventSkipped>());
-    },
-  );
+  test('a promise that never settles is cut off by a timeout', () async {
+    final p = load(
+      'mg.on("ui.action", () => new Promise(() => {}))',
+      policy: const PluginPolicy(actionTimeout: Duration(milliseconds: 100)),
+    );
+    expect(await p.dispatch(PluginEvent.uiAction, {}), isA<EventSkipped>());
+  });
 
-  test('нехватка памяти сразу выключает плагин', () async {
+  test('running out of memory disables the plugin immediately', () async {
     final p = load(
       'const a = []; mg.on("ui.action", () => { for (;;) a.push("x".repeat(4096)) })',
       policy: const PluginPolicy(limits: JsLimits(memoryBytes: 8 << 20)),
     );
     expect(await p.dispatch(PluginEvent.uiAction, {}), isA<EventSkipped>());
     expect(p.status, PluginStatus.disabled);
-    expect(p.disabledReason, contains('памяти'));
+    expect(p.disabledReason, contains('memory'));
   });
 
-  test('ошибка сервиса приходит в JS как исключение с кодом', () async {
-    services.failWith = const HostError('busy', 'занято');
+  test('a service error reaches JS as an exception with a code', () async {
+    services.failWith = const HostError('busy', 'busy');
     final p = load('''
       mg.on("ui.action", async () => {
         try { await mg.storage.get("k"); } catch (e) { return [{type: "text", text: e.code}]; }
@@ -186,8 +183,8 @@ void main() {
     expect((r as EventHandled).ui.single['text'], 'busy');
   });
 
-  test('console.log пишет в журнал плагина', () {
-    final p = load('console.log("загружен", {v: 1})');
-    expect(p.logs, ['info: загружен {"v":1}']);
+  test('console.log writes to the plugin log', () {
+    final p = load('console.log("loaded", {v: 1})');
+    expect(p.logs, ['info: loaded {"v":1}']);
   });
 }

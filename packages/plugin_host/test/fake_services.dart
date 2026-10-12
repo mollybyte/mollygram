@@ -2,12 +2,12 @@ import 'dart:async';
 
 import 'package:plugin_host/plugin_host.dart';
 
-/// Подставные сервисы: хранилище в памяти и распознавание, которое
-/// возвращает заранее заданный текст.
+/// Fake services: in-memory storage and speech recognition that returns
+/// predefined text.
 final class FakeServices implements PluginServices {
   final storage = <String, Object?>{};
   final calls = <String>[];
-  String transcript = 'привет, это голосовое';
+  String transcript = 'hello, this is a voice message';
   Duration delay = Duration.zero;
   Object? failWith;
 
@@ -47,7 +47,7 @@ PluginManifest manifest({
   String extra = '',
 }) => PluginManifest.parse('''
 id: dev.test.plugin
-name: Тест
+name: Test
 version: 1.0.0
 runtime: js
 sdk: ^1.0

@@ -5,10 +5,12 @@ import 'manifest.dart';
 import 'permissions.dart';
 import 'plugin_instance.dart';
 
-/// Плагин в отдельном изоляте. JS никогда не выполняется в UI-изоляте,
-/// поэтому даже плагин, который упирается в бюджет времени на каждом
-/// событии, не роняет частоту кадров. Сервисы вызываются в изоляте
-/// приложения: воркер пересылает только уже разрешённые вызовы.
+/// A plugin in a separate isolate.
+///
+/// JS never runs in the UI isolate, so even a plugin that hits its time
+/// budget on every event does not drop the frame rate. Services are called
+/// in the app isolate: the worker forwards only calls that are already
+/// authorized.
 final class PluginWorker {
   PluginWorker._(this.manifest, this._services);
 
@@ -28,7 +30,7 @@ final class PluginWorker {
   PluginStatus get status => _status;
   String? get disabledReason => _disabledReason;
 
-  /// Сообщает, когда плагин выключился сам (сбои, память).
+  /// Reports when the plugin disables itself (failures, memory).
   Stream<PluginStatus> get statusChanges => _statusChanges.stream;
 
   static Future<PluginWorker> start({
@@ -65,7 +67,7 @@ final class PluginWorker {
     Map<String, Object?> payload,
   ) async {
     if (_status != PluginStatus.running) {
-      return const EventSkipped('плагин не запущен');
+      return const EventSkipped('plugin is not running');
     }
     return await _request((id) => ('dispatch', id, (event, payload)))
         as EventOutcome;
@@ -82,7 +84,7 @@ final class PluginWorker {
     _isolate.kill(priority: Isolate.beforeNextEvent);
     _receive.close();
     for (final c in _replies.values) {
-      c.completeError(StateError('плагин остановлен'));
+      c.completeError(StateError('plugin stopped'));
     }
     _replies.clear();
     _setStatus(PluginStatus.stopped, null);
@@ -130,8 +132,8 @@ final class PluginWorker {
               )),
             );
       case [final String error, final String? _]:
-        // Необработанная ошибка в самом воркере. Плагин выключаем.
-        _setStatus(PluginStatus.disabled, 'сбой воркера: $error');
+        // An unhandled error in the worker itself. Disable the plugin.
+        _setStatus(PluginStatus.disabled, 'worker failure: $error');
     }
   }
 }
@@ -145,7 +147,7 @@ typedef _WorkerArgs = ({
   Map<String, Object?> settings,
 });
 
-/// Сервисы внутри воркера: пересылают вызов в изолят приложения.
+/// Services inside the worker: they forward calls to the app isolate.
 final class _RemoteServices implements PluginServices {
   _RemoteServices(this._port);
 
@@ -188,8 +190,8 @@ void _workerMain(_WorkerArgs args) {
     port.send(('status', plugin.status, plugin.disabledReason));
   }
 
-  // Статус уходит раньше ответа, чтобы к моменту ответа приложение уже
-  // знало, что плагин выключился.
+  // The status is sent before the reply, so that by the time the reply
+  // arrives the app already knows the plugin was disabled.
   Future<void> reply(int id, Future<Object?> Function() body) async {
     Object? value, error;
     try {
@@ -223,7 +225,8 @@ void _workerMain(_WorkerArgs args) {
         reply(id, () => plugin.updateSetting(k, v));
       case ('service.done', final int id, final Object? v, final HostError? e):
         services.complete(id, v, e);
-        // Ответ сервиса мог доиграть отложенный промис и выключить плагин.
+        // The service reply may have resumed a pending promise that disabled
+        // the plugin.
         scheduleMicrotask(reportStatus);
       case ('stop', _, _):
         plugin.stop();

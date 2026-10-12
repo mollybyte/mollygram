@@ -5,7 +5,7 @@ import 'package:ffi/ffi.dart';
 
 import 'native/bindings.dart';
 
-/// Чем закончился вызов в песочнице.
+/// How a call into the sandbox ended.
 enum JsStatus { ok, exception, timeout, outOfMemory, badArgument }
 
 final class JsResult {
@@ -13,7 +13,7 @@ final class JsResult {
 
   final JsStatus status;
 
-  /// JSON результата при [JsStatus.ok], иначе текст ошибки со стеком.
+  /// The result JSON for [JsStatus.ok], otherwise the error text with stack.
   final String raw;
 
   bool get isOk => status == JsStatus.ok;
@@ -24,11 +24,13 @@ final class JsResult {
   String toString() => '$status: $raw';
 }
 
-/// Обработчик вызовов `__mg_host(method, json)` из JS. Вызывается синхронно
-/// посреди исполнения JS и должен вернуть JSON-строку или null.
+/// Handles `__mg_host(method, json)` calls from JS.
+///
+/// Called synchronously in the middle of JS execution; must return a JSON
+/// string or null.
 typedef JsHostHandler = String? Function(String method, String argsJson);
 
-/// Лимиты одной виртуальной машины.
+/// Limits for a single virtual machine.
 final class JsLimits {
   const JsLimits({
     this.memoryBytes = 32 << 20,
@@ -37,23 +39,27 @@ final class JsLimits {
     this.callBudget = const Duration(milliseconds: 100),
   });
 
-  /// Потолок кучи QuickJS. При превышении плагин получает исключение,
-  /// а хост выключает плагин.
+  /// The QuickJS heap ceiling.
+  ///
+  /// When it is exceeded, the plugin gets an exception and the host disables
+  /// the plugin.
   final int memoryBytes;
   final int stackBytes;
 
-  /// Сколько процессорного времени может занять загрузка плагина.
+  /// How much CPU time loading the plugin may take.
   final Duration loadBudget;
 
-  /// Сколько может занять один синхронный заход в JS: обработчик события,
-  /// команда или прогон очереди промисов.
+  /// How long a single synchronous entry into JS may take: an event
+  /// handler, a command or a promise queue run.
   final Duration callBudget;
 }
 
-/// Один изолированный JSRuntime quickjs-ng. Без файлов, сети, таймеров и
-/// модулей: всё, что плагин может сделать снаружи, идёт через [JsHostHandler].
+/// A single isolated quickjs-ng JSRuntime.
 ///
-/// Не потокобезопасен: живёт в том изоляте, где создан.
+/// It has no files, network, timers or modules: everything a plugin can do
+/// outside goes through [JsHostHandler].
+///
+/// Not thread-safe: it lives in the isolate where it was created.
 final class JsVm {
   JsVm({required this._host, this.limits = const JsLimits()})
     : _id = _nextId++ {
@@ -65,7 +71,7 @@ final class JsVm {
       _callback!.nativeFunction,
     );
     if (ptr == nullptr) {
-      throw StateError('quickjs: не удалось создать runtime');
+      throw StateError('quickjs: failed to create runtime');
     }
     _ptr = ptr;
     _live[_id] = this;
@@ -92,7 +98,7 @@ final class JsVm {
     try {
       result = vm._host(method.toDartString(), args.toDartString());
     } catch (e) {
-      // Ошибка в коде хоста не должна пролетать сквозь C-стек QuickJS.
+      // An error in host code must not propagate through the QuickJS C stack.
       result = jsonEncode({
         'error': {'code': 'host_failure', 'message': '$e'},
       });
@@ -120,7 +126,7 @@ final class JsVm {
     });
   }
 
-  /// Вызывает глобальную функцию [function] с одним JSON-аргументом.
+  /// Calls the global function [function] with a single JSON argument.
   JsResult call(String function, Object? arg, {Duration? budget}) {
     _checkAlive();
     return using((arena) {
@@ -133,7 +139,7 @@ final class JsVm {
     });
   }
 
-  /// Прогоняет микрозадачи (продолжения промисов) до опустошения очереди.
+  /// Runs microtasks (promise continuations) until the queue is empty.
   JsResult runJobs({Duration? budget}) {
     _checkAlive();
     return using((arena) {
@@ -164,6 +170,6 @@ final class JsVm {
   bool get isDisposed => _disposed;
 
   void _checkAlive() {
-    if (_disposed) throw StateError('JsVm уже освобождена');
+    if (_disposed) throw StateError('JsVm is already disposed');
   }
 }
