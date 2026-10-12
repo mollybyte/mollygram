@@ -10,6 +10,7 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+env:
   # Пакеты монорепо, которые проверяет этот workflow. plugin_host
   # проверяется своим job'ом.
   PACKAGES: tdlib core ui_kit media app
