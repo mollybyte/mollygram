@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mollygram app screen</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+.mw{--fg:#1D1D1F;--fg2:#56565B;--sep:rgba(0,0,0,.08);--accent:#0071E3;--in:#FFFFFF;--out:#EFFDDE;--field:rgba(0,0,0,.055);--av1:#A9ADB6;--av2:#878B94;--muted:#A1A1A6;--win:#F5F5F7;--card:#FFFFFF;--off:#D9D9DE;--bshadow:0 1px 1px rgba(0,0,0,.07);
+  --wp:radial-gradient(60% 55% at 12% 18%,#DBDDBB 0,transparent 70%),radial-gradient(55% 55% at 88% 12%,#6BA587 0,transparent 70%),radial-gradient(60% 60% at 82% 88%,#D5D88D 0,transparent 70%),radial-gradient(55% 60% at 18% 90%,#88B884 0,transparent 70%),#B5C99E;
+  --glass:rgba(255,255,255,.42);--pglass:rgba(255,255,255,.62);--rim:rgba(255,255,255,.6);--hi:rgba(255,255,255,.95);--lo:rgba(255,255,255,.3);--glow:rgba(255,255,255,.35);--shadow:0 12px 34px rgba(30,50,20,.16);--pshadow:0 24px 70px rgba(0,0,0,.22);--frame:0 0 0 .5px rgba(0,0,0,.18),0 30px 80px rgba(0,0,0,.18),0 8px 24px rgba(0,0,0,.08);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;font-size:13px;color:var(--fg);-webkit-font-smoothing:antialiased;text-align:left;line-height:normal;letter-spacing:normal}
+.mw.dark{--fg:#F5F5F7;--fg2:#AEAEB3;--sep:rgba(255,255,255,.09);--accent:#0A84FF;--in:#2A2A2D;--out:#2B5278;--field:rgba(255,255,255,.07);--av1:#71757E;--av2:#565A62;--muted:#636366;--win:#1E1E20;--card:#2A2A2D;--off:#48484C;--bshadow:none;
+  --wp:radial-gradient(60% 55% at 12% 18%,#2D4A5C 0,transparent 70%),radial-gradient(55% 55% at 88% 12%,#1C3442 0,transparent 70%),radial-gradient(60% 60% at 82% 88%,#3B5465 0,transparent 70%),radial-gradient(55% 60% at 18% 90%,#203845 0,transparent 70%),#1A2A35;
+  --glass:rgba(28,30,34,.42);--pglass:rgba(30,32,36,.66);--rim:rgba(255,255,255,.14);--hi:rgba(255,255,255,.22);--lo:rgba(255,255,255,.05);--glow:rgba(255,255,255,.04);--shadow:0 12px 34px rgba(0,0,0,.45);--pshadow:0 24px 70px rgba(0,0,0,.6);--frame:0 0 0 .5px rgba(255,255,255,.16),0 30px 80px rgba(0,0,0,.55)}
+.mw-frame{box-shadow:var(--frame)}
+.mw-glass{background:var(--glass);-webkit-backdrop-filter:blur(30px) saturate(190%);backdrop-filter:blur(30px) saturate(190%);border:1px solid var(--rim);box-shadow:inset 0 1px 0 var(--hi),inset 0 -1px 0 var(--lo),inset 0 0 18px var(--glow),0 0 0 .5px rgba(0,0,0,.06),var(--shadow)}
+.mw-pal{background:var(--pglass);-webkit-backdrop-filter:blur(40px) saturate(190%);backdrop-filter:blur(40px) saturate(190%);border:1px solid var(--rim);box-shadow:inset 0 1px 0 var(--hi),inset 0 0 24px var(--glow),var(--pshadow)}
+.mw-av{display:grid;place-items:center;border-radius:50%;color:#FFFFFF;font-weight:600;background:linear-gradient(180deg,var(--av1),var(--av2));flex:none}
+.mw-row{display:flex;gap:10px;align-items:center;padding:7px 8px;border-radius:10px}
+.mw-row .s{color:var(--fg2)}
+.mw-row.on{background:var(--accent);color:#FFFFFF}
+.mw-row.on .s{color:rgba(255,255,255,.82)}
+.mw-badge{min-width:18px;height:18px;padding:0 5px;box-sizing:border-box;border-radius:9px;font-size:11px;font-weight:600;display:grid;place-items:center;color:#FFFFFF;background:var(--accent)}
+.mw-badge.m{background:var(--muted)}
+.mw-in{background:var(--in);box-shadow:var(--bshadow);border-radius:16px 16px 16px 5px;padding:7px 11px 5px;max-width:400px;line-height:1.4}
+.mw-out{background:var(--out);box-shadow:var(--bshadow);border-radius:16px 16px 5px 16px;padding:7px 11px 5px;max-width:400px;line-height:1.4;align-self:flex-end}
+.mw-meta{font-size:11px;color:var(--fg2);text-align:right}
+.mw-ib{width:30px;height:30px;border:0;border-radius:50%;background:transparent;color:var(--fg2);display:grid;place-items:center;padding:0;font:inherit}
+.mw-ib.on{color:var(--accent);background:var(--field)}
+.mw-tab{border:0;font:inherit;font-size:12.5px;font-weight:500;height:26px;padding:0 10px;border-radius:13px;background:transparent;color:var(--fg2)}
+.mw-tab.on{background:var(--field);color:var(--fg)}
+.mw-it{display:flex;align-items:center;gap:10px;padding:0 10px;height:36px;border-radius:8px}
+.mw-it .k{margin-left:auto;color:var(--fg2);font-size:12px}
+.mw-it.on{background:var(--accent);color:#FFFFFF}
+.mw-it.on .k,.mw-it.on .s{color:rgba(255,255,255,.8)}
+.mw-sw{width:38px;height:22px;border-radius:11px;border:0;padding:2px;display:flex;cursor:pointer;flex:none}
+.mw-sw span{width:18px;height:18px;border-radius:50%;background:#FFFFFF;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+.mw-side{position:absolute;z-index:3;top:8px;left:8px;bottom:8px;width:272px}
+.mw-main{position:absolute;top:0;bottom:0;left:288px;right:0}
+.mw-nav{width:200px}
+@media (max-width:760px){.mw-side{display:none}.mw-main{left:0}.mw-nav{display:none}}
+@media (prefers-reduced-transparency:reduce){.mw-glass,.mw-pal{background:var(--in);-webkit-backdrop-filter:none;backdrop-filter:none}}
+</style>
+</helmet>
+<div class="mw mw-frame {{theme}}" style="position: relative; width: 100%; height: {{h}}px; border-radius: 12px; overflow: hidden; background: {{bg}}">
+
+  <sc-if value="{{hasSide}}" hint-placeholder-val="{{ true }}">
+    <aside class="mw-glass mw-side" aria-label="Chats" style="border-radius: 16px; display: flex; flex-direction: column; overflow: hidden">
+      <div style="height: 40px; display: flex; align-items: center; padding: 0 8px 0 14px; gap: 8px">
+        <span aria-hidden="true" style="display: flex; gap: 8px"><span style="width: 12px; height: 12px; border-radius: 50%; background: #FF5F57"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #FEBC2E"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #28C840"></span></span>
+        <span style="flex: 1"></span>
+        <span class="mw-ib" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6"></path><path d="M17.5 3.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4z"></path></svg></span>
+      </div>
+      <div style="padding: 0 10px 8px">
+        <div style="display: flex; align-items: center; gap: 6px; height: 28px; padding: 0 9px; border-radius: 8px; background: var(--field); color: var(--fg2)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+          <span>Search</span><span style="margin-left: auto; font-size: 11.5px">⌘K</span>
+        </div>
+      </div>
+      <div style="display: flex; gap: 2px; padding: 0 8px 6px">
+        <span class="mw-tab on" style="display: inline-flex; align-items: center">All</span>
+        <span class="mw-tab" style="display: inline-flex; align-items: center; gap: 5px">Personal <span style="font-size: 11px">2</span></span>
+        <span class="mw-tab" style="display: inline-flex; align-items: center; gap: 5px">Work <span style="font-size: 11px">3</span></span>
+        <span class="mw-tab" style="display: inline-flex; align-items: center">Channels</span>
+      </div>
+      <div style="flex: 1; overflow: hidden; padding: 0 6px; display: flex; flex-direction: column; gap: 1px">
+        <sc-for list="{{chats}}" as="c" hint-placeholder-count="8">
+          <div class="mw-row {{c.cls}}">
+            <span class="mw-av" style="width: 40px; height: 40px; font-size: 14px">{{c.ini}}</span>
+            <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+              <span style="display: flex; gap: 6px; align-items: baseline">
+                <span style="flex: 1; min-width: 0; font-weight: 600; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{c.name}}</span>
+                <span class="s" style="font-size: 11.5px">{{c.time}}</span>
+              </span>
+              <span style="display: flex; gap: 6px; align-items: center">
+                <span class="s" style="flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{c.last}}</span>
+                <sc-if value="{{c.hasUnread}}" hint-placeholder-val="{{ false }}"><span class="mw-badge {{c.bcls}}">{{c.unread}}</span></sc-if>
+              </span>
+            </span>
+          </div>
+        </sc-for>
+      </div>
+    </aside>
+  </sc-if>
+
+  <!-- Chat with Anna: also the backdrop of the palette screen -->
+  <sc-if value="{{showAnna}}" hint-placeholder-val="{{ true }}">
+    <main class="mw-main" aria-label="Chat with Anna Morris">
+      <div style="position: absolute; inset: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end">
+        <div style="max-width: 720px; width: 100%; margin: 0 auto; box-sizing: border-box; padding: 64px 24px 74px; display: flex; flex-direction: column; gap: 4px">
+          <div class="mw-in">Sent the photos from the weekend, a couple of them came out really well<div class="mw-meta">13:55</div></div>
+          <div style="width: 320px; padding: 3px; border-radius: 16px 16px 16px 5px; background: var(--in); box-shadow: var(--bshadow); position: relative">
+            <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px; border-radius: 13px 13px 13px 3px; overflow: hidden">
+              <div style="height: 132px; background: linear-gradient(180deg,#A9CDE3 0,#CFE2EC 38%,#4F86A8 38.5%,#3E7193 62%,#E4D6B5 62.5%,#D2C19C 100%)"></div>
+              <div style="height: 132px; background: radial-gradient(30% 22% at 70% 30%,#FFE7B0 0,transparent 70%),linear-gradient(180deg,#F2B880 0,#E58D6B 45%,#6E5A6E 46%,#3F3A4A 100%)"></div>
+            </div>
+            <span style="position: absolute; right: 10px; bottom: 9px; font-size: 11px; color: #FFFFFF; padding: 1px 6px; border-radius: 8px; background: rgba(0,0,0,.35)">13:56</span>
+          </div>
+          <div class="mw-out" style="margin-top: 6px">The second one is great. Can you send it as a file? I want to print it<div class="mw-meta">13:58 ✓✓</div></div>
+          <div class="mw-in" style="width: 260px; padding: 9px 11px 6px; margin-top: 6px; display: flex; gap: 10px; align-items: center">
+            <span style="flex: none; width: 40px; height: 40px; border-radius: 50%; background: var(--accent); display: grid; place-items: center"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v12M7 12l5 5 5-5"></path></svg></span>
+            <span style="flex: 1; min-width: 0"><span style="display: block; font-weight: 500">IMG_2041.HEIC</span><span class="mw-meta" style="display: flex; justify-content: space-between"><span>6.8 MB, original</span><span>14:01</span></span></span>
+          </div>
+          <div style="position: relative; width: 184px; height: 184px; margin-top: 6px">
+            <div style="width: 184px; height: 184px; border-radius: 50%; background: radial-gradient(21% 24% at 50% 40%,#E2B897 0,#D3A483 70%,transparent 72%),radial-gradient(42% 30% at 50% 98%,#4D5D6E 0,#4D5D6E 80%,transparent 82%),radial-gradient(70% 60% at 85% 20%,#F6E3C4 0,transparent 70%),linear-gradient(160deg,#CDBBA2 0,#9B8B78 100%)"></div>
+            <svg width="184" height="184" viewBox="0 0 184 184" style="position: absolute; inset: 0" aria-hidden="true"><circle cx="92" cy="92" r="89" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="3"></circle><circle cx="92" cy="92" r="89" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-dasharray="559" stroke-dashoffset="372" transform="rotate(-90 92 92)"></circle></svg>
+            <span style="position: absolute; left: 12px; bottom: 12px; font-size: 11px; color: #FFFFFF; padding: 1px 7px; border-radius: 8px; background: rgba(0,0,0,.38)">0:04 / 0:12 · 120 fps</span>
+          </div>
+          <div class="mw-in" style="width: 290px; padding: 8px 10px 6px; margin-top: 6px">
+            <div style="display: flex; gap: 9px; align-items: center">
+              <span style="flex: none; width: 34px; height: 34px; border-radius: 50%; background: var(--accent); display: grid; place-items: center"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" fill="#FFFFFF"></path></svg></span>
+              <span style="flex: 1; display: flex; align-items: center; gap: 2px; height: 20px" aria-hidden="true">
+                <sc-for list="{{wave}}" as="w" hint-placeholder-count="30"><span style="width: 2.5px; border-radius: 2px; height: {{w.h}}px; background: var(--accent); opacity: {{w.o}}"></span></sc-for>
+              </span>
+              <span style="flex: none; font-size: 11px; color: var(--fg2)">0:18</span>
+            </div>
+            <div style="margin-top: 6px">We’re meeting at Alex’s on Saturday evening, bring that board game if you can</div>
+          </div>
+          <div class="mw-out" style="margin-top: 6px">Will do. See you there<div class="mw-meta">14:05 ✓</div></div>
+        </div>
+      </div>
+      <div style="position: absolute; z-index: 2; top: 9px; left: 12px; right: 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px">
+        <div class="mw-glass" style="border-radius: 22px; display: flex; align-items: center; gap: 9px; padding: 4px 14px 4px 4px">
+          <span class="mw-av" style="width: 30px; height: 30px; font-size: 12px">AM</span>
+          <span style="display: flex; flex-direction: column"><span style="font-weight: 600; font-size: 13.5px">Anna Morris</span><span style="font-size: 11.5px; color: var(--fg2)">online</span></span>
+        </div>
+        <div class="mw-glass" style="border-radius: 22px; display: flex; align-items: center; gap: 2px; padding: 3px">
+          <span class="mw-ib" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg></span>
+          <span class="mw-ib" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"></path></svg></span>
+          <span class="mw-ib" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M6 20V10a6 6 0 0 1 12 0v10l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5z"></path><path d="M10 10h.01M14 10h.01" stroke-width="2.4" stroke-linecap="round"></path></svg></span>
+        </div>
+      </div>
+      <div style="position: absolute; z-index: 2; bottom: 10px; left: 0; right: 0; padding: 0 22px; display: flex; justify-content: center">
+        <div class="mw-glass" style="width: 100%; max-width: 680px; border-radius: 22px; display: flex; align-items: center; gap: 2px; padding: 3px 3px 3px 6px">
+          <span class="mw-ib" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5 12.5 20a5 5 0 0 1-7-7l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7L10.2 17.7a1.7 1.7 0 0 1-2.4-2.4L15.5 7.6"></path></svg></span>
+          <span style="flex: 1; color: var(--fg2); font-size: 13.5px; padding-left: 2px">Message</span>
+          <span class="mw-ib" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="6" width="13" height="12" rx="3"></rect><path d="m16 10 5-3v10l-5-3"></path></svg></span>
+        </div>
+      </div>
+    </main>
+  </sc-if>
+
+  <!-- Command palette over the chat; no dimming, no animation -->
+  <sc-if value="{{isPalette}}" hint-placeholder-val="{{ false }}">
+    <div class="mw-pal" role="dialog" aria-label="Command palette" style="position: absolute; z-index: 5; left: calc(50% + 144px); top: 64px; transform: translateX(-50%); width: min(560px, calc(100% - 32px)); border-radius: 16px; overflow: hidden">
+      <div style="display: flex; align-items: center; gap: 10px; padding: 0 16px; height: 50px; border-bottom: 1px solid var(--sep)">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--fg2)" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+        <span style="font-size: 15px">&gt; spl<span style="display: inline-block; width: 1.5px; height: 17px; background: var(--accent); vertical-align: -3px; margin-left: 1px"></span></span>
+        <span style="margin-left: auto; font-size: 12px; color: var(--fg2)">Commands</span>
+      </div>
+      <div style="padding: 6px">
+        <div style="font-size: 11.5px; font-weight: 600; color: var(--fg2); padding: 6px 10px 4px">Commands</div>
+        <div class="mw-it on"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"></rect><path d="M12 4v16"></path></svg>Split view with Product team<span class="k">⌘\</span></div>
+        <div class="mw-it"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="6" width="18" height="14" rx="3"></rect><path d="M3 10h18M8 6V3"></path></svg>Open chat in a new tab<span class="k">⌘T</span></div>
+        <div class="mw-it"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"></rect><path d="M15 4v16"></path></svg>Split view: close the right pane<span class="k">⇧⌘\</span></div>
+        <div style="font-size: 11.5px; font-weight: 600; color: var(--fg2); padding: 10px 10px 4px">Messages</div>
+        <div class="mw-it"><span class="mw-av" style="width: 22px; height: 22px; font-size: 9px">VS</span><span>split the release notes by platform</span><span class="k s">Product team</span></div>
+      </div>
+      <div style="display: flex; gap: 16px; padding: 9px 16px; border-top: 1px solid var(--sep); font-size: 11.5px; color: var(--fg2)"><span>&gt; commands</span><span>@ people</span><span># messages</span></div>
+    </div>
+  </sc-if>
+
+  <!-- Tabs and split view -->
+  <sc-if value="{{isSplit}}" hint-placeholder-val="{{ false }}">
+    <main class="mw-main" aria-label="Two chats side by side">
+      <div style="position: absolute; z-index: 3; top: 9px; left: 12px; right: 12px; display: flex; justify-content: center">
+        <div class="mw-glass" style="border-radius: 18px; display: flex; gap: 2px; padding: 3px; max-width: 100%; overflow: hidden">
+          <span class="mw-tab on" style="display: inline-flex; align-items: center; gap: 6px; height: 28px; border-radius: 14px"><span class="mw-av" style="width: 18px; height: 18px; font-size: 8px">AM</span>Anna Morris</span>
+          <span class="mw-tab on" style="display: inline-flex; align-items: center; gap: 6px; height: 28px; border-radius: 14px"><span class="mw-av" style="width: 18px; height: 18px; font-size: 8px">PT</span>Product team</span>
+          <span class="mw-tab" style="display: inline-flex; align-items: center; gap: 6px; height: 28px; border-radius: 14px"><span class="mw-av" style="width: 18px; height: 18px; font-size: 8px">FD</span>Flutter Dev</span>
+          <span class="mw-tab" style="display: inline-flex; align-items: center; height: 28px; border-radius: 14px">Olivia Kim</span>
+          <span class="mw-ib" aria-hidden="true" style="width: 28px; height: 28px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></span>
+        </div>
+      </div>
+      <div style="position: absolute; inset: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr))">
+        <div style="position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; padding: 60px 16px 72px; gap: 4px; border-right: 1px solid var(--sep)">
+          <div class="mw-in">Sent the photos from the weekend, a couple of them came out really well<div class="mw-meta">13:55</div></div>
+          <div class="mw-out">The second one is great. Can you send it as a file? I want to print it<div class="mw-meta">13:58 ✓✓</div></div>
+          <div class="mw-in" style="width: 230px; padding: 9px 11px 6px; display: flex; gap: 10px; align-items: center">
+            <span style="flex: none; width: 38px; height: 38px; border-radius: 50%; background: var(--accent); display: grid; place-items: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v12M7 12l5 5 5-5"></path></svg></span>
+            <span style="flex: 1; min-width: 0"><span style="display: block; font-weight: 500">IMG_2041.HEIC</span><span class="mw-meta" style="display: block; text-align: left">6.8 MB, original</span></span>
+          </div>
+          <div class="mw-out">Will do. See you there<div class="mw-meta">14:05 ✓</div></div>
+          <div class="mw-glass" style="position: absolute; left: 14px; right: 14px; bottom: 10px; border-radius: 20px; height: 38px; display: flex; align-items: center; padding: 0 14px; color: var(--fg2)">Message Anna</div>
+        </div>
+        <div style="position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; padding: 60px 16px 72px; gap: 4px">
+          <div class="mw-in"><div style="font-weight: 600; font-size: 12.5px; color: var(--accent)">Vicky Stone</div>Build 214 is up. Can someone check sign-in on an Intel Mac?<div class="mw-meta">14:08</div></div>
+          <div class="mw-in"><div style="font-weight: 600; font-size: 12.5px; color: var(--accent)">Adam Lewis</div>Works on my 2019 MacBook Pro, QR code too<div class="mw-meta">14:09</div></div>
+          <div class="mw-out">Great. Let’s split the release notes by platform<div class="mw-meta">14:11 ✓✓</div></div>
+          <div class="mw-in"><div style="font-weight: 600; font-size: 12.5px; color: var(--accent)">Vicky Stone</div>Call at 16:30 then<div class="mw-meta">14:12</div></div>
+          <div class="mw-glass" style="position: absolute; left: 14px; right: 14px; bottom: 10px; border-radius: 20px; height: 38px; display: flex; align-items: center; padding: 0 14px; color: var(--fg2)">Message Product team</div>
+        </div>
+      </div>
+    </main>
+  </sc-if>
+
+  <!-- Privacy: ghost mode, kept deleted message, edit history -->
+  <sc-if value="{{isPrivacy}}" hint-placeholder-val="{{ false }}">
+    <main class="mw-main" aria-label="Product team chat in ghost mode">
+      <div style="position: absolute; inset: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end">
+        <div style="max-width: 720px; width: 100%; margin: 0 auto; box-sizing: border-box; padding: 64px 24px 74px; display: flex; flex-direction: column; gap: 4px">
+          <div class="mw-in"><div style="font-weight: 600; font-size: 12.5px; color: var(--accent)">Vicky Stone</div>Build 214 is up. Can someone check sign-in on an Intel Mac?<div class="mw-meta">14:08</div></div>
+          <div class="mw-in"><div style="font-weight: 600; font-size: 12.5px; color: var(--accent)">Adam Lewis</div>Works on my 2019 MacBook Pro, QR code too<div class="mw-meta">14:09</div></div>
+          <div class="mw-in" style="opacity: .6"><div style="font-weight: 600; font-size: 12.5px; color: var(--accent)">Adam Lewis</div>Also, the staging password is in the pinned message<div class="mw-meta" style="display: flex; justify-content: space-between; gap: 12px"><span style="display: inline-flex; align-items: center; gap: 4px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"></path></svg>deleted at 14:10, kept on this Mac</span><span>14:09</span></div></div>
+          <div class="mw-out" style="margin-top: 6px">Great. Let’s split the release notes by platform<div class="mw-meta">14:11 ✓✓</div></div>
+          <div style="display: flex; gap: 10px; align-items: flex-end; margin-top: 6px; flex-wrap: wrap">
+            <div class="mw-in"><div style="font-weight: 600; font-size: 12.5px; color: var(--accent)">Vicky Stone</div>Call at 16:30 then<div class="mw-meta">edited 14:12</div></div>
+            <div style="background: var(--card); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.18); padding: 10px 12px; width: 220px; display: flex; flex-direction: column; gap: 6px">
+              <div style="font-size: 11.5px; font-weight: 600; color: var(--fg2)">Edit history</div>
+              <div style="display: flex; gap: 8px"><span style="color: var(--fg2); font-size: 11.5px; width: 34px; flex: none">14:12</span><span>Call at 16:30 then</span></div>
+              <div style="display: flex; gap: 8px; color: var(--fg2)"><span style="font-size: 11.5px; width: 34px; flex: none">14:10</span><span style="text-decoration: line-through">Call at 16:00 then</span></div>
+              <div style="display: flex; gap: 8px; color: var(--fg2)"><span style="font-size: 11.5px; width: 34px; flex: none">14:10</span><span style="text-decoration: line-through">Call at 4 then</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="position: absolute; z-index: 2; top: 9px; left: 12px; right: 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px">
+        <div class="mw-glass" style="border-radius: 22px; display: flex; align-items: center; gap: 9px; padding: 4px 14px 4px 4px">
+          <span class="mw-av" style="width: 30px; height: 30px; font-size: 12px">PT</span>
+          <span style="display: flex; flex-direction: column"><span style="font-weight: 600; font-size: 13.5px">Product team</span><span style="font-size: 11.5px; color: var(--fg2)">8 members · you are invisible</span></span>
+        </div>
+        <div class="mw-glass" style="border-radius: 22px; display: flex; align-items: center; gap: 2px; padding: 3px">
+          <span class="mw-ib" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg></span>
+          <span class="mw-ib on" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M6 20V10a6 6 0 0 1 12 0v10l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5z"></path><path d="M10 10h.01M14 10h.01" stroke-width="2.4" stroke-linecap="round"></path></svg></span>
+        </div>
+      </div>
+      <div style="position: absolute; z-index: 2; bottom: 10px; left: 0; right: 0; padding: 0 22px; display: flex; justify-content: center">
+        <div class="mw-glass" style="width: 100%; max-width: 680px; border-radius: 22px; display: flex; align-items: center; height: 38px; padding: 0 14px; box-sizing: border-box; color: var(--fg2); gap: 8px">
+          <span style="flex: 1">Message</span><span style="font-size: 11.5px">Read receipts off</span>
+        </div>
+      </div>
+    </main>
+  </sc-if>
+
+  <!-- Plugins, styled like macOS System Settings -->
+  <sc-if value="{{isPlugins}}" hint-placeholder-val="{{ false }}">
+    <div style="position: absolute; inset: 0; display: flex; background: var(--win)">
+      <nav class="mw-nav" aria-label="Settings" style="flex: none; padding: 12px 8px; box-sizing: border-box; border-right: 1px solid var(--sep); display: flex; flex-direction: column; gap: 1px">
+        <span aria-hidden="true" style="display: flex; gap: 8px; padding: 2px 8px 14px"><span style="width: 12px; height: 12px; border-radius: 50%; background: #FF5F57"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #FEBC2E"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #28C840"></span></span>
+        <sc-for list="{{nav}}" as="n" hint-placeholder-count="8">
+          <div class="mw-it {{n.cls}}" style="height: 30px">{{n.label}}</div>
+        </sc-for>
+      </nav>
+      <div style="flex: 1; min-width: 0; padding: 20px 24px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px; overflow: hidden">
+        <div style="font-size: 17px; font-weight: 600">Plugins</div>
+        <div style="background: var(--card); border-radius: 10px; box-shadow: var(--bshadow)">
+          <sc-for list="{{plugins}}" as="p" hint-placeholder-count="4">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-top: {{p.border}}">
+              <span style="flex: none; width: 30px; height: 30px; border-radius: 8px; background: var(--field); display: grid; place-items: center; color: var(--fg2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{p.icon}}"></path></svg></span>
+              <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px"><span style="font-weight: 500">{{p.name}}</span><span style="font-size: 12px; color: var(--fg2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{p.desc}}</span></span>
+              <button class="mw-sw" role="switch" aria-checked="{{p.on}}" aria-label="{{p.name}}" onClick="{{p.toggle}}" style="background: {{p.bg}}; justify-content: {{p.jc}}"><span></span></button>
+            </div>
+          </sc-for>
+        </div>
+        <div style="font-size: 12px; font-weight: 600; color: var(--fg2); padding: 4px 2px 0">Transcribe voice can</div>
+        <div style="background: var(--card); border-radius: 10px; box-shadow: var(--bshadow)">
+          <div style="display: flex; gap: 10px; padding: 9px 14px; align-items: center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--fg2)" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0"></path></svg><span style="flex: 1">Read voice and video messages you open</span></div>
+          <div style="display: flex; gap: 10px; padding: 9px 14px; align-items: center; border-top: 1px solid var(--sep)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--fg2)" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"></rect><path d="M8 9h8M8 13h5"></path></svg><span style="flex: 1">Keep up to 1 MB of its own data</span></div>
+          <div style="display: flex; gap: 10px; padding: 9px 14px; align-items: center; border-top: 1px solid var(--sep); color: var(--fg2)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M5.6 5.6l12.8 12.8"></path></svg><span style="flex: 1">No network access</span></div>
+        </div>
+        <pre style="margin: 0; font: 11.5px/1.5 ui-monospace,'SF Mono',Menlo,monospace; color: var(--fg2); background: var(--field); border-radius: 8px; padding: 10px 12px; white-space: pre; overflow: hidden">id: dev.mollygram.transcribe
+runtime: js
+permissions:
+  media.read: [voice, round]
+  storage: 1mb</pre>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"appearance":{"editor":"enum","options":["Light","Dark"],"default":"Light"},"screen":{"editor":"enum","options":["Chat","Palette","Split","Privacy","Plugins"],"default":"Chat"},"height":{"editor":"int","min":360,"max":1000,"default":680},"$preview":{"width":1200,"height":680}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { on: { tr: true, tl: true, fl: false, qh: true } };
+  }
+  renderVals() {
+    const screen = this.props.screen ?? 'Chat';
+    const sel = screen === 'Privacy' ? 'team' : 'anya';
+    const C = [
+      { id: 'team', ini: 'PT', name: 'Product team', last: 'Vicky: Call at 16:30 then', time: '14:12', unread: 3 },
+      { id: 'anya', ini: 'AM', name: 'Anna Morris', last: 'Voice message', time: '14:03', unread: 0 },
+      { id: 'dennis', ini: 'D', name: 'Dennis', last: 'You: thanks, sent it back', time: '13:20', unread: 0 },
+      { id: 'dad', ini: 'D', name: 'Dad', last: 'Call me when you have a minute', time: '12:47', unread: 2 },
+      { id: 'book', ini: 'BC', name: 'Book club', last: 'Irene: voting on the November book', time: '11:30', unread: 12, muted: true },
+      { id: 'saved', ini: 'S', name: 'Saved Messages', last: 'lease_agreement.pdf', time: 'Yesterday', unread: 0 },
+      { id: 'flutter', ini: 'FD', name: 'Flutter Dev', last: 'What’s new on desktop', time: 'Yesterday', unread: 4, muted: true },
+      { id: 'olivia', ini: 'OK', name: 'Olivia Kim', last: 'Could you look at the mockups tonight?', time: 'Mon', unread: 0 },
+      { id: 'house', ini: 'B2', name: 'Building, entrance 2', last: 'Hot water is off tomorrow', time: 'Mon', unread: 28, muted: true }
+    ];
+    const chats = C.map((c) => ({ ...c, cls: c.id === sel ? 'on' : '', hasUnread: c.unread > 0, bcls: c.muted ? 'm' : '' }));
+    const H = [5,8,13,10,16,12,7,14,18,12,8,11,15,9,6,13,17,10,7,12,15,9,6,10,14,8,11,7,9,6];
+    const wave = H.map((h, i) => ({ h, o: i < 12 ? 1 : .35 }));
+    const nav = ['Account', 'Notifications', 'Privacy and security', 'Ghost mode', 'Media', 'Appearance', 'Windows and tabs', 'Plugins'].map((l) => ({ label: l, cls: l === 'Plugins' ? 'on' : '' }));
+    const s = this.state;
+    const P = [
+      { k: 'tr', name: 'Transcribe voice', desc: 'Built in · voice and video messages to text, on device', icon: 'M9 5h6a3 3 0 0 1 3 3v3a6 6 0 0 1-12 0V8a3 3 0 0 1 3-3zM12 17v4' },
+      { k: 'tl', name: 'Translate', desc: 'Built in · messages and the composer, any provider you set', icon: 'M4 5h9M8.5 3v2M6 5c1 4 4 7 7 8M11 5c-1 4-4 7-7 8M13 21l4-9 4 9M14.5 18h5' },
+      { k: 'fl', name: 'Chat filters', desc: 'Built in · hide messages by keyword, sender or type', icon: 'M4 5h16l-6 7v6l-4 2v-8z' },
+      { k: 'qh', name: 'Quiet hours', desc: 'tools.calm.quiet · mutes notifications on a schedule', icon: 'M20 14A8 8 0 1 1 10 4a6 6 0 0 0 10 10z' }
+    ];
+    const plugins = P.map((p, i) => ({ ...p, on: !!s.on[p.k], bg: s.on[p.k] ? 'var(--accent)' : 'var(--off)', jc: s.on[p.k] ? 'flex-end' : 'flex-start', border: i === 0 ? '0' : '1px solid var(--sep)', toggle: () => this.setState({ on: { ...s.on, [p.k]: !s.on[p.k] } }) }));
+    return {
+      theme: (this.props.appearance ?? 'Light') === 'Dark' ? 'dark' : '',
+      h: this.props.height ?? 680,
+      bg: screen === 'Plugins' ? 'var(--win)' : 'var(--wp)',
+      hasSide: screen !== 'Plugins',
+      showAnna: screen === 'Chat' || screen === 'Palette',
+      isPalette: screen === 'Palette', isSplit: screen === 'Split', isPrivacy: screen === 'Privacy', isPlugins: screen === 'Plugins',
+      chats, wave, nav, plugins
+    };
+  }
+}
+</script>
+</body>
+</html>

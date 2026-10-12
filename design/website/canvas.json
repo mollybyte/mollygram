@@ -1,0 +1,63 @@
+{
+  "v": 3,
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-10-12T20:20:00Z"
+  },
+  "title": "Mollygram website",
+  "launch": {
+    "view": "canvas"
+  },
+  "pages": [],
+  "boards": {
+    "Main.dc.html": {
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 5300,
+      "title": "Landing page, light",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "MainDark.dc.html": {
+      "x": 1520,
+      "y": 0,
+      "w": 1440,
+      "h": 5300,
+      "title": "Landing page, dark",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "AppShot.dc.html": {
+      "x": 0,
+      "y": 6600,
+      "w": 1200,
+      "h": 680,
+      "title": "Shared app screen (Screen tweak: chat, palette, split, privacy, plugins)",
+      "is_interactive": true,
+      "radius": 12
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "MainDark.dc.html",
+    "AppShot.dc.html"
+  ],
+  "notes": {
+    "a": {
+      "x": 0,
+      "y": -300,
+      "text": "mollygram.dev landing page",
+      "kind": "title1",
+      "maxW": 2960
+    },
+    "shared": {
+      "x": 0,
+      "y": 6300,
+      "text": "Real app screens used on every option",
+      "kind": "title1",
+      "maxW": 2960
+    }
+  },
+  "designSystems": []
+}
