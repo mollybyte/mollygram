@@ -32,3 +32,13 @@ build/
 secrets.json
 tdlib-db/
 tdlib-files/
+
+# Ключи Telegram для --dart-define-from-file (шаблон: config/telegram.example.json)
+config/telegram.json
+
+# libtdjson, собранная локально или скачанная из CI
+packages/tdlib/native/
+*.dylib
+
+# fvm
+.fvm/
