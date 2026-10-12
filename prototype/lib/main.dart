@@ -31,17 +31,26 @@ void main() {
 }
 
 class PrototypeApp extends StatefulWidget {
-  const PrototypeApp({super.key, required this.app, required this.circle});
+  const PrototypeApp({
+    super.key,
+    required this.app,
+    required this.circle,
+    this.chats,
+    this.messages,
+  });
 
   final AppState app;
   final CircleController circle;
+  final List<FakeChat>? chats;
+  final List<FakeMessage>? messages;
 
   @override
   State<PrototypeApp> createState() => _PrototypeAppState();
 }
 
 class _PrototypeAppState extends State<PrototypeApp> {
-  final _messages = buildMessages(5000);
+  late final List<FakeChat> _chats;
+  late final List<FakeMessage> _messages;
   final _scroll = ScrollController();
   late final _stats = FrameStats();
   late final _bench = Benchmark(
@@ -62,6 +71,8 @@ class _PrototypeAppState extends State<PrototypeApp> {
   @override
   void initState() {
     super.initState();
+    _chats = widget.chats ?? fakeChats;
+    _messages = widget.messages ?? buildMessages(5000);
     widget.circle.start();
     if (autobench) _autobench();
   }
@@ -112,11 +123,12 @@ class _PrototypeAppState extends State<PrototypeApp> {
                 type: MaterialType.transparency,
                 child: _Window(
                   sidebar: Sidebar(
+                    chats: _chats,
                     selected: _chat,
                     onSelect: (i) => setState(() => _chat = i),
                   ),
                   chat: ChatPane(
-                    chat: fakeChats[_chat],
+                    chat: _chats[_chat],
                     messages: _messages,
                     scroll: _scroll,
                     circle: widget.circle,

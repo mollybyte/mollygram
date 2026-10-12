@@ -8,8 +8,14 @@ import 'widgets.dart';
 
 /// A floating glass island with the chat list.
 class Sidebar extends StatefulWidget {
-  const Sidebar({super.key, required this.selected, required this.onSelect});
+  const Sidebar({
+    super.key,
+    required this.chats,
+    required this.selected,
+    required this.onSelect,
+  });
 
+  final List<FakeChat> chats;
   final int selected;
   final ValueChanged<int> onSelect;
 
@@ -100,9 +106,9 @@ class _SidebarState extends State<Sidebar> {
             Expanded(
               child: ListView.builder(
                 padding: const EdgeInsets.fromLTRB(6, 0, 6, 8),
-                itemCount: fakeChats.length,
+                itemCount: widget.chats.length,
                 itemBuilder: (context, i) => _ChatRow(
-                  chat: fakeChats[i],
+                  chat: widget.chats[i],
                   on: i == widget.selected,
                   onTap: () => widget.onSelect(i),
                 ),
