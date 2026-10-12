@@ -1,0 +1,11 @@
+/// Песочница для JS-плагинов Mollygram: манифест, права, quickjs-ng,
+/// декларативный UI. Спецификация: docs/plugins.md.
+library;
+
+export 'src/bundle.dart' show PluginBundle, maxSourceBytes;
+export 'src/js_vm.dart' show JsLimits, JsResult, JsStatus, JsVm;
+export 'src/manifest.dart';
+export 'src/permissions.dart';
+export 'src/plugin_instance.dart';
+export 'src/plugin_worker.dart';
+export 'src/ui.dart' show UiException, validateUi, codeTokens;

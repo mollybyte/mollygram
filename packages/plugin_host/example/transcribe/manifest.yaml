@@ -1,0 +1,28 @@
+id: dev.mollygram.transcribe
+name: Расшифровка
+version: 1.0.0
+author: Mollygram
+description: >-
+  Расшифровывает голосовые и кружки на устройстве, без сети и без Premium.
+runtime: js
+sdk: ^1.0
+main: index.js
+permissions:
+  media.read: [voice, round]
+  storage: 1mb
+hooks:
+  - message.render.voice
+  - message.render.round
+settings:
+  - key: auto
+    type: toggle
+    label: Расшифровывать сразу
+    default: false
+  - key: language
+    type: select
+    label: Язык
+    default: auto
+    options:
+      - { value: auto, label: Определять автоматически }
+      - { value: ru, label: Русский }
+      - { value: en, label: Английский }
