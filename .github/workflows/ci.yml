@@ -1,14 +1,49 @@
 name: CI
 
+# Pull requests get the fast layer only: format, analyze, codegen check and
+# tests on Linux. Desktop builds (macOS minutes are the most expensive) run on
+# main, on manual runs, and on pull requests labelled `full-ci`. Changes that
+# touch none of the paths below (docs, design, website, prototype) skip this
+# workflow entirely.
+
 on:
   push:
     branches: [main]
+    paths:
+      - packages/tdlib/**
+      - packages/core/**
+      - packages/ui_kit/**
+      - packages/media/**
+      - packages/app/**
+      - assets/icon/**
+      - config/**
+      - pubspec.yaml
+      - pubspec.lock
+      - analysis_options.yaml
+      - .fvmrc
+      - .github/workflows/ci.yml
   pull_request:
+    types: [opened, synchronize, reopened, labeled]
+    paths:
+      - packages/tdlib/**
+      - packages/core/**
+      - packages/ui_kit/**
+      - packages/media/**
+      - packages/app/**
+      - assets/icon/**
+      - config/**
+      - pubspec.yaml
+      - pubspec.lock
+      - analysis_options.yaml
+      - .fvmrc
+      - .github/workflows/ci.yml
   workflow_dispatch:
 
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # A new push cancels the running check of the same PR. Adding an unrelated
+  # label gets its own group, so it does not cancel anything.
+  group: ci-${{ github.event.pull_request.number || github.ref }}${{ github.event.action == 'labeled' && github.event.label.name != 'full-ci' && format('-{0}', github.run_id) || '' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   # Monorepo packages checked by this workflow. plugin_host
@@ -18,6 +53,7 @@ env:
 jobs:
   analyze:
     name: Analyze and test
+    if: github.event.action != 'labeled' || github.event.label.name == 'full-ci'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -60,6 +96,7 @@ jobs:
   build:
     name: Build ${{ matrix.target }}
     needs: analyze
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-ci')
     strategy:
       fail-fast: false
       matrix:

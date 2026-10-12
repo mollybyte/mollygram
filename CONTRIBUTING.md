@@ -92,7 +92,7 @@ BREAKING CHANGE: plugins must subscribe to message.render instead of message.
 
 - Keep a pull request focused on one change. Fill in the [pull request template](.github/pull_request_template.md).
 - **The PR title must be a Conventional Commit** (`feat(app): add chat tabs`). CI checks it, because pull requests are squash-merged and the title becomes the commit on `main`.
-- CI must be green: format, analyze, codegen check, tests and builds.
+- CI must be green: format, analyze, codegen check and tests. Pull requests run these on Linux only; the macOS, Windows and Linux builds run after merge to `main`. Add the `full-ci` label to run the builds on a pull request, for example when you change native code or platform folders.
 - Include screenshots or a short recording for UI changes, in both light and dark themes.
 - New features need tests where it is practical; bug fixes need a test that reproduces the bug.
 
