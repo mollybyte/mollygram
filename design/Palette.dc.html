@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Командная палитра</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#0071E3}a:hover{color:#0058B0}
+.app{--wall:#DCE3E9;--glass:rgba(250,250,252,.74);--pglass:rgba(248,248,250,.82);--glass-b:rgba(0,0,0,.08);--hi:rgba(255,255,255,.85);--fg:#1D1D1F;--fg2:#6E6E73;--sep:rgba(0,0,0,.08);--accent:#0071E3;--in:#FFFFFF;--out:#DDF5C9;--field:rgba(0,0,0,.055);--av1:#A9ADB6;--av2:#878B94;--shadow:0 6px 24px rgba(0,0,0,.09);--pshadow:0 24px 70px rgba(0,0,0,.22);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;font-size:13px;color:var(--fg);background:var(--wall);-webkit-font-smoothing:antialiased}
+.app.dark{--wall:#15181C;--glass:rgba(40,40,44,.72);--pglass:rgba(36,36,40,.82);--glass-b:rgba(255,255,255,.1);--hi:rgba(255,255,255,.08);--fg:#F5F5F7;--fg2:#A1A1A6;--sep:rgba(255,255,255,.09);--accent:#0A84FF;--in:#2A2A2D;--out:#2B5278;--field:rgba(255,255,255,.07);--av1:#71757E;--av2:#565A62;--shadow:0 6px 24px rgba(0,0,0,.45);--pshadow:0 24px 70px rgba(0,0,0,.6)}
+.glass{background:var(--glass);-webkit-backdrop-filter:blur(30px) saturate(190%);backdrop-filter:blur(30px) saturate(190%);border:1px solid var(--rim);box-shadow:inset 0 1px 0 var(--hi),inset 0 -1px 0 var(--lo),inset 0 0 18px var(--glow),0 0 0 .5px rgba(0,0,0,.06),var(--shadow)}
+.pal{background:var(--pglass);-webkit-backdrop-filter:blur(40px) saturate(190%);backdrop-filter:blur(40px) saturate(190%);border:1px solid var(--rim);box-shadow:inset 0 1px 0 var(--hi),inset 0 -1px 0 var(--lo),inset 0 0 24px var(--glow),0 0 0 .5px rgba(0,0,0,.08),var(--pshadow)}
+.app{--wp:radial-gradient(60% 55% at 12% 18%,#DBDDBB 0,transparent 70%),radial-gradient(55% 55% at 88% 12%,#6BA587 0,transparent 70%),radial-gradient(60% 60% at 82% 88%,#D5D88D 0,transparent 70%),radial-gradient(55% 60% at 18% 90%,#88B884 0,transparent 70%),#B5C99E;--glass:rgba(255,255,255,.42);--pglass:rgba(255,255,255,.55);--rim:rgba(255,255,255,.6);--hi:rgba(255,255,255,.95);--lo:rgba(255,255,255,.3);--glow:rgba(255,255,255,.35);--fg2:#56565B;--out:#EFFDDE;--shadow:0 12px 34px rgba(30,50,20,.16);background:var(--wp)}
+.app.dark{--wp:radial-gradient(60% 55% at 12% 18%,#2D4A5C 0,transparent 70%),radial-gradient(55% 55% at 88% 12%,#1C3442 0,transparent 70%),radial-gradient(60% 60% at 82% 88%,#3B5465 0,transparent 70%),radial-gradient(55% 60% at 18% 90%,#203845 0,transparent 70%),#1A2A35;--glass:rgba(28,30,34,.42);--pglass:rgba(30,32,36,.58);--rim:rgba(255,255,255,.14);--hi:rgba(255,255,255,.22);--lo:rgba(255,255,255,.05);--glow:rgba(255,255,255,.04);--fg2:#AEAEB3;--out:#2B5278;--shadow:0 12px 34px rgba(0,0,0,.45)}
+.av{display:grid;place-items:center;color:#FFFFFF;font-weight:600;background:linear-gradient(180deg,var(--av1),var(--av2));flex:none}
+.it{border:0;width:100%;font:inherit;color:inherit;text-align:left;display:flex;align-items:center;gap:10px;padding:0 10px;height:38px;border-radius:8px;background:transparent;cursor:pointer}
+.it .sub,.it .k{color:var(--fg2)}
+.it.on{background:var(--accent);color:#FFFFFF}
+.it.on .sub,.it.on .k{color:rgba(255,255,255,.8)}
+.scroll{scrollbar-width:thin;scrollbar-color:var(--sep) transparent}
+@media (prefers-reduced-transparency:reduce){.glass,.pal{background:var(--in);-webkit-backdrop-filter:none;backdrop-filter:none}}
+</style>
+</helmet>
+<div class="app {{theme}}" style="width: 100%; height: 100vh; min-height: 900px; position: relative; overflow: hidden">
+
+  <!-- Окно под палитрой -->
+  <div aria-hidden="true" style="position: absolute; inset: 0">
+    <div class="glass" style="position: absolute; top: 8px; left: 8px; bottom: 8px; width: 304px; border-radius: 16px; padding: 52px 10px 0; box-sizing: border-box; display: flex; flex-direction: column; gap: 4px">
+      <sc-for list="{{bgRows}}" as="r" hint-placeholder-count="10">
+        <div style="display: flex; gap: 10px; align-items: center; padding: 8px; border-radius: 10px; background: {{r.bg}}">
+          <span class="av" style="width: 42px; height: 42px; border-radius: 50%"></span>
+          <span style="flex: 1; display: flex; flex-direction: column; gap: 6px"><span style="width: {{r.w}}; height: 9px; border-radius: 5px; background: {{r.bar}}"></span><span style="width: 80%; height: 8px; border-radius: 4px; background: {{r.bar2}}"></span></span>
+        </div>
+      </sc-for>
+    </div>
+    <div style="position: absolute; left: 320px; right: 0; top: 0; bottom: 0; display: flex; justify-content: center">
+      <div style="width: 712px; padding-top: 420px; display: flex; flex-direction: column; gap: 6px">
+        <div style="width: 300px; height: 44px; border-radius: 16px 16px 16px 5px; background: var(--in)"></div>
+        <div style="width: 260px; height: 44px; border-radius: 16px 16px 5px 16px; background: var(--out); align-self: flex-end"></div>
+        <div style="width: 360px; height: 64px; border-radius: 16px 16px 16px 5px; background: var(--in)"></div>
+        <div style="width: 200px; height: 44px; border-radius: 16px 16px 5px 16px; background: var(--out); align-self: flex-end"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Палитра -->
+  <div class="pal" role="dialog" aria-modal="true" aria-label="Командная палитра" style="position: absolute; left: calc(50% + 160px); top: 120px; transform: translateX(-50%); width: min(640px, calc(100% - 32px)); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column">
+    <div style="display: flex; align-items: center; gap: 10px; padding: 0 16px; height: 52px">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--fg2)" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+      <input value="{{q}}" onInput="{{onQ}}" onKeyDown="{{onKey}}" placeholder="Чаты, сообщения и команды" aria-label="Поиск по палитре" style="flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--fg); font: inherit; font-size: 18px">
+      <sc-if value="{{hasMode}}" hint-placeholder-val="{{ false }}"><span style="font-size: 12px; color: var(--fg2)">{{modeLabel}}</span></sc-if>
+    </div>
+    <div style="height: .5px; background: var(--sep)"></div>
+    <div class="scroll" role="listbox" aria-label="Результаты" style="max-height: 440px; overflow-y: auto; padding: 6px">
+      <sc-if value="{{empty}}" hint-placeholder-val="{{ false }}">
+        <div style="padding: 28px 12px; text-align: center; color: var(--fg2)">Ничего не нашлось</div>
+      </sc-if>
+      <sc-for list="{{groups}}" as="gr" hint-placeholder-count="3">
+        <div style="font-size: 11px; font-weight: 600; color: var(--fg2); padding: 8px 10px 3px">{{gr.title}}</div>
+        <sc-for list="{{gr.items}}" as="i" hint-placeholder-count="3">
+          <button class="it {{i.cls}}" role="option" aria-selected="{{i.on}}" onClick="{{i.pick}}" onMouseEnter="{{i.hover}}">
+            <sc-if value="{{i.isPerson}}" hint-placeholder-val="{{ true }}"><span class="av" style="width: 24px; height: 24px; border-radius: 50%; font-size: 9.5px">{{i.ini}}</span></sc-if>
+            <sc-if value="{{i.isIcon}}" hint-placeholder-val="{{ false }}"><span style="width: 24px; height: 24px; display: grid; place-items: center; flex: none"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{i.icon}}"></path></svg></span></sc-if>
+            <span style="flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{i.title}} <span class="sub">{{i.sub}}</span></span>
+            <span class="k" style="font-size: 12px">{{i.kbd}}</span>
+          </button>
+        </sc-for>
+      </sc-for>
+    </div>
+    <div style="height: .5px; background: var(--sep)"></div>
+    <div style="display: flex; gap: 16px; padding: 0 16px; height: 34px; align-items: center; font-size: 12px; color: var(--fg2)">
+      <span>⏎ открыть</span><span>⌘⏎ в сплите</span><span>⌥⏎ во вкладке</span>
+      <span style="flex: 1"></span>
+      <span>&gt; команды · @ люди · # сообщения</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"appearance":{"editor":"enum","options":["светлая","тёмная"],"default":"светлая"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { q: '', idx: 0 };
+  }
+  renderVals() {
+    const s = this.state;
+    const ALL = [
+      { g: 'Недавние', k: 'chat', title: 'Аня Морозова', sub: '', ini: 'АМ', kbd: '' },
+      { g: 'Недавние', k: 'chat', title: 'Команда продукта', sub: '3 новых', ini: 'КП', kbd: '⌘1' },
+      { g: 'Недавние', k: 'chat', title: 'Папа', sub: '', ini: 'П', kbd: '' },
+      { g: 'Сообщения', k: 'msg', title: 'договор_аренды.pdf', sub: 'Избранное', icon: 'M7 3h7l5 5v13H7zM14 3v5h5', kbd: '' },
+      { g: 'Сообщения', k: 'msg', title: '«возьми ту настолку»', sub: 'Аня Морозова', icon: 'M4 5h16v11H9l-5 4z', kbd: '' },
+      { g: 'Команды', k: 'cmd', title: 'Сводка непрочитанного', sub: 'Сводка', icon: 'M17 5H7l6 7-6 7h10', kbd: '⌘⇧S' },
+      { g: 'Команды', k: 'cmd', title: 'Перевести черновик', sub: 'Переводчик', icon: 'M4 6h9M8.5 4v2M6 6c0 4 3 7 6 8M11 6c0 3-2 6-6 8M13 20l4-9 4 9M14.5 17h5', kbd: '⌘⇧T' },
+      { g: 'Команды', k: 'cmd', title: 'Режим призрака', sub: '', icon: 'M6 20V10a6 6 0 0 1 12 0v10l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5z', kbd: '⌘⇧G' },
+      { g: 'Команды', k: 'cmd', title: 'Открыть второй чат в сплите', sub: '', icon: 'M3 4h18v16H3zM12 4v16', kbd: '⌘\\' },
+      { g: 'Команды', k: 'cmd', title: 'Прочитать всё в папке', sub: 'Каналы', icon: 'M2 13l4 4 7-8M10 16l1 1 7-8', kbd: '' },
+      { g: 'Люди', k: 'user', title: 'Артём Литвинов', sub: '@artlit', ini: 'АЛ', kbd: '' },
+      { g: 'Люди', k: 'user', title: 'Вика Соколова', sub: '@vsokol', ini: 'ВС', kbd: '' }
+    ];
+    const modes = { '>': ['cmd', 'Команды'], '@': ['user', 'Люди'], '#': ['msg', 'Сообщения'] };
+    let q = s.q.trim().toLowerCase();
+    let mode = null;
+    if (q && modes[q[0]]) { mode = modes[q[0]]; q = q.slice(1).trim(); }
+    const list = ALL.filter((it) => (!mode || it.k === mode[0] || (mode[0] === 'user' && it.k === 'chat')) && (mode || q || it.k !== 'user') && (!q || (it.title + ' ' + it.sub).toLowerCase().includes(q)));
+    const idx = Math.min(s.idx, Math.max(list.length - 1, 0));
+    const dec = list.map((it, i) => ({ ...it, on: i === idx, cls: i === idx ? 'on' : '', isPerson: !!it.ini, isIcon: !it.ini,
+      pick: () => this.setState({ idx: i }), hover: () => { if (this.state.idx !== i) this.setState({ idx: i }); } }));
+    const order = [], by = {};
+    dec.forEach((it) => { if (!by[it.g]) { by[it.g] = []; order.push(it.g); } by[it.g].push(it); });
+    const bgRows = Array.from({ length: 10 }, (_, i) => ({ bg: i === 1 ? 'var(--accent)' : 'transparent', w: (40 + (i * 13) % 40) + '%', bar: i === 1 ? 'rgba(255,255,255,.7)' : 'var(--field)', bar2: i === 1 ? 'rgba(255,255,255,.45)' : 'var(--field)' }));
+    return {
+      theme: (this.props.appearance ?? 'светлая') === 'тёмная' ? 'dark' : '',
+      q: s.q, groups: order.map((g) => ({ title: g, items: by[g] })), empty: list.length === 0, bgRows,
+      hasMode: !!mode, modeLabel: mode ? mode[1] : '',
+      onQ: (e) => this.setState({ q: e.target.value, idx: 0 }),
+      onKey: (e) => {
+        if (e.key === 'ArrowDown') { e.preventDefault(); this.setState({ idx: Math.min(idx + 1, list.length - 1) }); }
+        if (e.key === 'ArrowUp') { e.preventDefault(); this.setState({ idx: Math.max(idx - 1, 0) }); }
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

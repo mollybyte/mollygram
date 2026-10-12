@@ -1,0 +1,34 @@
+# Flutter / Dart
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.g.dart.incremental
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# macOS
+.DS_Store
+**/macos/Flutter/ephemeral/
+**/macos/Pods/
+**/xcuserdata/
+
+# Windows
+**/windows/flutter/ephemeral/
+
+# Linux
+**/linux/flutter/ephemeral/
+
+# Секреты: api_id / api_hash Telegram и локальные сессии TDLib
+.env
+*.env
+secrets.json
+tdlib-db/
+tdlib-files/

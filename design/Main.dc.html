@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Главное окно</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#0071E3}a:hover{color:#0058B0}
+.app{--wall:#DCE3E9;--glass:rgba(250,250,252,.74);--glass-b:rgba(0,0,0,.08);--hi:rgba(255,255,255,.8);--fg:#1D1D1F;--fg2:#6E6E73;--sep:rgba(0,0,0,.08);--accent:#0071E3;--in:#FFFFFF;--out:#DDF5C9;--hover:rgba(0,0,0,.05);--field:rgba(0,0,0,.055);--av1:#A9ADB6;--av2:#878B94;--muted:#A1A1A6;--shadow:0 6px 24px rgba(0,0,0,.09);--bshadow:0 1px 1px rgba(0,0,0,.07);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;font-size:13px;color:var(--fg);background:var(--wall);-webkit-font-smoothing:antialiased}
+.app.dark{--wall:#15181C;--glass:rgba(40,40,44,.72);--glass-b:rgba(255,255,255,.09);--hi:rgba(255,255,255,.07);--fg:#F5F5F7;--fg2:#A1A1A6;--sep:rgba(255,255,255,.09);--accent:#0A84FF;--in:#2A2A2D;--out:#2B5278;--hover:rgba(255,255,255,.06);--field:rgba(255,255,255,.07);--av1:#71757E;--av2:#565A62;--muted:#636366;--shadow:0 6px 24px rgba(0,0,0,.45);--bshadow:none}
+.glass{background:var(--glass);-webkit-backdrop-filter:blur(30px) saturate(190%);backdrop-filter:blur(30px) saturate(190%);border:1px solid var(--rim);box-shadow:inset 0 1px 0 var(--hi),inset 0 -1px 0 var(--lo),inset 0 0 18px var(--glow),0 0 0 .5px rgba(0,0,0,.06),var(--shadow)}
+.app{--wp:radial-gradient(60% 55% at 12% 18%,#DBDDBB 0,transparent 70%),radial-gradient(55% 55% at 88% 12%,#6BA587 0,transparent 70%),radial-gradient(60% 60% at 82% 88%,#D5D88D 0,transparent 70%),radial-gradient(55% 60% at 18% 90%,#88B884 0,transparent 70%),#B5C99E;--glass:rgba(255,255,255,.42);--rim:rgba(255,255,255,.6);--hi:rgba(255,255,255,.95);--lo:rgba(255,255,255,.3);--glow:rgba(255,255,255,.35);--fg2:#56565B;--out:#EFFDDE;--shadow:0 12px 34px rgba(30,50,20,.16);background:var(--wp)}
+.app.dark{--wp:radial-gradient(60% 55% at 12% 18%,#2D4A5C 0,transparent 70%),radial-gradient(55% 55% at 88% 12%,#1C3442 0,transparent 70%),radial-gradient(60% 60% at 82% 88%,#3B5465 0,transparent 70%),radial-gradient(55% 60% at 18% 90%,#203845 0,transparent 70%),#1A2A35;--glass:rgba(28,30,34,.42);--rim:rgba(255,255,255,.14);--hi:rgba(255,255,255,.22);--lo:rgba(255,255,255,.05);--glow:rgba(255,255,255,.04);--fg2:#AEAEB3;--out:#2B5278;--shadow:0 12px 34px rgba(0,0,0,.45)}
+.av{display:grid;place-items:center;border-radius:50%;color:#FFFFFF;font-weight:600;background:linear-gradient(180deg,var(--av1),var(--av2));flex:none}
+.press{cursor:pointer;transition:transform 120ms cubic-bezier(.23,1,.32,1),background-color 120ms ease}
+.press:active{transform:scale(.97)}
+.ib{width:32px;height:32px;border:0;border-radius:50%;background:transparent;color:var(--fg2);display:grid;place-items:center;padding:0}
+.ib.on{color:var(--accent);background:var(--field)}
+.tabf{border:0;font:inherit;font-size:12.5px;font-weight:500;height:26px;padding:0 10px;border-radius:13px;background:transparent;color:var(--fg2);display:inline-flex;gap:5px;align-items:center}
+.tabf.on{background:var(--field);color:var(--fg)}
+.tabf .n{font-size:11.5px;color:var(--fg2)}
+.row{border:0;width:100%;font:inherit;color:inherit;text-align:left;background:transparent;border-radius:10px;display:flex;gap:10px;align-items:center;padding:8px}
+.row .sub,.row .tm{color:var(--fg2)}
+.row.on{background:var(--accent);color:#FFFFFF}
+.row.on .sub,.row.on .tm{color:rgba(255,255,255,.82)}
+.badge{min-width:18px;height:18px;padding:0 5px;box-sizing:border-box;border-radius:9px;font-size:11px;font-weight:600;display:grid;place-items:center;color:#FFFFFF;background:var(--accent)}
+.badge.m{background:var(--muted)}
+.row.on .badge{background:#FFFFFF;color:var(--accent)}
+.bin{background:var(--in);box-shadow:var(--bshadow);border-radius:16px 16px 16px 5px}
+.bout{background:var(--out);box-shadow:var(--bshadow);border-radius:16px 16px 5px 16px}
+.meta{font-size:11px;color:var(--fg2)}
+.react{border:0;font:inherit;font-size:12px;height:24px;padding:0 8px;border-radius:12px;display:inline-flex;align-items:center;gap:4px;background:var(--field);color:var(--fg)}
+.react.on{background:var(--accent);color:#FFFFFF}
+.scroll{scrollbar-width:thin;scrollbar-color:var(--sep) transparent}
+@media (hover:hover) and (pointer:fine){.ib:hover{background:var(--hover);color:var(--fg)}.row:hover{background:var(--hover)}.row.on:hover{background:var(--accent)}.tabf:hover{color:var(--fg)}}
+@media (prefers-reduced-transparency:reduce){.glass{background:var(--in);-webkit-backdrop-filter:none;backdrop-filter:none}}
+@media (prefers-reduced-motion:reduce){.press:active{transform:none}}
+</style>
+</helmet>
+<div class="app {{theme}}" style="width: 100%; height: 100vh; min-height: 900px; position: relative; overflow: hidden">
+
+  <!-- Плавающий сайдбар -->
+  <aside class="glass" aria-label="Чаты" style="position: absolute; z-index: 3; top: 8px; left: 8px; bottom: 8px; width: 304px; border-radius: 16px; display: flex; flex-direction: column; overflow: hidden">
+    <div style="height: 44px; display: flex; align-items: center; padding: 0 8px 0 16px; gap: 8px">
+      <span aria-hidden="true" style="display: flex; gap: 8px"><span style="width: 12px; height: 12px; border-radius: 50%; background: #FF5F57"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #FEBC2E"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #28C840"></span></span>
+      <span style="flex: 1"></span>
+      <button class="ib press" aria-label="Новое сообщение"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6"></path><path d="M17.5 3.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4z"></path></svg></button>
+    </div>
+    <div style="padding: 0 12px 8px">
+      <label style="display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 9px; border-radius: 8px; background: var(--field); color: var(--fg2)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+        <input placeholder="Поиск" aria-label="Поиск" style="flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--fg); font: inherit">
+      </label>
+    </div>
+    <div role="tablist" aria-label="Папки" style="display: flex; gap: 2px; padding: 0 10px 6px">
+      <sc-for list="{{folders}}" as="f" hint-placeholder-count="4">
+        <button role="tab" aria-selected="{{f.on}}" class="tabf press {{f.cls}}" onClick="{{f.pick}}">{{f.label}}<sc-if value="{{f.hasN}}" hint-placeholder-val="{{ false }}"><span class="n">{{f.n}}</span></sc-if></button>
+      </sc-for>
+    </div>
+    <div class="scroll" style="flex: 1; overflow-y: auto; padding: 0 6px 8px; display: flex; flex-direction: column; gap: 1px">
+      <sc-for list="{{chats}}" as="c" hint-placeholder-count="9">
+        <button class="row press {{c.cls}}" onClick="{{c.pick}}">
+          <span class="av" style="width: 42px; height: 42px; font-size: 15px">{{c.ini}}</span>
+          <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+            <span style="display: flex; gap: 6px; align-items: baseline">
+              <span style="flex: 1; min-width: 0; font-weight: 600; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{c.name}}</span>
+              <span class="tm" style="font-size: 11.5px">{{c.time}}</span>
+            </span>
+            <span style="display: flex; gap: 6px; align-items: center">
+              <span class="sub" style="flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{c.last}}</span>
+              <sc-if value="{{c.hasUnread}}" hint-placeholder-val="{{ false }}"><span class="badge {{c.bcls}}">{{c.unread}}</span></sc-if>
+            </span>
+          </span>
+        </button>
+      </sc-for>
+    </div>
+  </aside>
+
+  <!-- Чат: контент уходит под плавающие шапку и поле ввода -->
+  <main aria-label="Переписка" style="position: absolute; top: 0; bottom: 0; left: 320px; right: 0">
+    <div class="scroll" style="position: absolute; inset: 0; overflow-y: auto; display: flex; flex-direction: column-reverse">
+      <div style="max-width: 760px; width: 100%; margin: 0 auto; box-sizing: border-box; padding: 72px 24px 88px; display: flex; flex-direction: column; gap: 4px">
+
+        <div class="bin" style="max-width: 420px; padding: 7px 11px 5px">
+          <div style="line-height: 1.4">Ты в субботу во сколько освободишься?</div>
+          <div class="meta" style="text-align: right">вчера, 21:04</div>
+        </div>
+        <div class="bout" style="align-self: flex-end; max-width: 420px; padding: 7px 11px 5px; margin-top: 6px">
+          <div style="line-height: 1.4">Часам к трём, потом свободна</div>
+          <div class="meta" style="text-align: right">21:10 ✓✓</div>
+        </div>
+
+        <div style="align-self: center; font-size: 12px; font-weight: 500; padding: 3px 10px; border-radius: 11px; background: rgba(0,0,0,.18); color: #FFFFFF; margin: 14px 0 10px">Сегодня</div>
+
+        <div class="bin" style="max-width: 420px; padding: 7px 11px 5px">
+          <div style="line-height: 1.4">Привет! Скинула фотки с выходных, там есть пара хороших</div>
+          <div class="meta" style="text-align: right">13:55</div>
+        </div>
+        <div class="bin" style="width: 360px; padding: 3px; border-radius: 16px 16px 16px 5px; position: relative">
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px; border-radius: 13px 13px 13px 3px; overflow: hidden">
+            <div style="height: 150px; background: #B9A68F"></div>
+            <div style="height: 150px; background: #8FA2B3"></div>
+            <div style="height: 110px; background: #A6B497"></div>
+            <div style="height: 110px; background: #C3B2A4; display: grid; place-items: center; color: #FFFFFF; font-size: 20px; font-weight: 600">+6</div>
+          </div>
+          <span style="position: absolute; right: 10px; bottom: 9px; font-size: 11px; color: #FFFFFF; padding: 1px 6px; border-radius: 8px; background: rgba(0,0,0,.35)">13:56</span>
+        </div>
+
+        <div class="bout" style="align-self: flex-end; max-width: 420px; padding: 7px 11px 5px; margin-top: 6px">
+          <div style="line-height: 1.4">Вторая прям хорошая. Можешь кинуть её без сжатия? Хочу распечатать</div>
+          <div class="meta" style="text-align: right">13:58 ✓✓</div>
+        </div>
+
+        <div class="bin" style="width: 280px; padding: 9px 11px 6px; margin-top: 6px; display: flex; gap: 10px; align-items: center">
+          <button class="press" aria-label="Скачать IMG_2041.HEIC" style="flex: none; width: 42px; height: 42px; border-radius: 50%; border: 0; padding: 0; background: var(--accent); display: grid; place-items: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v12M7 12l5 5 5-5"></path></svg></button>
+          <div style="flex: 1; min-width: 0">
+            <div style="font-weight: 500">IMG_2041.HEIC</div>
+            <div class="meta" style="display: flex; justify-content: space-between"><span>6,8 МБ</span><span>14:01</span></div>
+          </div>
+        </div>
+
+        <div class="bin" style="max-width: 420px; padding: 7px 11px 5px; margin-top: 6px; opacity: .55">
+          <div style="line-height: 1.4">ой не тот чат</div>
+          <div class="meta" style="display: flex; justify-content: space-between; gap: 12px"><span>удалено</span><span>14:01</span></div>
+        </div>
+
+        <div style="position: relative; width: 200px; height: 200px; margin-top: 6px">
+          <div style="width: 200px; height: 200px; border-radius: 50%; background: #8E9A93"></div>
+          <svg width="200" height="200" viewBox="0 0 200 200" style="position: absolute; inset: 0" aria-hidden="true"><circle cx="100" cy="100" r="97" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="3"></circle><circle cx="100" cy="100" r="97" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-dasharray="610" stroke-dashoffset="410" transform="rotate(-90 100 100)"></circle></svg>
+          <span style="position: absolute; left: 12px; bottom: 14px; font-size: 11px; color: #FFFFFF; padding: 1px 7px; border-radius: 8px; background: rgba(0,0,0,.35)">0:04 / 0:12 <span style="opacity: .7">· 120</span></span>
+        </div>
+
+        <div class="bin" style="width: 300px; padding: 8px 10px 6px; margin-top: 6px">
+          <div style="display: flex; gap: 9px; align-items: center">
+            <button class="press" aria-label="Воспроизвести голосовое" style="flex: none; width: 36px; height: 36px; border-radius: 50%; border: 0; padding: 0; background: var(--accent); display: grid; place-items: center"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" fill="#FFFFFF"></path></svg></button>
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 3px">
+              <div style="display: flex; align-items: center; gap: 2px; height: 20px" aria-hidden="true">
+                <sc-for list="{{wave}}" as="w" hint-placeholder-count="34"><span style="width: 2.5px; border-radius: 2px; height: {{w.h}}px; background: var(--accent); opacity: {{w.o}}"></span></sc-for>
+              </div>
+              <div class="meta" style="display: flex; justify-content: space-between"><span>0:18</span><span>14:03</span></div>
+            </div>
+            <button class="press" onClick="{{toggleTr}}" aria-pressed="{{tr}}" aria-label="Расшифровать голосовое" style="flex: none; width: 28px; height: 28px; border-radius: 8px; border: 0; padding: 0; font: inherit; font-size: 11.5px; font-weight: 600; background: var(--field); color: var(--accent)">А</button>
+          </div>
+          <sc-if value="{{tr}}" hint-placeholder-val="{{ true }}">
+            <div style="line-height: 1.4; margin-top: 6px">Короче, вечером в субботу собираемся у Лёши, возьми, пожалуйста, ту настолку, если не сложно</div>
+          </sc-if>
+        </div>
+
+        <div style="align-self: flex-end; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; margin-top: 6px">
+          <div class="bout" style="max-width: 420px; padding: 7px 11px 5px">
+            <div style="line-height: 1.4">Спасибо! Ок, возьму</div>
+            <div class="meta" style="text-align: right">14:05 ✓</div>
+          </div>
+          <button class="react press {{heartCls}}" onClick="{{toggleHeart}}" aria-pressed="{{heart}}"><span aria-hidden="true">❤️</span>{{heartN}}</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Шапка: две стеклянные капсулы -->
+    <div style="position: absolute; z-index: 2; top: 10px; left: 14px; right: 14px; display: flex; justify-content: space-between; align-items: center; gap: 8px; pointer-events: none">
+      <button class="glass press" style="pointer-events: auto; border-radius: 22px; font: inherit; color: var(--fg); display: flex; align-items: center; gap: 9px; padding: 5px 14px 5px 5px">
+        <span class="av" style="width: 32px; height: 32px; font-size: 12.5px">{{cur.ini}}</span>
+        <span style="display: flex; flex-direction: column; align-items: flex-start; gap: 0">
+          <span style="font-weight: 600; font-size: 13.5px">{{cur.name}}</span>
+          <span style="font-size: 11.5px; color: var(--fg2)">{{statusLine}}</span>
+        </span>
+      </button>
+      <div class="glass" style="pointer-events: auto; border-radius: 22px; display: flex; align-items: center; gap: 2px; padding: 4px">
+        <button class="ib press" aria-label="Поиск в чате"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg></button>
+        <button class="ib press" aria-label="Позвонить"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"></path></svg></button>
+        <button class="ib press {{ghostCls}}" onClick="{{toggleGhost}}" aria-pressed="{{ghost}}" aria-label="Режим призрака"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M6 20V10a6 6 0 0 1 12 0v10l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5z"></path><path d="M10 10h.01M14 10h.01" stroke-width="2.4" stroke-linecap="round"></path></svg></button>
+        <button class="ib press" aria-label="Информация о чате"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"></rect><path d="M15 4v16"></path></svg></button>
+      </div>
+    </div>
+
+    <!-- Поле ввода -->
+    <div style="position: absolute; z-index: 2; bottom: 12px; left: 0; right: 0; padding: 0 24px; display: flex; justify-content: center">
+      <div class="glass" style="width: 100%; max-width: 712px; border-radius: 22px; display: flex; align-items: center; gap: 2px; padding: 4px 4px 4px 6px">
+        <button class="ib press" aria-label="Прикрепить"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5 12.5 20a5 5 0 0 1-7-7l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7L10.2 17.7a1.7 1.7 0 0 1-2.4-2.4L15.5 7.6"></path></svg></button>
+        <input value="{{draft}}" onInput="{{onDraft}}" placeholder="Сообщение" aria-label="Сообщение" style="flex: 1; min-width: 0; height: 32px; border: 0; outline: 0; background: transparent; color: var(--fg); font: inherit; font-size: 13.5px">
+        <button class="ib press" aria-label="Эмодзи и стикеры"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M8.5 14.5a4 4 0 0 0 7 0M9 9.5h.01M15 9.5h.01"></path></svg></button>
+        <sc-if value="{{hasDraft}}" hint-placeholder-val="{{ false }}">
+          <button class="press" aria-label="Отправить" style="width: 32px; height: 32px; border-radius: 50%; border: 0; padding: 0; background: var(--accent); display: grid; place-items: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"></path></svg></button>
+        </sc-if>
+        <sc-if value="{{noDraft}}" hint-placeholder-val="{{ true }}">
+          <button class="ib press" aria-label="Записать голосовое или кружок"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg></button>
+        </sc-if>
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"appearance":{"editor":"enum","options":["светлая","тёмная"],"default":"светлая"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { folder: 'all', chat: 'anya', ghost: false, tr: true, heart: true, draft: '' };
+  }
+  renderVals() {
+    const s = this.state;
+    const F = [
+      { id: 'all', label: 'Все', n: 0 }, { id: 'me', label: 'Личные', n: 2 },
+      { id: 'work', label: 'Работа', n: 3 }, { id: 'ch', label: 'Каналы', n: 0 }
+    ];
+    const C = [
+      { id: 'team', f: 'work', name: 'Команда продукта', ini: 'КП', last: 'Вика: ок, тогда созвон в 16:30', time: '14:12', unread: 3, status: '8 участников' },
+      { id: 'anya', f: 'me', name: 'Аня Морозова', ini: 'АМ', last: 'Голосовое сообщение', time: '14:03', unread: 0, status: 'в сети' },
+      { id: 'denis', f: 'me', name: 'Денис', ini: 'Д', last: 'Вы: спасибо, вернул', time: '13:20', unread: 0, status: 'был недавно' },
+      { id: 'dad', f: 'me', name: 'Папа', ini: 'П', last: 'Позвони, как будет минутка', time: '12:47', unread: 2, status: 'был в 12:50' },
+      { id: 'book', f: 'me', name: 'Книжный клуб', ini: 'КК', last: 'Ира: голосуем за книгу на ноябрь', time: '11:30', unread: 12, muted: true, status: '23 участника' },
+      { id: 'saved', f: 'me', name: 'Избранное', ini: 'И', last: 'договор_аренды.pdf', time: 'вчера', unread: 0, status: '' },
+      { id: 'flutter', f: 'ch', name: 'Flutter Dev', ini: 'FD', last: 'Что нового на десктопе в 3.38', time: 'вчера', unread: 4, muted: true, status: '18 400 подписчиков' },
+      { id: 'house', f: 'me', name: 'Дом, 2-й подъезд', ini: 'Д2', last: 'Завтра отключат горячую воду', time: 'пн', unread: 28, muted: true, status: '61 участник' },
+      { id: 'pm', f: 'work', name: 'Оля Ким', ini: 'ОК', last: 'Посмотришь макеты до вечера?', time: 'пн', unread: 0, status: 'в сети' }
+    ];
+    const folders = F.map((f) => ({ ...f, on: f.id === s.folder, cls: f.id === s.folder ? 'on' : '', hasN: f.n > 0, pick: () => this.setState({ folder: f.id }) }));
+    const chats = C.filter((c) => s.folder === 'all' || c.f === s.folder).map((c) => ({ ...c, cls: c.id === s.chat ? 'on' : '', hasUnread: c.unread > 0, bcls: c.muted ? 'm' : '', pick: () => this.setState({ chat: c.id }) }));
+    const cur = C.find((c) => c.id === s.chat) || C[1];
+    const H = [5,8,13,10,16,12,7,14,18,12,8,11,15,9,6,13,17,10,7,12,15,9,6,10,14,8,11,7,9,6,8,5,7,4];
+    const wave = H.map((h, i) => ({ h, o: i < 14 ? 1 : .35 }));
+    return {
+      theme: (this.props.appearance ?? 'светлая') === 'тёмная' ? 'dark' : '',
+      folders, chats, cur, wave,
+      statusLine: s.ghost ? cur.status + ' · вы невидимы' : cur.status,
+      ghost: s.ghost, ghostCls: s.ghost ? 'on' : '', toggleGhost: () => this.setState({ ghost: !s.ghost }),
+      tr: s.tr, toggleTr: () => this.setState({ tr: !s.tr }),
+      heart: s.heart, heartCls: s.heart ? 'on' : '', heartN: s.heart ? 1 : '', toggleHeart: () => this.setState({ heart: !s.heart }),
+      draft: s.draft, hasDraft: s.draft.length > 0, noDraft: s.draft.length === 0,
+      onDraft: (e) => this.setState({ draft: e.target.value })
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Плагины</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#0071E3}a:hover{color:#0058B0}
+.app{--pane:#F5F5F7;--glass:rgba(250,250,252,.74);--glass-b:rgba(0,0,0,.08);--hi:rgba(255,255,255,.8);--fg:#1D1D1F;--fg2:#6E6E73;--sep:rgba(0,0,0,.08);--accent:#0071E3;--surface:#FFFFFF;--hover:rgba(0,0,0,.05);--field:rgba(0,0,0,.055);--off:#D9D9DE;--shadow:0 6px 24px rgba(0,0,0,.09);--code:#F0F0F3;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;font-size:13px;color:var(--fg);background:var(--pane);-webkit-font-smoothing:antialiased}
+.app.dark{--pane:#1C1C1E;--glass:rgba(40,40,44,.72);--glass-b:rgba(255,255,255,.09);--hi:rgba(255,255,255,.07);--fg:#F5F5F7;--fg2:#A1A1A6;--sep:rgba(255,255,255,.09);--accent:#0A84FF;--surface:#2A2A2D;--hover:rgba(255,255,255,.06);--field:rgba(255,255,255,.07);--off:#48484C;--shadow:0 6px 24px rgba(0,0,0,.45);--code:#232326}
+.glass{background:var(--glass);-webkit-backdrop-filter:blur(30px) saturate(190%);backdrop-filter:blur(30px) saturate(190%);border:1px solid var(--rim);box-shadow:inset 0 1px 0 var(--hi),inset 0 -1px 0 var(--lo),inset 0 0 18px var(--glow),0 0 0 .5px rgba(0,0,0,.06),var(--shadow)}
+.app{--wp:radial-gradient(60% 55% at 12% 18%,#DBDDBB 0,transparent 70%),radial-gradient(55% 55% at 88% 12%,#6BA587 0,transparent 70%),radial-gradient(60% 60% at 82% 88%,#D5D88D 0,transparent 70%),radial-gradient(55% 60% at 18% 90%,#88B884 0,transparent 70%),#B5C99E;--glass:rgba(255,255,255,.42);--rim:rgba(255,255,255,.6);--hi:rgba(255,255,255,.95);--lo:rgba(255,255,255,.3);--glow:rgba(255,255,255,.35);--fg2:#56565B;--shadow:0 12px 34px rgba(30,50,20,.16);background:var(--wp)}
+.app.dark{--wp:radial-gradient(60% 55% at 12% 18%,#2D4A5C 0,transparent 70%),radial-gradient(55% 55% at 88% 12%,#1C3442 0,transparent 70%),radial-gradient(60% 60% at 82% 88%,#3B5465 0,transparent 70%),radial-gradient(55% 60% at 18% 90%,#203845 0,transparent 70%),#1A2A35;--glass:rgba(28,30,34,.42);--rim:rgba(255,255,255,.14);--hi:rgba(255,255,255,.22);--lo:rgba(255,255,255,.05);--glow:rgba(255,255,255,.04);--fg2:#AEAEB3;--shadow:0 12px 34px rgba(0,0,0,.45)}
+.pane{background:var(--pane);border-left:.5px solid var(--sep);box-shadow:-8px 0 30px rgba(0,0,0,.08)}
+.press{cursor:pointer;transition:transform 120ms cubic-bezier(.23,1,.32,1),background-color 120ms ease}
+.press:active{transform:scale(.97)}
+.item{border:0;width:100%;font:inherit;color:inherit;text-align:left;background:transparent;border-radius:8px;display:flex;gap:9px;align-items:center;padding:6px 8px;height:34px}
+.item.on{background:var(--accent);color:#FFFFFF}
+.item .st{font-size:11.5px;color:var(--fg2)}
+.item.on .st{color:rgba(255,255,255,.8)}
+.ic{flex:none;display:grid;place-items:center;color:#FFFFFF;font-weight:700}
+.grp{background:var(--surface);border-radius:10px;overflow:hidden;box-shadow:0 0 0 .5px var(--sep)}
+.ln{display:flex;align-items:center;gap:12px;padding:10px 12px;min-height:24px;border-top:.5px solid var(--sep)}
+.ln:first-child{border-top:0}
+.sw{flex:none;width:34px;height:20px;border-radius:10px;border:0;padding:2px;display:flex;transition:background-color 180ms ease}
+.sw span{width:16px;height:16px;border-radius:50%;background:#FFFFFF;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+.btn{border:0;font:inherit;font-size:13px;font-weight:500;height:28px;padding:0 14px;border-radius:7px}
+.mono{font-family:ui-monospace,"SF Mono",Menlo,monospace}
+.cap{font-size:12px;font-weight:600;color:var(--fg2);padding:0 4px 6px}
+.scroll{scrollbar-width:thin;scrollbar-color:var(--sep) transparent}
+@media (hover:hover) and (pointer:fine){.item:hover{background:var(--hover)}.item.on:hover{background:var(--accent)}}
+@media (prefers-reduced-transparency:reduce){.glass{background:var(--surface);-webkit-backdrop-filter:none;backdrop-filter:none}}
+@media (prefers-reduced-motion:reduce){.press:active{transform:none}}
+</style>
+</helmet>
+<div class="app {{theme}}" style="width: 100%; height: 100vh; min-height: 900px; position: relative; overflow: hidden">
+
+  <aside class="glass" aria-label="Список плагинов" style="position: absolute; z-index: 2; top: 8px; left: 8px; bottom: 8px; width: 260px; border-radius: 16px; display: flex; flex-direction: column; overflow: hidden">
+    <div style="height: 44px; display: flex; align-items: center; padding: 0 16px">
+      <span aria-hidden="true" style="display: flex; gap: 8px"><span style="width: 12px; height: 12px; border-radius: 50%; background: #FF5F57"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #FEBC2E"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #28C840"></span></span>
+    </div>
+    <div style="padding: 0 12px 10px">
+      <label style="display: flex; align-items: center; gap: 6px; height: 28px; padding: 0 9px; border-radius: 8px; background: var(--field); color: var(--fg2)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+        <input placeholder="Поиск" aria-label="Поиск плагинов" style="flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--fg); font: inherit">
+      </label>
+    </div>
+    <div class="scroll" style="flex: 1; overflow-y: auto; padding: 0 8px 10px">
+      <sc-for list="{{groups}}" as="g" hint-placeholder-count="2">
+        <div style="font-size: 11px; font-weight: 600; color: var(--fg2); padding: 10px 8px 4px">{{g.title}}</div>
+        <sc-for list="{{g.items}}" as="p" hint-placeholder-count="5">
+          <button class="item press {{p.cls}}" onClick="{{p.pick}}">
+            <span class="ic" style="width: 22px; height: 22px; border-radius: 6px; font-size: 11px; background: {{p.c}}">{{p.glyph}}</span>
+            <span style="flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{p.name}}</span>
+            <span class="st">{{p.state}}</span>
+          </button>
+        </sc-for>
+      </sc-for>
+    </div>
+    <div style="padding: 10px 12px; border-top: .5px solid var(--sep)">
+      <button class="btn press" style="width: 100%; background: var(--field); color: var(--fg)">Установить из файла…</button>
+    </div>
+  </aside>
+
+  <main class="scroll pane" aria-label="{{sel.name}}" style="position: absolute; top: 0; bottom: 0; left: 276px; right: 0; overflow-y: auto">
+    <div style="max-width: 620px; margin: 0 auto; padding: 40px 28px 60px; display: flex; flex-direction: column; gap: 22px">
+
+      <div style="display: flex; gap: 14px; align-items: center">
+        <span class="ic" style="width: 52px; height: 52px; border-radius: 12px; font-size: 20px; background: {{sel.c}}">{{sel.glyph}}</span>
+        <div style="flex: 1; min-width: 0">
+          <div style="font-size: 17px; font-weight: 600">{{sel.name}}</div>
+          <div style="color: var(--fg2); margin-top: 1px">{{sel.author}} · {{sel.ver}}</div>
+        </div>
+        <sc-if value="{{installed}}" hint-placeholder-val="{{ true }}">
+          <button class="sw press" role="switch" aria-checked="{{enabled}}" aria-label="Включить плагин" onClick="{{toggleEnabled}}" style="background: {{enBg}}; justify-content: {{enJc}}"><span></span></button>
+        </sc-if>
+        <sc-if value="{{notInstalled}}" hint-placeholder-val="{{ false }}">
+          <button class="btn press" onClick="{{install}}" style="background: var(--accent); color: #FFFFFF">Установить</button>
+        </sc-if>
+      </div>
+
+      <div style="line-height: 1.5; color: var(--fg)">{{sel.about}}</div>
+
+      <section>
+        <div class="cap">Доступ</div>
+        <div class="grp">
+          <sc-for list="{{sel.perms}}" as="r" hint-placeholder-count="3">
+            <div class="ln">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--fg2)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{r.icon}}"></path></svg>
+              <div style="flex: 1; min-width: 0"><div>{{r.t}}</div><div style="font-size: 12px; color: var(--fg2); margin-top: 1px">{{r.d}}</div></div>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+      <sc-if value="{{hasOpts}}" hint-placeholder-val="{{ true }}">
+        <section>
+          <div class="cap">Параметры</div>
+          <div class="grp">
+            <sc-for list="{{opts}}" as="o" hint-placeholder-count="3">
+              <div class="ln"><span style="flex: 1">{{o.label}}</span><button class="sw press" role="switch" aria-checked="{{o.on}}" aria-label="{{o.label}}" onClick="{{o.toggle}}" style="background: {{o.bg}}; justify-content: {{o.jc}}"><span></span></button></div>
+            </sc-for>
+          </div>
+        </section>
+      </sc-if>
+
+      <sc-if value="{{hasCmds}}" hint-placeholder-val="{{ true }}">
+        <section>
+          <div class="cap">Команды</div>
+          <div class="grp">
+            <sc-for list="{{sel.cmds}}" as="k" hint-placeholder-count="2">
+              <div class="ln"><span class="mono" style="width: 110px; flex: none">{{k.c}}</span><span style="flex: 1; color: var(--fg2)">{{k.d}}</span><span class="mono" style="font-size: 11.5px; color: var(--fg2)">{{k.k}}</span></div>
+            </sc-for>
+          </div>
+        </section>
+      </sc-if>
+
+      <section>
+        <button class="press" onClick="{{toggleManifest}}" aria-expanded="{{showManifest}}" style="border: 0; background: transparent; font: inherit; color: var(--fg2); font-size: 12px; font-weight: 600; padding: 0 4px 6px; display: flex; align-items: center; gap: 4px">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform: {{chev}}; transition: transform 160ms cubic-bezier(.23,1,.32,1)"><path d="M9 5l7 7-7 7"></path></svg>Манифест
+        </button>
+        <sc-if value="{{showManifest}}" hint-placeholder-val="{{ false }}">
+          <pre class="mono" style="margin: 0; padding: 12px 14px; border-radius: 10px; background: var(--code); font-size: 11.5px; line-height: 1.6; white-space: pre-wrap">{{sel.manifest}}</pre>
+        </sc-if>
+      </section>
+
+      <sc-if value="{{installed}}" hint-placeholder-val="{{ true }}">
+        <div style="display: flex; justify-content: space-between; align-items: center; color: var(--fg2); font-size: 12px">
+          <span>Обновлён {{sel.updated}}</span>
+          <button class="btn press" onClick="{{uninstall}}" style="background: transparent; color: #E5484D; padding: 0">Удалить плагин…</button>
+        </div>
+      </sc-if>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;appearance&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;светлая&quot;,&quot;тёмная&quot;],&quot;default&quot;:&quot;тёмная&quot;},&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { sel: 'summary', inst: { summary: true, translate: true, quiet: true, code: true, voice: true }, off: { quiet: true }, opts: { menu: true, auto: false, mentions: true }, manifest: false };
+  }
+  renderVals() {
+    const s = this.state;
+    const MSG = 'M4 5h16v11H9l-5 4z', NET = 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18', DB = 'M5 6c0-1.7 3.1-3 7-3s7 1.3 7 3-3.1 3-7 3-7-1.3-7-3zM5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6', BELL = 'M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 20h4', MIC = 'M9 3h6v11H9zM5 11a7 7 0 0 0 14 0M12 18v3', EYE = 'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6';
+    const P = [
+      { id: 'summary', name: 'Сводка', glyph: 'Σ', c: '#5E5CE6', author: 'tgplug.dev', ver: '2.3.0', updated: '3 дня назад',
+        about: 'Пересказывает непрочитанное в чате или папке: что решили, что спросили у вас, где упомянули. Работает с локальной моделью или с вашим ключом API.',
+        perms: [{ icon: MSG, t: 'Сообщения текущего чата', d: 'Только когда вы вызываете команду' }, { icon: NET, t: 'Сеть', d: 'Только адрес модели, который вы укажете' }, { icon: DB, t: 'Хранилище', d: 'До 5 МБ, кэш последних сводок' }],
+        cmds: [{ c: '/summary', d: 'Сводка по текущему чату', k: '⌘⇧S' }, { c: '/summary папка', d: 'По всей папке', k: '' }],
+        manifest: 'id: dev.tgplug.summary\nversion: 2.3.0\nruntime: js\npermissions:\n  messages.read: on_command\n  net: [user_endpoint]\n  storage: 5mb\ncommands: [/summary]' },
+      { id: 'translate', name: 'Переводчик', glyph: 'A', c: '#0A84FF', author: 'linguo', ver: '5.1.2', updated: 'вчера',
+        about: 'Переводит входящие сообщения в выбранных чатах и ваш черновик перед отправкой. DeepL, Google или офлайн-модель.',
+        perms: [{ icon: MSG, t: 'Сообщения выбранных чатов', d: 'Список чатов задаёте вы' }, { icon: NET, t: 'Сеть', d: 'api.deepl.com' }],
+        cmds: [{ c: '/tr', d: 'Перевести черновик', k: '⌘⇧T' }],
+        manifest: 'id: io.linguo.translate\nversion: 5.1.2\nruntime: js\npermissions:\n  messages.read: chats[]\n  composer.write: true\n  net: [api.deepl.com]' },
+      { id: 'quiet', name: 'Тихие часы', glyph: 'Z', c: '#8E8E93', author: 'calm.tools', ver: '1.4.0', updated: '2 нед. назад',
+        about: 'Откладывает уведомления по расписанию и присылает их одной пачкой. Избранные контакты приходят всегда.',
+        perms: [{ icon: BELL, t: 'Уведомления', d: 'Откладывать и группировать' }], cmds: [],
+        manifest: 'id: tools.calm.quiet\nversion: 1.4.0\nruntime: js\npermissions:\n  notifications.manage: true' },
+      { id: 'code', name: 'Подсветка кода', glyph: '{', c: '#30A46C', author: 'shiki-tg', ver: '3.0.0', updated: 'месяц назад',
+        about: 'Подсвечивает блоки кода в цветах темы, добавляет номера строк и копирование.',
+        perms: [{ icon: EYE, t: 'Отображение сообщений', d: 'Только блоки кода' }], cmds: [],
+        manifest: 'id: tg.shiki.code\nversion: 3.0.0\nruntime: js\nhooks: [message.render.code]' },
+      { id: 'voice', name: 'Расшифровка', glyph: '≈', c: '#E5484D', author: 'whisperkit', ver: '1.8.0', updated: '5 дней назад',
+        about: 'Расшифровывает голосовые и кружки на устройстве, без сети и без Premium.',
+        perms: [{ icon: MIC, t: 'Голосовые и кружки', d: 'Обработка на устройстве' }], cmds: [],
+        manifest: 'id: kit.whisper.voice\nversion: 1.8.0\nruntime: native\npermissions:\n  media.read: [voice, round]' },
+      { id: 'links', name: 'Карточки ссылок', glyph: '↗', c: '#B07D3A', author: 'unfurl', ver: '0.9.8', updated: '',
+        about: 'Показывает вместо обычного превью карточку: статус PR на GitHub, кадр из Figma, таймкод YouTube.',
+        perms: [{ icon: NET, t: 'Сеть', d: 'github.com, figma.com, youtube.com, без ваших cookie' }], cmds: [],
+        manifest: 'id: dev.unfurl.cards\nversion: 0.9.8\nruntime: js\npermissions:\n  net: [github.com, figma.com, youtube.com]' },
+      { id: 'stats', name: 'Статистика чата', glyph: '▤', c: '#636366', author: 'graphy', ver: '0.6.1', updated: '',
+        about: 'Строит графики активности по локальной истории. Ничего не отправляет наружу.',
+        perms: [{ icon: MSG, t: 'История выбранного чата', d: 'Локально, без сети' }], cmds: [{ c: '/stats', d: 'Открыть статистику', k: '' }],
+        manifest: 'id: io.graphy.stats\nversion: 0.6.1\nruntime: js\npermissions:\n  messages.read: chats[]\n  net: []' }
+    ];
+    const item = (p) => ({ ...p, cls: p.id === s.sel ? 'on' : '', state: s.inst[p.id] ? (s.off[p.id] ? 'выкл' : '') : '', pick: () => this.setState({ sel: p.id, manifest: false }) });
+    const groups = [
+      { title: 'Установленные', items: P.filter((p) => s.inst[p.id]).map(item) },
+      { title: 'Доступно', items: P.filter((p) => !s.inst[p.id]).map(item) }
+    ];
+    const sel = P.find((p) => p.id === s.sel) || P[0];
+    const installed = !!s.inst[sel.id];
+    const enabled = installed && !s.off[sel.id];
+    const O = [{ k: 'menu', label: 'Кнопка в меню чата' }, { k: 'auto', label: 'Сводка при открытии папки' }, { k: 'mentions', label: 'Выделять упоминания' }];
+    const opts = O.map((o) => ({ ...o, on: s.opts[o.k], bg: s.opts[o.k] ? 'var(--accent)' : 'var(--off)', jc: s.opts[o.k] ? 'flex-end' : 'flex-start', toggle: () => this.setState({ opts: { ...s.opts, [o.k]: !s.opts[o.k] } }) }));
+    return {
+      theme: (this.props.appearance ?? 'светлая') === 'тёмная' ? 'dark' : '',
+      groups, sel, opts, installed, notInstalled: !installed, enabled,
+      hasOpts: sel.id === 'summary' && installed, hasCmds: sel.cmds.length > 0,
+      enBg: enabled ? 'var(--accent)' : 'var(--off)', enJc: enabled ? 'flex-end' : 'flex-start',
+      toggleEnabled: () => this.setState({ off: { ...s.off, [sel.id]: enabled } }),
+      install: () => this.setState({ inst: { ...s.inst, [sel.id]: true } }),
+      uninstall: () => this.setState({ inst: { ...s.inst, [sel.id]: false } }),
+      showManifest: s.manifest, chev: s.manifest ? 'rotate(90deg)' : 'none',
+      toggleManifest: () => this.setState({ manifest: !s.manifest })
+    };
+  }
+}
+</script>
+</body>
+</html>

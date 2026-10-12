@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Настройки</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#0071E3}a:hover{color:#0058B0}
+.app{--pane:#F5F5F7;--glass:rgba(250,250,252,.74);--glass-b:rgba(0,0,0,.08);--hi:rgba(255,255,255,.8);--fg:#1D1D1F;--fg2:#6E6E73;--sep:rgba(0,0,0,.08);--accent:#0071E3;--surface:#FFFFFF;--hover:rgba(0,0,0,.05);--field:rgba(0,0,0,.06);--off:#D9D9DE;--av1:#A9ADB6;--av2:#878B94;--shadow:0 6px 24px rgba(0,0,0,.09);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;font-size:13px;color:var(--fg);background:var(--pane);-webkit-font-smoothing:antialiased}
+.app.dark{--pane:#1C1C1E;--glass:rgba(40,40,44,.72);--glass-b:rgba(255,255,255,.09);--hi:rgba(255,255,255,.07);--fg:#F5F5F7;--fg2:#A1A1A6;--sep:rgba(255,255,255,.09);--accent:#0A84FF;--surface:#2A2A2D;--hover:rgba(255,255,255,.06);--field:rgba(255,255,255,.08);--off:#48484C;--av1:#71757E;--av2:#565A62;--shadow:0 6px 24px rgba(0,0,0,.45)}
+.glass{background:var(--glass);-webkit-backdrop-filter:blur(30px) saturate(190%);backdrop-filter:blur(30px) saturate(190%);border:1px solid var(--rim);box-shadow:inset 0 1px 0 var(--hi),inset 0 -1px 0 var(--lo),inset 0 0 18px var(--glow),0 0 0 .5px rgba(0,0,0,.06),var(--shadow)}
+.app{--wp:radial-gradient(60% 55% at 12% 18%,#DBDDBB 0,transparent 70%),radial-gradient(55% 55% at 88% 12%,#6BA587 0,transparent 70%),radial-gradient(60% 60% at 82% 88%,#D5D88D 0,transparent 70%),radial-gradient(55% 60% at 18% 90%,#88B884 0,transparent 70%),#B5C99E;--glass:rgba(255,255,255,.42);--rim:rgba(255,255,255,.6);--hi:rgba(255,255,255,.95);--lo:rgba(255,255,255,.3);--glow:rgba(255,255,255,.35);--fg2:#56565B;--shadow:0 12px 34px rgba(30,50,20,.16);background:var(--wp)}
+.app.dark{--wp:radial-gradient(60% 55% at 12% 18%,#2D4A5C 0,transparent 70%),radial-gradient(55% 55% at 88% 12%,#1C3442 0,transparent 70%),radial-gradient(60% 60% at 82% 88%,#3B5465 0,transparent 70%),radial-gradient(55% 60% at 18% 90%,#203845 0,transparent 70%),#1A2A35;--glass:rgba(28,30,34,.42);--rim:rgba(255,255,255,.14);--hi:rgba(255,255,255,.22);--lo:rgba(255,255,255,.05);--glow:rgba(255,255,255,.04);--fg2:#AEAEB3;--shadow:0 12px 34px rgba(0,0,0,.45)}
+.pane{background:var(--pane);border-left:.5px solid var(--sep);box-shadow:-8px 0 30px rgba(0,0,0,.08)}
+.press{cursor:pointer;transition:transform 120ms cubic-bezier(.23,1,.32,1),background-color 120ms ease}
+.press:active{transform:scale(.97)}
+.item{border:0;width:100%;font:inherit;color:inherit;text-align:left;background:transparent;border-radius:8px;display:flex;gap:9px;align-items:center;padding:0 8px;height:32px}
+.item.on{background:var(--accent);color:#FFFFFF}
+.ic{flex:none;width:22px;height:22px;border-radius:6px;display:grid;place-items:center}
+.grp{background:var(--surface);border-radius:10px;overflow:hidden;box-shadow:0 0 0 .5px var(--sep)}
+.ln{display:flex;align-items:center;gap:12px;padding:9px 12px;min-height:26px;border-top:.5px solid var(--sep)}
+.ln:first-child{border-top:0}
+.cap{font-size:12px;font-weight:600;color:var(--fg2);padding:0 4px 6px}
+.hint{font-size:12px;color:var(--fg2);margin-top:1px}
+.sw{flex:none;width:34px;height:20px;border-radius:10px;border:0;padding:2px;display:flex;transition:background-color 180ms ease}
+.sw span{width:16px;height:16px;border-radius:50%;background:#FFFFFF;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+.seg{display:flex;padding:2px;border-radius:7px;background:var(--field);gap:1px}
+.seg button{border:0;font:inherit;font-size:12px;height:22px;padding:0 10px;border-radius:5px;background:transparent;color:var(--fg);cursor:pointer}
+.seg button.on{background:var(--surface);box-shadow:0 1px 2px rgba(0,0,0,.14),0 0 0 .5px rgba(0,0,0,.04)}
+input[type=range]{accent-color:var(--accent)}
+.scroll{scrollbar-width:thin;scrollbar-color:var(--sep) transparent}
+@media (hover:hover) and (pointer:fine){.item:hover{background:var(--hover)}.item.on:hover{background:var(--accent)}}
+@media (prefers-reduced-transparency:reduce){.glass{background:var(--surface);-webkit-backdrop-filter:none;backdrop-filter:none}}
+@media (prefers-reduced-motion:reduce){.press:active{transform:none}}
+</style>
+</helmet>
+<div class="app {{theme}}" style="width: 100%; height: 100vh; min-height: 900px; position: relative; overflow: hidden">
+
+  <aside class="glass" aria-label="Разделы настроек" style="position: absolute; z-index: 2; top: 8px; left: 8px; bottom: 8px; width: 240px; border-radius: 16px; display: flex; flex-direction: column; overflow: hidden">
+    <div style="height: 44px; display: flex; align-items: center; padding: 0 16px">
+      <span aria-hidden="true" style="display: flex; gap: 8px"><span style="width: 12px; height: 12px; border-radius: 50%; background: #FF5F57"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #FEBC2E"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #28C840"></span></span>
+    </div>
+    <div class="scroll" style="flex: 1; overflow-y: auto; padding: 0 8px 10px; display: flex; flex-direction: column; gap: 1px">
+      <button class="item press" style="height: 52px; margin-bottom: 8px">
+        <span style="width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; color: #FFFFFF; font-weight: 600; background: linear-gradient(180deg,var(--av1),var(--av2))">О</span>
+        <span style="display: flex; flex-direction: column"><span style="font-weight: 600">Олег</span><span style="font-size: 11.5px; color: var(--fg2)">+7 ••• ••• 12 47</span></span>
+      </button>
+      <sc-for list="{{nav}}" as="n" hint-placeholder-count="10">
+        <sc-if value="{{n.gap}}" hint-placeholder-val="{{ false }}"><div style="height: 10px"></div></sc-if>
+        <button class="item press {{n.cls}}" onClick="{{n.pick}}">
+          <span class="ic" style="background: {{n.c}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{n.icon}}"></path></svg></span>
+          <span>{{n.label}}</span>
+        </button>
+      </sc-for>
+    </div>
+  </aside>
+
+  <main class="scroll pane" style="position: absolute; top: 0; bottom: 0; left: 256px; right: 0; overflow-y: auto">
+    <div style="max-width: 600px; margin: 0 auto; padding: 22px 28px 60px; display: flex; flex-direction: column; gap: 22px">
+      <h1 style="margin: 0; font-size: 15px; font-weight: 600; height: 22px; display: flex; align-items: center">{{title}}</h1>
+
+      <!-- Медиа -->
+      <sc-if value="{{isMedia}}" hint-placeholder-val="{{ true }}">
+        <div style="display: flex; flex-direction: column; gap: 22px">
+          <section>
+            <div class="cap">Кружки</div>
+            <div class="grp">
+              <div class="ln" style="gap: 16px; padding: 14px 12px">
+                <div style="position: relative; width: 84px; height: 84px; flex: none">
+                  <div style="width: 84px; height: 84px; border-radius: 50%; background: #8E9A93"></div>
+                  <svg width="84" height="84" viewBox="0 0 84 84" style="position: absolute; inset: 0" aria-hidden="true"><circle cx="42" cy="42" r="40.5" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-dasharray="254" stroke-dashoffset="150" transform="rotate(-90 42 42)"></circle></svg>
+                </div>
+                <div style="flex: 1">
+                  <div style="font-weight: 500">{{res}} × {{res}}, {{fps}} кадров/с, {{codec}}</div>
+                  <div class="hint">Около {{perMin}} МБ за минуту записи</div>
+                </div>
+              </div>
+              <div class="ln"><span style="flex: 1">Частота кадров</span><div class="seg" role="group" aria-label="Частота кадров"><sc-for list="{{fpsOpts}}" as="o" hint-placeholder-count="3"><button class="{{o.cls}}" onClick="{{o.pick}}" aria-pressed="{{o.on}}">{{o.label}}</button></sc-for></div></div>
+              <div class="ln"><span style="flex: 1">Разрешение</span><div class="seg" role="group" aria-label="Разрешение"><sc-for list="{{resOpts}}" as="o" hint-placeholder-count="4"><button class="{{o.cls}}" onClick="{{o.pick}}" aria-pressed="{{o.on}}">{{o.label}}</button></sc-for></div></div>
+              <div class="ln"><span style="flex: 1">Кодек</span><div class="seg" role="group" aria-label="Кодек"><sc-for list="{{codecOpts}}" as="o" hint-placeholder-count="3"><button class="{{o.cls}}" onClick="{{o.pick}}" aria-pressed="{{o.on}}">{{o.label}}</button></sc-for></div></div>
+              <div class="ln"><label for="br" style="flex: 1">Битрейт</label><input id="br" type="range" min="1" max="12" step="1" value="{{bitrate}}" onInput="{{onBitrate}}" style="width: 180px"><span style="width: 74px; text-align: right; color: var(--fg2); font-variant-numeric: tabular-nums">{{bitrate}} Мбит/с</span></div>
+            </div>
+          </section>
+          <section>
+            <div class="cap">Отправка</div>
+            <div class="grp">
+              <div class="ln"><span style="flex: 1">Фото</span><div class="seg" role="group" aria-label="Фото"><sc-for list="{{photoOpts}}" as="o" hint-placeholder-count="3"><button class="{{o.cls}}" onClick="{{o.pick}}" aria-pressed="{{o.on}}">{{o.label}}</button></sc-for></div></div>
+              <div class="ln"><span style="flex: 1">Видео</span><div class="seg" role="group" aria-label="Видео"><sc-for list="{{videoOpts}}" as="o" hint-placeholder-count="3"><button class="{{o.cls}}" onClick="{{o.pick}}" aria-pressed="{{o.on}}">{{o.label}}</button></sc-for></div></div>
+              <div class="ln"><span style="flex: 1">Голосовые</span><div class="seg" role="group" aria-label="Голосовые"><sc-for list="{{voiceOpts}}" as="o" hint-placeholder-count="3"><button class="{{o.cls}}" onClick="{{o.pick}}" aria-pressed="{{o.on}}">{{o.label}}</button></sc-for></div></div>
+              <div class="ln"><span style="flex: 1"><div>Удалять геометки и EXIF</div><div class="hint">В том числе при отправке без сжатия</div></span><button class="sw press" role="switch" aria-checked="{{t.exif.on}}" aria-label="Удалять геометки и EXIF" onClick="{{t.exif.toggle}}" style="background: {{t.exif.bg}}; justify-content: {{t.exif.jc}}"><span></span></button></div>
+            </div>
+          </section>
+          <section>
+            <div class="cap">Загрузки</div>
+            <div class="grp">
+              <div class="ln"><label for="th" style="flex: 1">Параллельные потоки</label><input id="th" type="range" min="1" max="8" step="1" value="{{threads}}" onInput="{{onThreads}}" style="width: 180px"><span style="width: 74px; text-align: right; color: var(--fg2); font-variant-numeric: tabular-nums">{{threads}}</span></div>
+              <div class="ln"><span style="flex: 1">Раскладывать по папкам по типу файла</span><button class="sw press" role="switch" aria-checked="{{t.sort.on}}" aria-label="Раскладывать по папкам" onClick="{{t.sort.toggle}}" style="background: {{t.sort.bg}}; justify-content: {{t.sort.jc}}"><span></span></button></div>
+              <div class="ln"><span style="flex: 1">Папка</span><span style="color: var(--fg2)">~/Загрузки/Telegram</span><button class="press" style="border: 0; font: inherit; font-size: 12px; height: 22px; padding: 0 10px; border-radius: 5px; background: var(--field); color: var(--fg)">Изменить…</button></div>
+            </div>
+          </section>
+        </div>
+      </sc-if>
+
+      <!-- Призрак -->
+      <sc-if value="{{isGhost}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 22px">
+          <section>
+            <div class="grp">
+              <div class="ln"><span style="flex: 1"><div style="font-weight: 500">Режим призрака</div><div class="hint">Включается в шапке чата или по ⌘⇧G</div></span><button class="sw press" role="switch" aria-checked="{{t.ghost.on}}" aria-label="Режим призрака" onClick="{{t.ghost.toggle}}" style="background: {{t.ghost.bg}}; justify-content: {{t.ghost.jc}}"><span></span></button></div>
+            </div>
+          </section>
+          <section>
+            <div class="cap">В режиме призрака</div>
+            <div class="grp" style="opacity: {{ghostOpacity}}">
+              <sc-for list="{{ghostRows}}" as="r" hint-placeholder-count="4">
+                <div class="ln"><span style="flex: 1"><div>{{r.label}}</div><div class="hint">{{r.hint}}</div></span><button class="sw press" role="switch" aria-checked="{{r.on}}" aria-label="{{r.label}}" onClick="{{r.toggle}}" style="background: {{r.bg}}; justify-content: {{r.jc}}"><span></span></button></div>
+              </sc-for>
+            </div>
+          </section>
+          <section>
+            <div class="cap">История</div>
+            <div class="grp">
+              <sc-for list="{{histRows}}" as="r" hint-placeholder-count="3">
+                <div class="ln"><span style="flex: 1"><div>{{r.label}}</div><div class="hint">{{r.hint}}</div></span><button class="sw press" role="switch" aria-checked="{{r.on}}" aria-label="{{r.label}}" onClick="{{r.toggle}}" style="background: {{r.bg}}; justify-content: {{r.jc}}"><span></span></button></div>
+              </sc-for>
+            </div>
+          </section>
+        </div>
+      </sc-if>
+
+      <!-- Окна -->
+      <sc-if value="{{isWin}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 22px">
+          <section>
+            <div class="grp">
+              <sc-for list="{{winRows}}" as="r" hint-placeholder-count="5">
+                <div class="ln"><span style="flex: 1"><div>{{r.label}}</div><div class="hint">{{r.hint}}</div></span><button class="sw press" role="switch" aria-checked="{{r.on}}" aria-label="{{r.label}}" onClick="{{r.toggle}}" style="background: {{r.bg}}; justify-content: {{r.jc}}"><span></span></button></div>
+              </sc-for>
+              <div class="ln"><span style="flex: 1">Двойной клик по сообщению</span><div class="seg" role="group" aria-label="Двойной клик"><sc-for list="{{dblOpts}}" as="o" hint-placeholder-count="3"><button class="{{o.cls}}" onClick="{{o.pick}}" aria-pressed="{{o.on}}">{{o.label}}</button></sc-for></div></div>
+            </div>
+          </section>
+          <section>
+            <div class="cap">Сочетания клавиш</div>
+            <div class="grp">
+              <sc-for list="{{keys}}" as="k" hint-placeholder-count="7">
+                <div class="ln"><span style="flex: 1">{{k.a}}</span><span style="color: var(--fg2)">{{k.k}}</span></div>
+              </sc-for>
+            </div>
+          </section>
+        </div>
+      </sc-if>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"appearance":{"editor":"enum","options":["светлая","тёмная"],"default":"светлая"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      sec: 'media', fps: '120', res: '720', codec: 'HEVC', photo: 'Без сжатия', video: '1080p', voice: '64 кбит/с', dbl: 'Ответ',
+      bitrate: 6, threads: 6,
+      t: { exif: true, sort: true, ghost: false, read: true, typing: true, online: true, stories: true, deleted: true, edits: true, utm: true, tabs: true, split: true, silent: false, ids: true, call: true }
+    };
+  }
+  renderVals() {
+    const s = this.state;
+    const N = [
+      { id: 'acc', label: 'Аккаунт', c: '#8E8E93', icon: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM5 20a7 7 0 0 1 14 0' },
+      { id: 'notif', label: 'Уведомления', c: '#E5484D', icon: 'M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 20h4' },
+      { id: 'priv', label: 'Конфиденциальность', c: '#0A84FF', icon: 'M7 11V8a5 5 0 0 1 10 0v3M5 11h14v9H5z' },
+      { id: 'data', label: 'Данные и память', c: '#30A46C', icon: 'M5 6c0-1.7 3.1-3 7-3s7 1.3 7 3-3.1 3-7 3-7-1.3-7-3zM5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6' },
+      { id: 'look', label: 'Оформление', c: '#5E5CE6', icon: 'M12 3a9 9 0 1 0 0 18c1 0 1.5-.7 1.5-1.5 0-1.2-1-1.5-1-2.5s.8-1.5 2-1.5H17a4 4 0 0 0 4-4c0-4.4-4-8.5-9-8.5z' },
+      { id: 'media', label: 'Медиа', c: '#FF9F0A', icon: 'M4 6h16v12H4zM10 9.5v5l4-2.5z', gap: true },
+      { id: 'ghost', label: 'Режим призрака', c: '#636366', icon: 'M6 20V10a6 6 0 0 1 12 0v10l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5z' },
+      { id: 'win', label: 'Окна и вкладки', c: '#0A84FF', icon: 'M3 5h18v14H3zM3 9h18' },
+      { id: 'plug', label: 'Плагины', c: '#30A46C', icon: 'M10 4a2 2 0 1 1 4 0v2h4v4h-2a2 2 0 1 0 0 4h2v4h-4v-2a2 2 0 1 0-4 0v2H6v-4h2a2 2 0 1 0 0-4H6V6h4z' }
+    ];
+    const live = { media: 1, ghost: 1, win: 1 };
+    const nav = N.map((n) => ({ ...n, gap: !!n.gap, cls: n.id === s.sec ? 'on' : '', pick: () => { if (live[n.id]) this.setState({ sec: n.id }); } }));
+    const titles = { media: 'Медиа', ghost: 'Режим призрака', win: 'Окна и вкладки' };
+    const seg = (key, vals) => vals.map((v) => ({ label: v, on: s[key] === v, cls: s[key] === v ? 'on' : '', pick: () => this.setState({ [key]: v }) }));
+    const sw = (k) => ({ on: !!s.t[k], bg: s.t[k] ? 'var(--accent)' : 'var(--off)', jc: s.t[k] ? 'flex-end' : 'flex-start', toggle: () => this.setState({ t: { ...s.t, [k]: !s.t[k] } }) });
+    const rows = (list) => list.map((r) => ({ ...r, ...sw(r.k) }));
+    return {
+      theme: (this.props.appearance ?? 'светлая') === 'тёмная' ? 'dark' : '',
+      nav, title: titles[s.sec],
+      isMedia: s.sec === 'media', isGhost: s.sec === 'ghost', isWin: s.sec === 'win',
+      t: { exif: sw('exif'), sort: sw('sort'), ghost: sw('ghost') },
+      fpsOpts: seg('fps', ['30', '60', '120']), resOpts: seg('res', ['384', '512', '720', '1080']), codecOpts: seg('codec', ['H.264', 'HEVC', 'AV1']),
+      photoOpts: seg('photo', ['Сжатое', '2560 px', 'Без сжатия']), videoOpts: seg('video', ['720p', '1080p', 'Исходное']), voiceOpts: seg('voice', ['32 кбит/с', '64 кбит/с', '128 кбит/с']),
+      dblOpts: seg('dbl', ['Ответ', 'Реакция', 'Правка']),
+      fps: s.fps, res: s.res, codec: s.codec, bitrate: s.bitrate, threads: s.threads,
+      perMin: Math.round(s.bitrate * 60 / 8),
+      onBitrate: (e) => this.setState({ bitrate: Number(e.target.value) }),
+      onThreads: (e) => this.setState({ threads: Number(e.target.value) }),
+      ghostOpacity: s.t.ghost ? 1 : .6,
+      ghostRows: rows([
+        { k: 'read', label: 'Не отправлять отметку о прочтении', hint: 'Отметка уйдёт, когда вы ответите' },
+        { k: 'typing', label: 'Скрывать «печатает»', hint: 'И «записывает голосовое»' },
+        { k: 'online', label: 'Не показываться в сети', hint: 'Собеседники видят время последнего визита' },
+        { k: 'stories', label: 'Смотреть истории без отметки', hint: '' }
+      ]),
+      histRows: rows([
+        { k: 'deleted', label: 'Сохранять удалённые сообщения', hint: 'Только на этом устройстве' },
+        { k: 'edits', label: 'Хранить историю правок', hint: '' },
+        { k: 'utm', label: 'Убирать из ссылок метки отслеживания', hint: 'utm, fbclid и подобные' }
+      ]),
+      winRows: rows([
+        { k: 'tabs', label: 'Вкладки чатов', hint: 'Открытые чаты восстанавливаются после перезапуска' },
+        { k: 'split', label: 'Сплит на два чата', hint: '' },
+        { k: 'silent', label: 'Отправлять без звука', hint: '⇧⏎ — со звуком' },
+        { k: 'ids', label: 'Показывать ID в профилях', hint: '' },
+        { k: 'call', label: 'Спрашивать перед звонком', hint: '' }
+      ]),
+      keys: [
+        { a: 'Палитра команд', k: '⌘K' }, { a: 'Следующий непрочитанный чат', k: '⌥↓' }, { a: 'Вкладки 1–9', k: '⌘1 … ⌘9' },
+        { a: 'Сплит', k: '⌘\\' }, { a: 'Режим призрака', k: '⌘⇧G' }, { a: 'Сводка чата', k: '⌘⇧S' }, { a: 'Отложенная отправка', k: '⌘⇧⏎' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

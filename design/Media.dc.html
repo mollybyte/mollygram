@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Медиа и файлы чата</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#0071E3}a:hover{color:#0058B0}
+.app{--wall:#ECEDEF;--glass:rgba(250,250,252,.74);--glass-b:rgba(0,0,0,.08);--hi:rgba(255,255,255,.8);--fg:#1D1D1F;--fg2:#6E6E73;--sep:rgba(0,0,0,.08);--accent:#0071E3;--surface:#FFFFFF;--hover:rgba(0,0,0,.05);--field:rgba(0,0,0,.055);--av1:#A9ADB6;--av2:#878B94;--shadow:0 6px 24px rgba(0,0,0,.09);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;font-size:13px;color:var(--fg);background:var(--wall);-webkit-font-smoothing:antialiased}
+.app.dark{--wall:#1C1C1E;--glass:rgba(40,40,44,.72);--glass-b:rgba(255,255,255,.09);--hi:rgba(255,255,255,.07);--fg:#F5F5F7;--fg2:#A1A1A6;--sep:rgba(255,255,255,.09);--accent:#0A84FF;--surface:#2A2A2D;--hover:rgba(255,255,255,.06);--field:rgba(255,255,255,.07);--av1:#71757E;--av2:#565A62;--shadow:0 6px 24px rgba(0,0,0,.45)}
+.glass{background:var(--glass);-webkit-backdrop-filter:blur(30px) saturate(190%);backdrop-filter:blur(30px) saturate(190%);border:1px solid var(--rim);box-shadow:inset 0 1px 0 var(--hi),inset 0 -1px 0 var(--lo),inset 0 0 18px var(--glow),0 0 0 .5px rgba(0,0,0,.06),var(--shadow)}
+.app{--wp:radial-gradient(60% 55% at 12% 18%,#DBDDBB 0,transparent 70%),radial-gradient(55% 55% at 88% 12%,#6BA587 0,transparent 70%),radial-gradient(60% 60% at 82% 88%,#D5D88D 0,transparent 70%),radial-gradient(55% 60% at 18% 90%,#88B884 0,transparent 70%),#B5C99E;--glass:rgba(255,255,255,.42);--rim:rgba(255,255,255,.6);--hi:rgba(255,255,255,.95);--lo:rgba(255,255,255,.3);--glow:rgba(255,255,255,.35);--fg2:#56565B;--shadow:0 12px 34px rgba(30,50,20,.16);background:var(--wp)}
+.app.dark{--wp:radial-gradient(60% 55% at 12% 18%,#2D4A5C 0,transparent 70%),radial-gradient(55% 55% at 88% 12%,#1C3442 0,transparent 70%),radial-gradient(60% 60% at 82% 88%,#3B5465 0,transparent 70%),radial-gradient(55% 60% at 18% 90%,#203845 0,transparent 70%),#1A2A35;--glass:rgba(28,30,34,.42);--rim:rgba(255,255,255,.14);--hi:rgba(255,255,255,.22);--lo:rgba(255,255,255,.05);--glow:rgba(255,255,255,.04);--fg2:#AEAEB3;--shadow:0 12px 34px rgba(0,0,0,.45)}
+.av{display:grid;place-items:center;border-radius:50%;color:#FFFFFF;font-weight:600;background:linear-gradient(180deg,var(--av1),var(--av2));flex:none}
+.press{cursor:pointer;transition:transform 120ms cubic-bezier(.23,1,.32,1),background-color 120ms ease}
+.press:active{transform:scale(.97)}
+.ib{width:32px;height:32px;border:0;border-radius:50%;background:transparent;color:var(--fg2);display:grid;place-items:center;padding:0}
+.row{border:0;width:100%;font:inherit;color:inherit;text-align:left;background:transparent;border-radius:10px;display:flex;gap:10px;align-items:center;padding:8px}
+.row .sub,.row .tm{color:var(--fg2)}
+.row.on{background:var(--accent);color:#FFFFFF}
+.row.on .sub,.row.on .tm{color:rgba(255,255,255,.82)}
+.seg{border:0;font:inherit;font-size:12.5px;font-weight:500;height:28px;padding:0 12px;border-radius:14px;background:transparent;color:var(--fg2)}
+.seg.on{background:var(--surface);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.tile{position:relative;aspect-ratio:1/1;border:0;padding:0;cursor:pointer}
+.scroll{scrollbar-width:thin;scrollbar-color:var(--sep) transparent}
+@media (hover:hover) and (pointer:fine){.ib:hover{background:var(--hover);color:var(--fg)}.row:hover{background:var(--hover)}.row.on:hover{background:var(--accent)}.seg:hover{color:var(--fg)}.tile:hover{filter:brightness(.94)}}
+@media (prefers-reduced-transparency:reduce){.glass{background:var(--surface);-webkit-backdrop-filter:none;backdrop-filter:none}}
+@media (prefers-reduced-motion:reduce){.press:active{transform:none}}
+</style>
+</helmet>
+<div class="app {{theme}}" style="width: 100%; height: 100vh; min-height: 900px; position: relative; overflow: hidden">
+
+  <aside class="glass" aria-label="Чаты" style="position: absolute; z-index: 3; top: 8px; left: 8px; bottom: 8px; width: 304px; border-radius: 16px; display: flex; flex-direction: column; overflow: hidden">
+    <div style="height: 44px; display: flex; align-items: center; padding: 0 8px 0 16px">
+      <span aria-hidden="true" style="display: flex; gap: 8px"><span style="width: 12px; height: 12px; border-radius: 50%; background: #FF5F57"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #FEBC2E"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #28C840"></span></span>
+    </div>
+    <div style="padding: 0 12px 10px">
+      <label style="display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 9px; border-radius: 8px; background: var(--field); color: var(--fg2)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+        <input placeholder="Поиск" aria-label="Поиск" style="flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--fg); font: inherit">
+      </label>
+    </div>
+    <div class="scroll" style="flex: 1; overflow-y: auto; padding: 0 6px 8px; display: flex; flex-direction: column; gap: 1px">
+      <sc-for list="{{chats}}" as="c" hint-placeholder-count="7">
+        <button class="row press {{c.cls}}">
+          <span class="av" style="width: 42px; height: 42px; font-size: 15px">{{c.ini}}</span>
+          <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+            <span style="display: flex; gap: 6px; align-items: baseline"><span style="flex: 1; min-width: 0; font-weight: 600; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{c.name}}</span><span class="tm" style="font-size: 11.5px">{{c.time}}</span></span>
+            <span class="sub" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{c.last}}</span>
+          </span>
+        </button>
+      </sc-for>
+    </div>
+  </aside>
+
+  <main aria-label="Медиа и файлы" style="position: absolute; top: 0; bottom: 0; left: 320px; right: 0">
+    <div class="scroll" style="position: absolute; inset: 0; overflow-y: auto">
+      <div style="max-width: 960px; margin: 0 auto; padding: 68px 24px 96px; display: flex; flex-direction: column; gap: 6px">
+
+        <sc-if value="{{isPhotos}}" hint-placeholder-val="{{ true }}">
+          <sc-for list="{{months}}" as="m" hint-placeholder-count="2">
+            <div style="font-weight: 600; font-size: 13.5px; padding: 14px 2px 8px">{{m.title}}</div>
+            <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 3px">
+              <sc-for list="{{m.tiles}}" as="t" hint-placeholder-count="12">
+                <button class="tile" aria-label="{{t.label}}" style="background: {{t.c}}">
+                  <sc-if value="{{t.isVideo}}" hint-placeholder-val="{{ false }}"><span style="position: absolute; left: 6px; bottom: 6px; font-size: 11px; color: #FFFFFF; padding: 1px 6px; border-radius: 7px; background: rgba(0,0,0,.4)">{{t.dur}}</span></sc-if>
+                </button>
+              </sc-for>
+            </div>
+          </sc-for>
+        </sc-if>
+
+        <sc-if value="{{isFiles}}" hint-placeholder-val="{{ false }}">
+          <div style="background: var(--surface); border-radius: 12px; overflow: hidden; margin-top: 8px">
+            <sc-for list="{{files}}" as="f" hint-placeholder-count="7">
+              <div style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-top: {{f.bt}}">
+                <span style="flex: none; width: 38px; height: 38px; border-radius: 8px; display: grid; place-items: center; font-size: 10px; font-weight: 700; color: #FFFFFF; background: {{f.c}}">{{f.ext}}</span>
+                <div style="flex: 1; min-width: 0">
+                  <div style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{f.name}}</div>
+                  <sc-if value="{{f.loading}}" hint-placeholder-val="{{ false }}">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px"><span style="flex: 1; height: 3px; border-radius: 2px; background: var(--field); overflow: hidden"><span style="display: block; height: 3px; width: {{f.pct}}%; background: var(--accent)"></span></span><span style="font-size: 11.5px; color: var(--fg2)">{{f.prog}}</span></div>
+                  </sc-if>
+                  <sc-if value="{{f.idle}}" hint-placeholder-val="{{ true }}"><div style="font-size: 11.5px; color: var(--fg2)">{{f.meta}}</div></sc-if>
+                </div>
+                <button class="ib press" aria-label="{{f.action}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{f.icon}}"></path></svg></button>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{isLinks}}" hint-placeholder-val="{{ false }}">
+          <div style="background: var(--surface); border-radius: 12px; overflow: hidden; margin-top: 8px">
+            <sc-for list="{{links}}" as="l" hint-placeholder-count="5">
+              <a href="#" style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-top: {{l.bt}}; text-decoration: none; color: var(--fg)">
+                <span style="flex: none; width: 38px; height: 38px; border-radius: 8px; display: grid; place-items: center; font-weight: 600; background: var(--field); color: var(--fg2)">{{l.l}}</span>
+                <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px"><span style="font-weight: 500">{{l.t}}</span><span style="font-size: 12px; color: var(--accent)">{{l.u}}</span></span>
+                <span style="font-size: 11.5px; color: var(--fg2)">{{l.d}}</span>
+              </a>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{isVoice}}" hint-placeholder-val="{{ false }}">
+          <div style="background: var(--surface); border-radius: 12px; overflow: hidden; margin-top: 8px">
+            <sc-for list="{{voices}}" as="v" hint-placeholder-count="5">
+              <div style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-top: {{v.bt}}">
+                <button class="press" aria-label="Воспроизвести" style="flex: none; width: 34px; height: {{v.size}}; border-radius: 50%; border: 0; padding: 0; background: var(--accent); display: grid; place-items: center"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" fill="#FFFFFF"></path></svg></button>
+                <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px"><span style="font-weight: 500">{{v.who}}</span><span style="font-size: 12px; color: var(--fg2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{v.text}}</span></span>
+                <span style="font-size: 11.5px; color: var(--fg2)">{{v.d}}</span>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+
+    <div style="position: absolute; z-index: 2; top: 10px; left: 14px; right: 14px; display: flex; justify-content: space-between; align-items: center; gap: 8px; pointer-events: none">
+      <a href="Main.dc.html" class="glass press" style="pointer-events: auto; border-radius: 22px; text-decoration: none; color: var(--fg); display: flex; align-items: center; gap: 8px; padding: 5px 14px 5px 8px; height: 32px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
+        <span class="av" style="width: 26px; height: 26px; font-size: 11px">АМ</span>
+        <span style="font-weight: 600; font-size: 13.5px">Аня Морозова</span>
+      </a>
+      <div class="glass" role="tablist" aria-label="Тип вложений" style="pointer-events: auto; border-radius: 22px; display: flex; gap: 2px; padding: 4px">
+        <sc-for list="{{tabs}}" as="t" hint-placeholder-count="4">
+          <button role="tab" aria-selected="{{t.on}}" class="seg press {{t.cls}}" onClick="{{t.pick}}">{{t.label}} <span style="color: var(--fg2); font-weight: 400">{{t.n}}</span></button>
+        </sc-for>
+      </div>
+      <div class="glass" style="pointer-events: auto; border-radius: 22px; display: flex; gap: 2px; padding: 4px">
+        <button class="ib press" aria-label="Поиск по вложениям"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg></button>
+        <button class="ib press" aria-label="Скачать всё"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"></path></svg></button>
+      </div>
+    </div>
+
+    <div style="position: absolute; z-index: 2; bottom: 12px; left: 0; right: 0; display: flex; justify-content: center; pointer-events: none">
+      <div class="glass" style="pointer-events: auto; width: 420px; border-radius: 22px; padding: 8px 8px 8px 16px; display: flex; align-items: center; gap: 12px">
+        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px">
+          <div style="display: flex; justify-content: space-between; font-size: 12px"><span style="font-weight: 500">{{dlTitle}}</span><span style="color: var(--fg2)">42 из 118 МБ</span></div>
+          <span style="height: 3px; border-radius: 2px; background: var(--field); overflow: hidden"><span style="display: block; height: 3px; width: 36%; background: {{dlBar}}"></span></span>
+        </div>
+        <button class="ib press" onClick="{{togglePause}}" aria-label="{{pauseLabel}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="{{pauseIcon}}"></path></svg></button>
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"appearance":{"editor":"enum","options":["светлая","тёмная"],"default":"светлая"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { tab: 'photos', paused: false };
+  }
+  renderVals() {
+    const s = this.state;
+    const chats = [
+      { ini: 'КП', name: 'Команда продукта', last: 'Вика: ок, тогда созвон в 16:30', time: '14:12' },
+      { ini: 'АМ', name: 'Аня Морозова', last: 'Голосовое сообщение', time: '14:03', on: true },
+      { ini: 'Д', name: 'Денис', last: 'Вы: спасибо, вернул', time: '13:20' },
+      { ini: 'П', name: 'Папа', last: 'Позвони, как будет минутка', time: '12:47' },
+      { ini: 'КК', name: 'Книжный клуб', last: 'Ира: голосуем за книгу на ноябрь', time: '11:30' },
+      { ini: 'И', name: 'Избранное', last: 'договор_аренды.pdf', time: 'вчера' },
+      { ini: 'FD', name: 'Flutter Dev', last: 'Что нового на десктопе в 3.38', time: 'вчера' }
+    ].map((c) => ({ ...c, cls: c.on ? 'on' : '' }));
+    const P = ['#B9A68F', '#8FA2B3', '#A6B497', '#C3B2A4', '#9AA7A0', '#B7A9B9', '#8E9A93', '#C9B79C', '#A3AFBF', '#B4A08A', '#99A88E', '#BFB4AA'];
+    const mk = (n, off, vids) => Array.from({ length: n }, (_, i) => {
+      const v = vids[i];
+      return { c: P[(i + off) % P.length], isVideo: !!v, dur: v || '', label: v ? 'Видео ' + v : 'Фото' };
+    });
+    const months = [
+      { title: 'Октябрь', tiles: mk(10, 0, { 2: '0:12', 7: '1:04' }) },
+      { title: 'Сентябрь', tiles: mk(18, 5, { 4: '0:38', 11: '2:15' }) }
+    ];
+    const DL = 'M12 5v12M7 12l5 5 5-5';
+    const OPEN = 'M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5';
+    const files = [
+      { ext: 'HEIC', c: '#8E8E93', name: 'IMG_2041.HEIC', meta: '6,8 МБ · сегодня', icon: OPEN, action: 'Открыть' },
+      { ext: 'MOV', c: '#5E5CE6', name: 'IMG_2043.MOV', loading: true, pct: 36, prog: '42 из 118 МБ', icon: 'M8 6h3v12H8zM13 6h3v12h-3z', action: 'Пауза' },
+      { ext: 'PDF', c: '#E5484D', name: 'Билеты_Казань.pdf', meta: '412 КБ · 3 окт', icon: OPEN, action: 'Открыть' },
+      { ext: 'ZIP', c: '#B07D3A', name: 'фото_дача_2026.zip', meta: '1,2 ГБ · 21 сен', icon: DL, action: 'Скачать' },
+      { ext: 'DOC', c: '#2F6FDE', name: 'Список гостей.docx', meta: '38 КБ · 14 сен', icon: OPEN, action: 'Открыть' },
+      { ext: 'MP3', c: '#30A46C', name: 'плейлист в машину.mp3', meta: '9,4 МБ · 2 сен', icon: DL, action: 'Скачать' }
+    ].map((f, i) => ({ ...f, loading: !!f.loading, idle: !f.loading, bt: i ? '.5px solid var(--sep)' : '0' }));
+    const links = [
+      { l: 'К', t: 'Квест «Тайна маяка» — бронь', u: 'quest-mayak.ru/booking', d: '9 окт' },
+      { l: 'Я', t: 'Маршрут до дачи', u: 'yandex.ru/maps', d: '28 сен' },
+      { l: 'A', t: 'Настолка, которую хотели', u: 'hobbygames.ru', d: '21 сен' },
+      { l: 'Y', t: 'Видео с концерта', u: 'youtu.be/…', d: '2 сен' }
+    ].map((x, i) => ({ ...x, bt: i ? '.5px solid var(--sep)' : '0' }));
+    const voices = [
+      { who: 'Аня Морозова', text: 'Короче, вечером в субботу собираемся у Лёши…', d: '0:18 · сегодня', size: '34px' },
+      { who: 'Аня Морозова · кружок', text: '0:12 · 120 кадров/с', d: 'сегодня', size: '34px' },
+      { who: 'Вы', text: 'Я уже еду, буду минут через двадцать', d: '0:07 · 9 окт', size: '34px' },
+      { who: 'Аня Морозова', text: 'Слушай, а ты не помнишь, как называлось то кафе…', d: '0:41 · 3 окт', size: '34px' }
+    ].map((x, i) => ({ ...x, bt: i ? '.5px solid var(--sep)' : '0' }));
+    const T = [{ id: 'photos', label: 'Фото и видео', n: 28 }, { id: 'files', label: 'Файлы', n: 6 }, { id: 'links', label: 'Ссылки', n: 4 }, { id: 'voice', label: 'Голосовые', n: 4 }];
+    const tabs = T.map((t) => ({ ...t, on: t.id === s.tab, cls: t.id === s.tab ? 'on' : '', pick: () => this.setState({ tab: t.id }) }));
+    return {
+      theme: (this.props.appearance ?? 'светлая') === 'тёмная' ? 'dark' : '',
+      chats, months, files, links, voices, tabs,
+      isPhotos: s.tab === 'photos', isFiles: s.tab === 'files', isLinks: s.tab === 'links', isVoice: s.tab === 'voice',
+      dlTitle: s.paused ? 'Загрузка на паузе' : 'Загружается IMG_2043.MOV',
+      dlBar: s.paused ? 'var(--fg2)' : 'var(--accent)',
+      pauseLabel: s.paused ? 'Продолжить' : 'Пауза',
+      pauseIcon: s.paused ? 'M8 5v14l11-7z' : 'M7 5h4v14H7zM13 5h4v14h-4z',
+      togglePause: () => this.setState({ paused: !s.paused })
+    };
+  }
+}
+</script>
+</body>
+</html>
