@@ -183,6 +183,10 @@ class MgColors extends ThemeExtension<MgColors> {
   static MgColors of(BuildContext context) =>
       Theme.of(context).extension<MgColors>() ?? light;
 
+  static const Object _keep = Object();
+
+  /// Returns a copy with the given tokens replaced. Pass
+  /// `bubbleShadow: null` to remove the bubble shadow.
   @override
   MgColors copyWith({
     Brightness? brightness,
@@ -194,7 +198,7 @@ class MgColors extends ThemeExtension<MgColors> {
     Color? separator,
     Color? bubbleIn,
     Color? bubbleOut,
-    Color? bubbleShadow,
+    Object? bubbleShadow = _keep,
     Color? field,
     Color? hover,
     Color? avatarTop,
@@ -222,7 +226,9 @@ class MgColors extends ThemeExtension<MgColors> {
       separator: separator ?? this.separator,
       bubbleIn: bubbleIn ?? this.bubbleIn,
       bubbleOut: bubbleOut ?? this.bubbleOut,
-      bubbleShadow: bubbleShadow ?? this.bubbleShadow,
+      bubbleShadow: identical(bubbleShadow, _keep)
+          ? this.bubbleShadow
+          : bubbleShadow as Color?,
       field: field ?? this.field,
       hover: hover ?? this.hover,
       avatarTop: avatarTop ?? this.avatarTop,

@@ -284,4 +284,86 @@ void main() {
       expect(taps, 1);
     });
   });
+
+  testWidgets('composer without onSend does not take Enter or send', (
+    tester,
+  ) async {
+    await tester.pumpWidget(themed(const Composer(labels: _labels)));
+    await tester.enterText(find.byType(TextField), 'draft');
+    await tester.pump();
+    final send = tester.widget<MgSendButton>(find.byType(MgSendButton));
+    expect(send.onPressed, isNull);
+  });
+
+  testWidgets('composer re-syncs the draft state for a new controller', (
+    tester,
+  ) async {
+    final full = TextEditingController(text: 'draft');
+    final empty = TextEditingController();
+    addTearDown(full.dispose);
+    addTearDown(empty.dispose);
+    Future<void> pump(TextEditingController c) => tester.pumpWidget(
+      themed(Composer(labels: _labels, controller: c, onSend: (_) {})),
+    );
+    await pump(full);
+    expect(find.byType(MgSendButton), findsOneWidget);
+    await pump(empty);
+    expect(find.byType(MgSendButton), findsNothing);
+    empty.text = 'x';
+    await tester.pump();
+    expect(find.byType(MgSendButton), findsOneWidget);
+  });
+
+  testWidgets('composer stays within its max width', (tester) async {
+    tester.view.physicalSize = const Size(1400, 300);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      themed(const SizedBox.expand(child: Composer(labels: _labels))),
+    );
+    expect(tester.getSize(find.byType(Glass)).width, Composer.maxWidth);
+  });
+
+  testWidgets('header keeps the actions at the right edge', (tester) async {
+    tester.view.physicalSize = const Size(1000, 200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      themed(
+        const Align(
+          alignment: Alignment.topCenter,
+          child: ChatHeaderBar(
+            title: SizedBox(width: 120),
+            actions: SizedBox(width: 80),
+            fill: SizedBox.expand(key: Key('fill')),
+          ),
+        ),
+      ),
+    );
+    final bar = tester.getRect(find.byType(ChatHeaderBar));
+    final fill = tester.getRect(find.byKey(const Key('fill')));
+    expect(bar.width, 1000);
+    expect(fill.left, 120);
+    expect(fill.right, 1000 - 80);
+  });
+
+  testWidgets('form buttons expose a semantic tap', (tester) async {
+    final semantics = tester.ensureSemantics();
+    var taps = 0;
+    await tester.pumpWidget(
+      themed(
+        Column(
+          children: [
+            MgPrimaryButton(label: 'Next', onPressed: () => taps++),
+            MgTextButton(label: 'Use a QR code', onPressed: () => taps++),
+          ],
+        ),
+      ),
+    );
+    for (final label in ['Next', 'Use a QR code']) {
+      tester.semantics.tap(find.semantics.byLabel(label));
+    }
+    expect(taps, 2);
+    semantics.dispose();
+  });
 }

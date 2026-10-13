@@ -9,25 +9,20 @@ class UnreadBadge extends StatelessWidget {
     required this.count,
     this.muted = false,
     this.onAccent = false,
+    this.label,
   });
 
   final int count;
+
+  /// The text to show instead of [count], such as a compact, localized
+  /// "1.2K". The app formats it; the kit has no locale rules of its own.
+  final String? label;
 
   /// A muted chat uses a gray badge.
   final bool muted;
 
   /// Inverted colors for a selected (accent-filled) row.
   final bool onAccent;
-
-  /// Telegram-style compact label: 999 and below as is, then 1K, 1.2K, 15K.
-  static String label(int count) {
-    if (count < 1000) return '$count';
-    if (count < 10000) {
-      final tenths = (count / 100).floor();
-      return tenths % 10 == 0 ? '${tenths ~/ 10}K' : '${tenths / 10}K';
-    }
-    return '${count ~/ 1000}K';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +37,7 @@ class UnreadBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(9),
       ),
       child: Text(
-        label(count),
+        label ?? '$count',
         style: TextStyle(
           fontSize: 11,
           height: 1,

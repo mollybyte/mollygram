@@ -14,6 +14,7 @@ class ChatListTile extends StatefulWidget {
     required this.subtitle,
     this.time = '',
     this.unread = 0,
+    this.unreadLabel,
     this.muted = false,
     this.selected = false,
     this.avatar,
@@ -26,6 +27,9 @@ class ChatListTile extends StatefulWidget {
   final String subtitle;
   final String time;
   final int unread;
+
+  /// A formatted [unread] count, such as "1.2K"; see [UnreadBadge.label].
+  final String? unreadLabel;
   final bool muted;
   final bool selected;
 
@@ -119,6 +123,7 @@ class _ChatListTileState extends State<ChatListTile> {
                             const SizedBox(width: 6),
                             UnreadBadge(
                               count: widget.unread,
+                              label: widget.unreadLabel,
                               muted: widget.muted,
                               onAccent: on,
                             ),

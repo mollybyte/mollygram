@@ -78,6 +78,7 @@ class _ComposerState extends State<Composer> {
     if (old.controller != widget.controller) {
       (old.controller ?? _own)?.removeListener(_changed);
       _text.addListener(_changed);
+      _hadDraft = _text.text.trim().isNotEmpty;
     }
   }
 
@@ -102,7 +103,8 @@ class _ComposerState extends State<Composer> {
   }
 
   KeyEventResult _onKey(FocusNode node, KeyEvent event) {
-    if (event is KeyDownEvent &&
+    if (widget.onSend != null &&
+        event is KeyDownEvent &&
         event.logicalKey == LogicalKeyboardKey.enter &&
         !HardwareKeyboard.instance.isShiftPressed) {
       _send();
@@ -117,7 +119,7 @@ class _ComposerState extends State<Composer> {
     final l = widget.labels;
     final style = mgTextStyle(c, size: MgType.title);
     final hasDraft = _text.text.trim().isNotEmpty;
-    return Glass(
+    final composer = Glass(
       radius: 22,
       padding: const EdgeInsets.fromLTRB(6, 4, 4, 4),
       child: Row(
@@ -164,7 +166,10 @@ class _ComposerState extends State<Composer> {
           ),
           const SizedBox(width: 2),
           if (hasDraft)
-            MgSendButton(tooltip: l.send, onPressed: _send)
+            MgSendButton(
+              tooltip: l.send,
+              onPressed: widget.onSend == null ? null : _send,
+            )
           else
             MgIconButton(
               icon: MgIcons.mic,
@@ -173,6 +178,13 @@ class _ComposerState extends State<Composer> {
               onPressed: widget.onRecord,
             ),
         ],
+      ),
+    );
+    return Center(
+      heightFactor: 1,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: Composer.maxWidth),
+        child: composer,
       ),
     );
   }

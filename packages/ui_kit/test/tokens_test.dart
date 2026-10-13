@@ -61,11 +61,11 @@ void main() {
     });
   });
 
-  test('UnreadBadge.label compacts large counts', () {
-    expect(UnreadBadge.label(7), '7');
-    expect(UnreadBadge.label(999), '999');
-    expect(UnreadBadge.label(1000), '1K');
-    expect(UnreadBadge.label(1234), '1.2K');
-    expect(UnreadBadge.label(15600), '15K');
+  test('copyWith can clear the bubble shadow', () {
+    expect(MgColors.light.copyWith(bubbleShadow: null).bubbleShadow, isNull);
+    expect(
+      MgColors.light.copyWith(fg: const Color(0xFF000000)).bubbleShadow,
+      MgColors.light.bubbleShadow,
+    );
   });
 }

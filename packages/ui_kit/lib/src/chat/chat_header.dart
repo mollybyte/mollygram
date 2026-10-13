@@ -29,15 +29,54 @@ class ChatHeaderBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       height: height,
-      child: Row(
+      child: CustomMultiChildLayout(
+        delegate: _HeaderLayout(),
         children: [
-          Flexible(child: title),
-          Expanded(child: fill ?? const SizedBox()),
-          actions,
+          LayoutId(id: _Slot.actions, child: actions),
+          LayoutId(id: _Slot.title, child: title),
+          if (fill != null) LayoutId(id: _Slot.fill, child: fill!),
         ],
       ),
     );
   }
+}
+
+enum _Slot { title, fill, actions }
+
+/// Actions keep their natural width at the right edge, the title takes its
+/// natural width and shrinks only when there is no room, and the fill gets
+/// whatever is left between them.
+class _HeaderLayout extends MultiChildLayoutDelegate {
+  static const double _gap = 8;
+
+  @override
+  void performLayout(Size size) {
+    final h = size.height;
+    final actions = layoutChild(
+      _Slot.actions,
+      BoxConstraints(maxWidth: size.width, minHeight: h, maxHeight: h),
+    );
+    positionChild(_Slot.actions, Offset(size.width - actions.width, 0));
+
+    final titleMax = (size.width - actions.width - _gap).clamp(0.0, size.width);
+    final title = layoutChild(
+      _Slot.title,
+      BoxConstraints(maxWidth: titleMax, minHeight: h, maxHeight: h),
+    );
+    positionChild(_Slot.title, Offset.zero);
+
+    if (hasChild(_Slot.fill)) {
+      final w = (size.width - actions.width - title.width).clamp(
+        0.0,
+        size.width,
+      );
+      layoutChild(_Slot.fill, BoxConstraints.tightFor(width: w, height: h));
+      positionChild(_Slot.fill, Offset(title.width, 0));
+    }
+  }
+
+  @override
+  bool shouldRelayout(_HeaderLayout oldDelegate) => false;
 }
 
 /// The left capsule: avatar, chat name and status line.

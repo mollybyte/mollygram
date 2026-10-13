@@ -29,6 +29,7 @@ class MgPrimaryButton extends StatelessWidget {
       button: true,
       enabled: enabled,
       label: label,
+      onTap: enabled ? onPressed : null,
       excludeSemantics: true,
       child: MouseRegion(
         cursor: enabled ? SystemMouseCursors.click : MouseCursor.defer,
@@ -95,6 +96,7 @@ class _MgTextButtonState extends State<MgTextButton> {
       button: true,
       enabled: enabled,
       label: widget.label,
+      onTap: widget.onPressed,
       excludeSemantics: true,
       child: MouseRegion(
         cursor: enabled ? SystemMouseCursors.click : MouseCursor.defer,

@@ -176,6 +176,7 @@ class _Window extends StatelessWidget {
                     subtitle: 'Release notes are out',
                     time: '18:02',
                     unread: 1234,
+                    unreadLabel: '1.2K',
                     muted: true,
                   ),
                   ChatListTile(title: 'Ilya', subtitle: 'ok', time: 'Mon'),
