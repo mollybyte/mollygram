@@ -21,7 +21,7 @@ sealed class AuthorizationStage {
   const factory AuthorizationStage.phoneNumber() = _PhoneNumber;
   const factory AuthorizationStage.qrCode({required String link}) = _QrCode;
   const factory AuthorizationStage.code() = _Code;
-  const factory AuthorizationStage.password() = _Password;
+  const factory AuthorizationStage.password({String hint}) = _Password;
   const factory AuthorizationStage.ready() = _Ready;
   const factory AuthorizationStage.unavailable() = _Unavailable;
 
@@ -29,6 +29,9 @@ sealed class AuthorizationStage {
 
   /// A short-lived `tg://` link to render as a QR code, if TDLib supplied one.
   String? get qrLink => null;
+
+  /// The two-step verification hint; empty when the user set none.
+  String get passwordHint => '';
 
   factory AuthorizationStage.from(td.AuthorizationState state) =>
       switch (state) {
@@ -39,8 +42,8 @@ sealed class AuthorizationStage {
         td.AuthorizationStateWaitOtherDeviceConfirmation(link: final link) =>
           AuthorizationStage.qrCode(link: link),
         td.AuthorizationStateWaitCode() => const AuthorizationStage.code(),
-        td.AuthorizationStateWaitPassword() =>
-          const AuthorizationStage.password(),
+        td.AuthorizationStateWaitPassword(:final passwordHint) =>
+          AuthorizationStage.password(hint: passwordHint),
         td.AuthorizationStateReady() => const AuthorizationStage.ready(),
         _ => const AuthorizationStage.unavailable(),
       };
@@ -80,7 +83,12 @@ final class _Code extends AuthorizationStage {
 }
 
 final class _Password extends AuthorizationStage {
-  const _Password();
+  const _Password({this.hint = ''});
+
+  final String hint;
+
+  @override
+  String get passwordHint => hint;
 
   @override
   AuthorizationStageKind get kind => AuthorizationStageKind.password;
