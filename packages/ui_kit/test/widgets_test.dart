@@ -205,4 +205,83 @@ void main() {
     );
     expect(colors, same(MgColors.light));
   });
+
+  group('forms', () {
+    testWidgets('primary button ignores taps while loading', (tester) async {
+      var taps = 0;
+      Future<void> pump({required bool loading}) => tester.pumpWidget(
+        themed(
+          Center(
+            child: MgPrimaryButton(
+              label: 'Next',
+              loading: loading,
+              onPressed: () => taps++,
+            ),
+          ),
+        ),
+      );
+
+      await pump(loading: false);
+      await tester.tap(find.byType(MgPrimaryButton));
+      expect(taps, 1);
+
+      await pump(loading: true);
+      expect(find.text('Next'), findsNothing);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      await tester.tap(find.byType(MgPrimaryButton));
+      expect(taps, 1);
+    });
+
+    testWidgets('primary button expands to the full width', (tester) async {
+      await tester.pumpWidget(
+        themed(
+          const Center(
+            child: SizedBox(
+              width: 300,
+              child: MgPrimaryButton(label: 'Next', expand: true),
+            ),
+          ),
+        ),
+      );
+      expect(tester.getSize(find.byType(MgPrimaryButton)).width, 300);
+    });
+
+    testWidgets('text field shows its error and submits', (tester) async {
+      final submitted = <String>[];
+      await tester.pumpWidget(
+        themed(
+          Center(
+            child: SizedBox(
+              width: 300,
+              child: MgTextField(
+                hintText: 'Phone number',
+                errorText: 'Invalid number',
+                onSubmitted: submitted.add,
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(find.text('Invalid number'), findsOneWidget);
+      await tester.enterText(find.byType(TextField), '+1 555');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      expect(submitted, ['+1 555']);
+    });
+
+    testWidgets('text button reports taps', (tester) async {
+      var taps = 0;
+      await tester.pumpWidget(
+        themed(
+          Center(
+            child: MgTextButton(
+              label: 'Use a QR code',
+              onPressed: () => taps++,
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Use a QR code'));
+      expect(taps, 1);
+    });
+  });
 }

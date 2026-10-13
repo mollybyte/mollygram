@@ -240,6 +240,61 @@ void main() {
       );
     });
 
+    testWidgets('sign-in card $theme', skip: _skip, (tester) async {
+      await _shoot(
+        tester,
+        GlassScope(
+          child: Stack(
+            children: [
+              const Positioned.fill(child: Wallpaper()),
+              Center(
+                child: GlassCard(
+                  width: 340,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Text(
+                        'Your phone number',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const MgTextField(hintText: 'Phone number'),
+                      const SizedBox(height: 10),
+                      const MgTextField(
+                        hintText: 'Code',
+                        errorText: 'Invalid code',
+                      ),
+                      const SizedBox(height: 16),
+                      MgPrimaryButton(
+                        label: 'Next',
+                        expand: true,
+                        onPressed: () {},
+                      ),
+                      const SizedBox(height: 6),
+                      Center(
+                        child: MgTextButton(
+                          label: 'Use a QR code',
+                          onPressed: () {},
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        colors,
+        'sign_in_card_$theme',
+        size: const Size(520, 420),
+      );
+    });
+
     testWidgets('icons $theme', skip: _skip, (tester) async {
       await _shoot(
         tester,
