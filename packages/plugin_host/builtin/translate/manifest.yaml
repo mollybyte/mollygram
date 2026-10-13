@@ -38,5 +38,5 @@ settings:
     default: false
   - key: skip
     type: text
-    label: Do not translate, language codes separated by commas
+    label: Never translate, language codes
     default: ""

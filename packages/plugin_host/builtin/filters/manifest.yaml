@@ -19,7 +19,7 @@ settings:
     default: true
   - key: keywords
     type: text
-    label: Keywords, separated by commas
+    label: Keywords, comma-separated
     default: ""
   - key: mode
     type: select

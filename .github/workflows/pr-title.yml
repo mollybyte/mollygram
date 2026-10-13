@@ -40,6 +40,7 @@ jobs:
             media
             plugin_host
             plugin_sdk
+            plugins_ui
             prototype
             design
             web
