@@ -14,3 +14,4 @@ workspace:
   - packages/media
   - packages/app
   - packages/plugin_host
+  - packages/shell
