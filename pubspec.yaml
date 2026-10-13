@@ -12,5 +12,6 @@ workspace:
   - packages/core
   - packages/ui_kit
   - packages/media
+  - packages/media/example
   - packages/app
   - packages/plugin_host
