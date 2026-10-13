@@ -15,6 +15,7 @@ on:
       - packages/ui_kit/**
       - packages/media/**
       - packages/app/**
+      - packages/shell/**
       - assets/icon/**
       - config/**
       - pubspec.yaml
@@ -30,6 +31,7 @@ on:
       - packages/ui_kit/**
       - packages/media/**
       - packages/app/**
+      - packages/shell/**
       - assets/icon/**
       - config/**
       - pubspec.yaml
@@ -48,7 +50,7 @@ concurrency:
 env:
   # Monorepo packages checked by this workflow. plugin_host
   # is checked by its own job.
-  PACKAGES: tdlib core ui_kit media app
+  PACKAGES: tdlib core ui_kit media shell app
 
 jobs:
   analyze:
