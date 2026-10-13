@@ -1,6 +1,6 @@
-# Plugins: specification v1
+# Plugins: specification v1.1
 
-Mollygram plugins are written in TypeScript or JavaScript and run in a quickjs-ng sandbox. Plugins cannot load native code, and there is no exteraGram compatibility. Implementation: `packages/plugin_host`; types for authors: `packages/plugin_sdk`; example: `packages/plugin_host/example/transcribe`.
+Mollygram plugins are written in TypeScript or JavaScript and run in a quickjs-ng sandbox. Plugins cannot load native code, and there is no exteraGram compatibility. Implementation: `packages/plugin_host`; types for authors: `packages/plugin_sdk`; example: `packages/plugin_host/example/transcribe`; built-in plugins: `packages/plugin_host/builtin`.
 
 ## Prior art
 
@@ -85,11 +85,17 @@ A plugin subscribes with `mg.on(event, handler)`, only during load and only to e
 | `message.render.code` | render | | `{message, language, code}` | list of UI nodes |
 | `message.render.voice` | render | `media.read: [voice]` | `{message}` | list of UI nodes |
 | `message.render.round` | render | `media.read: [round]` | `{message}` | list of UI nodes |
+| `message.render.text` (1.1) | render | `messages.read: chats[]` or `all` | `{message}` | list of UI nodes shown below the text |
+| `message.filter` (1.1) | filter | `messages.read: chats[]` or `all` | `{message}` | `{filter: "hide" \| "collapse", reason}` or nothing |
 | `ui.action` | render | | `{action, payload, message}` after a plugin button is pressed | list of UI nodes replacing the old ones |
 | `notification.incoming` | intercept | `notifications.manage` | `{chatId, messageId, title, body}` | `{cancel}`, `{modify}` or `{defer: seconds}` |
 | `settings.changed` | observe | | `{key, value}` | |
 
-Planned for stage 7, for the built-in plugins from `forks-research.md`: `message.filter` (intercepts display to hide or collapse a message; requires `messages.read`) for ad filters, and `message.render.text` (a block below the text) for translation. They will ship in SDK minor version 1.1 without changing existing events.
+Events marked 1.1 arrived in SDK 1.1 for the built-in plugins from `forks-research.md` (items 8 and 9); existing events did not change. A plugin that subscribes to them declares `sdk: ^1.1`, otherwise the manifest is invalid.
+
+Events that carry messages (`chat.opened`, `message.incoming`, `message.edited`, `message.deleted`, `message.render.text`, `message.filter`) reach a `messages.read: chats[]` plugin only for the chats the user granted.
+
+For `message.filter`, the strongest answer of all handlers wins: `hide` over `collapse`. A collapsed message is shown as a thin row with the `reason` (up to 100 characters) that the user can expand; a hidden one is not shown at all.
 
 ## Plugin API
 
@@ -101,6 +107,9 @@ mg.command("/name", handler)              // a command from the manifest, shown 
 mg.settings.get(key)                      // synchronous
 mg.storage.get / set / delete             // Promise, storage permission
 mg.messages.get(chatId, id) / history()   // Promise, messages.read permission
+mg.messages.translate(chatId, id, {to})   // 1.1, Promise, messages.read; Telegram's own translation (TDLib translateMessageText)
+mg.text.detectLanguage(text)              // 1.1, Promise, no permission; on-device detection, null when unsure
+mg.app.locale()                           // 1.1, synchronous: the app's UI language, "en" or "ru"
 mg.composer.insert(text)                  // Promise, composer.write permission
 mg.media.transcribe(media, {language})    // Promise, media.read permission; the app does on-device recognition
 mg.net.fetch(url, {method, headers, body})// Promise, https and hosts from net only, no cookies, no redirects to other hosts
@@ -134,6 +143,19 @@ Limits: 200 nodes, nesting depth 8, strings up to 4000 characters. No colors, si
 - **Time.** CPU time budget per entry into JS: 500 ms for loading, 100 ms for a handler or a promise job run. Measured as thread CPU time, so system load does not penalize well-behaved plugins. An async handler is awaited for up to 5 s; a command or button press for up to 60 s (it may involve speech recognition).
 - **Failures.** An exception, timeout or invalid UI is a strike, and the event result is as if the plugin were not installed. Three consecutive strikes disable the plugin until it is re-enabled manually; the reason is shown on its screen. A successful call resets the counter.
 - **Not covered.** A bug in quickjs-ng itself (memory corruption) will crash the process, because the VM lives in our process. If this turns out to be a real risk in stage 7, the same worker protocol can move to a separate host process with no changes for plugins.
+
+## Built-in plugins
+
+Shipped with the app in `packages/plugin_host/builtin`, built from TypeScript like any other plugin and run in the same sandbox with the same permission checks. They cannot be uninstalled, only turned off.
+
+- **Filters** (`dev.mollygram.filters`): collapses or hides advertising (`erid` tokens, `#ad`, `#реклама`, a "Sponsored" line) and messages with the user's keywords. Keywords match whole words in any script, ignoring case. Permissions: `messages.read: all`; no network, no storage.
+- **Translate** (`dev.mollygram.translate`): shows "Translate from German" under messages in another language, detected on the device, and translates them with Telegram's own translation, so the text goes nowhere it has not been already. Translates automatically when the user turns that on; caches translations keyed by the message text, so an edited message is translated again. Permissions: `messages.read: all`, `storage: 2mb`.
+
+Rebuild after editing `src/index.ts`: `cd packages/plugin_host/builtin/<name> && npx -p typescript@5.9 tsc -p .`. CI checks that the committed `index.js` matches.
+
+## Plugin settings screen
+
+`packages/plugins_ui` implements the screen from `design/Plugins.dc.html`, styled like macOS System Settings: a glass list of installed and available plugins with search, and a solid pane with the plugin's access, options, commands, manifest and uninstall. Installing a plugin, or an update that asks for more access, opens a consent sheet listing every permission; `messages.read: all` gets a separate warning. Permission rows and the built-in plugins' texts are localized in English and Russian; third-party plugins show their manifest texts as is.
 
 ## Distribution
 

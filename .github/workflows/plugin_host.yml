@@ -1,5 +1,8 @@
 name: Plugin host
 
+# Also checks packages/plugins_ui, the plugins settings screen: it depends on
+# plugin_host, so its tests need the same QuickJS submodule.
+#
 # Pull requests test on Linux only. The native QuickJS build on macOS and
 # Windows runs on main, on manual runs, and on pull requests labelled
 # `full-ci`.
@@ -7,10 +10,10 @@ name: Plugin host
 on:
   push:
     branches: [main]
-    paths: [packages/plugin_host/**, packages/plugin_sdk/**, pubspec.yaml, pubspec.lock, .fvmrc, .gitmodules, .github/workflows/plugin_host.yml]
+    paths: [packages/plugin_host/**, packages/plugin_sdk/**, packages/plugins_ui/**, pubspec.yaml, pubspec.lock, .fvmrc, .gitmodules, .github/workflows/plugin_host.yml]
   pull_request:
     types: [opened, synchronize, reopened, labeled]
-    paths: [packages/plugin_host/**, packages/plugin_sdk/**, pubspec.yaml, pubspec.lock, .fvmrc, .gitmodules, .github/workflows/plugin_host.yml]
+    paths: [packages/plugin_host/**, packages/plugin_sdk/**, packages/plugins_ui/**, pubspec.yaml, pubspec.lock, .fvmrc, .gitmodules, .github/workflows/plugin_host.yml]
   workflow_dispatch:
 
 concurrency:
@@ -61,8 +64,35 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Example compiles and matches committed index.js
-        working-directory: packages/plugin_host/example/transcribe
+      - name: Example and built-in plugins compile and match committed index.js
+        working-directory: packages/plugin_host
         run: |
-          npx --yes -p typescript@5.9 tsc -p .
-          git diff --exit-code index.js
+          for d in example/transcribe builtin/filters builtin/translate; do
+            (cd "$d" && npx --yes -p typescript@5.9 tsc -p .)
+          done
+          git diff --exit-code -- '*.js'
+
+  ui:
+    name: Plugins screen
+    if: github.event.action != 'labeled' || github.event.label.name == 'full-ci'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/plugins_ui
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Read Flutter version
+        shell: bash
+        run: echo "FLUTTER_VERSION=$(jq -r .flutter .fvmrc)" >> "$GITHUB_ENV"
+        working-directory: .
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: dart format --output=none --set-exit-if-changed .
+      - run: flutter analyze --fatal-infos
+      - run: flutter test

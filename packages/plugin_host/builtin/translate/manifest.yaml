@@ -1,0 +1,42 @@
+id: dev.mollygram.translate
+name: Translate
+version: 1.0.0
+author: Mollygram
+description: >-
+  Translates messages written in other languages with Telegram's own
+  translation, free and without Premium. The language is detected on the
+  device.
+runtime: js
+sdk: ^1.1
+main: index.js
+permissions:
+  messages.read: all
+  storage: 2mb
+hooks:
+  - message.render.text
+settings:
+  - key: to
+    type: select
+    label: Translate to
+    default: app
+    options:
+      - { value: app, label: App language }
+      - { value: en, label: English }
+      - { value: ru, label: Russian }
+      - { value: uk, label: Ukrainian }
+      - { value: de, label: German }
+      - { value: es, label: Spanish }
+      - { value: fr, label: French }
+      - { value: it, label: Italian }
+      - { value: pt, label: Portuguese }
+      - { value: tr, label: Turkish }
+      - { value: zh, label: Chinese }
+      - { value: ja, label: Japanese }
+  - key: auto
+    type: toggle
+    label: Translate automatically
+    default: false
+  - key: skip
+    type: text
+    label: Never translate, language codes
+    default: ""

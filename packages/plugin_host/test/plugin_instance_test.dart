@@ -187,4 +187,78 @@ void main() {
     final p = load('console.log("loaded", {v: 1})');
     expect(p.logs, ['info: loaded {"v":1}']);
   });
+
+  group('SDK 1.1', () {
+    PluginManifest m11(String scope, String hooks) => manifest(
+      sdk: '^1.1',
+      permissions: '  messages.read: $scope',
+      hooks: hooks,
+    );
+    Map<String, Object?> msg(int chat, [String text = 'hi']) => {
+      'message': {'chatId': chat, 'id': 1, 'text': text, 'outgoing': false},
+    };
+
+    test('message.filter: hide wins over collapse', () async {
+      final p = load('''
+        mg.on("message.filter", ({message}) =>
+          message.text.includes("a") ? {filter: "collapse", reason: "A"} : undefined);
+        mg.on("message.filter", ({message}) =>
+          message.text.includes("b") ? {filter: "hide"} : undefined);
+      ''', m: m11('all', '  - message.filter'));
+      final a = await p.dispatch(PluginEvent.messageFilter, msg(1, 'a'));
+      expect(a, isA<EventFiltered>());
+      expect((a as EventFiltered).verdict, FilterVerdict.collapse);
+      expect(a.reason, 'A');
+      final ab = await p.dispatch(PluginEvent.messageFilter, msg(1, 'ab'));
+      expect((ab as EventFiltered).verdict, FilterVerdict.hide);
+      final none = await p.dispatch(PluginEvent.messageFilter, msg(1, 'c'));
+      expect(none, isA<EventHandled>());
+    });
+
+    test('an invalid filter result is a strike', () async {
+      final p = load(
+        'mg.on("message.filter", () => ({filter: "explode"}))',
+        m: m11('all', '  - message.filter'),
+      );
+      final r = await p.dispatch(PluginEvent.messageFilter, msg(1));
+      expect(r, isA<EventSkipped>());
+      expect(p.logs.last, contains('invalid filter result'));
+    });
+
+    test('chats[] plugins see only granted chats', () async {
+      final p = load(
+        'mg.on("message.render.text", () => [{type: "text", text: "seen"}])',
+        m: m11('chats[]', '  - message.render.text'),
+        grants: const PluginGrants(chats: {5}),
+      );
+      final granted = await p.dispatch(PluginEvent.messageRenderText, msg(5));
+      expect((granted as EventHandled).ui.single['text'], 'seen');
+      final other = await p.dispatch(PluginEvent.messageRenderText, msg(6));
+      expect(other, isA<EventSkipped>());
+    });
+
+    test('translate follows messages.read, detection needs nothing', () async {
+      final p = load(
+        '''
+        mg.command("/tr", async (chat) => {
+          try { return (await mg.messages.translate(chat, 1, {to: "en"})).text; }
+          catch (e) { return e.code; }
+        });
+        mg.command("/lang", async () =>
+          (await mg.text.detectLanguage("Guten Morgen")).language + ":" + mg.app.locale());
+      ''',
+        m: manifest(
+          sdk: '^1.1',
+          permissions: '  messages.read: chats[]',
+          extra:
+              'commands:\n  - { name: /tr, title: Tr }\n'
+              '  - { name: /lang, title: Lang }',
+        ),
+        grants: const PluginGrants(chats: {5}),
+      );
+      expect(await p.runCommand('/tr', args: 5), 'translated to en');
+      expect(await p.runCommand('/tr', args: 6), 'permission_denied');
+      expect(await p.runCommand('/lang'), 'de:en');
+    });
+  });
 }

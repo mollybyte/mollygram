@@ -142,6 +142,11 @@ final class PermissionSet {
     );
   }
 
+  /// Whether the plugin may observe messages as they arrive or render:
+  /// `chats[]` or `all`.
+  bool get canObserveMessages =>
+      messagesRead == MessagesScope.chats || messagesRead == MessagesScope.all;
+
   /// Returns the permissions that were not in [previous].
   ///
   /// If the list is not empty, the plugin update stays disabled until the
@@ -220,23 +225,31 @@ enum PluginEvent {
   messageRenderVoice('message.render.voice', EventKind.render),
   messageRenderRound('message.render.round', EventKind.render),
 
+  /// Renders an extra block below the text of a message, for example a
+  /// translation. SDK 1.1.
+  messageRenderText('message.render.text', EventKind.render, sinceMinor: 1),
+
+  /// Decides whether a message is shown, collapsed or hidden. SDK 1.1.
+  messageFilter('message.filter', EventKind.filter, sinceMinor: 1),
+
   /// A tap on a button the plugin rendered itself.
   uiAction('ui.action', EventKind.render),
   notificationIncoming('notification.incoming', EventKind.intercept),
   settingsChanged('settings.changed', EventKind.observe);
 
-  const PluginEvent(this.id, this.kind);
+  const PluginEvent(this.id, this.kind, {this.sinceMinor = 0});
 
   final String id;
   final EventKind kind;
+
+  /// The SDK 1.x minor version that introduced the event.
+  final int sinceMinor;
 
   static final byName = {for (final e in values) e.id: e};
 
   /// Returns the permission missing for a subscription, or null if none.
   String? requires(PermissionSet p) => switch (this) {
-    chatOpened || messageIncoming || messageEdited || messageDeleted
-        when p.messagesRead == MessagesScope.none ||
-            p.messagesRead == MessagesScope.onCommand =>
+    _ when readsMessages && !p.canObserveMessages =>
       'messages.read: chats[] or all',
     messageSending when !p.composerWrite => 'composer.write',
     messageRenderVoice when !p.mediaRead.contains(MediaKind.voice) =>
@@ -245,6 +258,18 @@ enum PluginEvent {
       'media.read: [round]',
     notificationIncoming when !p.notificationsManage => 'notifications.manage',
     _ => null,
+  };
+
+  /// Whether the payload carries messages of a chat, so the plugin may only
+  /// receive it for chats it can read.
+  bool get readsMessages => switch (this) {
+    chatOpened ||
+    messageIncoming ||
+    messageEdited ||
+    messageDeleted ||
+    messageRenderText ||
+    messageFilter => true,
+    _ => false,
   };
 }
 
@@ -257,4 +282,8 @@ enum EventKind {
 
   /// The result is a list of declarative UI nodes.
   render,
+
+  /// A `{filter: "hide" | "collapse", reason}` result hides or collapses
+  /// the message.
+  filter,
 }

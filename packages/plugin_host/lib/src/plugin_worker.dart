@@ -39,6 +39,7 @@ final class PluginWorker {
     required PluginServices services,
     PluginGrants grants = const PluginGrants(),
     PluginPolicy policy = const PluginPolicy(),
+    String locale = 'en',
     Map<String, Object?> settings = const {},
   }) async {
     final w = PluginWorker._(manifest, services);
@@ -52,6 +53,7 @@ final class PluginWorker {
         source: source,
         grants: grants,
         policy: policy,
+        locale: locale,
         settings: settings,
       ),
       debugName: 'plugin ${manifest.id}',
@@ -144,6 +146,7 @@ typedef _WorkerArgs = ({
   String source,
   PluginGrants grants,
   PluginPolicy policy,
+  String locale,
   Map<String, Object?> settings,
 });
 
@@ -179,6 +182,7 @@ void _workerMain(_WorkerArgs args) {
     services: services,
     grants: args.grants,
     policy: args.policy,
+    locale: args.locale,
     settings: args.settings,
   );
   var lastStatus = plugin.status;
