@@ -38,6 +38,7 @@ jobs:
             tdlib
             ui_kit
             media
+            shell
             plugin_host
             plugin_sdk
             plugins_ui

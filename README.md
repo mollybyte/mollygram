@@ -57,6 +57,7 @@ The layout follows the official Telegram Desktop, so there is nothing to relearn
 | `packages/core` | Models and state on top of TDLib, no Flutter dependency |
 | `packages/ui_kit` | Shared widgets, glass, theme |
 | `packages/media` | Video, video messages, voice messages |
+| [`packages/shell`](packages/shell) | Window layout: chat tabs, split view, ⌘K command palette |
 | [`packages/plugin_host`](packages/plugin_host) | Plugin sandbox and the built-in Filters and Translate plugins |
 | `packages/plugins_ui` | The plugins settings screen |
 | `packages/plugin_sdk` | TypeScript types for plugin authors |
