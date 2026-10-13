@@ -61,8 +61,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Example compiles and matches committed index.js
-        working-directory: packages/plugin_host/example/transcribe
+      - name: Example and built-in plugins compile and match committed index.js
+        working-directory: packages/plugin_host
         run: |
-          npx --yes -p typescript@5.9 tsc -p .
-          git diff --exit-code index.js
+          for d in example/transcribe builtin/filters builtin/translate; do
+            (cd "$d" && npx --yes -p typescript@5.9 tsc -p .)
+          done
+          git diff --exit-code -- '*.js'

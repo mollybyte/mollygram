@@ -15,3 +15,10 @@ To rebuild the example after editing `example/transcribe/src/index.ts`:
 ```sh
 cd example/transcribe && npx -p typescript@5.9 tsc -p .
 ```
+
+Built-in plugins live in `builtin/` and are rebuilt the same way:
+
+```sh
+cd builtin/filters && npx -p typescript@5.9 tsc -p .
+cd builtin/translate && npx -p typescript@5.9 tsc -p .
+```

@@ -32,8 +32,9 @@ abstract interface class PluginServices {
   /// Performs [method] on behalf of the plugin [pluginId].
   ///
   /// [method] is one of: `storage.get`, `storage.set`, `storage.delete`,
-  /// `messages.get`, `messages.history`, `composer.insert`,
-  /// `media.transcribe`, `net.fetch`, `ui.toast`, `log`.
+  /// `messages.get`, `messages.history`, `messages.translate`,
+  /// `text.detectLanguage`, `composer.insert`, `media.transcribe`,
+  /// `net.fetch`, `ui.toast`.
   /// Errors should be thrown as [HostError].
   Future<Object?> call(
     String pluginId,
@@ -97,6 +98,28 @@ final class EventCancelled extends EventOutcome {
   const EventCancelled();
 }
 
+/// What a `message.filter` handler decided.
+enum FilterVerdict {
+  /// Shown as a thin row with the reason; the user can expand it.
+  collapse,
+
+  /// Not shown at all.
+  hide,
+}
+
+/// The message is collapsed or hidden by a `message.filter` handler.
+final class EventFiltered extends EventOutcome {
+  const EventFiltered(this.verdict, {this.reason});
+
+  final FilterVerdict verdict;
+
+  /// A short explanation for the collapsed row, for example "Advertising".
+  final String? reason;
+
+  @override
+  String toString() => 'EventFiltered(${verdict.name}, $reason)';
+}
+
 final class EventHandled extends EventOutcome {
   const EventHandled({required this.payload, this.ui = const []});
 
@@ -117,6 +140,7 @@ final class PluginInstance {
     required this._services,
     this.grants = const PluginGrants(),
     this.policy = const PluginPolicy(),
+    this.locale = 'en',
     Map<String, Object?> settings = const {},
   }) : _settings = {
          for (final s in manifest.settings) s.key: s.defaultValue,
@@ -126,6 +150,9 @@ final class PluginInstance {
   final PluginManifest manifest;
   final PluginGrants grants;
   final PluginPolicy policy;
+
+  /// The app's UI language, for example `en` or `ru`: `mg.app.locale()`.
+  final String locale;
   final PluginServices _services;
   final Map<String, Object?> _settings;
 
@@ -192,6 +219,9 @@ final class PluginInstance {
       return const EventSkipped('plugin is not running');
     }
     if (!_events.contains(event.id)) return const EventSkipped();
+    if (event.readsMessages && !_mayReadChat(payload)) {
+      return const EventSkipped('chat is not granted');
+    }
     final timeout = event == PluginEvent.uiAction
         ? policy.actionTimeout
         : policy.eventTimeout;
@@ -211,6 +241,16 @@ final class PluginInstance {
           ? const EventCancelled()
           : EventHandled(payload: payload);
     }
+    if (event.kind == EventKind.filter) {
+      try {
+        final outcome = _filterOutcome((value['results'] as List).cast());
+        _strikes = 0;
+        return outcome ?? EventHandled(payload: payload);
+      } on UiException catch (e) {
+        _strike('invalid filter result: ${e.message}');
+        return EventSkipped(e.message);
+      }
+    }
     if (event.kind == EventKind.render) {
       try {
         final ui = [
@@ -228,6 +268,39 @@ final class PluginInstance {
     return EventHandled(
       payload: event.kind == EventKind.intercept ? value['payload'] : payload,
     );
+  }
+
+  /// Whether the chat in an event payload is readable under
+  /// `messages.read`: `all`, or `chats[]` with the chat granted.
+  bool _mayReadChat(Map<String, Object?> payload) {
+    final p = manifest.permissions;
+    if (p.messagesRead == MessagesScope.all) return true;
+    final message = payload['message'];
+    final chat = message is Map ? message['chatId'] : payload['chatId'];
+    return p.messagesRead == MessagesScope.chats && grants.chats.contains(chat);
+  }
+
+  /// The strongest verdict of all handlers: hide wins over collapse.
+  static EventFiltered? _filterOutcome(List<Object?> results) {
+    EventFiltered? best;
+    for (final r in results) {
+      if (r is! Map) throw UiException('a filter result must be an object');
+      final verdict = switch (r['filter']) {
+        null => null,
+        'hide' => FilterVerdict.hide,
+        'collapse' => FilterVerdict.collapse,
+        final v => throw UiException('unknown filter "$v"'),
+      };
+      if (verdict == null) continue;
+      final reason = r['reason'];
+      if (reason != null && (reason is! String || reason.length > 100)) {
+        throw UiException('reason must be a string up to 100 characters');
+      }
+      if (best == null || verdict.index > best.verdict.index) {
+        best = EventFiltered(verdict, reason: reason as String?);
+      }
+    }
+    return best;
   }
 
   /// Runs a command from the palette. [chatId] is the current chat.
@@ -399,6 +472,8 @@ final class PluginInstance {
             );
           }
           return _ok(null);
+        case 'app.locale':
+          return _ok(locale);
         case 'settings.get':
           if (!_settings.containsKey(args['key'])) {
             throw HostError('no_setting', 'no setting ${args['key']}');
@@ -431,7 +506,7 @@ final class PluginInstance {
           );
         }
         args['quota'] = p.storageBytes;
-      case 'messages.get' || 'messages.history':
+      case 'messages.get' || 'messages.history' || 'messages.translate':
         final chat = args['chatId'];
         final allowed = switch (p.messagesRead) {
           MessagesScope.none => false,
@@ -440,6 +515,18 @@ final class PluginInstance {
           MessagesScope.all => true,
         };
         if (!allowed) throw HostError.denied('messages.read for chat $chat');
+        if (method == 'messages.translate' && args['to'] is! String) {
+          throw const HostError('bad_argument', 'to: a language code');
+        }
+      case 'text.detectLanguage':
+        // On-device detection of text the plugin already has: no permission.
+        final text = args['text'];
+        if (text is! String || text.length > 4000) {
+          throw const HostError(
+            'bad_argument',
+            'text: a string up to 4000 characters',
+          );
+        }
       case 'composer.insert':
         if (!p.composerWrite) throw HostError.denied('composer.write');
       case 'media.transcribe':
