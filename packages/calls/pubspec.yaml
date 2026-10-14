@@ -1,0 +1,14 @@
+name: mollygram_calls
+description: dart:ffi binding to libmgcalls, the call engine (tgcalls + WebRTC).
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  ffi: ^2.1.0
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.26.0

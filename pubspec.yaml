@@ -9,6 +9,7 @@ environment:
 # pubspec.
 workspace:
   - packages/tdlib
+  - packages/calls
   - packages/core
   - packages/ui_kit
   - packages/media
