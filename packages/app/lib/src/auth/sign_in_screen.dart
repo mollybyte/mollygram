@@ -327,17 +327,7 @@ class _SignInFlowState extends ConsumerState<_SignInFlow> {
             qr: link == null
                 ? const Center(child: CupertinoActivityIndicator())
                 : QrView(data: link, color: const Color(0xFF000000)),
-            center: link == null
-                ? null
-                : ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.asset(
-                      'assets/app_icon.png',
-                      width: 36,
-                      height: 36,
-                      semanticLabel: l10n.appTitle,
-                    ),
-                  ),
+            center: link == null ? null : const AppMark(),
           ),
           title: l10n.qrTitle,
         ),

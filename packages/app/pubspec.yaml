@@ -34,5 +34,3 @@ dev_dependencies:
 flutter:
   generate: true
   uses-material-design: false
-  assets:
-    - assets/app_icon.png
