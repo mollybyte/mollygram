@@ -23,21 +23,24 @@ String formatMessageTime(int unixSeconds, String locale) =>
     DateFormat.Hm(locale)
         .format(DateTime.fromMillisecondsSinceEpoch(unixSeconds * 1000));
 
+/// The name of a kind of message, such as "Photo"; empty for text.
+String kindLabel(AppLocalizations l10n, ChatPreviewKind kind) => switch (kind) {
+  ChatPreviewKind.text => '',
+  ChatPreviewKind.photo => l10n.previewPhoto,
+  ChatPreviewKind.video => l10n.previewVideo,
+  ChatPreviewKind.videoNote => l10n.previewVideoNote,
+  ChatPreviewKind.voiceNote => l10n.previewVoiceNote,
+  ChatPreviewKind.audio => l10n.previewAudio,
+  ChatPreviewKind.document => l10n.previewDocument,
+  ChatPreviewKind.sticker => l10n.previewSticker,
+  ChatPreviewKind.animation => l10n.previewAnimation,
+  ChatPreviewKind.other => l10n.previewOther,
+};
+
 /// The second line of a chat-list row.
 String formatPreview(AppLocalizations l10n, ChatPreview? preview) {
   if (preview == null) return '';
-  final label = switch (preview.kind) {
-    ChatPreviewKind.text => '',
-    ChatPreviewKind.photo => l10n.previewPhoto,
-    ChatPreviewKind.video => l10n.previewVideo,
-    ChatPreviewKind.videoNote => l10n.previewVideoNote,
-    ChatPreviewKind.voiceNote => l10n.previewVoiceNote,
-    ChatPreviewKind.audio => l10n.previewAudio,
-    ChatPreviewKind.document => l10n.previewDocument,
-    ChatPreviewKind.sticker => l10n.previewSticker,
-    ChatPreviewKind.animation => l10n.previewAnimation,
-    ChatPreviewKind.other => l10n.previewOther,
-  };
+  final label = kindLabel(l10n, preview.kind);
   final text = preview.text.replaceAll('\n', ' ');
   final body = switch ((label.isEmpty, text.isEmpty)) {
     (true, _) => text,

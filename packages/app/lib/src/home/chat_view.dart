@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
@@ -259,6 +260,9 @@ class _Messages extends StatelessWidget {
     final lastReadOutbox = store.lastReadOutbox(chatId);
     return ListView.builder(
       reverse: true,
+      // No off-screen cache: a message is built when it enters the
+      // viewport, which is when onShown reports it to TDLib as viewed.
+      scrollCacheExtent: const ScrollCacheExtent.pixels(0),
       padding: const EdgeInsets.only(top: 72, bottom: 88),
       itemCount: items.length,
       findChildIndexCallback: (key) {

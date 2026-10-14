@@ -593,8 +593,10 @@ List<int> albumRows(int count, double firstRatio) => switch (count) {
 };
 
 final _emojiOnly = RegExp(
+  // The lint checks the pattern without the unicode flag it is built with.
+  // ignore: valid_regexps
   r'^(?:\p{Extended_Pictographic}|[\u{1F1E6}-\u{1F1FF}]|[\u{1F3FB}-\u{1F3FF}]'
-  r'|‍|️|⃣|\s)+$',
+  r'|\u200d|\ufe0f|\u20e3|\s)+$',
   unicode: true,
 );
 

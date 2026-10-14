@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 
 import 'chat_list_store.dart';
+import 'message_content.dart';
 
 /// Keeps [ChatListStore] synchronized with TDLib's incremental chat updates.
 ///
@@ -123,30 +124,7 @@ ChatListEntry _entryFrom(td.Chat chat) => ChatListEntry(
 
 ChatPreview? _previewFrom(td.Message? message) {
   if (message == null) return null;
-  final (kind, text) = switch (message.content) {
-    td.MessageText(:final text) => (ChatPreviewKind.text, text.text),
-    td.MessagePhoto(:final caption) => (ChatPreviewKind.photo, caption.text),
-    td.MessageVideo(:final caption) => (ChatPreviewKind.video, caption.text),
-    td.MessageVideoNote() => (ChatPreviewKind.videoNote, ''),
-    td.MessageVoiceNote(:final caption) => (
-      ChatPreviewKind.voiceNote,
-      caption.text,
-    ),
-    td.MessageAudio(:final caption) => (ChatPreviewKind.audio, caption.text),
-    td.MessageDocument(:final caption) => (
-      ChatPreviewKind.document,
-      caption.text,
-    ),
-    td.MessageSticker(:final sticker) => (
-      ChatPreviewKind.sticker,
-      sticker.emoji,
-    ),
-    td.MessageAnimation(:final caption) => (
-      ChatPreviewKind.animation,
-      caption.text,
-    ),
-    _ => (ChatPreviewKind.other, ''),
-  };
+  final (kind, text) = summarizeContent(message.content);
   return ChatPreview(
     kind: kind,
     text: text,

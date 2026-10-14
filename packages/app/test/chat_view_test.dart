@@ -93,6 +93,34 @@ void main() {
     expect(requests().last, 'closeChat');
   });
 
+  testWidgets('marks only the messages on screen as viewed', (tester) async {
+    json.history = [
+      for (var id = 200; id > 100; id--)
+        _message(id: id, senderId: 2, text: 'Message $id'),
+    ];
+    await pump(tester);
+
+    final viewed = {
+      for (final r in json.sent)
+        if (r['@type'] == 'viewMessages') ...(r['message_ids']! as List),
+    };
+    // The newest ones fill the 800 px window; the rest are loaded but
+    // not on screen.
+    expect(viewed, contains(200));
+    expect(viewed, isNot(contains(101)));
+    const screen = Rect.fromLTWH(0, 0, 1200, 800);
+    for (final id in viewed) {
+      final rect = tester.getRect(
+        find.textContaining('Message $id', findRichText: true),
+      );
+      expect(
+        rect.overlaps(screen),
+        isTrue,
+        reason: 'message $id is off screen',
+      );
+    }
+  });
+
   testWidgets('names the sender once per run in a group', (tester) async {
     await pump(tester);
 
@@ -198,6 +226,7 @@ final class _FakeTdJson implements td.TdJson {
   final _queue = Queue<String>();
   final sent = <Map<String, Object?>>[];
   var failSend = false;
+  var history = _history;
   var _nextClientId = 0;
 
   @override
@@ -221,8 +250,14 @@ final class _FakeTdJson implements td.TdJson {
       'getAuthorizationState' => {'@type': 'authorizationStateReady'},
       'getChatHistory' => {
         '@type': 'messages',
-        'total_count': _history.length,
-        'messages': [for (final m in _history) m.toJson()],
+        'total_count': history.length,
+        'messages': [
+          // TDLib returns messages older than from_message_id.
+          for (final m in history)
+            if (decoded['from_message_id'] == 0 ||
+                m.id < (decoded['from_message_id']! as int))
+              m.toJson(),
+        ],
       },
       'sendMessage' when failSend => {
         '@type': 'error',

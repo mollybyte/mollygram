@@ -194,12 +194,14 @@ final class ConversationController {
 
   void _onUpdate(td.TdObject object) {
     switch (object) {
+      // Sender names on screen follow renames. updateUser also comes for
+      // status and other changes, so only a new name is announced.
       case td.UpdateUser(:final user):
         final sender = MessageSenderId.user(user.id);
         store
-          ..setUserName(user.id, _nameOf(user))
           ..setColor(sender, user.accentColorId)
           ..setPhoto(sender, user.profilePhoto?.small);
+        if (store.setUserName(user.id, _nameOf(user))) _changes.add(null);
       case td.UpdateNewChat(:final chat):
         store
           ..setChatTitle(chat.id, chat.title)
@@ -221,7 +223,7 @@ final class ConversationController {
         store.setReadOutbox(chatId, lastReadOutboxMessageId);
         _changes.add(null);
       case td.UpdateChatTitle(:final chatId, :final title):
-        store.setChatTitle(chatId, title);
+        if (store.setChatTitle(chatId, title)) _changes.add(null);
       case td.UpdateChatPhoto(:final chatId, :final photo):
         store.setPhoto(MessageSenderId.chat(chatId), photo?.small);
       case td.UpdateChatAccentColors(:final chatId, :final accentColorId):

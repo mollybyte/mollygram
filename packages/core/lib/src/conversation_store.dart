@@ -245,9 +245,19 @@ final class ConversationStore {
   void addReferenced(ConversationMessage message) =>
       _referenced[(message.chatId, message.id)] = message;
 
-  void setUserName(int userId, String name) => _userNames[userId] = name;
+  /// Returns whether the name changed.
+  bool setUserName(int userId, String name) {
+    if (_userNames[userId] == name) return false;
+    _userNames[userId] = name;
+    return true;
+  }
 
-  void setChatTitle(int chatId, String title) => _chatTitles[chatId] = title;
+  /// Returns whether the title changed.
+  bool setChatTitle(int chatId, String title) {
+    if (_chatTitles[chatId] == title) return false;
+    _chatTitles[chatId] = title;
+    return true;
+  }
 
   /// The display name of [sender], or null while TDLib hasn't sent it.
   String? nameOf(MessageSenderId sender) =>
