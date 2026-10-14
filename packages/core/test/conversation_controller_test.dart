@@ -249,6 +249,14 @@ void main() {
     );
   });
 
+  test('announces a sender rename, but not an unchanged name', () {
+    final store = ConversationStore();
+    expect(store.setUserName(2, 'Boris'), isTrue);
+    expect(store.setUserName(2, 'Boris'), isFalse);
+    expect(store.setUserName(2, 'Boris B.'), isTrue);
+    expect(store.nameOf(const MessageSenderId.user(2)), 'Boris B.');
+  });
+
   test('opens, views and closes a chat through TDLib', () async {
     await controller.start();
 

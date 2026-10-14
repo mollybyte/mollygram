@@ -164,12 +164,14 @@ final class ConversationController {
 
   void _onUpdate(td.TdObject object) {
     switch (object) {
+      // Sender names on screen follow renames. updateUser also comes for
+      // status and other changes, so only a new name is announced.
       case td.UpdateUser(:final user):
-        store.setUserName(user.id, _nameOf(user));
+        if (store.setUserName(user.id, _nameOf(user))) _changes.add(null);
       case td.UpdateNewChat(:final chat):
-        store.setChatTitle(chat.id, chat.title);
+        if (store.setChatTitle(chat.id, chat.title)) _changes.add(null);
       case td.UpdateChatTitle(:final chatId, :final title):
-        store.setChatTitle(chatId, title);
+        if (store.setChatTitle(chatId, title)) _changes.add(null);
       case td.UpdateNewMessage(:final message):
         _add(message);
       // A sent message first arrives with a temporary id; TDLib then replaces
