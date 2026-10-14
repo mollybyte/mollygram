@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../data/chat_directory.dart';
 import '../l10n/shell_strings.dart';
@@ -9,7 +10,6 @@ import '../model/workspace.dart';
 import '../palette/palette_search.dart';
 import '../shortcuts.dart';
 import 'glyphs.dart';
-import 'shell_theme.dart';
 
 /// The ⌘K palette: chats, people, messages and commands in one list.
 ///
@@ -222,7 +222,7 @@ class _CommandPaletteState extends State<CommandPalette> {
   @override
   Widget build(BuildContext context) {
     _built = true;
-    final c = ShellTheme.of(context);
+    final c = MgColors.of(context);
     final s = widget.strings;
     final base = DefaultTextStyle.of(context).style
         .copyWith(color: c.fg, fontSize: 13);
@@ -248,7 +248,7 @@ class _CommandPaletteState extends State<CommandPalette> {
 
     final panel = Container(
       decoration: BoxDecoration(
-        color: c.paletteGlass,
+        color: _paletteFill(c),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: c.rim),
       ),
@@ -365,7 +365,7 @@ class _CommandPaletteState extends State<CommandPalette> {
       explicitChildNodes: true,
       label: s.palette,
       child: CustomPaint(
-        painter: _OuterShadow(color: c.paletteShadow),
+        painter: _OuterShadow(color: _paletteShadow(c)),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(16),
           child: BackdropFilter(filter: paletteGlassFilter, child: panel),
@@ -374,7 +374,7 @@ class _CommandPaletteState extends State<CommandPalette> {
     );
   }
 
-  Widget _results(ShellColors c) {
+  Widget _results(MgColors c) {
     var index = 0;
     final children = <Widget>[];
     for (final group in _groups) {
@@ -452,6 +452,14 @@ class _OuterShadow extends CustomPainter {
   bool shouldRepaint(_OuterShadow old) => old.color != color;
 }
 
+/// The palette floats over everything, so its glass is denser than the
+/// sidebar's and its shadow deeper (design/Palette.dc.html).
+Color _paletteFill(MgColors c) =>
+    c.isDark ? const Color(0x941E2024) : const Color(0x8CFFFFFF);
+
+Color _paletteShadow(MgColors c) =>
+    c.isDark ? const Color(0x99000000) : const Color(0x38000000);
+
 /// blur(40px) saturate(190%) from the palette mock; in CSS the blur radius
 /// is the sigma.
 final ui.ImageFilter paletteGlassFilter = ui.ImageFilter.compose(
@@ -488,9 +496,9 @@ class _PaletteRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = ShellTheme.of(context);
-    final fg = selected ? const Color(0xFFFFFFFF) : c.fg;
-    final fg2 = selected ? const Color(0xCCFFFFFF) : c.fg2;
+    final c = MgColors.of(context);
+    final fg = selected ? c.onAccent : c.fg;
+    final fg2 = selected ? c.onAccentSecondary : c.fg2;
 
     final (
       Widget leading,
@@ -499,7 +507,7 @@ class _PaletteRow extends StatelessWidget {
       String? kbd,
     ) = switch (item) {
       ChatPaletteItem(:final chat) => (
-        MonogramAvatar(initials: chat.initials),
+        MonogramAvatar(name: chat.title, size: 24),
         chat.title,
         chat.unread > 0
             ? strings.newMessages(chat.unread)

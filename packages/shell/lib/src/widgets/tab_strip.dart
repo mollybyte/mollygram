@@ -1,11 +1,11 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
+import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../data/chat_directory.dart';
 import '../l10n/shell_strings.dart';
 import '../model/workspace.dart';
 import 'glyphs.dart';
-import 'shell_theme.dart';
 
 /// The row of chat tabs. Solid, not glass: glass is only for the sidebar,
 /// the chat header capsules, the composer and the palette.
@@ -29,7 +29,7 @@ class TabStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final workspace = controller.value;
-    final c = ShellTheme.of(context);
+    final c = MgColors.of(context);
     return Semantics(
       container: true,
       label: strings.tabs,
@@ -100,7 +100,7 @@ class _TabPillState extends State<_TabPill> {
 
   @override
   Widget build(BuildContext context) {
-    final c = ShellTheme.of(context);
+    final c = MgColors.of(context);
     final showClose = _hover || widget.selected;
     return MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
@@ -190,7 +190,7 @@ class _IconButtonState extends State<_IconButton> {
 
   @override
   Widget build(BuildContext context) {
-    final c = ShellTheme.of(context);
+    final c = MgColors.of(context);
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hover = true),

@@ -24,21 +24,6 @@ class ChatSummary {
   final String? username;
 
   final int unread;
-
-  /// Up to two letters for the monogram avatar.
-  String get initials {
-    final words = title
-        .split(RegExp(r'\s+'))
-        .where(
-          (w) => w.isNotEmpty && RegExp(r'\p{L}', unicode: true).hasMatch(w),
-        )
-        .toList();
-    if (words.isEmpty) return '';
-    final first = String.fromCharCode(words.first.runes.first);
-    if (words.length == 1) return first.toUpperCase();
-    final second = String.fromCharCode(words[1].runes.first);
-    return (first + second).toUpperCase();
-  }
 }
 
 /// A message found by search.

@@ -1,8 +1,8 @@
 import 'package:flutter/widgets.dart';
+import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../l10n/shell_strings.dart';
 import '../model/workspace.dart';
-import 'shell_theme.dart';
 
 /// Builds the content of one pane. [chat] is `null` for an empty pane.
 typedef PaneBuilder = Widget Function(
@@ -107,7 +107,7 @@ class _Divider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = ShellTheme.of(context);
+    final c = MgColors.of(context);
     return Semantics(
       container: true,
       label: label,
@@ -132,7 +132,7 @@ class EmptyPane extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = ShellTheme.of(context);
+    final c = MgColors.of(context);
     return Center(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),

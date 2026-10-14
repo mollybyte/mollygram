@@ -41,6 +41,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.tag || github.ref }}
+          # plugin_host (quickjs-ng) is a submodule; the app links it.
+          submodules: true
       # The project uses a single Flutter version, taken from .fvmrc.
       - name: Read Flutter version
         shell: bash
