@@ -197,6 +197,21 @@ void main() {
     expect(p.disabledReason, contains('memory'));
   });
 
+  test('a result after a caught out-of-memory error is discarded', () async {
+    final p = load('''
+      mg.on("ui.action", async () => {
+        await null;
+        let a = [];
+        try { for (;;) a.push("x".repeat(4096)) } catch (e) {}
+        a = null;
+        return [{type: "text", text: "ok"}];
+      });
+      ''', policy: const PluginPolicy(limits: JsLimits(memoryBytes: 8 << 20)));
+    expect(await p.dispatch(PluginEvent.uiAction, {}), isA<EventSkipped>());
+    expect(p.status, PluginStatus.disabled);
+    expect(p.disabledReason, contains('memory'));
+  });
+
   test('a service error reaches JS as an exception with a code', () async {
     services.failWith = const HostError('busy', 'busy');
     final p = load('''
