@@ -18,3 +18,12 @@ dependencies:
 dev_dependencies:
   lints: ^6.0.0
   test: ^1.26.0
+
+# The built-in plugins ship inside the app as assets of this package:
+# packages/plugin_host/builtin/<name>/manifest.yaml and index.js.
+flutter:
+  assets:
+    - builtin/filters/manifest.yaml
+    - builtin/filters/index.js
+    - builtin/translate/manifest.yaml
+    - builtin/translate/index.js

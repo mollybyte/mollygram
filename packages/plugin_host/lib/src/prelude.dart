@@ -66,6 +66,13 @@ const prelude = r'''
     messages: {
       get: (chatId, messageId) => request("messages.get", { chatId, messageId }),
       history: (chatId, options) => request("messages.history", { chatId, ...options }),
+      translate: (chatId, messageId, options) => request("messages.translate", { chatId, messageId, ...options }),
+    },
+    text: {
+      detectLanguage: (text) => request("text.detectLanguage", { text }),
+    },
+    app: {
+      locale: () => requestSync("app.locale"),
     },
     composer: {
       insert: (text) => request("composer.insert", { text }),

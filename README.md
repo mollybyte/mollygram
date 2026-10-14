@@ -57,7 +57,9 @@ The layout follows the official Telegram Desktop, so there is nothing to relearn
 | `packages/core` | Models and state on top of TDLib, no Flutter dependency |
 | `packages/ui_kit` | Shared widgets, glass, theme |
 | `packages/media` | Video, video messages, voice messages |
-| [`packages/plugin_host`](packages/plugin_host) | Plugin sandbox |
+| [`packages/shell`](packages/shell) | Window layout: chat tabs, split view, ⌘K command palette |
+| [`packages/plugin_host`](packages/plugin_host) | Plugin sandbox and the built-in Filters and Translate plugins |
+| `packages/plugins_ui` | The plugins settings screen |
 | `packages/plugin_sdk` | TypeScript types for plugin authors |
 | `packages/app` | The application itself |
 
@@ -91,7 +93,7 @@ Contributions are welcome. Read [`CONTRIBUTING.md`](CONTRIBUTING.md) first: the 
 | [`pr-title.yml`](.github/workflows/pr-title.yml) | pull requests | Checks that the PR title follows Conventional Commits |
 | [`release-please.yml`](.github/workflows/release-please.yml) | push to `main` | Keeps a release PR with the next version and `CHANGELOG.md` up to date; merging it tags `v*` and starts the release |
 | [`release.yml`](.github/workflows/release.yml) | `v*` tag, release PR merge | Builds all three platforms with keys from secrets and attaches the archives to the GitHub release |
-| [`plugin_host.yml`](.github/workflows/plugin_host.yml) | changes to the plugin packages | Builds QuickJS and runs the plugin host tests on all three platforms |
+| [`plugin_host.yml`](.github/workflows/plugin_host.yml) | changes to the plugin packages | Builds QuickJS and runs the plugin host tests on all three platforms, and tests the plugins screen |
 | [`tdlib.yml`](.github/workflows/tdlib.yml) | TDLib version change, manual | Builds a universal `libtdjson.dylib` for macOS and publishes it to the `tdlib-<version>` release |
 
 ## Brand

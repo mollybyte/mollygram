@@ -1,0 +1,30 @@
+id: dev.mollygram.filters
+name: Filters
+version: 1.0.0
+author: Mollygram
+description: >-
+  Collapses or hides advertising and messages with your keywords. Messages
+  are checked on the device and go nowhere.
+runtime: js
+sdk: ^1.1
+main: index.js
+permissions:
+  messages.read: all
+hooks:
+  - message.filter
+settings:
+  - key: ads
+    type: toggle
+    label: Filter advertising
+    default: true
+  - key: keywords
+    type: text
+    label: Keywords, comma-separated
+    default: ""
+  - key: mode
+    type: select
+    label: Filtered messages
+    default: collapse
+    options:
+      - { value: collapse, label: Collapse }
+      - { value: hide, label: Hide }

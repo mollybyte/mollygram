@@ -17,6 +17,9 @@ dependencies:
   flutter_secure_storage: ^11.2.0
   flutter_svg: ^2.3.0
   intl: ^0.20.3
+  # Native libmpv for mollygram_media. In a pub workspace media_kit_video
+  # links against it as soon as any member depends on the libs package.
+  media_kit_libs_video: ^1.0.7
   mollygram_core: any
   mollygram_media: any
   mollygram_tdlib: any

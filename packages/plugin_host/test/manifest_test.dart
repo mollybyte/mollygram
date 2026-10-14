@@ -78,6 +78,23 @@ commands:
     expect(e.errors.single, contains('SDK'));
   });
 
+  test('SDK 1.1 hooks need sdk ^1.1 and messages.read', () {
+    final old = errorsOf(
+      '${base}permissions:\n  messages.read: all\nhooks: [message.filter]\n',
+    );
+    expect(old.errors.single, contains('^1.1'));
+    final noRead = errorsOf(
+      '${base.replaceFirst('^1.0', '^1.1')}hooks: [message.render.text]\n',
+    );
+    expect(noRead.errors.single, contains('messages.read'));
+    final ok = PluginManifest.parse(
+      '${base.replaceFirst('^1.0', '^1.1')}'
+      'permissions:\n  messages.read: chats[]\n'
+      'hooks: [message.filter, message.render.text]\n',
+    );
+    expect(ok.hooks, ['message.filter', 'message.render.text']);
+  });
+
   test('main cannot escape the plugin folder', () {
     final e = errorsOf('${base}main: ../../etc/x.js\n');
     expect(e.errors.single, contains('main'));

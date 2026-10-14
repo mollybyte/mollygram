@@ -8,8 +8,12 @@ final class FakeServices implements PluginServices {
   final storage = <String, Object?>{};
   final calls = <String>[];
   String transcript = 'hello, this is a voice message';
+
+  /// What `text.detectLanguage` returns; null means "not sure".
+  Map<String, Object?>? detected = {'language': 'de', 'confidence': 0.9};
   Duration delay = Duration.zero;
   Object? failWith;
+  bool failTranslate = false;
 
   @override
   Future<Object?> call(
@@ -31,6 +35,11 @@ final class FakeServices implements PluginServices {
         return null;
       case 'media.transcribe':
         return {'text': transcript, 'language': args['language'] ?? 'ru'};
+      case 'messages.translate':
+        if (failTranslate) throw const HostError('unavailable', 'offline');
+        return {'text': 'translated to ${args['to']}'};
+      case 'text.detectLanguage':
+        return detected;
       case 'messages.get':
         return {'chatId': args['chatId'], 'id': args['messageId'], 'text': 'x'};
       case 'net.fetch':
@@ -45,12 +54,13 @@ PluginManifest manifest({
   String permissions = '',
   String hooks = '',
   String extra = '',
+  String sdk = '^1.0',
 }) => PluginManifest.parse('''
 id: dev.test.plugin
 name: Test
 version: 1.0.0
 runtime: js
-sdk: ^1.0
+sdk: $sdk
 ${permissions.isEmpty ? '' : 'permissions:\n$permissions'}
 ${hooks.isEmpty ? '' : 'hooks:\n$hooks'}
 $extra
