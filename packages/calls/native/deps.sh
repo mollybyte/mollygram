@@ -48,11 +48,14 @@ build_rnnoise() {
   cp "$src/rnnoise/include/rnnoise.h" "$prefix/include/"
 }
 
+# mozjpeg's own GNUInstallDirs resolves a relative LIBDIR against the working
+# directory, not the prefix, so it gets an absolute one.
 build_mozjpeg() {
   log "mozjpeg $(pin mozjpeg)"
   checkout https://github.com/mozilla/mozjpeg.git "$src/mozjpeg" "$(pin mozjpeg)"
   cmake -S "$src/mozjpeg" -B "$src/mozjpeg/build" "${cmake_common[@]}" \
     -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+    -DCMAKE_INSTALL_LIBDIR="$prefix/lib" \
     -DWITH_JPEG8=ON -DENABLE_SHARED=OFF -DPNG_SUPPORTED=OFF -DWITH_TURBOJPEG=OFF
   cmake --build "$src/mozjpeg/build"
   cmake --install "$src/mozjpeg/build"
