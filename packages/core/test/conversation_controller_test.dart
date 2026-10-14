@@ -249,6 +249,31 @@ void main() {
     );
   });
 
+  test('keeps messages that are not text, with their kind', () async {
+    await controller.start();
+    await controller.loadHistory(7);
+    json.push({
+      '@type': 'updateNewMessage',
+      'message': _message(id: 20, chatId: 7, text: '').toJson()
+        ..['content'] = {'@type': 'messageContactRegistered'},
+    });
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+
+    final message = controller.store.messagesFor(7).first;
+    expect(message.id, 20);
+    expect(message.kind, ChatPreviewKind.other);
+
+    // An edit can turn text into something else and back.
+    json.push({
+      '@type': 'updateMessageContent',
+      'chat_id': 7,
+      'message_id': 10,
+      'new_content': {'@type': 'messageContactRegistered'},
+    });
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    expect(controller.store.messagesFor(7).last.kind, ChatPreviewKind.other);
+  });
+
   test('announces a sender rename, but not an unchanged name', () {
     final store = ConversationStore();
     expect(store.setUserName(2, 'Boris'), isTrue);

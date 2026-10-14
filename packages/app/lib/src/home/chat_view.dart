@@ -11,8 +11,8 @@ import '../session/providers.dart';
 import '../window_drag_area.dart';
 import 'format.dart';
 
-/// One conversation: text messages scroll under the floating header and
-/// composer. Media rendering arrives with the chat and media stages.
+/// One conversation: messages scroll under the floating header and
+/// composer. Media shows as its label and caption until the media stage.
 class ChatView extends ConsumerStatefulWidget {
   const ChatView({super.key, required this.chatId});
 
@@ -140,7 +140,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
         Positioned.fill(
           child: switch (messages) {
             AsyncData(value: final list) when list.isEmpty => Center(
-              child: Text(l10n.noTextMessages, style: TextStyle(color: c.fg2)),
+              child: Text(l10n.noMessages, style: TextStyle(color: c.fg2)),
             ),
             AsyncData(value: final list) => _Messages(
               messages: list,
@@ -231,6 +231,7 @@ class _Messages extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).toLanguageTag();
     return ListView.builder(
       reverse: true,
@@ -263,7 +264,7 @@ class _Messages extends StatelessWidget {
               child: Align(
                 alignment: out ? Alignment.centerRight : Alignment.centerLeft,
                 child: TextMessageBubble(
-                  text: message.text,
+                  text: formatMessageBody(l10n, message),
                   time: formatMessageTime(message.date, locale),
                   outgoing: out,
                   sender: name == null || name.isEmpty ? null : name,

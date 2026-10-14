@@ -428,11 +428,11 @@ abstract class AppLocalizations {
   /// **'Message'**
   String get previewOther;
 
-  /// No description provided for @noTextMessages.
+  /// No description provided for @noMessages.
   ///
   /// In en, this message translates to:
-  /// **'No text messages here yet'**
-  String get noTextMessages;
+  /// **'No messages here yet'**
+  String get noMessages;
 
   /// No description provided for @sendFailed.
   ///

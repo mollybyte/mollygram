@@ -1,3 +1,5 @@
+import 'chat_list_store.dart';
+
 /// Who sent a message: a user, or a chat (a channel, or a group posting
 /// anonymously).
 final class MessageSenderId {
@@ -37,10 +39,13 @@ final class ConversationMessage {
     required this.isOutgoing,
     this.sender,
     this.sendState = MessageSendState.sent,
+    this.kind = ChatPreviewKind.text,
   });
 
   final int id;
   final int chatId;
+
+  /// The text, or the caption of media; empty when there is none.
   final String text;
   final int date;
   final bool isOutgoing;
@@ -49,18 +54,24 @@ final class ConversationMessage {
   final MessageSenderId? sender;
   final MessageSendState sendState;
 
-  ConversationMessage copyWith({String? text}) => ConversationMessage(
-    id: id,
-    chatId: chatId,
-    text: text ?? this.text,
-    date: date,
-    isOutgoing: isOutgoing,
-    sender: sender,
-    sendState: sendState,
-  );
+  /// What the message is. Media is shown as its label and caption until the
+  /// media stage renders it.
+  final ChatPreviewKind kind;
+
+  ConversationMessage copyWith({String? text, ChatPreviewKind? kind}) =>
+      ConversationMessage(
+        id: id,
+        chatId: chatId,
+        text: text ?? this.text,
+        date: date,
+        isOutgoing: isOutgoing,
+        sender: sender,
+        sendState: sendState,
+        kind: kind ?? this.kind,
+      );
 }
 
-/// Holds the loaded text-message timelines for chats, and the names of the
+/// Holds the loaded message timelines for chats, and the names of the
 /// people and chats that sent them.
 ///
 /// TDLib sends history and live updates separately. Messages are keyed by
@@ -89,11 +100,16 @@ final class ConversationStore {
     (_byChat[message.chatId] ??= {})[message.id] = message;
   }
 
-  void updateText(int chatId, int messageId, String text) {
+  void updateContent(
+    int chatId,
+    int messageId,
+    ChatPreviewKind kind,
+    String text,
+  ) {
     final messages = _byChat[chatId];
     final message = messages?[messageId];
     if (message == null) return;
-    messages![messageId] = message.copyWith(text: text);
+    messages![messageId] = message.copyWith(text: text, kind: kind);
   }
 
   void remove(int chatId, Iterable<int> messageIds) {

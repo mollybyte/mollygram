@@ -3,11 +3,12 @@ import 'dart:async';
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 
 import 'conversation_store.dart';
+import 'message_content.dart';
 
-/// Loads and maintains text-message timelines from TDLib.
+/// Loads and maintains message timelines from TDLib.
 ///
-/// Media messages are deliberately ignored here; their specialized rendering
-/// and upload/download lifecycle belong to the media stage.
+/// Media is kept as its kind and caption only; its rendering and
+/// upload/download lifecycle belong to the media stage.
 final class ConversationController {
   ConversationController(this._client, {ConversationStore? store})
     : store = store ?? ConversationStore();
@@ -38,7 +39,7 @@ final class ConversationController {
   ///
   /// TDLib often answers the first request with only a message or two
   /// while it fetches the rest, so older pages are asked for until the
-  /// screen has [fill] text messages or the history ends.
+  /// screen has [fill] messages or the history ends.
   Future<void> loadHistory(int chatId, {int fill = 40}) async {
     _oldestLoaded.remove(chatId);
     _historyEnd.remove(chatId);
@@ -52,10 +53,10 @@ final class ConversationController {
     // Updates kept coming while the request was in flight; a message they
     // added may be missing from the page, so it is kept.
     store.replaceHistory(chatId, [
-      for (final message in page) ?_textMessageFrom(message),
+      for (final message in page) _messageFrom(message),
     ], keep: arrived);
     _changes.add(null);
-    // A few pages at most: media-only stretches have no text to show.
+    // A few pages at most, so a slow server doesn't keep the chat loading.
     for (var i = 0; i < 5; i++) {
       if (!hasOlder(chatId) || store.messagesFor(chatId).length >= fill) break;
       await loadOlder(chatId);
@@ -79,7 +80,7 @@ final class ConversationController {
     if (oldest == null) return;
     final page = await _historyPage(chatId, fromMessageId: oldest);
     for (final message in page) {
-      if (_textMessageFrom(message) case final text?) store.upsert(text);
+      store.upsert(_messageFrom(message));
     }
     if (!_changes.isClosed) _changes.add(null);
   }
@@ -186,10 +187,9 @@ final class ConversationController {
         :final messageId,
         :final newContent,
       ):
-        if (newContent is td.MessageText) {
-          store.updateText(chatId, messageId, newContent.text.text);
-          _changes.add(null);
-        }
+        final (kind, text) = summarizeContent(newContent);
+        store.updateContent(chatId, messageId, kind, text);
+        _changes.add(null);
       // Not permanent means the messages became inaccessible, which hides
       // them all the same. Only an eviction from TDLib's cache leaves them,
       // since they still exist and the open timeline keeps its copy.
@@ -207,10 +207,8 @@ final class ConversationController {
   }
 
   void _add(td.Message message) {
-    final text = _textMessageFrom(message);
-    if (text == null) return;
     _arrivedDuringLoad[message.chatId]?.add(message.id);
-    store.upsert(text);
+    store.upsert(_messageFrom(message));
     _changes.add(null);
   }
 }
@@ -218,13 +216,13 @@ final class ConversationController {
 String _nameOf(td.User user) =>
     [user.firstName, user.lastName].where((part) => part.isNotEmpty).join(' ');
 
-ConversationMessage? _textMessageFrom(td.Message message) {
-  final content = message.content;
-  if (content is! td.MessageText) return null;
+ConversationMessage _messageFrom(td.Message message) {
+  final (kind, text) = summarizeContent(message.content);
   return ConversationMessage(
     id: message.id,
     chatId: message.chatId,
-    text: content.text.text,
+    kind: kind,
+    text: text,
     date: message.date,
     isOutgoing: message.isOutgoing,
     sender: switch (message.senderId) {
