@@ -7,7 +7,12 @@ import 'formatted_text.dart';
 
 /// The text lines of contents that have no media of their own: places,
 /// contacts, polls, calls, games, invoices. Null for anything else.
-Widget? otherContent(BuildContext context, td.MessageContent content) {
+/// [isOutgoing] tells a call the user made from one they received.
+Widget? otherContent(
+  BuildContext context,
+  td.MessageContent content, {
+  bool isOutgoing = false,
+}) {
   final l10n = AppLocalizations.of(context);
   return switch (content) {
     td.MessageLocation(:final location) => _Labeled(
@@ -38,7 +43,7 @@ Widget? otherContent(BuildContext context, td.MessageContent content) {
     td.MessageCall(:final isVideo, :final discardReason, :final duration) =>
       _Labeled(
         icon: isVideo ? '📹' : '📞',
-        title: _callTitle(l10n, content, isVideo, discardReason),
+        title: _callTitle(l10n, isOutgoing, isVideo, discardReason),
         subtitle: duration > 0 ? _callLength(l10n, duration) : null,
       ),
     td.MessageGame(:final game) => _Labeled(
@@ -75,13 +80,16 @@ String _mapUrl(td.Location l) =>
 
 String _callTitle(
   AppLocalizations l10n,
-  td.MessageContent content,
+  bool isOutgoing,
   bool isVideo,
   td.CallDiscardReason reason,
 ) => switch (reason) {
+  // A call the other side didn't pick up was cancelled by the caller.
+  td.CallDiscardReasonMissed() when isOutgoing => l10n.callCancelled,
   td.CallDiscardReasonMissed() => l10n.callMissed,
   td.CallDiscardReasonDeclined() => l10n.callDeclined,
-  _ => isVideo ? l10n.callVideoOutgoing : l10n.callOutgoing,
+  _ when isOutgoing => isVideo ? l10n.callVideoOutgoing : l10n.callOutgoing,
+  _ => isVideo ? l10n.callVideoIncoming : l10n.callIncoming,
 };
 
 String _callLength(AppLocalizations l10n, int seconds) => seconds < 60

@@ -650,6 +650,36 @@ abstract class AppLocalizations {
   /// **'Couldn\'t send the files'**
   String get attachFailed;
 
+  /// No description provided for @hiddenMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden media, tap to show'**
+  String get hiddenMedia;
+
+  /// No description provided for @spoilerMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'Spoiler'**
+  String get spoilerMedia;
+
+  /// No description provided for @secretMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to view'**
+  String get secretMedia;
+
+  /// No description provided for @sensitiveMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'18+'**
+  String get sensitiveMedia;
+
+  /// No description provided for @forwardFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t forward the message'**
+  String get forwardFailed;
+
   /// No description provided for @close.
   ///
   /// In en, this message translates to:

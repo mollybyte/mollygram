@@ -116,6 +116,11 @@
   "captionHint": "Add a caption",
   "dropFiles": "Drop files here to send them",
   "attachFailed": "Couldn't send the files",
+  "hiddenMedia": "Hidden media, tap to show",
+  "spoilerMedia": "Spoiler",
+  "secretMedia": "Tap to view",
+  "sensitiveMedia": "18+",
+  "forwardFailed": "Couldn't forward the message",
   "close": "Close",
   "fileSizeBytes": "{size} B",
   "@fileSizeBytes": {

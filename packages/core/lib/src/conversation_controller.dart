@@ -273,6 +273,10 @@ final class ConversationController {
           messageId: messageId,
           inputMessageContent: td.InputMessageText(
             text: formatted,
+            linkPreviewOptions: switch (content) {
+              td.MessageText(:final linkPreviewOptions) => linkPreviewOptions,
+              _ => null,
+            },
             clearDraft: false,
           ),
         ),
@@ -344,9 +348,13 @@ final class ConversationController {
       td.GetMessageAvailableReactions(
         chatId: chatId,
         messageId: messageId,
-        rowSize: limit,
+        // TDLib accepts rows of 5 to 25.
+        rowSize: limit.clamp(5, 25),
       ),
     );
+    // The user can't react here, for example without Premium in a chat
+    // that only allows paid reactions.
+    if (available.unavailabilityReason != null) return const [];
     final emoji = <String>[];
     for (final reaction in [
       ...available.topReactions,
@@ -391,14 +399,15 @@ final class ConversationController {
 
   void _onUpdate(td.TdObject object) {
     switch (object) {
-      // Sender names on screen follow renames. updateUser also comes for
-      // status and other changes, so only a new name is announced.
+      // Sender names and avatars on screen follow their changes.
       case td.UpdateUser(:final user):
         final sender = MessageSenderId.user(user.id);
-        store
-          ..setColor(sender, user.accentColorId)
-          ..setPhoto(sender, user.profilePhoto?.small);
-        if (store.setUserName(user.id, _nameOf(user))) _notify();
+        // updateUser also comes for status and other changes, so only a new
+        // name, colour or photo is announced.
+        final color = store.setColor(sender, user.accentColorId);
+        final photo = store.setPhoto(sender, user.profilePhoto?.small);
+        final name = store.setUserName(user.id, _nameOf(user));
+        if (color || photo || name) _notify();
       case td.UpdateNewChat(:final chat):
         store
           ..setChatTitle(chat.id, chat.title)
@@ -422,9 +431,21 @@ final class ConversationController {
       case td.UpdateChatTitle(:final chatId, :final title):
         if (store.setChatTitle(chatId, title)) _notify();
       case td.UpdateChatPhoto(:final chatId, :final photo):
-        store.setPhoto(MessageSenderId.chat(chatId), photo?.small);
+        if (store.setPhoto(MessageSenderId.chat(chatId), photo?.small)) {
+          _notify();
+        }
       case td.UpdateChatAccentColors(:final chatId, :final accentColorId):
-        store.setColor(MessageSenderId.chat(chatId), accentColorId);
+        if (store.setColor(MessageSenderId.chat(chatId), accentColorId)) {
+          _notify();
+        }
+      case td.UpdateMessageEphemeralContent(
+        :final chatId,
+        :final messageId,
+        :final ephemeralContent,
+      ):
+        _patch(chatId, messageId, {
+          'ephemeral_content': ephemeralContent?.toJson(),
+        });
       case td.UpdateNewMessage(:final message):
         _add(message);
       // A sent message first arrives with a temporary id; TDLib then replaces

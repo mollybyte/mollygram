@@ -4,9 +4,9 @@ import 'dart:ui' as ui;
 
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:file_selector/file_selector.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_media/mollygram_media.dart';
@@ -157,6 +157,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
       row: row,
       position: position,
       peerName: isPrivate ? chat.title : null,
+      isShown: () => mounted && widget.chatId == row.primary.chatId,
       handlers: MessageMenuHandlers(
         onReply: _reply,
         onEdit: _edit,
@@ -249,11 +250,14 @@ class _ChatViewState extends ConsumerState<ChatView> {
   Future<void> _forward(List<ConversationMessage> messages) async {
     final target = await pickForwardTarget(context);
     if (target == null || messages.isEmpty) return;
-    await _quiet(
-      _conversations.forwardMessages(target, messages.first.chatId, [
+    try {
+      await _conversations.forwardMessages(target, messages.first.chatId, [
         for (final message in messages) message.id,
-      ]),
-    );
+      ]);
+    } catch (_) {
+      // Such as a channel the user can't post in.
+      if (mounted) setState(() => _failure = _Failure.forward);
+    }
   }
 
   var _olderScheduled = false;
@@ -270,9 +274,12 @@ class _ChatViewState extends ConsumerState<ChatView> {
   }
 
   Future<void> _send(String text) async {
-    if (text.trim().isEmpty) return;
     final editing = _editing;
-    if (editing != null) return _saveEdit(editing, text);
+    // A caption may be removed; a text message can't be emptied.
+    if (editing != null && (text.trim().isNotEmpty || _isCaption(editing))) {
+      return _saveEdit(editing, text);
+    }
+    if (text.trim().isEmpty) return;
     final chatId = widget.chatId;
     final replyTo = _replyTo;
     _draft.clear();
@@ -299,6 +306,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
     }
   }
 
+  static bool _isCaption(ConversationMessage message) =>
+      message.content is! td.MessageText;
+
   Future<void> _saveEdit(ConversationMessage message, String text) async {
     if (text == message.text) return _stopEditing();
     _stopEditing();
@@ -306,6 +316,11 @@ class _ChatViewState extends ConsumerState<ChatView> {
       await _conversations.editText(message.chatId, message.id, text);
     } catch (_) {
       if (!mounted || widget.chatId != message.chatId) return;
+      // Another edit has started meanwhile; keep it and only say so.
+      if (_editing != null) {
+        setState(() => _failure = _Failure.edit);
+        return;
+      }
       // Put the edit back so the change is not lost.
       _edit(message);
       _draft.value = TextEditingValue(
@@ -323,35 +338,60 @@ class _ChatViewState extends ConsumerState<ChatView> {
     await _offerFiles([for (final file in picked) file.path]);
   }
 
-  /// Cmd+V: files copied in Finder or an image take the place of text.
+  /// Cmd+V: files copied in Finder, or an image with no text beside it,
+  /// take the place of text.
   Future<bool> _paste() async {
     List<String> files;
     try {
-      files = await Pasteboard.files();
+      // A copied link also comes back here, as a path that is not a file.
+      files = _onlyFiles(await Pasteboard.files());
     } on Object {
       files = const [];
     }
     if (files.isEmpty) {
-      Uint8List? image;
-      try {
-        image = await Pasteboard.image;
-      } on Object {
-        image = null;
-      }
-      if (image == null || image.isEmpty) return false;
-      final directory = await getTemporaryDirectory();
-      final file = File(
-        '${directory.path}/Pasted ${DateTime.now().millisecondsSinceEpoch}.png',
-      );
-      await file.writeAsBytes(image);
-      files = [file.path];
+      // Office apps put a picture of the copied text next to it; the text
+      // is what the user means.
+      if (await Clipboard.hasStrings()) return false;
+      final image = await _pastedImage();
+      if (image == null) return false;
+      files = [image];
     }
     if (!mounted) return true;
     await _offerFiles(files);
     return true;
   }
 
-  Future<void> _offerFiles(List<String> paths) async {
+  /// The image on the clipboard, saved as a PNG file, or null.
+  static Future<String?> _pastedImage() async {
+    try {
+      final bytes = await Pasteboard.image;
+      if (bytes == null || bytes.isEmpty) return null;
+      // macOS gives TIFF and Windows BMP; Telegram wants a PNG or JPEG.
+      final codec = await ui.instantiateImageCodec(bytes);
+      final frame = await codec.getNextFrame();
+      final png = await frame.image.toByteData(format: ui.ImageByteFormat.png);
+      frame.image.dispose();
+      codec.dispose();
+      if (png == null) return null;
+      final directory = await getTemporaryDirectory();
+      final file = File(
+        '${directory.path}/Pasted ${DateTime.now().millisecondsSinceEpoch}.png',
+      );
+      await file.writeAsBytes(png.buffer.asUint8List());
+      return file.path;
+    } on Object {
+      return null;
+    }
+  }
+
+  /// [paths] without folders and anything that isn't there.
+  static List<String> _onlyFiles(Iterable<String> paths) => [
+    for (final path in paths)
+      if (path.isNotEmpty && FileSystemEntity.isFileSync(path)) path,
+  ];
+
+  Future<void> _offerFiles(List<String> picked) async {
+    final paths = _onlyFiles(picked);
     if (paths.isEmpty) return;
     final chatId = widget.chatId;
     // The draft becomes the caption, as in the official apps; not while
@@ -370,38 +410,45 @@ class _ChatViewState extends ConsumerState<ChatView> {
     });
     if (useDraft) _draft.clear();
     try {
+      // One at a time: each video or song opens a player to be measured.
+      final files = <OutgoingFile>[];
+      for (final file in choice.files) {
+        files.add(await _measure(file));
+      }
       await _conversations.sendFiles(
         chatId,
-        await Future.wait(choice.files.map(_measure)),
+        files,
         caption: choice.caption,
         replyTo: replyTo?.id,
       );
     } catch (_) {
       if (!mounted || widget.chatId != chatId) return;
-      setState(() => _failure = _Failure.attach);
+      // Give the caption and the reply back, as a failed text send does.
+      if (useDraft && _draft.text.isEmpty) _draft.text = choice.caption;
+      setState(() {
+        _failure = _Failure.attach;
+        _replyTo ??= replyTo;
+      });
     }
   }
 
   /// Adds the pixel size and length the server shows before it has the
-  /// file itself.
+  /// file itself. A picture Telegram won't take as a photo goes as a file.
   static Future<OutgoingFile> _measure(OutgoingFile file) async {
     switch (file.kind) {
       case OutgoingKind.photo:
-        try {
-          final buffer = await ui.ImmutableBuffer.fromFilePath(file.path);
-          final image = await ui.ImageDescriptor.encoded(buffer);
-          final measured = OutgoingFile(
-            path: file.path,
-            kind: file.kind,
-            width: image.width,
-            height: image.height,
-          );
-          image.dispose();
-          buffer.dispose();
-          return measured;
-        } on Object {
-          return file;
+        final size = await _imageSize(file.path);
+        final bytes = await File(file.path).length();
+        if (size == null ||
+            !fitsAsPhoto(width: size.$1, height: size.$2, bytes: bytes)) {
+          return OutgoingFile(path: file.path, kind: OutgoingKind.document);
         }
+        return OutgoingFile(
+          path: file.path,
+          kind: file.kind,
+          width: size.$1,
+          height: size.$2,
+        );
       case OutgoingKind.video || OutgoingKind.animation || OutgoingKind.audio:
         final info = await probeMedia(file.path);
         if (info == null) return file;
@@ -414,6 +461,28 @@ class _ChatViewState extends ConsumerState<ChatView> {
         );
       case OutgoingKind.document:
         return file;
+    }
+  }
+
+  /// The pixel size of the image at [path], read from its header.
+  static Future<(int, int)?> _imageSize(String path) async {
+    final ui.ImmutableBuffer buffer;
+    try {
+      buffer = await ui.ImmutableBuffer.fromFilePath(path);
+    } on Object {
+      return null;
+    }
+    try {
+      final image = await ui.ImageDescriptor.encoded(buffer);
+      try {
+        return (image.width, image.height);
+      } finally {
+        image.dispose();
+      }
+    } on Object {
+      return null;
+    } finally {
+      buffer.dispose();
     }
   }
 
@@ -458,7 +527,12 @@ class _ChatViewState extends ConsumerState<ChatView> {
       onDragExited: (_) => setState(() => _dragging = false),
       onDragDone: (details) {
         setState(() => _dragging = false);
-        unawaited(_offerFiles([for (final file in details.files) file.path]));
+        unawaited(
+          _offerFiles([
+            for (final item in details.files)
+              if (item is! DropItemDirectory) item.path,
+          ]),
+        );
       },
       child: Stack(
         children: [
@@ -504,6 +578,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
                         _Failure.send => l10n.sendFailed,
                         _Failure.edit => l10n.editFailed,
                         _Failure.attach => l10n.attachFailed,
+                        _Failure.forward => l10n.forwardFailed,
                       },
                       textAlign: TextAlign.center,
                       style: mgTextStyle(
@@ -523,6 +598,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
                   onEditLast: () => unawaited(_editLast()),
                   onAttach: () => unawaited(_chooseFiles()),
                   onPaste: _paste,
+                  allowEmpty: _editing != null && _isCaption(_editing!),
                   labels: ComposerLabels(
                     hint: l10n.messageHint,
                     attach: l10n.attach,
@@ -556,7 +632,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
   }
 }
 
-enum _Failure { send, edit, attach }
+enum _Failure { send, edit, attach, forward }
 
 /// The timeline, newest at the bottom: rows of messages and albums with a
 /// date pill above the first message of each day.

@@ -329,6 +329,21 @@ class AppLocalizationsRu extends AppLocalizations {
   String get attachFailed => 'Не удалось отправить файлы';
 
   @override
+  String get hiddenMedia => 'Скрытое медиа, нажмите, чтобы показать';
+
+  @override
+  String get spoilerMedia => 'Спойлер';
+
+  @override
+  String get secretMedia => 'Нажмите, чтобы посмотреть';
+
+  @override
+  String get sensitiveMedia => '18+';
+
+  @override
+  String get forwardFailed => 'Не удалось переслать сообщение';
+
+  @override
   String get close => 'Закрыть';
 
   @override

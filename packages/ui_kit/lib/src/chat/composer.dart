@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -44,6 +45,7 @@ class Composer extends StatefulWidget {
     this.onCancel,
     this.onEditLast,
     this.onPaste,
+    this.allowEmpty = false,
     this.header,
     this.maxLines = 8,
   });
@@ -69,6 +71,10 @@ class Composer extends StatefulWidget {
   /// on the clipboard, such as files or an image; otherwise the text on the
   /// clipboard is pasted as usual.
   final Future<bool> Function()? onPaste;
+
+  /// Keeps the send button with an empty field, such as while editing a
+  /// caption, which may be removed.
+  final bool allowEmpty;
 
   /// Drawn above the text field inside the glass, such as the message
   /// being replied to.
@@ -119,7 +125,7 @@ class _ComposerState extends State<Composer> {
 
   void _send() {
     final text = _text.text;
-    if (text.trim().isEmpty) return;
+    if (text.trim().isEmpty && !widget.allowEmpty) return;
     widget.onSend?.call(text);
   }
 
@@ -131,7 +137,14 @@ class _ComposerState extends State<Composer> {
     final selection = value.selection.isValid
         ? value.selection
         : TextSelection.collapsed(offset: value.text.length);
-    _text.value = value.replaced(selection, text);
+    // Like a native paste: the caret ends up after the pasted text.
+    _text.value = TextEditingValue(
+      text:
+          selection.textBefore(value.text) +
+          text +
+          selection.textAfter(value.text),
+      selection: TextSelection.collapsed(offset: selection.start + text.length),
+    );
   }
 
   KeyEventResult _onKey(FocusNode node, KeyEvent event) {
@@ -144,9 +157,14 @@ class _ComposerState extends State<Composer> {
     }
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
     final keyboard = HardwareKeyboard.instance;
+    // Cmd+V on macOS, Ctrl+V elsewhere.
+    final mac = defaultTargetPlatform == TargetPlatform.macOS;
+    final command = mac
+        ? keyboard.isMetaPressed && !keyboard.isControlPressed
+        : keyboard.isControlPressed && !keyboard.isMetaPressed;
     if (widget.onPaste != null &&
         event.logicalKey == LogicalKeyboardKey.keyV &&
-        (keyboard.isMetaPressed || keyboard.isControlPressed) &&
+        command &&
         !keyboard.isShiftPressed &&
         !keyboard.isAltPressed) {
       unawaited(_paste());
@@ -181,7 +199,7 @@ class _ComposerState extends State<Composer> {
     final c = MgColors.of(context);
     final l = widget.labels;
     final style = mgTextStyle(c, size: MgType.title);
-    final hasDraft = _text.text.trim().isNotEmpty;
+    final hasDraft = _text.text.trim().isNotEmpty || widget.allowEmpty;
     final composer = Glass(
       radius: 22,
       padding: const EdgeInsets.fromLTRB(6, 4, 4, 4),

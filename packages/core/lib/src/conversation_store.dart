@@ -50,7 +50,11 @@ final class ConversationMessage {
   /// When the message was last edited, or 0.
   int get editDate => message.editDate;
   bool get isOutgoing => message.isOutgoing;
-  td.MessageContent get content => message.content;
+
+  /// What to show: an ephemeral payload, when TDLib sends one, replaces
+  /// the regular content.
+  td.MessageContent get content =>
+      message.ephemeralContent?.content ?? message.content;
 
   /// Messages sent together as an album share a non-zero id.
   int get albumId => message.mediaAlbumId;
@@ -267,14 +271,22 @@ final class ConversationStore {
   /// which colors their name; 0 while unknown.
   int colorOf(MessageSenderId sender) => _colors[sender] ?? 0;
 
-  void setColor(MessageSenderId sender, int colorId) =>
-      _colors[sender] = colorId;
+  /// Returns whether the colour changed.
+  bool setColor(MessageSenderId sender, int colorId) {
+    if (_colors[sender] == colorId) return false;
+    _colors[sender] = colorId;
+    return true;
+  }
 
   /// The small profile photo of [sender], if they have one.
   td.File? photoOf(MessageSenderId sender) => _photos[sender];
 
-  void setPhoto(MessageSenderId sender, td.File? photo) =>
-      photo == null ? _photos.remove(sender) : _photos[sender] = photo;
+  /// Returns whether a different photo, or none, is shown now.
+  bool setPhoto(MessageSenderId sender, td.File? photo) {
+    final changed = _photos[sender]?.id != photo?.id;
+    photo == null ? _photos.remove(sender) : _photos[sender] = photo;
+    return changed;
+  }
 
   /// The newest message of [chatId] the user has read.
   int lastReadInbox(int chatId) => _readInbox[chatId] ?? 0;

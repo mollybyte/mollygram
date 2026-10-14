@@ -12,6 +12,7 @@ final class OutgoingFile {
     this.width = 0,
     this.height = 0,
     this.duration = 0,
+    this.forceFile = false,
   });
 
   final String path;
@@ -25,17 +26,35 @@ final class OutgoingFile {
   /// Seconds, for videos and music.
   final int duration;
 
+  /// Sent as a plain file even when TDLib would recognise a video or a
+  /// song in it.
+  final bool forceFile;
+
   /// The same file, sent untouched.
   OutgoingFile asDocument() =>
-      OutgoingFile(path: path, kind: OutgoingKind.document);
+      OutgoingFile(path: path, kind: OutgoingKind.document, forceFile: true);
 
   /// Photos and videos can be sent compressed or as files.
   bool get isMedia => kind == OutgoingKind.photo || kind == OutgoingKind.video;
 }
 
-const _photo = {'jpg', 'jpeg', 'png', 'webp', 'heic', 'heif', 'bmp'};
+// HEIC and BMP go as files: Telegram takes neither as a photo.
+const _photo = {'jpg', 'jpeg', 'png', 'webp'};
 const _video = {'mp4', 'mov', 'm4v', 'webm', 'mkv', 'avi'};
 const _audio = {'mp3', 'm4a', 'aac', 'flac', 'ogg', 'oga', 'opus', 'wav'};
+
+/// Whether Telegram takes a picture of [width] x [height] pixels and
+/// [bytes] in size as a photo: at most 10 MB, width and height adding up
+/// to at most 10000 and one side at most 20 times the other.
+bool fitsAsPhoto({
+  required int width,
+  required int height,
+  required int bytes,
+}) {
+  if (width <= 0 || height <= 0) return false;
+  final ratio = width > height ? width / height : height / width;
+  return bytes <= 10 * 1000 * 1000 && width + height <= 10000 && ratio <= 20;
+}
 
 /// The kind a file is sent as by default, from its extension, as the
 /// official clients do.
@@ -133,7 +152,7 @@ td.InputMessageContent inputContentOf(
     OutgoingKind.document => td.InputMessageDocument(
       document: td.InputDocument(
         document: input,
-        disableContentTypeDetection: false,
+        disableContentTypeDetection: file.forceFile,
       ),
       caption: caption,
     ),

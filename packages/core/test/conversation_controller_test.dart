@@ -394,6 +394,60 @@ void main() {
 
     expect(await controller.quickReactions(7, 1), ['👍', '❤', '😁']);
     expect(await controller.quickReactions(7, 1, limit: 2), ['👍', '❤']);
+    // TDLib takes rows of 5 to 25.
+    final rows = [
+      for (final r in json.sent)
+        if (r['@type'] == 'getMessageAvailableReactions') r['row_size'],
+    ];
+    expect(rows, [8, 5]);
+
+    json.reactionsUnavailable = {'@type': 'reactionUnavailabilityReasonGuest'};
+    expect(await controller.quickReactions(7, 1), isEmpty);
+  });
+
+  test('announces a new avatar or colour of a sender', () async {
+    await controller.start();
+    var changes = 0;
+    controller.changes.listen((_) => changes++);
+
+    json.push({
+      '@type': 'updateChatAccentColors',
+      'chat_id': 7,
+      'accent_color_id': 3,
+      'background_custom_emoji_id': 0,
+      'profile_accent_color_id': -1,
+      'profile_background_custom_emoji_id': 0,
+    });
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    expect(changes, 1);
+    expect(controller.store.colorOf(const MessageSenderId.chat(7)), 3);
+  });
+
+  test('shows ephemeral content instead of the regular one', () async {
+    await controller.start();
+    await controller.loadHistory(7);
+
+    json.push({
+      '@type': 'updateMessageEphemeralContent',
+      'chat_id': 7,
+      'message_id': 10,
+      'ephemeral_content': {
+        '@type': 'ephemeralMessageContent',
+        'can_be_saved': true,
+        'has_timestamped_media': false,
+        'content': {
+          '@type': 'messageText',
+          'text': {
+            '@type': 'formattedText',
+            'text': 'Secret',
+            'entities': <Object?>[],
+          },
+        },
+      },
+    });
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+
+    expect(controller.store.message(7, 10)?.text, 'Secret');
   });
 
   test('keeps the sender of each message', () async {
@@ -478,6 +532,9 @@ final class _FakeTdJson implements td.TdJson {
 
   /// When set, getRepliedMessage fails with this TDLib error code.
   int? repliedError;
+
+  /// When set, reactions come back unavailable for this reason.
+  Map<String, Object?>? reactionsUnavailable;
   var _nextClientId = 0;
 
   @override
@@ -548,6 +605,7 @@ final class _FakeTdJson implements td.TdJson {
         ],
         'allow_custom_emoji': true,
         'are_tags': false,
+        'unavailability_reason': reactionsUnavailable,
       },
       'getRepliedMessage' when repliedError != null => {
         '@type': 'error',

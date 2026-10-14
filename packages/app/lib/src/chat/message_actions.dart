@@ -41,6 +41,7 @@ Future<void> showMessageMenu(
   required MessageRow row,
   required Offset position,
   required MessageMenuHandlers handlers,
+  required bool Function() isShown,
   String? peerName,
 }) async {
   final l10n = AppLocalizations.of(context);
@@ -62,7 +63,8 @@ Future<void> showMessageMenu(
     // A message that is still being sent has no properties yet; only
     // copying makes sense then.
   }
-  if (!context.mounted) return;
+  // The user may have moved to another chat meanwhile.
+  if (!context.mounted || !isShown()) return;
 
   // Reactions go where the tile draws them: on the row's last message.
   final reacted = row.primary;
@@ -73,10 +75,12 @@ Future<void> showMessageMenu(
       if (reaction.isChosen)
         if (reaction.type case td.ReactionTypeEmoji(:final emoji)) emoji,
   };
-  final protected =
-      properties != null &&
-      (properties.hasProtectedContentByCurrentUser ||
-          properties.hasProtectedContentByOtherUser);
+  // Without properties, the message's own flag still says whether it may
+  // leave the app.
+  final protected = properties == null
+      ? !target.message.canBeSaved
+      : properties.hasProtectedContentByCurrentUser ||
+            properties.hasProtectedContentByOtherUser;
   final canDelete =
       properties != null &&
       (properties.canBeDeletedOnlyForSelf ||
@@ -125,6 +129,7 @@ Future<void> showMessageMenu(
             messages: row.messages,
             properties: properties!,
             peerName: peerName,
+            isShown: isShown,
           ),
         ),
       ),
@@ -173,6 +178,7 @@ Future<void> _confirmDelete(
   required List<ConversationMessage> messages,
   required td.MessageProperties properties,
   required String? peerName,
+  required bool Function() isShown,
 }) async {
   final l10n = AppLocalizations.of(context);
   final count = messages.length;
@@ -196,7 +202,7 @@ Future<void> _confirmDelete(
     optionValue: true,
     destructive: true,
   );
-  if (checked == null) return;
+  if (checked == null || !isShown()) return;
   final revoke = choice ? checked : properties.canBeDeletedForAllUsers;
   await conversations
       .deleteMessages(messages.first.chatId, [

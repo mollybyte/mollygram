@@ -31,11 +31,11 @@ void main() {
     expect(_spans(carryEntities('teh word', 'the word', [_bold(0, 3)])), [
       (0, 3),
     ]);
-    // Bold "abc|def" where "cd" is replaced: the left part is cut at the
-    // change, the right part starts after it.
+    // Bold "abc|def" where "cd" is replaced by "XY": the text typed
+    // after "ab" joins the left part, the right part starts at "e".
     expect(
       _spans(carryEntities('abcdef', 'abXYef', [_bold(0, 3), _bold(3, 3)])),
-      [(0, 2), (4, 2)],
+      [(0, 4), (4, 2)],
     );
     // A bold word deleted entirely disappears.
     expect(
@@ -44,8 +44,24 @@ void main() {
     );
   });
 
+  test('keeps formatting between two separate fixes', () {
+    // "Teh *bold* wrod": both typos fixed, the bold word untouched.
+    expect(
+      _spans(carryEntities('Teh bold wrod', 'The bold word', [_bold(4, 4)])),
+      [(4, 4)],
+    );
+  });
+
+  test('leaves out entities TDLib detects by itself', () {
+    final url = td.TextEntity(
+      offset: 0,
+      length: 13,
+      type: const td.TextEntityTypeUrl(),
+    );
+    expect(carryEntities('https://a.org', 'https://a.org!', [url]), isEmpty);
+  });
+
   test('changes nothing when the text is the same', () {
-    final entities = [_bold(0, 2)];
-    expect(carryEntities('ok', 'ok', entities), same(entities));
+    expect(_spans(carryEntities('ok', 'ok', [_bold(0, 2)])), [(0, 2)]);
   });
 }

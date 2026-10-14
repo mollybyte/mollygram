@@ -63,7 +63,7 @@ void main() {
         ..setReadOutbox(7, 1000);
 
       tester.view
-        ..physicalSize = const Size(1000, 2300)
+        ..physicalSize = const Size(1000, 2700)
         ..devicePixelRatio = 1;
       addTearDown(tester.view.reset);
       final colors = dark ? MgColors.dark : MgColors.light;
@@ -112,6 +112,10 @@ void main() {
         );
         await tester.pump();
       }
+
+      // A spoiler stays covered; a call Boris made is an incoming one.
+      expect(find.text('Spoiler'), findsOneWidget);
+      expect(find.text('Incoming call'), findsOneWidget);
 
       await expectLater(
         find.byType(ChatView),
@@ -409,6 +413,18 @@ List<td.Message> _history(String photo) => [
     outgoing: true,
     editDate: 1760020000,
   ),
+  _message(15, 3, {
+    '@type': 'messagePhoto',
+    'photo': _photo(70, photo),
+    'caption': _text(''),
+    'has_spoiler': true,
+  }),
+  _message(16, 2, {
+    '@type': 'messageCall',
+    'is_video': false,
+    'discard_reason': {'@type': 'callDiscardReasonHungUp'},
+    'duration': 95,
+  }),
 ];
 
 final class _FakeTdJson implements td.TdJson {

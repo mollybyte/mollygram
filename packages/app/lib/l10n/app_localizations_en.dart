@@ -325,6 +325,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get attachFailed => 'Couldn\'t send the files';
 
   @override
+  String get hiddenMedia => 'Hidden media, tap to show';
+
+  @override
+  String get spoilerMedia => 'Spoiler';
+
+  @override
+  String get secretMedia => 'Tap to view';
+
+  @override
+  String get sensitiveMedia => '18+';
+
+  @override
+  String get forwardFailed => 'Couldn\'t forward the message';
+
+  @override
   String get close => 'Close';
 
   @override
