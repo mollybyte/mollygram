@@ -2,8 +2,9 @@
 //
 // Only JSON strings cross the boundary: Dart never sees a JSValue, and the
 // plugin never sees anything except what the host handed over via __mg_host.
-// Limits: memory (JS_SetMemoryLimit), stack (JS_SetMaxStackSize) and time
-// (a deadline checked by the interrupt handler).
+// Limits: memory (our own allocator, see mg_malloc), stack
+// (JS_SetMaxStackSize) and time (a deadline checked by the interrupt
+// handler).
 
 #include <stdlib.h>
 #include <string.h>
@@ -16,6 +17,7 @@
 #define MG_EXPORT __attribute__((visibility("default")))
 #endif
 
+#include "cutils.h"
 #include "quickjs.h"
 
 enum {
@@ -38,6 +40,8 @@ typedef struct MgVm {
   int64_t id;
   MgHostFn host;
   int64_t memory_limit;
+  int64_t heap_used;    // bytes handed out by mg_malloc and friends
+  int out_of_memory;    // an allocation was refused since the last entry
   int64_t deadline_ns;  // 0 = no limit
   int interrupted;
   char *host_result;
@@ -61,6 +65,63 @@ static int64_t mg_now_ns(void) {
   return (int64_t)ts.tv_sec * 1000000000LL + ts.tv_nsec;
 #endif
 }
+
+// The heap limit is enforced here rather than with JS_SetMemoryLimit so we
+// know for sure when it was hit. QuickJS reports a refused allocation as an
+// exception, but when the heap is full even that can fail, and inside a
+// promise job the failure is swallowed into a rejected promise nobody
+// listens to. Which of these happens depends on the platform's malloc
+// rounding, so heap-usage heuristics are not reliable (they missed it on
+// Windows). A refused allocation sets a flag that the next return to the
+// host turns into MG_OUT_OF_MEMORY.
+static size_t mg_usable(const void *p) {
+  return p == NULL ? 0 : js__malloc_usable_size(p);
+}
+
+static int mg_admit(MgVm *vm, size_t freed, size_t size) {
+  if (vm->heap_used - (int64_t)freed + (int64_t)size > vm->memory_limit) {
+    vm->out_of_memory = 1;
+    return 0;
+  }
+  return 1;
+}
+
+static void *mg_malloc(void *opaque, size_t size) {
+  MgVm *vm = opaque;
+  if (!mg_admit(vm, 0, size)) return NULL;
+  void *p = malloc(size);
+  vm->heap_used += (int64_t)mg_usable(p);
+  return p;
+}
+
+static void *mg_calloc(void *opaque, size_t count, size_t size) {
+  MgVm *vm = opaque;
+  if (size != 0 && count > SIZE_MAX / size) return NULL;
+  if (!mg_admit(vm, 0, count * size)) return NULL;
+  void *p = calloc(count, size);
+  vm->heap_used += (int64_t)mg_usable(p);
+  return p;
+}
+
+static void mg_free_block(void *opaque, void *ptr) {
+  MgVm *vm = opaque;
+  vm->heap_used -= (int64_t)mg_usable(ptr);
+  free(ptr);
+}
+
+static void *mg_realloc(void *opaque, void *ptr, size_t size) {
+  MgVm *vm = opaque;
+  size_t old = mg_usable(ptr);
+  if (size > old && !mg_admit(vm, old, size)) return NULL;
+  void *p = realloc(ptr, size);
+  // realloc(p, 0) may free p and return NULL.
+  if (p != NULL || size == 0) vm->heap_used += (int64_t)mg_usable(p) - (int64_t)old;
+  return p;
+}
+
+static const JSMallocFunctions mg_malloc_funcs = {
+    mg_calloc, mg_malloc, mg_free_block, mg_realloc, js__malloc_usable_size,
+};
 
 static int mg_interrupt(JSRuntime *rt, void *opaque) {
   (void)rt;
@@ -115,12 +176,11 @@ MG_EXPORT MgVm *mg_vm_new(int64_t id, int64_t memory_limit,
   vm->id = id;
   vm->host = host;
   vm->memory_limit = memory_limit;
-  vm->rt = JS_NewRuntime();
+  vm->rt = JS_NewRuntime2(&mg_malloc_funcs, vm);
   if (vm->rt == NULL) {
     free(vm);
     return NULL;
   }
-  JS_SetMemoryLimit(vm->rt, (size_t)memory_limit);
   JS_SetMaxStackSize(vm->rt, (size_t)stack_limit);
   JS_SetInterruptHandler(vm->rt, mg_interrupt, vm);
   vm->ctx = JS_NewContext(vm->rt);
@@ -157,10 +217,12 @@ MG_EXPORT void mg_vm_set_budget_ms(MgVm *vm, int64_t ms) {
 }
 
 MG_EXPORT int64_t mg_vm_memory_used(MgVm *vm) {
-  JSMemoryUsage usage;
-  JS_ComputeMemoryUsage(vm->rt, &usage);
-  return usage.malloc_size;
+  return vm->heap_used;
 }
+
+// Whether an allocation was refused since the VM was last entered. Lets a
+// host callback tell a plugin's own error from running out of memory.
+MG_EXPORT int mg_vm_out_of_memory(MgVm *vm) { return vm->out_of_memory; }
 
 MG_EXPORT void mg_free(void *p) { free(p); }
 
@@ -171,14 +233,7 @@ static int mg_take_exception(MgVm *vm, char **out) {
   int status = MG_EXCEPTION;
   if (vm->interrupted) status = MG_TIMEOUT;
   const char *msg = JS_ToCString(ctx, exc);
-  if (msg != NULL && strstr(msg, "out of memory") != NULL)
-    status = MG_OUT_OF_MEMORY;
-  // If there was not even enough memory for the error object, QuickJS
-  // throws null. Tell this apart from `throw null` in the plugin by heap
-  // usage.
-  if (status == MG_EXCEPTION && JS_IsNull(exc) &&
-      mg_vm_memory_used(vm) > vm->memory_limit / 10 * 9)
-    status = MG_OUT_OF_MEMORY;
+  if (vm->out_of_memory) status = MG_OUT_OF_MEMORY;
   size_t len = 0;
   char *text = NULL;
   if (JS_IsError(exc)) {
@@ -202,9 +257,6 @@ static int mg_take_exception(MgVm *vm, char **out) {
       len = strlen(msg);
       text = mg_strdup(msg, len);
     } else {
-      // When there is no memory even for the message, return the status
-      // without text.
-      if (status == MG_EXCEPTION && !vm->interrupted) status = MG_OUT_OF_MEMORY;
       text = mg_strdup("", 0);
     }
   }
@@ -216,7 +268,20 @@ static int mg_take_exception(MgVm *vm, char **out) {
 
 // A Dart isolate may move to another OS thread between events, so update
 // the stack top for the recursion check before every entry into JS.
-static void mg_enter(MgVm *vm) { JS_UpdateStackTop(vm->rt); }
+static void mg_enter(MgVm *vm) {
+  JS_UpdateStackTop(vm->rt);
+  vm->out_of_memory = 0;
+}
+
+// Reports a refused allocation even when the plugin code caught it or it
+// was swallowed by a promise: the plugin is over its memory limit either
+// way. Replaces any result already stored in *out.
+static int mg_leave(MgVm *vm, int status, char **out) {
+  if (!vm->out_of_memory || status == MG_OUT_OF_MEMORY) return status;
+  free(*out);
+  *out = mg_strdup("", 0);
+  return MG_OUT_OF_MEMORY;
+}
 
 static int mg_stringify(MgVm *vm, JSValue val, char **out) {
   JSContext *ctx = vm->ctx;
@@ -249,7 +314,7 @@ MG_EXPORT int mg_vm_eval(MgVm *vm, const char *code, int64_t len,
   if (JS_IsException(val)) return mg_take_exception(vm, out);
   int status = mg_stringify(vm, val, out);
   JS_FreeValue(vm->ctx, val);
-  return status;
+  return mg_leave(vm, status, out);
 }
 
 // Calls the global function fn with one argument parsed from JSON.
@@ -276,7 +341,7 @@ MG_EXPORT int mg_vm_call(MgVm *vm, const char *fn, const char *arg_json,
   if (JS_IsException(val)) return mg_take_exception(vm, out);
   int status = mg_stringify(vm, val, out);
   JS_FreeValue(ctx, val);
-  return status;
+  return mg_leave(vm, status, out);
 }
 
 // Runs the promise job queue. Returns MG_OK when the queue is empty.
@@ -289,5 +354,5 @@ MG_EXPORT int mg_vm_run_jobs(MgVm *vm, char **out) {
     if (r < 0) return mg_take_exception(vm, out);
   }
   *out = NULL;
-  return MG_OK;
+  return mg_leave(vm, MG_OK, out);
 }

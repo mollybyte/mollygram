@@ -42,6 +42,9 @@ external void mg_vm_set_budget_ms(Pointer<MgVm> vm, int ms);
 @Native<Int64 Function(Pointer<MgVm>)>()
 external int mg_vm_memory_used(Pointer<MgVm> vm);
 
+@Native<Int32 Function(Pointer<MgVm>)>()
+external int mg_vm_out_of_memory(Pointer<MgVm> vm);
+
 @Native<Void Function(Pointer<Void>)>()
 external void mg_free(Pointer<Void> p);
 

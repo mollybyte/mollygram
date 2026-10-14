@@ -21,6 +21,7 @@
   "packages": {
     ".": {
       "release-type": "simple",
+      "initial-version": "0.1.0",
       "package-name": "mollygram",
       "changelog-path": "CHANGELOG.md",
       "extra-files": [
