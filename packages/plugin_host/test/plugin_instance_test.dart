@@ -172,6 +172,31 @@ void main() {
     expect(p.disabledReason, contains('memory'));
   });
 
+  test('running out of memory in a promise job disables the plugin', () async {
+    // The rejection is swallowed by a catch that itself needs memory.
+    final p = load('''
+      const a = [];
+      mg.on("ui.action", async () => {
+        await null;
+        for (;;) a.push("x".repeat(4096));
+      });
+      ''', policy: const PluginPolicy(limits: JsLimits(memoryBytes: 8 << 20)));
+    expect(await p.dispatch(PluginEvent.uiAction, {}), isA<EventSkipped>());
+    expect(p.status, PluginStatus.disabled);
+    expect(p.disabledReason, contains('memory'));
+  });
+
+  test('a caught out-of-memory error still disables the plugin', () async {
+    final p = load(
+      'mg.on("ui.action", () => { const a = []; '
+      'try { for (;;) a.push("x".repeat(4096)) } catch (e) {} return null })',
+      policy: const PluginPolicy(limits: JsLimits(memoryBytes: 8 << 20)),
+    );
+    expect(await p.dispatch(PluginEvent.uiAction, {}), isA<EventSkipped>());
+    expect(p.status, PluginStatus.disabled);
+    expect(p.disabledReason, contains('memory'));
+  });
+
   test('a service error reaches JS as an exception with a code', () async {
     services.failWith = const HostError('busy', 'busy');
     final p = load('''
