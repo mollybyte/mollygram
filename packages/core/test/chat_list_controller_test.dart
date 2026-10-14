@@ -52,6 +52,57 @@ void main() {
     expect(changes, isNotEmpty);
     await subscription.cancel();
   });
+
+  test('keeps loading pages until TDLib reports the end', () async {
+    await controller.start();
+    expect(controller.hasMore(), isTrue);
+
+    await controller.loadMore();
+    expect(controller.hasMore(), isTrue);
+
+    json.endOfList = true;
+    await controller.loadMore();
+    expect(controller.hasMore(), isFalse);
+
+    // Nothing is requested once the list is exhausted.
+    await controller.loadMore();
+    expect(json.sent.where((r) => r['@type'] == 'loadChats'), hasLength(3));
+  });
+
+  test('shares one request between overlapping loads of a list', () async {
+    await controller.start();
+    await Future.wait([controller.loadMore(), controller.loadMore()]);
+
+    expect(json.sent.where((r) => r['@type'] == 'loadChats'), hasLength(2));
+  });
+
+  test('applies positions sent with a draft change', () async {
+    const main = ChatListLocation.main();
+    await controller.start();
+    controller.store.upsert(
+      ChatListEntry(
+        id: 5,
+        title: 'Draft',
+        unreadCount: 0,
+        positions: [ChatListPosition(list: main, order: 10, isPinned: false)],
+      ),
+    );
+    json.push({
+      '@type': 'updateChatDraftMessage',
+      'chat_id': 5,
+      'positions': [
+        {
+          '@type': 'chatPosition',
+          'list': {'@type': 'chatListMain'},
+          'order': '99',
+          'is_pinned': false,
+        },
+      ],
+    });
+    await pumpEventQueue();
+
+    expect(controller.store.chat(5)!.positionFor(main)!.order, 99);
+  });
 }
 
 Map<String, Object?> _folder({
@@ -75,6 +126,7 @@ Map<String, Object?> _folder({
 final class _FakeTdJson implements td.TdJson {
   final _queue = Queue<String>();
   final sent = <Map<String, Object?>>[];
+  var endOfList = false;
   var _nextClientId = 0;
 
   @override
@@ -91,6 +143,18 @@ final class _FakeTdJson implements td.TdJson {
   void send(int clientId, String request) {
     final decoded = jsonDecode(request) as Map<String, Object?>;
     sent.add(decoded);
+    if (endOfList && decoded['@type'] == 'loadChats') {
+      _queue.add(
+        jsonEncode({
+          '@type': 'error',
+          'code': 404,
+          'message': 'Not Found',
+          '@client_id': clientId,
+          '@extra': decoded['@extra'],
+        }),
+      );
+      return;
+    }
     _queue.add(
       jsonEncode({
         '@type': 'ok',

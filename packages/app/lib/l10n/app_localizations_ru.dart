@@ -187,5 +187,8 @@ class AppLocalizationsRu extends AppLocalizations {
   String get previewOther => 'Сообщение';
 
   @override
-  String get noTextMessages => 'Текстовых сообщений пока нет';
+  String get noMessages => 'Сообщений пока нет';
+
+  @override
+  String get sendFailed => 'Сообщение не отправлено. Попробуйте ещё раз';
 }

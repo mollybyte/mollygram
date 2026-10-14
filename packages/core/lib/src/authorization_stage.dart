@@ -10,6 +10,9 @@ enum AuthorizationStageKind {
   code,
   password,
   ready,
+
+  /// TDLib is logging out or closing; the session has to be restarted.
+  closing,
   unavailable,
 }
 
@@ -29,6 +32,7 @@ sealed class AuthorizationStage {
   }) = _Code;
   const factory AuthorizationStage.password({String hint}) = _Password;
   const factory AuthorizationStage.ready() = _Ready;
+  const factory AuthorizationStage.closing() = _Closing;
   const factory AuthorizationStage.unavailable() = _Unavailable;
 
   AuthorizationStageKind get kind;
@@ -70,6 +74,9 @@ sealed class AuthorizationStage {
         td.AuthorizationStateWaitPassword(:final passwordHint) =>
           AuthorizationStage.password(hint: passwordHint),
         td.AuthorizationStateReady() => const AuthorizationStage.ready(),
+        td.AuthorizationStateLoggingOut() ||
+        td.AuthorizationStateClosing() ||
+        td.AuthorizationStateClosed() => const AuthorizationStage.closing(),
         _ => const AuthorizationStage.unavailable(),
       };
 }
@@ -131,6 +138,13 @@ final class _Ready extends AuthorizationStage {
 
   @override
   AuthorizationStageKind get kind => AuthorizationStageKind.ready;
+}
+
+final class _Closing extends AuthorizationStage {
+  const _Closing();
+
+  @override
+  AuthorizationStageKind get kind => AuthorizationStageKind.closing;
 }
 
 final class _Unavailable extends AuthorizationStage {

@@ -37,13 +37,10 @@ class _CountryPickerState extends State<CountryPicker> {
   }
 
   List<PhoneCountry> get _shown {
-    final query = _query.text.trim().toLowerCase().replaceFirst('+', '');
-    if (query.isEmpty) return widget.countries;
+    final query = _query.text;
     return [
       for (final country in widget.countries)
-        if (country.name.toLowerCase().contains(query) ||
-            country.callingCodes.any((code) => code.startsWith(query)))
-          country,
+        if (country.matches(query)) country,
     ];
   }
 

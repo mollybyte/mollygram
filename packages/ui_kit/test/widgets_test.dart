@@ -168,6 +168,41 @@ void main() {
     expect(text.right, greaterThanOrEqualTo(meta.right - 1));
   });
 
+  testWidgets('group bubble shows the sender over the text', (tester) async {
+    await tester.pumpWidget(
+      themed(
+        const Center(
+          child: TextMessageBubble(
+            text: 'hello',
+            time: '21:10',
+            outgoing: false,
+            sender: 'Alina',
+          ),
+        ),
+      ),
+    );
+    final bubble = tester.getRect(find.byType(MessageBubble));
+    final name = tester.getRect(find.text('Alina'));
+    final text = tester.getRect(
+      find.textContaining('hello', findRichText: true),
+    );
+    expect(bubble.contains(name.topLeft), isTrue);
+    expect(name.bottom, lessThanOrEqualTo(text.top));
+  });
+
+  testWidgets('a failed message shows the failed mark in red', (tester) async {
+    await tester.pumpWidget(
+      themed(
+        const Center(
+          child: MessageMeta(time: '21:10', status: MessageStatus.failed),
+        ),
+      ),
+    );
+    final icon = tester.widget<MgIcon>(find.byType(MgIcon));
+    expect(icon.icon, MgIcons.failed);
+    expect(icon.color, MessageMeta.failedColor);
+  });
+
   testWidgets('glass turns blur off inside a scope without blur', (
     tester,
   ) async {

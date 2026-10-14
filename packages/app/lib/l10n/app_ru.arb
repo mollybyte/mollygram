@@ -55,5 +55,6 @@
   "previewSticker": "Стикер",
   "previewAnimation": "GIF",
   "previewOther": "Сообщение",
-  "noTextMessages": "Текстовых сообщений пока нет"
+  "noMessages": "Сообщений пока нет",
+  "sendFailed": "Сообщение не отправлено. Попробуйте ещё раз"
 }

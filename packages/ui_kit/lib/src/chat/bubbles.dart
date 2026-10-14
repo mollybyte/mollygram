@@ -46,6 +46,9 @@ enum MessageStatus {
   sending,
   sent,
   read,
+
+  /// The server rejected the message; drawn in red.
+  failed,
 }
 
 /// The time of a message with its delivery ticks, and an optional label in
@@ -75,7 +78,11 @@ class MessageMeta extends StatelessWidget {
     MessageStatus.sending => MgIcons.sending,
     MessageStatus.sent => MgIcons.sent,
     MessageStatus.read => MgIcons.readTicks,
+    MessageStatus.failed => MgIcons.failed,
   };
+
+  /// The red of a message that was not sent.
+  static const Color failedColor = Color(0xFFFF3B30);
 
   static TextStyle styleOf(MgColors c, {Color? color}) =>
       mgTextStyle(c, size: MgType.meta, color: color ?? c.fg2, height: 1.35);
@@ -123,7 +130,11 @@ class MessageMeta extends StatelessWidget {
         Text(time, style: style),
         if (tick != null) ...[
           const SizedBox(width: _tickGap),
-          MgIcon(tick, size: _tickSize, color: style.color),
+          MgIcon(
+            tick,
+            size: _tickSize,
+            color: status == MessageStatus.failed ? failedColor : style.color,
+          ),
         ],
       ],
     );
@@ -175,9 +186,13 @@ class TextMessageBubble extends StatelessWidget {
     this.status = MessageStatus.none,
     this.label,
     this.dimmed = false,
+    this.sender,
   });
 
   final String text;
+
+  /// The author's name over the text, for incoming messages in groups.
+  final String? sender;
   final String time;
   final bool outgoing;
   final MessageStatus status;
@@ -196,25 +211,46 @@ class TextMessageBubble extends StatelessWidget {
       status: status,
       label: label,
     );
+    final body = Stack(
+      children: [
+        Text.rich(
+          TextSpan(
+            text: text,
+            children: [
+              WidgetSpan(child: SizedBox(width: metaWidth + 8, height: 14)),
+            ],
+          ),
+        ),
+        Positioned(
+          right: 0,
+          bottom: -1,
+          child: MessageMeta(time: time, status: status, label: label),
+        ),
+      ],
+    );
+    final sender = this.sender;
     final bubble = MessageBubble(
       outgoing: outgoing,
-      child: Stack(
-        children: [
-          Text.rich(
-            TextSpan(
-              text: text,
+      child: sender == null
+          ? body
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                WidgetSpan(child: SizedBox(width: metaWidth + 8, height: 14)),
+                Text(
+                  sender,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: mgTextStyle(
+                    MgColors.of(context),
+                    weight: FontWeight.w600,
+                    color: MgColors.of(context).accent,
+                  ),
+                ),
+                const SizedBox(height: 1),
+                body,
               ],
             ),
-          ),
-          Positioned(
-            right: 0,
-            bottom: -1,
-            child: MessageMeta(time: time, status: status, label: label),
-          ),
-        ],
-      ),
     );
     return dimmed ? Opacity(opacity: 0.55, child: bubble) : bubble;
   }

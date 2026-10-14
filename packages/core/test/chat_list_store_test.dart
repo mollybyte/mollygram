@@ -3,7 +3,7 @@ import 'package:test/test.dart';
 
 void main() {
   group('ChatListStore', () {
-    test('sorts pinned chats, then TDLib order and chat id', () {
+    test('sorts by TDLib order, then chat id, ignoring the pin flag', () {
       final store = ChatListStore();
       const main = ChatListLocation.main();
 
@@ -27,6 +27,16 @@ void main() {
       );
       store.upsert(
         ChatListEntry(
+          id: 4,
+          title: 'Same order, larger id',
+          unreadCount: 0,
+          positions: [
+            ChatListPosition(list: main, order: 100, isPinned: false),
+          ],
+        ),
+      );
+      store.upsert(
+        ChatListEntry(
           id: 3,
           title: 'Newest',
           unreadCount: 0,
@@ -36,7 +46,7 @@ void main() {
         ),
       );
 
-      expect(store.chatsFor(main).map((chat) => chat.id), [2, 3, 1]);
+      expect(store.chatsFor(main).map((chat) => chat.id), [3, 4, 1, 2]);
     });
 
     test('updates one chat without discarding its other positions', () {

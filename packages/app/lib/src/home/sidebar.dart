@@ -32,6 +32,16 @@ class _SidebarState extends ConsumerState<Sidebar> {
     super.dispose();
   }
 
+  void _loadMore(ChatListLocation list) {
+    final chatLists = ref.read(telegramSessionProvider).requireValue.chatLists;
+    if (!chatLists.hasMore(list)) return;
+    // Called during build: the request starts after the frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      chatLists.loadMore(list).catchError((Object _) {});
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = MgColors.of(context);
@@ -75,15 +85,27 @@ class _SidebarState extends ConsumerState<Sidebar> {
                 style: TextStyle(color: c.fg2),
               ),
             )
-          : _ChatList(chats: shown),
+          : _ChatList(
+              chats: shown,
+              // TDLib sends the list a page at a time; the next page is
+              // asked for as the end comes on screen. Search filters only
+              // what is loaded, so it doesn't page.
+              onNearEnd: query.isEmpty ? () => _loadMore(list) : null,
+            ),
     );
   }
 }
 
 class _ChatList extends ConsumerWidget {
-  const _ChatList({required this.chats});
+  const _ChatList({required this.chats, this.onNearEnd});
 
   final List<ChatListEntry> chats;
+
+  /// Called while one of the last rows is built.
+  final VoidCallback? onNearEnd;
+
+  /// How many rows before the end the next page is asked for.
+  static const _preload = 20;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -97,6 +119,7 @@ class _ChatList extends ConsumerWidget {
       itemBuilder: (context, i) {
         final chat = chats[i];
         final last = chat.lastMessage;
+        if (i >= chats.length - _preload) onNearEnd?.call();
         return ChatListTile(
           key: ValueKey(chat.id),
           title: chat.title,

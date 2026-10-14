@@ -186,5 +186,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get previewOther => 'Message';
 
   @override
-  String get noTextMessages => 'No text messages here yet';
+  String get noMessages => 'No messages here yet';
+
+  @override
+  String get sendFailed => 'The message wasn\'t sent. Try again';
 }

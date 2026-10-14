@@ -29,6 +29,7 @@ final class TelegramSession {
   final ConversationController conversations;
   final _errors = StreamController<Object>.broadcast(sync: true);
   StreamSubscription<AuthorizationStage>? _stageSubscription;
+  Future<void>? _firstReconcile;
   var _disposed = false;
 
   /// Creates and starts a session around an already-created TDLib instance.
@@ -50,8 +51,19 @@ final class TelegramSession {
       initializer: TdlibInitializer(client, parameters: parameters),
     );
     session._stageSubscription = authorization.stages.listen(session._onStage);
-    await conversations.start();
-    await authorization.start();
+    try {
+      await conversations.start();
+      await authorization.start();
+      // Sending the parameters is part of starting: a wrong database key or
+      // bad credentials must fail the session, not leave the UI waiting.
+      if (authorization.currentStage?.kind ==
+          AuthorizationStageKind.tdlibParameters) {
+        await session._firstReconcile;
+      }
+    } catch (_) {
+      await session.dispose();
+      rethrow;
+    }
     return session;
   }
 
@@ -59,9 +71,11 @@ final class TelegramSession {
   Stream<Object> get errors => _errors.stream;
 
   void _onStage(AuthorizationStage stage) {
+    final reconcile = _reconcile(stage);
+    _firstReconcile ??= reconcile;
     unawaited(
-      _reconcile(stage).onError((Object error, StackTrace stackTrace) {
-        _errors.add(error);
+      reconcile.onError((Object error, StackTrace stackTrace) {
+        if (!_errors.isClosed) _errors.add(error);
       }),
     );
   }
@@ -77,6 +91,7 @@ final class TelegramSession {
       case AuthorizationStageKind.qrCode:
       case AuthorizationStageKind.code:
       case AuthorizationStageKind.password:
+      case AuthorizationStageKind.closing:
       case AuthorizationStageKind.unavailable:
         break;
     }

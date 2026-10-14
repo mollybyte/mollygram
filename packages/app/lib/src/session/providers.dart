@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mollygram_core/mollygram_core.dart';
+import 'package:mollygram_tdlib/mollygram_tdlib.dart' show TdClientClosed;
 
 import 'sign_in_actions.dart';
 import 'telegram_session_launcher.dart';
@@ -43,8 +44,30 @@ final authorizationStageProvider = StreamProvider<AuthorizationStage>((ref) {
 /// Sends what the user typed on the sign-in screen to TDLib.
 final signInActionsProvider = Provider<SignInActions>((ref) {
   final session = ref.watch(telegramSessionProvider).requireValue;
-  return SessionSignInActions(session.authorization);
+  return SessionSignInActions(
+    session.authorization,
+    restart: () async {
+      // The old client has to be closed before a new one opens the same
+      // database, or TDLib can't lock it.
+      await session.dispose();
+      ref.invalidate(telegramSessionProvider);
+    },
+  );
 });
+
+/// Whether the sign-in screen opens on the phone number form rather than
+/// the QR code. It outlives the session, which is restarted to leave the
+/// QR step (see [SignInActions.leaveQrCode]).
+final preferPhoneSignInProvider = NotifierProvider<PreferPhoneSignIn, bool>(
+  PreferPhoneSignIn.new,
+);
+
+class PreferPhoneSignIn extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void set(bool value) => state = value;
+}
 
 /// Chat folders in the server-defined order.
 final chatFoldersProvider = StreamProvider<List<ChatFolder>>((ref) {
@@ -73,12 +96,24 @@ final chatListProvider =
           .watch(telegramSessionProvider)
           .requireValue
           .chatLists;
-      if (!list.isMain) unawaited(chatLists.loadMore(list));
+      if (!list.isMain) unawaited(_ignoreClosed(chatLists.loadMore(list)));
       return _startWith(
         chatLists.store.chatsFor(list),
         chatLists.changes.map((_) => chatLists.store.chatsFor(list)),
       );
     });
+
+/// One chat's sidebar entry, kept current, for the chat header.
+final chatEntryProvider = StreamProvider.family<ChatListEntry?, int>((
+  ref,
+  chatId,
+) {
+  final chatLists = ref.watch(telegramSessionProvider).requireValue.chatLists;
+  return _startWith(
+    chatLists.store.chat(chatId),
+    chatLists.changes.map((_) => chatLists.store.chat(chatId)),
+  ).distinct();
+});
 
 /// The chat open in the main pane.
 final selectedChatProvider = NotifierProvider<SelectedChat, int?>(
@@ -99,7 +134,7 @@ final conversationProvider =
           .watch(telegramSessionProvider)
           .requireValue
           .conversations;
-      unawaited(conversations.loadHistory(chatId));
+      unawaited(_ignoreClosed(conversations.loadHistory(chatId)));
       return _startWith(
         conversations.store.messagesFor(chatId),
         conversations.changes.map(
@@ -107,6 +142,11 @@ final conversationProvider =
         ),
       );
     });
+
+/// Lets a background request fail quietly when the session closes under it
+/// (sign-in restarts it, the app closes it).
+Future<void> _ignoreClosed(Future<void> request) =>
+    request.catchError((Object _) {}, test: (error) => error is TdClientClosed);
 
 /// Emits [first] (when not null), then everything from [rest].
 ///

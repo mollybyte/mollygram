@@ -5,6 +5,11 @@ import 'package:mollygram_core/mollygram_core.dart';
 abstract interface class SignInActions {
   Future<void> submitPhone(String phoneNumber);
   Future<void> requestQrCode();
+
+  /// Leaves the QR code step for the phone number form. TDLib can't go back
+  /// from that step, so the session is restarted; the new one starts at the
+  /// phone number step.
+  Future<void> leaveQrCode();
   Future<void> submitCode(String code);
   Future<void> submitPassword(String password);
 
@@ -16,9 +21,12 @@ abstract interface class SignInActions {
 }
 
 final class SessionSignInActions implements SignInActions {
-  const SessionSignInActions(this._controller);
+  const SessionSignInActions(this._controller, {required this.restart});
 
   final AuthorizationController _controller;
+
+  /// Closes the session and starts a new one.
+  final Future<void> Function() restart;
 
   @override
   Future<void> submitPhone(String phoneNumber) =>
@@ -26,6 +34,12 @@ final class SessionSignInActions implements SignInActions {
 
   @override
   Future<void> requestQrCode() => _controller.requestQrCode();
+
+  @override
+  Future<void> leaveQrCode() async {
+    await _controller.abandonQrCode();
+    await restart();
+  }
 
   @override
   Future<void> submitCode(String code) => _controller.submitCode(code);
