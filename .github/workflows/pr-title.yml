@@ -42,6 +42,7 @@ jobs:
             plugin_host
             plugin_sdk
             plugins_ui
+            calls
             prototype
             design
             web
