@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../forms/underline_field.dart';
 import '../icon_button.dart';
@@ -134,12 +135,17 @@ class SignInHeader extends StatelessWidget {
 /// The QR code on a white rounded square, with an optional mark in the
 /// middle. The QR stays dark on white in both themes so phones can read it.
 class QrFrame extends StatelessWidget {
-  const QrFrame({super.key, required this.qr, this.center, this.size = 200});
+  const QrFrame({
+    super.key,
+    required this.qr,
+    this.center = const AppMark(size: 44),
+    this.size = 200,
+  });
 
   /// The QR code itself, drawn by the app in black.
   final Widget qr;
 
-  /// A small mark over the middle, such as the app icon.
+  /// The mark over the middle; defaults to [AppMark].
   final Widget? center;
   final double size;
 
@@ -160,15 +166,52 @@ class QrFrame extends StatelessWidget {
           Positioned.fill(child: qr),
           if (center != null)
             Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFFFFF),
-                borderRadius: BorderRadius.circular(12),
+              padding: const EdgeInsets.all(5),
+              decoration: const BoxDecoration(
+                color: Color(0xFFFFFFFF),
+                shape: BoxShape.circle,
               ),
               child: center,
             ),
         ],
       ),
+    );
+  }
+}
+
+/// The Mollygram mark in the theme accent: a white chat bubble with an "m"
+/// on an accent circle, like the plane in the middle of Telegram's QR code.
+class AppMark extends StatelessWidget {
+  const AppMark({super.key, this.size = 44, this.color});
+
+  final double size;
+
+  /// Defaults to the theme accent.
+  final Color? color;
+
+  static String _svg(Color accent) {
+    final hex = (accent.toARGB32() & 0xFFFFFF)
+        .toRadixString(16)
+        .padLeft(6, '0');
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+        '<circle cx="50" cy="50" r="50" fill="#$hex"/>'
+        '<path fill="#fff" d="M50 24c-16 0-28 10.5-28 24 0 7.2 3.4 13.5 9 17.9'
+        '-.5 3.9-2.3 7.4-5.4 9.9 5.8.3 10.8-1.4 14.6-4.4 3.1.9 6.3 1.4 9.8 1.4'
+        ' 16 0 28-10.5 28-24.8S66 24 50 24z"/>'
+        '<path fill="none" stroke="#$hex" stroke-width="6" '
+        'stroke-linecap="round" stroke-linejoin="round" '
+        'd="M37.5 57V45.8a6.3 6.3 0 0 1 12.5 0V57M50 45.8a6.3 6.3 0 0 1 12.5 0'
+        'V57"/></svg>';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = color ?? MgColors.of(context).accent;
+    return SvgPicture.string(
+      _svg(accent),
+      width: size,
+      height: size,
+      excludeFromSemantics: true,
     );
   }
 }
