@@ -1,0 +1,109 @@
+import 'package:flutter/material.dart';
+
+import 'icons.dart';
+import 'theme/colors.dart';
+
+/// A round 32 px icon button (`.ib` in the mockup): secondary color at rest,
+/// a hover fill, the accent with a field fill when [selected].
+class MgIconButton extends StatefulWidget {
+  const MgIconButton({
+    super.key,
+    required this.icon,
+    required this.tooltip,
+    this.onPressed,
+    this.selected = false,
+    this.iconSize = 17,
+  });
+
+  final MgIconData icon;
+
+  /// Shown on hover and read by screen readers. Pass a localized string.
+  final String tooltip;
+  final VoidCallback? onPressed;
+
+  /// A toggled state, like ghost mode being on.
+  final bool selected;
+  final double iconSize;
+
+  @override
+  State<MgIconButton> createState() => _MgIconButtonState();
+}
+
+class _MgIconButtonState extends State<MgIconButton> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    final enabled = widget.onPressed != null;
+    final hover = _hover && enabled;
+    final fg = widget.selected ? c.accent : (hover ? c.fg : c.fg2);
+    final bg = widget.selected
+        ? c.field
+        : (hover ? c.hover : const Color(0x00000000));
+    return Tooltip(
+      message: widget.tooltip,
+      excludeFromSemantics: true,
+      child: Semantics(
+        button: true,
+        enabled: enabled,
+        toggled: widget.selected ? true : null,
+        label: widget.tooltip,
+        child: MouseRegion(
+          cursor: enabled ? SystemMouseCursors.click : MouseCursor.defer,
+          onEnter: (_) => setState(() => _hover = true),
+          onExit: (_) => setState(() => _hover = false),
+          child: GestureDetector(
+            onTap: widget.onPressed,
+            child: Container(
+              width: 32,
+              height: 32,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
+              child: MgIcon(widget.icon, size: widget.iconSize, color: fg),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The filled round send button that replaces the microphone when the
+/// composer has a draft.
+class MgSendButton extends StatelessWidget {
+  const MgSendButton({super.key, required this.tooltip, this.onPressed});
+
+  final String tooltip;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    return Tooltip(
+      message: tooltip,
+      excludeFromSemantics: true,
+      child: Semantics(
+        button: true,
+        enabled: onPressed != null,
+        label: tooltip,
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            onTap: onPressed,
+            child: Container(
+              width: 32,
+              height: 32,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: c.accent,
+                shape: BoxShape.circle,
+              ),
+              child: MgIcon(MgIcons.send, size: 16, color: c.onAccent),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
