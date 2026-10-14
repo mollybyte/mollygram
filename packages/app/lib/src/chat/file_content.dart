@@ -255,7 +255,12 @@ class _AudioTrack extends ConsumerWidget {
               final state = _stateOf(file);
               Future<void> onTap() async {
                 if (playing) return player.pause();
+                // Read before any await: the row may scroll away meanwhile.
                 final files = _filesOf(ref);
+                final conversations = ref
+                    .read(telegramSessionProvider)
+                    .requireValue
+                    .conversations;
                 var path = downloadedPath(file);
                 if (path == null) {
                   if (state == _FileState.downloading) {
@@ -269,10 +274,6 @@ class _AudioTrack extends ConsumerWidget {
                 }
                 if (path == null) return;
                 await player.play(_key, path);
-                final conversations = ref
-                    .read(telegramSessionProvider)
-                    .requireValue
-                    .conversations;
                 unawaited(
                   conversations
                       .openContent(chatId, messageId)

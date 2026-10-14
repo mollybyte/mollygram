@@ -263,12 +263,25 @@ class _VideoNoteContentState extends ConsumerState<VideoNoteContent> {
   String? _path;
   var _withSound = false;
 
+  // Read up front: ref can't be used in dispose or after an await once the
+  // widget has left the tree.
+  late final CirclePlayerPool _pool;
+  late final ConversationController _conversations;
+
+  @override
+  void initState() {
+    super.initState();
+    _pool = ref.read(circlePlayerPoolProvider);
+    _conversations = ref
+        .read(telegramSessionProvider)
+        .requireValue
+        .conversations;
+  }
+
   void _attach(String path) {
     if (_path == path) return;
     _path = path;
-    final player = _player ??= ref
-        .read(circlePlayerPoolProvider)
-        .acquire(CircleQuality.standard.side);
+    final player = _player ??= _pool.acquire(CircleQuality.standard.side);
     unawaited(player.open(CircleSource.file(path)));
   }
 
@@ -279,12 +292,8 @@ class _VideoNoteContentState extends ConsumerState<VideoNoteContent> {
       setState(() => _withSound = true);
       await player.setMuted(false);
       await player.play();
-      final conversations = ref
-          .read(telegramSessionProvider)
-          .requireValue
-          .conversations;
       unawaited(
-        conversations
+        _conversations
             .openContent(widget.chatId, widget.messageId)
             .catchError((Object _) {}),
       );
@@ -301,7 +310,7 @@ class _VideoNoteContentState extends ConsumerState<VideoNoteContent> {
   void dispose() {
     final player = _player;
     if (player != null) {
-      unawaited(ref.read(circlePlayerPoolProvider).release(player));
+      unawaited(_pool.release(player));
     }
     super.dispose();
   }

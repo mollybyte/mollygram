@@ -279,6 +279,22 @@ void main() {
     expect(controller.store.message(7, 3)?.text, 'Quoted');
   });
 
+  test('marks a reply as missing only when TDLib has no original', () async {
+    await controller.start();
+
+    json.repliedError = 500;
+    await controller.loadReplied(7, 10);
+    expect(controller.store.isMissing(7, 10), isFalse);
+
+    json.repliedError = 404;
+    await controller.loadReplied(7, 10);
+    expect(controller.store.isMissing(7, 10), isTrue);
+    expect(
+      json.sent.where((r) => r['@type'] == 'getRepliedMessage'),
+      hasLength(2),
+    );
+  });
+
   test('keeps the sender of each message', () async {
     await controller.start();
     await controller.loadHistory(7);
@@ -358,6 +374,9 @@ final class _FakeTdJson implements td.TdJson {
 
   /// The history page that starts at a message id (0 is the newest).
   List<td.Message> Function(int fromMessageId)? history;
+
+  /// When set, getRepliedMessage fails with this TDLib error code.
+  int? repliedError;
   var _nextClientId = 0;
 
   @override
@@ -390,6 +409,11 @@ final class _FakeTdJson implements td.TdJson {
                   [_message(id: 10, chatId: 7, text: 'From history')])
             message.toJson(),
         ],
+      },
+      'getRepliedMessage' when repliedError != null => {
+        '@type': 'error',
+        'code': repliedError,
+        'message': 'Failed',
       },
       'getRepliedMessage' => _message(
         id: 3,

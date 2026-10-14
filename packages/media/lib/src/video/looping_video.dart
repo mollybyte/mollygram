@@ -37,6 +37,7 @@ class _LoopingVideoState extends State<LoopingVideo> {
   late final VideoController _video = VideoController(_player);
   StreamSubscription<Duration>? _position;
   var _showing = false;
+  var _disposed = false;
 
   @override
   void initState() {
@@ -48,10 +49,18 @@ class _LoopingVideoState extends State<LoopingVideo> {
     unawaited(_open());
   }
 
+  /// Fast scrolling can dispose the widget between these steps; the rest
+  /// is skipped then, and a call already racing the dispose is ignored.
   Future<void> _open() async {
-    await _player.setPlaylistMode(PlaylistMode.single);
-    await _player.setVolume(0);
-    await _player.open(Media(Uri.file(widget.path).toString()));
+    try {
+      await _player.setPlaylistMode(PlaylistMode.single);
+      if (_disposed) return;
+      await _player.setVolume(0);
+      if (_disposed) return;
+      await _player.open(Media(Uri.file(widget.path).toString()));
+    } on Object {
+      if (!_disposed) rethrow;
+    }
   }
 
   @override
@@ -64,6 +73,7 @@ class _LoopingVideoState extends State<LoopingVideo> {
 
   @override
   void dispose() {
+    _disposed = true;
     unawaited(_position?.cancel());
     unawaited(_player.dispose());
     super.dispose();

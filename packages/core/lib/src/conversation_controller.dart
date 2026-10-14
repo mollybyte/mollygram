@@ -59,7 +59,7 @@ final class ConversationController {
       for (final message in response.messages) ConversationMessage(message),
     ], keep: arrived);
     if (response.messages.isEmpty) store.markReachedStart(chatId);
-    _changes.add(null);
+    _notify();
     while (!store.reachedStart(chatId) &&
         store.messagesFor(chatId).length < minimum) {
       if (!await loadOlder(chatId)) break;
@@ -86,7 +86,7 @@ final class ConversationController {
         for (final message in response.messages) ConversationMessage(message),
       ]);
       if (added == 0) store.markReachedStart(chatId);
-      _changes.add(null);
+      _notify();
       return added > 0;
     } finally {
       _loadingOlder.remove(chatId);
@@ -104,10 +104,16 @@ final class ConversationController {
         td.GetRepliedMessage(chatId: chatId, messageId: messageId),
       );
       store.addReferenced(ConversationMessage(message));
-    } on td.TdException {
-      store.markMissing(chatId, messageId);
+    } on td.TdException catch (error) {
+      if (error.code == 404) {
+        store.markMissing(chatId, messageId);
+      } else {
+        // A network error or a flood wait: let a later build ask again.
+        _requested.remove((chatId, messageId));
+        return;
+      }
     }
-    _changes.add(null);
+    _notify();
   }
 
   /// Tells TDLib the user opened a voice or video message, which marks it
@@ -187,6 +193,12 @@ final class ConversationController {
     _add(message);
   }
 
+  /// Announces a change, unless the controller is already closed: a reply
+  /// can land after the session started shutting down.
+  void _notify() {
+    if (!_changes.isClosed) _changes.add(null);
+  }
+
   Future<void> dispose() async {
     await _subscription?.cancel();
     await _changes.close();
@@ -201,7 +213,7 @@ final class ConversationController {
         store
           ..setColor(sender, user.accentColorId)
           ..setPhoto(sender, user.profilePhoto?.small);
-        if (store.setUserName(user.id, _nameOf(user))) _changes.add(null);
+        if (store.setUserName(user.id, _nameOf(user))) _notify();
       case td.UpdateNewChat(:final chat):
         store
           ..setChatTitle(chat.id, chat.title)
@@ -215,15 +227,15 @@ final class ConversationController {
           });
       case td.UpdateChatReadInbox(:final chatId, :final lastReadInboxMessageId):
         store.setReadInbox(chatId, lastReadInboxMessageId);
-        _changes.add(null);
+        _notify();
       case td.UpdateChatReadOutbox(
         :final chatId,
         :final lastReadOutboxMessageId,
       ):
         store.setReadOutbox(chatId, lastReadOutboxMessageId);
-        _changes.add(null);
+        _notify();
       case td.UpdateChatTitle(:final chatId, :final title):
-        if (store.setChatTitle(chatId, title)) _changes.add(null);
+        if (store.setChatTitle(chatId, title)) _notify();
       case td.UpdateChatPhoto(:final chatId, :final photo):
         store.setPhoto(MessageSenderId.chat(chatId), photo?.small);
       case td.UpdateChatAccentColors(:final chatId, :final accentColorId):
@@ -285,7 +297,7 @@ final class ConversationController {
       ):
         if (fromCache) return;
         store.remove(chatId, messageIds);
-        _changes.add(null);
+        _notify();
       default:
         return;
     }
@@ -294,11 +306,11 @@ final class ConversationController {
   void _add(td.Message message) {
     _arrivedDuringLoad[message.chatId]?.add(message.id);
     store.upsert(ConversationMessage(message));
-    _changes.add(null);
+    _notify();
   }
 
   void _patch(int chatId, int messageId, Map<String, Object?> fields) {
-    if (store.patch(chatId, messageId, fields)) _changes.add(null);
+    if (store.patch(chatId, messageId, fields)) _notify();
   }
 }
 
