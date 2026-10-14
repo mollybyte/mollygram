@@ -1,5 +1,8 @@
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 
+/// How Telegram delivered the sign-in code.
+enum CodeDelivery { app, sms, call, other }
+
 enum AuthorizationStageKind {
   tdlibParameters,
   phoneNumber,
@@ -20,7 +23,10 @@ sealed class AuthorizationStage {
   const factory AuthorizationStage.tdlibParameters() = _TdlibParameters;
   const factory AuthorizationStage.phoneNumber() = _PhoneNumber;
   const factory AuthorizationStage.qrCode({required String link}) = _QrCode;
-  const factory AuthorizationStage.code() = _Code;
+  const factory AuthorizationStage.code({
+    String phoneNumber,
+    CodeDelivery delivery,
+  }) = _Code;
   const factory AuthorizationStage.password({String hint}) = _Password;
   const factory AuthorizationStage.ready() = _Ready;
   const factory AuthorizationStage.unavailable() = _Unavailable;
@@ -29,6 +35,12 @@ sealed class AuthorizationStage {
 
   /// A short-lived `tg://` link to render as a QR code, if TDLib supplied one.
   String? get qrLink => null;
+
+  /// The number the code was sent to, while TDLib waits for the code.
+  String get phoneNumber => '';
+
+  /// Where the code went, while TDLib waits for the code.
+  CodeDelivery get codeDelivery => CodeDelivery.other;
 
   /// The two-step verification hint; empty when the user set none.
   String get passwordHint => '';
@@ -41,7 +53,20 @@ sealed class AuthorizationStage {
           const AuthorizationStage.phoneNumber(),
         td.AuthorizationStateWaitOtherDeviceConfirmation(link: final link) =>
           AuthorizationStage.qrCode(link: link),
-        td.AuthorizationStateWaitCode() => const AuthorizationStage.code(),
+        td.AuthorizationStateWaitCode(:final codeInfo) =>
+          AuthorizationStage.code(
+            phoneNumber: codeInfo.phoneNumber,
+            delivery: switch (codeInfo.type) {
+              td.AuthenticationCodeTypeTelegramMessage() => CodeDelivery.app,
+              td.AuthenticationCodeTypeSms() ||
+              td.AuthenticationCodeTypeSmsWord() ||
+              td.AuthenticationCodeTypeSmsPhrase() => CodeDelivery.sms,
+              td.AuthenticationCodeTypeCall() ||
+              td.AuthenticationCodeTypeFlashCall() ||
+              td.AuthenticationCodeTypeMissedCall() => CodeDelivery.call,
+              _ => CodeDelivery.other,
+            },
+          ),
         td.AuthorizationStateWaitPassword(:final passwordHint) =>
           AuthorizationStage.password(hint: passwordHint),
         td.AuthorizationStateReady() => const AuthorizationStage.ready(),
@@ -76,7 +101,14 @@ final class _QrCode extends AuthorizationStage {
 }
 
 final class _Code extends AuthorizationStage {
-  const _Code();
+  const _Code({this.phoneNumber = '', this.delivery = CodeDelivery.other});
+
+  @override
+  final String phoneNumber;
+  final CodeDelivery delivery;
+
+  @override
+  CodeDelivery get codeDelivery => delivery;
 
   @override
   AuthorizationStageKind get kind => AuthorizationStageKind.code;

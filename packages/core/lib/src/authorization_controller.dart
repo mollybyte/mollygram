@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 
 import 'authorization_stage.dart';
+import 'phone_country.dart';
 
 /// Coordinates TDLib's authorization requests with the application UI.
 ///
@@ -42,6 +43,25 @@ final class AuthorizationController {
 
   Future<void> submitPassword(String password) =>
       _client.send(td.CheckAuthenticationPassword(password: password));
+
+  /// Countries for the phone number form, sorted by name, hidden ones left
+  /// out.
+  Future<List<PhoneCountry>> countries() async {
+    final result = await _client.send(const td.GetCountries());
+    return [
+      for (final country in result.countries)
+        if (!country.isHidden)
+          PhoneCountry(
+            code: country.countryCode,
+            name: country.name,
+            callingCodes: country.callingCodes,
+          ),
+    ]..sort((a, b) => a.name.compareTo(b.name));
+  }
+
+  /// The user's country guessed by Telegram from the IP address.
+  Future<String> currentCountryCode() async =>
+      (await _client.send(const td.GetCountryCode())).text;
 
   Future<void> dispose() async {
     await _subscription?.cancel();

@@ -34,16 +34,19 @@ void main() {
       ),
     );
     expect(code.kind, AuthorizationStageKind.code);
+    expect(code.phoneNumber, '+15550000000');
+    expect(code.codeDelivery, CodeDelivery.app);
 
     final password = AuthorizationStage.from(
       const td.AuthorizationStateWaitPassword(
-        passwordHint: '',
+        passwordHint: 'cat',
         hasRecoveryEmailAddress: false,
         hasPassportData: false,
         recoveryEmailAddressPattern: '',
       ),
     );
     expect(password.kind, AuthorizationStageKind.password);
+    expect(password.passwordHint, 'cat');
 
     final ready = AuthorizationStage.from(const td.AuthorizationStateReady());
     expect(ready.kind, AuthorizationStageKind.ready);
