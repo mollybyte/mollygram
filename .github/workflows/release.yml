@@ -29,9 +29,13 @@ jobs:
           - os: windows-latest
             target: windows
             path: packages/app/build/windows/x64/runner/Release
+            tdjson: tdjson-windows-x64
+            tdjson_dir: .
           - os: ubuntu-latest
             target: linux
             path: packages/app/build/linux/x64/release/bundle
+            tdjson: libtdjson-linux-x64
+            tdjson_dir: lib
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -69,6 +73,33 @@ jobs:
         working-directory: packages/app
       - run: flutter build ${{ matrix.target }} --release --dart-define-from-file=../../config/telegram.json
         working-directory: packages/app
+      # macOS copies libtdjson into the app in the Xcode build
+      # (macos/scripts/bundle_tdjson.sh). Windows and Linux take it from the
+      # tdlib-<version>-<commit> release built by tdlib.yml and keep it where
+      # TelegramSessionLauncher looks: next to mollygram.exe, and in lib/.
+      - name: Bundle libtdjson
+        if: matrix.tdjson
+        shell: bash
+        run: |
+          version=$(jq -r .version packages/tdlib/tdlib.json)
+          commit=$(jq -r .commit packages/tdlib/tdlib.json)
+          base="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/download/tdlib-$version-${commit:0:7}"
+          zip="${{ matrix.tdjson }}.zip"
+          tmp=tdjson-download
+          mkdir -p "$tmp"
+          curl -fsSL -o "$tmp/$zip" "$base/$zip"
+          curl -fsSL -o "$tmp/$zip.sha256" "$base/$zip.sha256"
+          (cd "$tmp" && sha256sum -c "$zip.sha256")
+          destination="${{ matrix.path }}/${{ matrix.tdjson_dir }}"
+          mkdir -p "$destination"
+          if [ "$RUNNER_OS" = Windows ]; then
+            7z x -y -bso0 -o"$destination" "$tmp/$zip"
+            test -f "$destination/tdjson.dll"
+          else
+            unzip -o -q "$tmp/$zip" -d "$destination"
+            test -f "$destination/libtdjson.so"
+          fi
+          ls -l "$destination"
       - uses: actions/upload-artifact@v4
         with:
           name: mollygram-${{ matrix.target }}
