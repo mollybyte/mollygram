@@ -89,6 +89,11 @@ abstract final class MgIcons {
     'pause',
     '<path d="M8 6h3v12H8zM13 6h3v12h-3z" fill="currentColor" stroke="none"/>',
   );
+  static const close = MgIconData(
+    'close',
+    '<path d="M7 7l10 10M17 7L7 17"/>',
+    stroke: 2,
+  );
   static const back = MgIconData('back', '<path d="M15 5l-7 7 7 7"/>');
   static const chevron = MgIconData('chevron', '<path d="M9 5l7 7-7 7"/>');
 
@@ -179,6 +184,7 @@ abstract final class MgIcons {
     downloadAll,
     play,
     pause,
+    close,
     back,
     chevron,
     plugin,

@@ -7,6 +7,7 @@ import 'authorization_stage.dart';
 import 'chat_list_controller.dart';
 import 'chat_search.dart';
 import 'conversation_controller.dart';
+import 'file_controller.dart';
 import 'tdlib_initializer.dart';
 
 /// Owns one TDLib instance and coordinates its initial authorization flow.
@@ -21,6 +22,7 @@ final class TelegramSession {
     required this.chatLists,
     required this.conversations,
     required this.search,
+    required this.files,
     required this._initializer,
   });
 
@@ -30,6 +32,7 @@ final class TelegramSession {
   final ChatListController chatLists;
   final ConversationController conversations;
   final ChatSearch search;
+  final FileController files;
   final _errors = StreamController<Object>.broadcast(sync: true);
   StreamSubscription<AuthorizationStage>? _stageSubscription;
   Future<void>? _firstReconcile;
@@ -46,17 +49,20 @@ final class TelegramSession {
     final client = tdlib.createClient();
     final authorization = AuthorizationController(client);
     final conversations = ConversationController(client);
+    final files = FileController(client);
     final session = TelegramSession._(
       tdlib: tdlib,
       authorization: authorization,
       chatLists: ChatListController(client),
       conversations: conversations,
       search: ChatSearch(client),
+      files: files,
       initializer: TdlibInitializer(client, parameters: parameters),
     );
     session._stageSubscription = authorization.stages.listen(session._onStage);
     try {
       await conversations.start();
+      await files.start();
       await authorization.start();
       // Sending the parameters is part of starting: a wrong database key or
       // bad credentials must fail the session, not leave the UI waiting.
@@ -108,6 +114,7 @@ final class TelegramSession {
     await _stageSubscription?.cancel();
     await chatLists.dispose();
     await conversations.dispose();
+    await files.dispose();
     await authorization.dispose();
     await _tdlib.close();
     await _errors.close();

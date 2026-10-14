@@ -187,10 +187,381 @@ class AppLocalizationsRu extends AppLocalizations {
   String get previewOther => 'Сообщение';
 
   @override
-  String get noMessages => 'Сообщений пока нет';
+  String get sendFailed => 'Сообщение не отправлено. Попробуйте ещё раз';
 
   @override
-  String get sendFailed => 'Сообщение не отправлено. Попробуйте ещё раз';
+  String get noMessages => 'Здесь пока нет сообщений';
+
+  @override
+  String get today => 'Сегодня';
+
+  @override
+  String get yesterday => 'Вчера';
+
+  @override
+  String get edited => 'изменено';
+
+  @override
+  String forwardedFrom(String name) {
+    return 'Переслано от $name';
+  }
+
+  @override
+  String get deletedMessage => 'Удалённое сообщение';
+
+  @override
+  String get loadingMessage => 'Загрузка…';
+
+  @override
+  String get unknownSender => 'Неизвестный';
+
+  @override
+  String get hiddenAccount => 'Скрытый аккаунт';
+
+  @override
+  String get download => 'Скачать';
+
+  @override
+  String get cancelDownload => 'Отменить загрузку';
+
+  @override
+  String get openFile => 'Открыть';
+
+  @override
+  String get play => 'Воспроизвести';
+
+  @override
+  String get pause => 'Пауза';
+
+  @override
+  String get close => 'Закрыть';
+
+  @override
+  String fileSizeBytes(String size) {
+    return '$size Б';
+  }
+
+  @override
+  String fileSizeKb(String size) {
+    return '$size КБ';
+  }
+
+  @override
+  String fileSizeMb(String size) {
+    return '$size МБ';
+  }
+
+  @override
+  String fileSizeGb(String size) {
+    return '$size ГБ';
+  }
+
+  @override
+  String fileProgress(String done, String total) {
+    return '$done из $total';
+  }
+
+  @override
+  String get contentLocation => 'Геопозиция';
+
+  @override
+  String get contentLiveLocation => 'Трансляция геопозиции';
+
+  @override
+  String get contentContact => 'Контакт';
+
+  @override
+  String get contentPoll => 'Опрос';
+
+  @override
+  String get contentQuiz => 'Викторина';
+
+  @override
+  String pollVotes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count голосов',
+      few: '$count голоса',
+      one: '$count голос',
+      zero: 'Нет голосов',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get contentGame => 'Игра';
+
+  @override
+  String get contentInvoice => 'Счёт';
+
+  @override
+  String get contentStory => 'История';
+
+  @override
+  String get contentChecklist => 'Список задач';
+
+  @override
+  String get contentGiveaway => 'Розыгрыш';
+
+  @override
+  String get contentPaidMedia => 'Платный контент';
+
+  @override
+  String get contentExpiredPhoto => 'Фото больше недоступно';
+
+  @override
+  String get contentExpiredVideo => 'Видео больше недоступно';
+
+  @override
+  String get contentExpiredVideoNote => 'Видеосообщение больше недоступно';
+
+  @override
+  String get contentExpiredVoiceNote => 'Голосовое сообщение больше недоступно';
+
+  @override
+  String get contentUnsupported =>
+      'Это сообщение пока не поддерживается в Mollygram';
+
+  @override
+  String get callOutgoing => 'Исходящий звонок';
+
+  @override
+  String get callIncoming => 'Входящий звонок';
+
+  @override
+  String get callVideoOutgoing => 'Исходящий видеозвонок';
+
+  @override
+  String get callVideoIncoming => 'Входящий видеозвонок';
+
+  @override
+  String get callMissed => 'Пропущенный звонок';
+
+  @override
+  String get callDeclined => 'Отклонённый звонок';
+
+  @override
+  String get callCancelled => 'Отменённый звонок';
+
+  @override
+  String durationMinutes(int count) {
+    return '$count мин';
+  }
+
+  @override
+  String durationSeconds(int count) {
+    return '$count с';
+  }
+
+  @override
+  String serviceGroupCreated(String name, String title) {
+    return '$name создаёт группу «$title»';
+  }
+
+  @override
+  String get serviceChannelCreated => 'Канал создан';
+
+  @override
+  String serviceTitleChanged(String name, String title) {
+    return '$name меняет название группы на «$title»';
+  }
+
+  @override
+  String serviceChannelTitleChanged(String title) {
+    return 'Название канала изменено на «$title»';
+  }
+
+  @override
+  String servicePhotoChanged(String name) {
+    return '$name обновляет фото группы';
+  }
+
+  @override
+  String get serviceChannelPhotoChanged => 'Фото канала обновлено';
+
+  @override
+  String servicePhotoRemoved(String name) {
+    return '$name удаляет фото группы';
+  }
+
+  @override
+  String get serviceChannelPhotoRemoved => 'Фото канала удалено';
+
+  @override
+  String serviceJoined(String name) {
+    return '$name вступает в группу';
+  }
+
+  @override
+  String serviceAdded(String name, String members) {
+    return '$name добавляет $members';
+  }
+
+  @override
+  String serviceJoinedByLink(String name) {
+    return '$name вступает в группу по ссылке';
+  }
+
+  @override
+  String serviceJoinedByRequest(String name) {
+    return '$name принят(а) в группу';
+  }
+
+  @override
+  String serviceLeft(String name) {
+    return '$name выходит из группы';
+  }
+
+  @override
+  String serviceRemoved(String name, String member) {
+    return '$name удаляет $member';
+  }
+
+  @override
+  String servicePinned(String name, String text) {
+    return '$name закрепляет «$text»';
+  }
+
+  @override
+  String servicePinnedMessage(String name) {
+    return '$name закрепляет сообщение';
+  }
+
+  @override
+  String serviceScreenshot(String name) {
+    return '$name делает снимок экрана';
+  }
+
+  @override
+  String serviceAutoDeleteOn(String name, String time) {
+    return '$name включает автоудаление сообщений через $time';
+  }
+
+  @override
+  String serviceAutoDeleteOff(String name) {
+    return '$name отключает автоудаление сообщений';
+  }
+
+  @override
+  String get serviceUpgraded => 'Группа преобразована в супергруппу';
+
+  @override
+  String serviceVideoChatStarted(String name) {
+    return '$name начинает видеочат';
+  }
+
+  @override
+  String serviceVideoChatEnded(String duration) {
+    return 'Видеочат завершён ($duration)';
+  }
+
+  @override
+  String get serviceVideoChatScheduled => 'Видеочат запланирован';
+
+  @override
+  String serviceVideoChatInvited(String name, String members) {
+    return '$name приглашает $members в видеочат';
+  }
+
+  @override
+  String serviceTopicCreated(String title) {
+    return 'Тема «$title» создана';
+  }
+
+  @override
+  String serviceTopicEdited(String name) {
+    return '$name изменяет тему';
+  }
+
+  @override
+  String serviceContactJoined(String name) {
+    return '$name теперь в Telegram';
+  }
+
+  @override
+  String serviceThemeChanged(String name) {
+    return '$name меняет тему чата';
+  }
+
+  @override
+  String serviceBackgroundChanged(String name) {
+    return '$name меняет обои чата';
+  }
+
+  @override
+  String serviceGift(String name) {
+    return '$name отправляет подарок';
+  }
+
+  @override
+  String get servicePayment => 'Платёж выполнен';
+
+  @override
+  String serviceBoost(String name) {
+    return '$name бустит группу';
+  }
+
+  @override
+  String serviceGameScore(String name, int score) {
+    return '$name набирает $score';
+  }
+
+  @override
+  String serviceOther(String name) {
+    return '$name выполняет действие, которое Mollygram пока не умеет показывать';
+  }
+
+  @override
+  String get listSeparator => ', ';
+
+  @override
+  String durationHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count часов',
+      few: '$count часа',
+      one: '$count час',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String durationDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count дней',
+      few: '$count дня',
+      one: '$count день',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String durationWeeks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count недель',
+      few: '$count недели',
+      one: '$count неделю',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String durationMonths(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count месяцев',
+      few: '$count месяца',
+      one: '$count месяц',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get plugins => 'Плагины';

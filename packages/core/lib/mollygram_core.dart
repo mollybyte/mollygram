@@ -8,6 +8,7 @@ export 'src/chat_list_store.dart';
 export 'src/chat_search.dart';
 export 'src/conversation_controller.dart';
 export 'src/conversation_store.dart';
+export 'src/file_controller.dart';
 export 'src/phone_country.dart';
 export 'src/tdlib_initializer.dart';
 export 'src/telegram_api_config.dart';

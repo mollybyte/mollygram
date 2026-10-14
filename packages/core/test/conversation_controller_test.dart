@@ -26,7 +26,7 @@ void main() {
     await controller.loadHistory(7);
 
     expect(controller.store.messagesFor(7).map((message) => message.text), [
-      'Message 10',
+      'From history',
     ]);
 
     json.push({
@@ -37,7 +37,7 @@ void main() {
 
     expect(controller.store.messagesFor(7).map((message) => message.text), [
       'Live',
-      'Message 10',
+      'From history',
     ]);
   });
 
@@ -183,103 +183,127 @@ void main() {
     expect(message.sendState, MessageSendState.failed);
   });
 
+  test('loads older pages until the screen is filled', () async {
+    // TDLib answers the first request with just the last message.
+    json.history = (from) => from == 0
+        ? [_message(id: 100, chatId: 7, text: 'Last')]
+        : [
+            for (var id = from - 1; id > from - 21 && id > 50; id--)
+              _message(id: id, chatId: 7, text: '#$id'),
+          ];
+    await controller.start();
+
+    await controller.loadHistory(7);
+
+    final ids = controller.store.messagesFor(7).map((m) => m.id);
+    expect(ids.length, greaterThanOrEqualTo(30));
+    expect(ids.first, 100);
+
+    // Paging to the start stops once a page adds nothing.
+    while (await controller.loadOlder(7)) {}
+    expect(controller.store.reachedStart(7), isTrue);
+    expect(controller.store.oldestId(7), 51);
+  });
+
+  test('keeps media messages and their content updates', () async {
+    await controller.start();
+    await controller.loadHistory(7);
+
+    json.push({
+      '@type': 'updateMessageContent',
+      'chat_id': 7,
+      'message_id': 10,
+      'new_content': {
+        '@type': 'messageSticker',
+        'is_premium': false,
+        'sticker': {
+          '@type': 'sticker',
+          'id': '1',
+          'set_id': '2',
+          'width': 512,
+          'height': 512,
+          'emoji': '🙂',
+          'format': {'@type': 'stickerFormatWebp'},
+          'full_type': {'@type': 'stickerFullTypeRegular'},
+          'sticker': {
+            '@type': 'file',
+            'id': 5,
+            'size': 100,
+            'expected_size': 100,
+            'local': {
+              '@type': 'localFile',
+              'path': '',
+              'can_be_downloaded': true,
+              'can_be_deleted': false,
+              'is_downloading_active': false,
+              'is_downloading_completed': false,
+              'download_offset': 0,
+              'downloaded_prefix_size': 0,
+              'downloaded_size': 0,
+            },
+            'remote': {
+              '@type': 'remoteFile',
+              'id': 'x',
+              'unique_id': 'y',
+              'is_uploading_active': false,
+              'is_uploading_completed': true,
+              'uploaded_size': 100,
+            },
+          },
+        },
+      },
+    });
+    json.push({
+      '@type': 'updateMessageEdited',
+      'chat_id': 7,
+      'message_id': 10,
+      'edit_date': 77,
+    });
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+
+    final message = controller.store.messagesFor(7).single;
+    expect(message.content, isA<td.MessageSticker>());
+    expect(message.editDate, 77);
+  });
+
+  test('fetches a replied-to message outside the timeline once', () async {
+    await controller.start();
+
+    await controller.loadReplied(7, 10);
+    await controller.loadReplied(7, 10);
+
+    expect(
+      json.sent.where((r) => r['@type'] == 'getRepliedMessage'),
+      hasLength(1),
+    );
+    expect(controller.store.message(7, 3)?.text, 'Quoted');
+  });
+
+  test('marks a reply as missing only when TDLib has no original', () async {
+    await controller.start();
+
+    json.repliedError = 500;
+    await controller.loadReplied(7, 10);
+    expect(controller.store.isMissing(7, 10), isFalse);
+
+    json.repliedError = 404;
+    await controller.loadReplied(7, 10);
+    expect(controller.store.isMissing(7, 10), isTrue);
+    expect(
+      json.sent.where((r) => r['@type'] == 'getRepliedMessage'),
+      hasLength(2),
+    );
+  });
+
   test('keeps the sender of each message', () async {
     await controller.start();
     await controller.loadHistory(7);
     controller.store.setUserName(1, 'Alina');
 
-    final sender = controller.store.messagesFor(7).single.sender!;
+    final sender = controller.store.messagesFor(7).single.sender;
     expect(sender, const MessageSenderId.user(1));
     expect(controller.store.nameOf(sender), 'Alina');
     expect(controller.store.nameOf(const MessageSenderId.chat(1)), isNull);
-  });
-
-  test('pages back through history until TDLib has no more', () async {
-    json.historyPages = {
-      0: [12],
-      12: [11, 10],
-      10: [],
-    };
-    await controller.start();
-
-    // The first answer is short, so older pages are fetched to fill the
-    // screen, until the empty page ends the history.
-    await controller.loadHistory(7);
-
-    expect(controller.store.messagesFor(7).map((message) => message.id), [
-      12,
-      11,
-      10,
-    ]);
-    expect(controller.hasOlder(7), isFalse);
-    expect(
-      [
-        for (final r in json.sent)
-          if (r['@type'] == 'getChatHistory') r['from_message_id'],
-      ],
-      [0, 12, 10],
-    );
-
-    await controller.loadOlder(7);
-    expect(
-      json.sent.where((r) => r['@type'] == 'getChatHistory'),
-      hasLength(3),
-    );
-  });
-
-  test('loads older messages on request', () async {
-    json.historyPages = {
-      0: [12],
-      12: [11],
-    };
-    await controller.start();
-    await controller.loadHistory(7, fill: 1);
-    expect(controller.store.messagesFor(7).map((message) => message.id), [12]);
-    expect(controller.hasOlder(7), isTrue);
-
-    await Future.wait([controller.loadOlder(7), controller.loadOlder(7)]);
-
-    expect(controller.store.messagesFor(7).map((message) => message.id), [
-      12,
-      11,
-    ]);
-    expect(
-      json.sent.where((r) => r['@type'] == 'getChatHistory'),
-      hasLength(2),
-    );
-  });
-
-  test('keeps messages that are not text, with their kind', () async {
-    await controller.start();
-    await controller.loadHistory(7);
-    json.push({
-      '@type': 'updateNewMessage',
-      'message': _message(id: 20, chatId: 7, text: '').toJson()
-        ..['content'] = {'@type': 'messageContactRegistered'},
-    });
-    await Future<void>.delayed(const Duration(milliseconds: 5));
-
-    final message = controller.store.messagesFor(7).first;
-    expect(message.id, 20);
-    expect(message.kind, ChatPreviewKind.other);
-
-    // An edit can turn text into something else and back.
-    json.push({
-      '@type': 'updateMessageContent',
-      'chat_id': 7,
-      'message_id': 10,
-      'new_content': {'@type': 'messageContactRegistered'},
-    });
-    await Future<void>.delayed(const Duration(milliseconds: 5));
-    expect(controller.store.messagesFor(7).last.kind, ChatPreviewKind.other);
-  });
-
-  test('announces a sender rename, but not an unchanged name', () {
-    final store = ConversationStore();
-    expect(store.setUserName(2, 'Boris'), isTrue);
-    expect(store.setUserName(2, 'Boris'), isFalse);
-    expect(store.setUserName(2, 'Boris B.'), isTrue);
-    expect(store.nameOf(const MessageSenderId.user(2)), 'Boris B.');
   });
 
   test('opens, views and closes a chat through TDLib', () async {
@@ -345,12 +369,14 @@ final class _FakeTdJson implements td.TdJson {
   final _queue = Queue<String>();
   final sent = <Map<String, Object?>>[];
 
-  /// Message ids returned by `getChatHistory`, by `from_message_id`; when
-  /// null every request returns message 10.
-  Map<int, List<int>>? historyPages;
-
   /// Delivered as `updateNewMessage` before the history response.
   td.Message? liveDuringHistory;
+
+  /// The history page that starts at a message id (0 is the newest).
+  List<td.Message> Function(int fromMessageId)? history;
+
+  /// When set, getRepliedMessage fails with this TDLib error code.
+  int? repliedError;
   var _nextClientId = 0;
 
   @override
@@ -378,11 +404,22 @@ final class _FakeTdJson implements td.TdJson {
         '@type': 'messages',
         'total_count': 1,
         'messages': [
-          for (final id
-              in historyPages?[decoded['from_message_id']] ?? const [10])
-            _message(id: id, chatId: 7, text: 'Message $id').toJson(),
+          for (final message
+              in history?.call(decoded['from_message_id']! as int) ??
+                  [_message(id: 10, chatId: 7, text: 'From history')])
+            message.toJson(),
         ],
       },
+      'getRepliedMessage' when repliedError != null => {
+        '@type': 'error',
+        'code': repliedError,
+        'message': 'Failed',
+      },
+      'getRepliedMessage' => _message(
+        id: 3,
+        chatId: 7,
+        text: 'Quoted',
+      ).toJson(),
       'sendMessage' => _message(
         id: 12,
         chatId: 7,

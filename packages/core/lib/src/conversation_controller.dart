@@ -3,12 +3,8 @@ import 'dart:async';
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 
 import 'conversation_store.dart';
-import 'message_content.dart';
 
-/// Loads and maintains message timelines from TDLib.
-///
-/// Media is kept as its kind and caption only; its rendering and
-/// upload/download lifecycle belong to the media stage.
+/// Loads and maintains conversation timelines from TDLib.
 final class ConversationController {
   ConversationController(this._client, {ConversationStore? store})
     : store = store ?? ConversationStore();
@@ -20,10 +16,11 @@ final class ConversationController {
   /// Messages that arrived while a chat's history was loading, by chat.
   final _arrivedDuringLoad = <int, Set<int>>{};
 
-  /// The oldest message id loaded per chat, and chats whose history ended.
-  final _oldestLoaded = <int, int>{};
-  final _historyEnd = <int>{};
-  final _loadingOlder = <int, Future<void>>{};
+  /// Chats with a page of older history on its way.
+  final _loadingOlder = <int>{};
+
+  /// Replied-to messages requested from TDLib, by chat and message id.
+  final _requested = <(int, int)>{};
   StreamSubscription<td.TdObject>? _subscription;
 
   Stream<void> get changes => _changes.stream;
@@ -35,100 +32,138 @@ final class ConversationController {
     _subscription = _client.updates.listen(_onUpdate);
   }
 
-  /// Loads the newest messages of [chatId], replacing what was loaded.
+  /// Loads the newest page of [chatId], replacing what was loaded before.
   ///
-  /// TDLib often answers the first request with only a message or two
-  /// while it fetches the rest, so older pages are asked for until the
-  /// screen has [fill] messages or the history ends.
-  Future<void> loadHistory(int chatId, {int fill = 40}) async {
-    _oldestLoaded.remove(chatId);
-    _historyEnd.remove(chatId);
+  /// TDLib answers the first request from its local database, which may
+  /// hold only the last message, so older pages follow until the screen
+  /// has [minimum] messages or the chat has no more.
+  Future<void> loadHistory(int chatId, {int minimum = 30}) async {
     final arrived = _arrivedDuringLoad[chatId] ??= {};
-    final List<td.Message> page;
+    final td.Messages response;
     try {
-      page = await _historyPage(chatId, fromMessageId: 0);
+      response = await _client.send(
+        td.GetChatHistory(
+          chatId: chatId,
+          fromMessageId: 0,
+          offset: 0,
+          limit: 50,
+          onlyLocal: false,
+        ),
+      );
     } finally {
       _arrivedDuringLoad.remove(chatId);
     }
     // Updates kept coming while the request was in flight; a message they
     // added may be missing from the page, so it is kept.
     store.replaceHistory(chatId, [
-      for (final message in page) _messageFrom(message),
+      for (final message in response.messages) ConversationMessage(message),
     ], keep: arrived);
-    _changes.add(null);
-    // A few pages at most, so a slow server doesn't keep the chat loading.
-    for (var i = 0; i < 5; i++) {
-      if (!hasOlder(chatId) || store.messagesFor(chatId).length >= fill) break;
-      await loadOlder(chatId);
+    if (response.messages.isEmpty) store.markReachedStart(chatId);
+    _notify();
+    while (!store.reachedStart(chatId) &&
+        store.messagesFor(chatId).length < minimum) {
+      if (!await loadOlder(chatId)) break;
     }
   }
 
-  /// Whether TDLib may have messages older than the loaded ones.
-  bool hasOlder(int chatId) => !_historyEnd.contains(chatId);
-
-  /// Loads the page before the oldest loaded message. Calls made while a
-  /// page is loading share it.
-  Future<void> loadOlder(int chatId) {
-    if (!hasOlder(chatId)) return Future.value();
-    return _loadingOlder[chatId] ??= _loadOlderPage(chatId).whenComplete(() {
+  /// Loads the page before the oldest loaded message. Returns whether it
+  /// added anything; false also while another page is on its way.
+  Future<bool> loadOlder(int chatId) async {
+    final oldest = store.oldestId(chatId);
+    if (oldest == null || store.reachedStart(chatId)) return false;
+    if (!_loadingOlder.add(chatId)) return false;
+    try {
+      final response = await _client.send(
+        td.GetChatHistory(
+          chatId: chatId,
+          fromMessageId: oldest,
+          offset: 0,
+          limit: 50,
+          onlyLocal: false,
+        ),
+      );
+      final added = store.addOlder(chatId, [
+        for (final message in response.messages) ConversationMessage(message),
+      ]);
+      if (added == 0) store.markReachedStart(chatId);
+      _notify();
+      return added > 0;
+    } finally {
       _loadingOlder.remove(chatId);
-    });
-  }
-
-  Future<void> _loadOlderPage(int chatId) async {
-    final oldest = _oldestLoaded[chatId];
-    if (oldest == null) return;
-    final page = await _historyPage(chatId, fromMessageId: oldest);
-    for (final message in page) {
-      store.upsert(_messageFrom(message));
     }
-    if (!_changes.isClosed) _changes.add(null);
   }
 
-  /// One `getChatHistory` page; tracks the oldest message seen (of any
-  /// kind, so pages of media don't stall paging) and the end of history.
-  Future<List<td.Message>> _historyPage(
-    int chatId, {
-    required int fromMessageId,
-  }) async {
-    final response = await _client.send(
-      td.GetChatHistory(
-        chatId: chatId,
-        fromMessageId: fromMessageId,
-        offset: 0,
-        limit: 100,
-        onlyLocal: false,
-      ),
+  /// Makes sure the message that [messageId] of [chatId] replies to is in
+  /// the store, asking TDLib for it when it is outside the loaded timeline.
+  /// When TDLib can't find it, the reply is marked as pointing nowhere
+  /// ([ConversationStore.isMissing] for the reply's own id).
+  Future<void> loadReplied(int chatId, int messageId) async {
+    if (!_requested.add((chatId, messageId))) return;
+    try {
+      final message = await _client.send(
+        td.GetRepliedMessage(chatId: chatId, messageId: messageId),
+      );
+      store.addReferenced(ConversationMessage(message));
+    } on td.TdException catch (error) {
+      if (error.code == 404) {
+        store.markMissing(chatId, messageId);
+      } else {
+        // A network error or a flood wait: let a later build ask again.
+        _requested.remove((chatId, messageId));
+        return;
+      }
+    }
+    _notify();
+  }
+
+  /// Tells TDLib the user opened a voice or video message, which marks it
+  /// as listened to for the sender.
+  Future<void> openContent(int chatId, int messageId) async {
+    await _client.send(
+      td.OpenMessageContent(chatId: chatId, messageId: messageId),
     );
-    final messages = response.messages;
-    var oldest = _oldestLoaded[chatId];
-    final before = oldest;
-    for (final message in messages) {
-      if (oldest == null || message.id < oldest) oldest = message.id;
-    }
-    // An empty page, or one with nothing older, means the history ended.
-    if (oldest == null || oldest == before) {
-      _historyEnd.add(chatId);
-    } else {
-      _oldestLoaded[chatId] = oldest;
-    }
-    return messages;
   }
+
+  /// Adds the reaction, or takes it back when [chosen] is true.
+  Future<void> toggleReaction(
+    int chatId,
+    int messageId,
+    td.ReactionType reaction, {
+    required bool chosen,
+  }) async => chosen
+      ? await _client.send(
+          td.RemoveMessageReaction(
+            chatId: chatId,
+            messageId: messageId,
+            reactionType: reaction,
+          ),
+        )
+      : await _client.send(
+          td.AddMessageReaction(
+            chatId: chatId,
+            messageId: messageId,
+            reactionType: reaction,
+            isBig: false,
+            updateRecentReactions: true,
+          ),
+        );
 
   /// Tells TDLib the chat is on screen. Supergroups and channels get all
   /// their updates only while open.
-  Future<void> openChat(int chatId) =>
-      _client.send(td.OpenChat(chatId: chatId));
+  Future<void> openChat(int chatId) async {
+    await _client.send(td.OpenChat(chatId: chatId));
+  }
 
   /// Tells TDLib the chat is no longer on screen.
-  Future<void> closeChat(int chatId) =>
-      _client.send(td.CloseChat(chatId: chatId));
+  Future<void> closeChat(int chatId) async {
+    await _client.send(td.CloseChat(chatId: chatId));
+  }
 
   /// Marks messages the user has seen as read. TDLib clears the unread count
   /// and sends read receipts from this.
-  Future<void> viewMessages(int chatId, List<int> messageIds) {
-    if (messageIds.isEmpty) return Future.value();
-    return _client.send(
+  Future<void> viewMessages(int chatId, List<int> messageIds) async {
+    if (messageIds.isEmpty) return;
+    await _client.send(
       td.ViewMessages(
         chatId: chatId,
         messageIds: messageIds,
@@ -158,6 +193,12 @@ final class ConversationController {
     _add(message);
   }
 
+  /// Announces a change, unless the controller is already closed: a reply
+  /// can land after the session started shutting down.
+  void _notify() {
+    if (!_changes.isClosed) _changes.add(null);
+  }
+
   Future<void> dispose() async {
     await _subscription?.cancel();
     await _changes.close();
@@ -168,11 +209,37 @@ final class ConversationController {
       // Sender names on screen follow renames. updateUser also comes for
       // status and other changes, so only a new name is announced.
       case td.UpdateUser(:final user):
-        if (store.setUserName(user.id, _nameOf(user))) _changes.add(null);
+        final sender = MessageSenderId.user(user.id);
+        store
+          ..setColor(sender, user.accentColorId)
+          ..setPhoto(sender, user.profilePhoto?.small);
+        if (store.setUserName(user.id, _nameOf(user))) _notify();
       case td.UpdateNewChat(:final chat):
-        if (store.setChatTitle(chat.id, chat.title)) _changes.add(null);
+        store
+          ..setChatTitle(chat.id, chat.title)
+          ..setColor(MessageSenderId.chat(chat.id), chat.accentColorId)
+          ..setPhoto(MessageSenderId.chat(chat.id), chat.photo?.small)
+          ..setReadInbox(chat.id, chat.lastReadInboxMessageId)
+          ..setReadOutbox(chat.id, chat.lastReadOutboxMessageId)
+          ..setChannel(chat.id, switch (chat.type) {
+            td.ChatTypeSupergroup(:final isChannel) => isChannel,
+            _ => false,
+          });
+      case td.UpdateChatReadInbox(:final chatId, :final lastReadInboxMessageId):
+        store.setReadInbox(chatId, lastReadInboxMessageId);
+        _notify();
+      case td.UpdateChatReadOutbox(
+        :final chatId,
+        :final lastReadOutboxMessageId,
+      ):
+        store.setReadOutbox(chatId, lastReadOutboxMessageId);
+        _notify();
       case td.UpdateChatTitle(:final chatId, :final title):
-        if (store.setChatTitle(chatId, title)) _changes.add(null);
+        if (store.setChatTitle(chatId, title)) _notify();
+      case td.UpdateChatPhoto(:final chatId, :final photo):
+        store.setPhoto(MessageSenderId.chat(chatId), photo?.small);
+      case td.UpdateChatAccentColors(:final chatId, :final accentColorId):
+        store.setColor(MessageSenderId.chat(chatId), accentColorId);
       case td.UpdateNewMessage(:final message):
         _add(message);
       // A sent message first arrives with a temporary id; TDLib then replaces
@@ -187,9 +254,39 @@ final class ConversationController {
         :final messageId,
         :final newContent,
       ):
-        final (kind, text) = summarizeContent(newContent);
-        store.updateContent(chatId, messageId, kind, text);
-        _changes.add(null);
+        _patch(chatId, messageId, {'content': newContent.toJson()});
+      case td.UpdateMessageEdited(
+        :final chatId,
+        :final messageId,
+        :final editDate,
+        :final replyMarkup,
+      ):
+        _patch(chatId, messageId, {
+          'edit_date': editDate,
+          'reply_markup': replyMarkup?.toJson(),
+        });
+      case td.UpdateMessageInteractionInfo(
+        :final chatId,
+        :final messageId,
+        :final interactionInfo,
+      ):
+        _patch(chatId, messageId, {
+          'interaction_info': interactionInfo?.toJson(),
+        });
+      case td.UpdateMessageIsPinned(
+        :final chatId,
+        :final messageId,
+        :final isPinned,
+      ):
+        _patch(chatId, messageId, {'is_pinned': isPinned});
+      case td.UpdateMessageContentOpened(:final chatId, :final messageId):
+        final content = store.message(chatId, messageId)?.content;
+        final opened = switch (content) {
+          td.MessageVoiceNote() => {...content.toJson(), 'is_listened': true},
+          td.MessageVideoNote() => {...content.toJson(), 'is_viewed': true},
+          _ => null,
+        };
+        if (opened != null) _patch(chatId, messageId, {'content': opened});
       // Not permanent means the messages became inaccessible, which hides
       // them all the same. Only an eviction from TDLib's cache leaves them,
       // since they still exist and the open timeline keeps its copy.
@@ -200,7 +297,7 @@ final class ConversationController {
       ):
         if (fromCache) return;
         store.remove(chatId, messageIds);
-        _changes.add(null);
+        _notify();
       default:
         return;
     }
@@ -208,31 +305,14 @@ final class ConversationController {
 
   void _add(td.Message message) {
     _arrivedDuringLoad[message.chatId]?.add(message.id);
-    store.upsert(_messageFrom(message));
-    _changes.add(null);
+    store.upsert(ConversationMessage(message));
+    _notify();
+  }
+
+  void _patch(int chatId, int messageId, Map<String, Object?> fields) {
+    if (store.patch(chatId, messageId, fields)) _notify();
   }
 }
 
 String _nameOf(td.User user) =>
     [user.firstName, user.lastName].where((part) => part.isNotEmpty).join(' ');
-
-ConversationMessage _messageFrom(td.Message message) {
-  final (kind, text) = summarizeContent(message.content);
-  return ConversationMessage(
-    id: message.id,
-    chatId: message.chatId,
-    kind: kind,
-    text: text,
-    date: message.date,
-    isOutgoing: message.isOutgoing,
-    sender: switch (message.senderId) {
-      td.MessageSenderUser(:final userId) => MessageSenderId.user(userId),
-      td.MessageSenderChat(:final chatId) => MessageSenderId.chat(chatId),
-    },
-    sendState: switch (message.sendingState) {
-      td.MessageSendingStatePending() => MessageSendState.pending,
-      td.MessageSendingStateFailed() => MessageSendState.failed,
-      null => MessageSendState.sent,
-    },
-  );
-}

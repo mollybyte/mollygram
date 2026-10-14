@@ -18,6 +18,7 @@ dependencies:
   intl: ^0.20.3
   # Native libmpv for mollygram_media. In a pub workspace media_kit_video
   # links against it as soon as any member depends on the libs package.
+  lottie: ^3.6.1
   media_kit_libs_video: ^1.0.7
   mollygram_core: any
   mollygram_media: any
@@ -27,6 +28,7 @@ dependencies:
   mollygram_ui_kit: any
   path_provider: ^2.1.6
   qr: ^4.0.0
+  url_launcher: ^6.3.3
 
 dev_dependencies:
   flutter_lints: ^6.0.0

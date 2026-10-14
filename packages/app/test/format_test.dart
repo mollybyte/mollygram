@@ -28,36 +28,6 @@ void main() {
     expect(formatPreview(ru, note), 'Видеосообщение');
   });
 
-  test('shows media in a bubble as its label and caption', () {
-    final en = AppLocalizationsEn();
-    ConversationMessage message(ChatPreviewKind kind, String text) =>
-        ConversationMessage(
-          id: 1,
-          chatId: 1,
-          text: text,
-          date: 0,
-          isOutgoing: false,
-          kind: kind,
-        );
-
-    expect(formatMessageBody(en, message(ChatPreviewKind.text, 'Hi')), 'Hi');
-    expect(
-      formatMessageBody(en, message(ChatPreviewKind.animation, '')),
-      'GIF',
-    );
-    expect(
-      formatMessageBody(en, message(ChatPreviewKind.photo, 'Sea')),
-      'Photo\nSea',
-    );
-    expect(
-      formatMessageBody(
-        AppLocalizationsRu(),
-        message(ChatPreviewKind.sticker, '🐱'),
-      ),
-      'Стикер\n🐱',
-    );
-  });
-
   test('shows the hour today and the date in earlier years', () {
     final now = DateTime(2026, 10, 13, 18);
     int unix(DateTime d) => d.millisecondsSinceEpoch ~/ 1000;

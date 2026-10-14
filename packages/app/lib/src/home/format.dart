@@ -37,14 +37,6 @@ String kindLabel(AppLocalizations l10n, ChatPreviewKind kind) => switch (kind) {
   ChatPreviewKind.other => l10n.previewOther,
 };
 
-/// A message as text, until media is rendered: the kind on the first line
-/// and the caption under it.
-String formatMessageBody(AppLocalizations l10n, ConversationMessage message) {
-  final label = kindLabel(l10n, message.kind);
-  if (label.isEmpty) return message.text;
-  return message.text.isEmpty ? label : '$label\n${message.text}';
-}
-
 /// The second line of a chat-list row.
 String formatPreview(AppLocalizations l10n, ChatPreview? preview) {
   if (preview == null) return '';
