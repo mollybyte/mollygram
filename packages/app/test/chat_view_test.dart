@@ -101,11 +101,13 @@ void main() {
     expect(find.text('Vera'), findsOneWidget);
   });
 
-  testWidgets('shows no sender names outside groups', (tester) async {
+  testWidgets('names each run outside groups too, as the flat layout does', (
+    tester,
+  ) async {
     await pump(tester, group: false);
 
-    expect(find.text('Boris'), findsNothing);
-    expect(find.text('Vera'), findsNothing);
+    expect(find.text('Boris'), findsOneWidget);
+    expect(find.text('Vera'), findsOneWidget);
   });
 
   testWidgets('gives the text back when sending fails', (tester) async {

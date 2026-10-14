@@ -428,17 +428,521 @@ abstract class AppLocalizations {
   /// **'Message'**
   String get previewOther;
 
-  /// No description provided for @noTextMessages.
-  ///
-  /// In en, this message translates to:
-  /// **'No text messages here yet'**
-  String get noTextMessages;
-
   /// No description provided for @sendFailed.
   ///
   /// In en, this message translates to:
   /// **'The message wasn\'t sent. Try again'**
   String get sendFailed;
+
+  /// No description provided for @noMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'No messages here yet'**
+  String get noMessages;
+
+  /// No description provided for @today.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get today;
+
+  /// No description provided for @yesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get yesterday;
+
+  /// No description provided for @edited.
+  ///
+  /// In en, this message translates to:
+  /// **'edited'**
+  String get edited;
+
+  /// No description provided for @forwardedFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'Forwarded from {name}'**
+  String forwardedFrom(String name);
+
+  /// No description provided for @deletedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted message'**
+  String get deletedMessage;
+
+  /// No description provided for @loadingMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading…'**
+  String get loadingMessage;
+
+  /// No description provided for @unknownSender.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get unknownSender;
+
+  /// No description provided for @hiddenAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden account'**
+  String get hiddenAccount;
+
+  /// No description provided for @download.
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
+  String get download;
+
+  /// No description provided for @cancelDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel download'**
+  String get cancelDownload;
+
+  /// No description provided for @openFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get openFile;
+
+  /// No description provided for @play.
+  ///
+  /// In en, this message translates to:
+  /// **'Play'**
+  String get play;
+
+  /// No description provided for @pause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get pause;
+
+  /// No description provided for @close.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get close;
+
+  /// No description provided for @fileSizeBytes.
+  ///
+  /// In en, this message translates to:
+  /// **'{size} B'**
+  String fileSizeBytes(String size);
+
+  /// No description provided for @fileSizeKb.
+  ///
+  /// In en, this message translates to:
+  /// **'{size} KB'**
+  String fileSizeKb(String size);
+
+  /// No description provided for @fileSizeMb.
+  ///
+  /// In en, this message translates to:
+  /// **'{size} MB'**
+  String fileSizeMb(String size);
+
+  /// No description provided for @fileSizeGb.
+  ///
+  /// In en, this message translates to:
+  /// **'{size} GB'**
+  String fileSizeGb(String size);
+
+  /// No description provided for @fileProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} of {total}'**
+  String fileProgress(String done, String total);
+
+  /// No description provided for @contentLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get contentLocation;
+
+  /// No description provided for @contentLiveLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Live location'**
+  String get contentLiveLocation;
+
+  /// No description provided for @contentContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact'**
+  String get contentContact;
+
+  /// No description provided for @contentPoll.
+  ///
+  /// In en, this message translates to:
+  /// **'Poll'**
+  String get contentPoll;
+
+  /// No description provided for @contentQuiz.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiz'**
+  String get contentQuiz;
+
+  /// No description provided for @pollVotes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No votes} =1{1 vote} other{{count} votes}}'**
+  String pollVotes(int count);
+
+  /// No description provided for @contentGame.
+  ///
+  /// In en, this message translates to:
+  /// **'Game'**
+  String get contentGame;
+
+  /// No description provided for @contentInvoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoice'**
+  String get contentInvoice;
+
+  /// No description provided for @contentStory.
+  ///
+  /// In en, this message translates to:
+  /// **'Story'**
+  String get contentStory;
+
+  /// No description provided for @contentChecklist.
+  ///
+  /// In en, this message translates to:
+  /// **'Checklist'**
+  String get contentChecklist;
+
+  /// No description provided for @contentGiveaway.
+  ///
+  /// In en, this message translates to:
+  /// **'Giveaway'**
+  String get contentGiveaway;
+
+  /// No description provided for @contentPaidMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid media'**
+  String get contentPaidMedia;
+
+  /// No description provided for @contentExpiredPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'The photo has expired'**
+  String get contentExpiredPhoto;
+
+  /// No description provided for @contentExpiredVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'The video has expired'**
+  String get contentExpiredVideo;
+
+  /// No description provided for @contentExpiredVideoNote.
+  ///
+  /// In en, this message translates to:
+  /// **'The video message has expired'**
+  String get contentExpiredVideoNote;
+
+  /// No description provided for @contentExpiredVoiceNote.
+  ///
+  /// In en, this message translates to:
+  /// **'The voice message has expired'**
+  String get contentExpiredVoiceNote;
+
+  /// No description provided for @contentUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This message isn\'t supported in Mollygram yet'**
+  String get contentUnsupported;
+
+  /// No description provided for @callOutgoing.
+  ///
+  /// In en, this message translates to:
+  /// **'Outgoing call'**
+  String get callOutgoing;
+
+  /// No description provided for @callIncoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Incoming call'**
+  String get callIncoming;
+
+  /// No description provided for @callVideoOutgoing.
+  ///
+  /// In en, this message translates to:
+  /// **'Outgoing video call'**
+  String get callVideoOutgoing;
+
+  /// No description provided for @callVideoIncoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Incoming video call'**
+  String get callVideoIncoming;
+
+  /// No description provided for @callMissed.
+  ///
+  /// In en, this message translates to:
+  /// **'Missed call'**
+  String get callMissed;
+
+  /// No description provided for @callDeclined.
+  ///
+  /// In en, this message translates to:
+  /// **'Declined call'**
+  String get callDeclined;
+
+  /// No description provided for @callCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled call'**
+  String get callCancelled;
+
+  /// No description provided for @durationMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 min} other{{count} min}}'**
+  String durationMinutes(int count);
+
+  /// No description provided for @durationSeconds.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} s'**
+  String durationSeconds(int count);
+
+  /// No description provided for @serviceGroupCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} created the group «{title}»'**
+  String serviceGroupCreated(String name, String title);
+
+  /// No description provided for @serviceChannelCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Channel created'**
+  String get serviceChannelCreated;
+
+  /// No description provided for @serviceTitleChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} changed the group name to «{title}»'**
+  String serviceTitleChanged(String name, String title);
+
+  /// No description provided for @serviceChannelTitleChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Channel name changed to «{title}»'**
+  String serviceChannelTitleChanged(String title);
+
+  /// No description provided for @servicePhotoChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} updated the group photo'**
+  String servicePhotoChanged(String name);
+
+  /// No description provided for @serviceChannelPhotoChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Channel photo updated'**
+  String get serviceChannelPhotoChanged;
+
+  /// No description provided for @servicePhotoRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} removed the group photo'**
+  String servicePhotoRemoved(String name);
+
+  /// No description provided for @serviceChannelPhotoRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Channel photo removed'**
+  String get serviceChannelPhotoRemoved;
+
+  /// No description provided for @serviceJoined.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} joined the group'**
+  String serviceJoined(String name);
+
+  /// No description provided for @serviceAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} added {members}'**
+  String serviceAdded(String name, String members);
+
+  /// No description provided for @serviceJoinedByLink.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} joined the group via invite link'**
+  String serviceJoinedByLink(String name);
+
+  /// No description provided for @serviceJoinedByRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} was accepted to the group'**
+  String serviceJoinedByRequest(String name);
+
+  /// No description provided for @serviceLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} left the group'**
+  String serviceLeft(String name);
+
+  /// No description provided for @serviceRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} removed {member}'**
+  String serviceRemoved(String name, String member);
+
+  /// No description provided for @servicePinned.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} pinned «{text}»'**
+  String servicePinned(String name, String text);
+
+  /// No description provided for @servicePinnedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} pinned a message'**
+  String servicePinnedMessage(String name);
+
+  /// No description provided for @serviceScreenshot.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} took a screenshot'**
+  String serviceScreenshot(String name);
+
+  /// No description provided for @serviceAutoDeleteOn.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} set messages to auto-delete after {time}'**
+  String serviceAutoDeleteOn(String name, String time);
+
+  /// No description provided for @serviceAutoDeleteOff.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} turned off auto-delete'**
+  String serviceAutoDeleteOff(String name);
+
+  /// No description provided for @serviceUpgraded.
+  ///
+  /// In en, this message translates to:
+  /// **'The group was upgraded to a supergroup'**
+  String get serviceUpgraded;
+
+  /// No description provided for @serviceVideoChatStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} started a video chat'**
+  String serviceVideoChatStarted(String name);
+
+  /// No description provided for @serviceVideoChatEnded.
+  ///
+  /// In en, this message translates to:
+  /// **'Video chat ended ({duration})'**
+  String serviceVideoChatEnded(String duration);
+
+  /// No description provided for @serviceVideoChatScheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'Video chat scheduled'**
+  String get serviceVideoChatScheduled;
+
+  /// No description provided for @serviceVideoChatInvited.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} invited {members} to the video chat'**
+  String serviceVideoChatInvited(String name, String members);
+
+  /// No description provided for @serviceTopicCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Topic «{title}» created'**
+  String serviceTopicCreated(String title);
+
+  /// No description provided for @serviceTopicEdited.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} changed the topic'**
+  String serviceTopicEdited(String name);
+
+  /// No description provided for @serviceContactJoined.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} joined Telegram'**
+  String serviceContactJoined(String name);
+
+  /// No description provided for @serviceThemeChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} changed the chat theme'**
+  String serviceThemeChanged(String name);
+
+  /// No description provided for @serviceBackgroundChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} changed the chat wallpaper'**
+  String serviceBackgroundChanged(String name);
+
+  /// No description provided for @serviceGift.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} sent a gift'**
+  String serviceGift(String name);
+
+  /// No description provided for @servicePayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment completed'**
+  String get servicePayment;
+
+  /// No description provided for @serviceBoost.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} boosted the group'**
+  String serviceBoost(String name);
+
+  /// No description provided for @serviceGameScore.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} scored {score}'**
+  String serviceGameScore(String name, int score);
+
+  /// No description provided for @serviceOther.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} performed an action that Mollygram can\'t show yet'**
+  String serviceOther(String name);
+
+  /// No description provided for @listSeparator.
+  ///
+  /// In en, this message translates to:
+  /// **', '**
+  String get listSeparator;
+
+  /// No description provided for @durationHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 hour} other{{count} hours}}'**
+  String durationHours(int count);
+
+  /// No description provided for @durationDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 day} other{{count} days}}'**
+  String durationDays(int count);
+
+  /// No description provided for @durationWeeks.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 week} other{{count} weeks}}'**
+  String durationWeeks(int count);
+
+  /// No description provided for @durationMonths.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 month} other{{count} months}}'**
+  String durationMonths(int count);
 }
 
 class _AppLocalizationsDelegate

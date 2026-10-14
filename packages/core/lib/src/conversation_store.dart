@@ -1,8 +1,15 @@
+import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
+
 /// Who sent a message: a user, or a chat (a channel, or a group posting
 /// anonymously).
 final class MessageSenderId {
   const MessageSenderId.user(this.id) : isChat = false;
   const MessageSenderId.chat(this.id) : isChat = true;
+
+  factory MessageSenderId.of(td.MessageSender sender) => switch (sender) {
+    td.MessageSenderUser(:final userId) => MessageSenderId.user(userId),
+    td.MessageSenderChat(:final chatId) => MessageSenderId.chat(chatId),
+  };
 
   final int id;
   final bool isChat;
@@ -27,48 +34,118 @@ enum MessageSendState {
   failed,
 }
 
-/// A presentation-ready message retained in a single conversation timeline.
+/// One message of a conversation timeline.
+///
+/// It wraps the TDLib message as is, so every kind of content reaches the
+/// chat view; the getters cover what the timeline itself needs.
 final class ConversationMessage {
-  const ConversationMessage({
-    required this.id,
-    required this.chatId,
-    required this.text,
-    required this.date,
-    required this.isOutgoing,
-    this.sender,
-    this.sendState = MessageSendState.sent,
-  });
+  const ConversationMessage(this.message);
 
-  final int id;
-  final int chatId;
-  final String text;
-  final int date;
-  final bool isOutgoing;
+  final td.Message message;
 
-  /// Who sent the message, when TDLib said so.
-  final MessageSenderId? sender;
-  final MessageSendState sendState;
+  int get id => message.id;
+  int get chatId => message.chatId;
+  int get date => message.date;
 
-  ConversationMessage copyWith({String? text}) => ConversationMessage(
-    id: id,
-    chatId: chatId,
-    text: text ?? this.text,
-    date: date,
-    isOutgoing: isOutgoing,
-    sender: sender,
-    sendState: sendState,
-  );
+  /// When the message was last edited, or 0.
+  int get editDate => message.editDate;
+  bool get isOutgoing => message.isOutgoing;
+  td.MessageContent get content => message.content;
+
+  /// Messages sent together as an album share a non-zero id.
+  int get albumId => message.mediaAlbumId;
+
+  /// The text of a text message, or the caption of a media one.
+  String get text => captionOf(content)?.text ?? '';
+
+  /// Who sent the message.
+  MessageSenderId get sender => MessageSenderId.of(message.senderId);
+
+  MessageSendState get sendState => switch (message.sendingState) {
+    td.MessageSendingStatePending() => MessageSendState.pending,
+    td.MessageSendingStateFailed() => MessageSendState.failed,
+    null => MessageSendState.sent,
+  };
+
+  /// A chat event ("joined the group", "pinned a message") rather than
+  /// something a person wrote; drawn centered, without a bubble.
+  bool get isService => isServiceContent(content);
+
+  /// The same message with some of its JSON fields replaced, for the
+  /// updates TDLib sends about a single field.
+  ConversationMessage patched(Map<String, Object?> fields) =>
+      ConversationMessage(
+        td.Message.fromJson({...message.toJson(), ...fields}),
+      );
 }
 
-/// Holds the loaded text-message timelines for chats, and the names of the
-/// people and chats that sent them.
+/// The text of a text message, or the caption of media; null when the
+/// content has neither.
+td.FormattedText? captionOf(td.MessageContent content) => switch (content) {
+  td.MessageText(:final text) => text,
+  td.MessagePhoto(:final caption) ||
+  td.MessageVideo(:final caption) ||
+  td.MessageAnimation(:final caption) ||
+  td.MessageDocument(:final caption) ||
+  td.MessageAudio(:final caption) ||
+  td.MessageVoiceNote(:final caption) ||
+  td.MessagePaidMedia(:final caption) => caption,
+  _ => null,
+};
+
+/// Whether [content] is a chat event rather than a message someone wrote.
+bool isServiceContent(td.MessageContent content) => switch (content) {
+  td.MessageText() ||
+  td.MessageRichMessage() ||
+  td.MessageAnimation() ||
+  td.MessageAudio() ||
+  td.MessageDocument() ||
+  td.MessagePaidMedia() ||
+  td.MessagePhoto() ||
+  td.MessageSticker() ||
+  td.MessageVideo() ||
+  td.MessageVideoNote() ||
+  td.MessageVoiceNote() ||
+  td.MessageExpiredPhoto() ||
+  td.MessageExpiredVideo() ||
+  td.MessageExpiredVideoNote() ||
+  td.MessageExpiredVoiceNote() ||
+  td.MessageLiveLocation() ||
+  td.MessageLocation() ||
+  td.MessageVenue() ||
+  td.MessageContact() ||
+  td.MessageAnimatedEmoji() ||
+  td.MessageDice() ||
+  td.MessageGame() ||
+  td.MessagePoll() ||
+  td.MessageStakeDice() ||
+  td.MessageStory() ||
+  td.MessageChecklist() ||
+  td.MessageInvoice() ||
+  td.MessageCall() ||
+  td.MessageGiveaway() ||
+  td.MessageGiveawayWinners() ||
+  td.MessageUnsupported() => false,
+  _ => true,
+};
+
+/// Holds the loaded timelines for chats, the messages they reply to, and
+/// the names of the people and chats that sent them.
 ///
 /// TDLib sends history and live updates separately. Messages are keyed by
 /// their per-chat IDs, so either source can safely replace an earlier value.
 final class ConversationStore {
   final _byChat = <int, Map<int, ConversationMessage>>{};
+  final _referenced = <(int, int), ConversationMessage>{};
+  final _missing = <(int, int)>{};
+  final _reachedStart = <int>{};
   final _userNames = <int, String>{};
   final _chatTitles = <int, String>{};
+  final _colors = <MessageSenderId, int>{};
+  final _photos = <MessageSenderId, td.File>{};
+  final _readInbox = <int, int>{};
+  final _readOutbox = <int, int>{};
+  final _channels = <int>{};
 
   /// Replaces the timeline of [chatId] with [messages], keeping the ones in
   /// [keep] that are still present (messages that arrived while the history
@@ -79,28 +156,68 @@ final class ConversationStore {
     Set<int> keep = const {},
   }) {
     final previous = _byChat[chatId] ?? const {};
+    _reachedStart.remove(chatId);
     _byChat[chatId] = {
       for (final id in keep) id: ?previous[id],
       for (final message in messages) message.id: message,
     };
   }
 
-  void upsert(ConversationMessage message) {
-    (_byChat[message.chatId] ??= {})[message.id] = message;
+  /// Adds a page of older history. Returns how many of [messages] were not
+  /// in the timeline yet.
+  int addOlder(int chatId, List<ConversationMessage> messages) {
+    final timeline = _byChat[chatId] ??= {};
+    var added = 0;
+    for (final message in messages) {
+      if (timeline.containsKey(message.id)) continue;
+      timeline[message.id] = message;
+      added++;
+    }
+    return added;
   }
 
-  void updateText(int chatId, int messageId, String text) {
+  /// Whether the timeline of [chatId] goes back to the first message.
+  bool reachedStart(int chatId) => _reachedStart.contains(chatId);
+
+  void markReachedStart(int chatId) => _reachedStart.add(chatId);
+
+  /// The oldest loaded message of [chatId], or null when none is.
+  int? oldestId(int chatId) {
+    final ids = _byChat[chatId]?.keys;
+    if (ids == null || ids.isEmpty) return null;
+    return ids.reduce((a, b) => a < b ? a : b);
+  }
+
+  void upsert(ConversationMessage message) {
+    (_byChat[message.chatId] ??= {})[message.id] = message;
+    final key = (message.chatId, message.id);
+    if (_referenced.containsKey(key)) _referenced[key] = message;
+  }
+
+  /// Replaces JSON [fields] of a message, wherever the store holds it.
+  /// Returns whether it did.
+  bool patch(int chatId, int messageId, Map<String, Object?> fields) {
+    var found = false;
     final messages = _byChat[chatId];
     final message = messages?[messageId];
-    if (message == null) return;
-    messages![messageId] = message.copyWith(text: text);
+    if (message != null) {
+      messages![messageId] = message.patched(fields);
+      found = true;
+    }
+    final key = (chatId, messageId);
+    final referenced = _referenced[key];
+    if (referenced != null) {
+      _referenced[key] = referenced.patched(fields);
+      found = true;
+    }
+    return found;
   }
 
   void remove(int chatId, Iterable<int> messageIds) {
     final messages = _byChat[chatId];
-    if (messages == null) return;
     for (final id in messageIds) {
-      messages.remove(id);
+      messages?.remove(id);
+      _referenced.remove((chatId, id));
     }
   }
 
@@ -110,6 +227,24 @@ final class ConversationStore {
     return List.unmodifiable(messages);
   }
 
+  /// A message of [chatId], from the timeline or from the messages loaded
+  /// because something replies to them.
+  ConversationMessage? message(int chatId, int messageId) =>
+      _byChat[chatId]?[messageId] ?? _referenced[(chatId, messageId)];
+
+  /// Whether TDLib said the message [messageId] of [chatId] doesn't exist,
+  /// such as the deleted original of a reply.
+  bool isMissing(int chatId, int messageId) =>
+      _missing.contains((chatId, messageId));
+
+  void markMissing(int chatId, int messageId) =>
+      _missing.add((chatId, messageId));
+
+  /// Keeps a message outside the loaded timeline, such as an old one a
+  /// reply quotes.
+  void addReferenced(ConversationMessage message) =>
+      _referenced[(message.chatId, message.id)] = message;
+
   void setUserName(int userId, String name) => _userNames[userId] = name;
 
   void setChatTitle(int chatId, String title) => _chatTitles[chatId] = title;
@@ -117,4 +252,37 @@ final class ConversationStore {
   /// The display name of [sender], or null while TDLib hasn't sent it.
   String? nameOf(MessageSenderId sender) =>
       sender.isChat ? _chatTitles[sender.id] : _userNames[sender.id];
+
+  /// The accent color id of [sender] (0 to 6 are the built-in colors),
+  /// which colors their name; 0 while unknown.
+  int colorOf(MessageSenderId sender) => _colors[sender] ?? 0;
+
+  void setColor(MessageSenderId sender, int colorId) =>
+      _colors[sender] = colorId;
+
+  /// The small profile photo of [sender], if they have one.
+  td.File? photoOf(MessageSenderId sender) => _photos[sender];
+
+  void setPhoto(MessageSenderId sender, td.File? photo) =>
+      photo == null ? _photos.remove(sender) : _photos[sender] = photo;
+
+  /// The newest message of [chatId] the user has read.
+  int lastReadInbox(int chatId) => _readInbox[chatId] ?? 0;
+
+  /// The newest outgoing message of [chatId] the other side has read; the
+  /// ones up to it get two ticks.
+  int lastReadOutbox(int chatId) => _readOutbox[chatId] ?? 0;
+
+  void setReadInbox(int chatId, int messageId) =>
+      _readInbox[chatId] = messageId;
+
+  void setReadOutbox(int chatId, int messageId) =>
+      _readOutbox[chatId] = messageId;
+
+  /// Whether [chatId] is a channel, where posts come from the channel and
+  /// events read differently.
+  bool isChannel(int chatId) => _channels.contains(chatId);
+
+  void setChannel(int chatId, bool isChannel) =>
+      isChannel ? _channels.add(chatId) : _channels.remove(chatId);
 }

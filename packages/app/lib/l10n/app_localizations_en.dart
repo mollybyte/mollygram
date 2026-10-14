@@ -186,8 +186,380 @@ class AppLocalizationsEn extends AppLocalizations {
   String get previewOther => 'Message';
 
   @override
-  String get noTextMessages => 'No text messages here yet';
+  String get sendFailed => 'The message wasn\'t sent. Try again';
 
   @override
-  String get sendFailed => 'The message wasn\'t sent. Try again';
+  String get noMessages => 'No messages here yet';
+
+  @override
+  String get today => 'Today';
+
+  @override
+  String get yesterday => 'Yesterday';
+
+  @override
+  String get edited => 'edited';
+
+  @override
+  String forwardedFrom(String name) {
+    return 'Forwarded from $name';
+  }
+
+  @override
+  String get deletedMessage => 'Deleted message';
+
+  @override
+  String get loadingMessage => 'Loading…';
+
+  @override
+  String get unknownSender => 'Unknown';
+
+  @override
+  String get hiddenAccount => 'Hidden account';
+
+  @override
+  String get download => 'Download';
+
+  @override
+  String get cancelDownload => 'Cancel download';
+
+  @override
+  String get openFile => 'Open';
+
+  @override
+  String get play => 'Play';
+
+  @override
+  String get pause => 'Pause';
+
+  @override
+  String get close => 'Close';
+
+  @override
+  String fileSizeBytes(String size) {
+    return '$size B';
+  }
+
+  @override
+  String fileSizeKb(String size) {
+    return '$size KB';
+  }
+
+  @override
+  String fileSizeMb(String size) {
+    return '$size MB';
+  }
+
+  @override
+  String fileSizeGb(String size) {
+    return '$size GB';
+  }
+
+  @override
+  String fileProgress(String done, String total) {
+    return '$done of $total';
+  }
+
+  @override
+  String get contentLocation => 'Location';
+
+  @override
+  String get contentLiveLocation => 'Live location';
+
+  @override
+  String get contentContact => 'Contact';
+
+  @override
+  String get contentPoll => 'Poll';
+
+  @override
+  String get contentQuiz => 'Quiz';
+
+  @override
+  String pollVotes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count votes',
+      one: '1 vote',
+      zero: 'No votes',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get contentGame => 'Game';
+
+  @override
+  String get contentInvoice => 'Invoice';
+
+  @override
+  String get contentStory => 'Story';
+
+  @override
+  String get contentChecklist => 'Checklist';
+
+  @override
+  String get contentGiveaway => 'Giveaway';
+
+  @override
+  String get contentPaidMedia => 'Paid media';
+
+  @override
+  String get contentExpiredPhoto => 'The photo has expired';
+
+  @override
+  String get contentExpiredVideo => 'The video has expired';
+
+  @override
+  String get contentExpiredVideoNote => 'The video message has expired';
+
+  @override
+  String get contentExpiredVoiceNote => 'The voice message has expired';
+
+  @override
+  String get contentUnsupported =>
+      'This message isn\'t supported in Mollygram yet';
+
+  @override
+  String get callOutgoing => 'Outgoing call';
+
+  @override
+  String get callIncoming => 'Incoming call';
+
+  @override
+  String get callVideoOutgoing => 'Outgoing video call';
+
+  @override
+  String get callVideoIncoming => 'Incoming video call';
+
+  @override
+  String get callMissed => 'Missed call';
+
+  @override
+  String get callDeclined => 'Declined call';
+
+  @override
+  String get callCancelled => 'Cancelled call';
+
+  @override
+  String durationMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count min',
+      one: '1 min',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String durationSeconds(int count) {
+    return '$count s';
+  }
+
+  @override
+  String serviceGroupCreated(String name, String title) {
+    return '$name created the group «$title»';
+  }
+
+  @override
+  String get serviceChannelCreated => 'Channel created';
+
+  @override
+  String serviceTitleChanged(String name, String title) {
+    return '$name changed the group name to «$title»';
+  }
+
+  @override
+  String serviceChannelTitleChanged(String title) {
+    return 'Channel name changed to «$title»';
+  }
+
+  @override
+  String servicePhotoChanged(String name) {
+    return '$name updated the group photo';
+  }
+
+  @override
+  String get serviceChannelPhotoChanged => 'Channel photo updated';
+
+  @override
+  String servicePhotoRemoved(String name) {
+    return '$name removed the group photo';
+  }
+
+  @override
+  String get serviceChannelPhotoRemoved => 'Channel photo removed';
+
+  @override
+  String serviceJoined(String name) {
+    return '$name joined the group';
+  }
+
+  @override
+  String serviceAdded(String name, String members) {
+    return '$name added $members';
+  }
+
+  @override
+  String serviceJoinedByLink(String name) {
+    return '$name joined the group via invite link';
+  }
+
+  @override
+  String serviceJoinedByRequest(String name) {
+    return '$name was accepted to the group';
+  }
+
+  @override
+  String serviceLeft(String name) {
+    return '$name left the group';
+  }
+
+  @override
+  String serviceRemoved(String name, String member) {
+    return '$name removed $member';
+  }
+
+  @override
+  String servicePinned(String name, String text) {
+    return '$name pinned «$text»';
+  }
+
+  @override
+  String servicePinnedMessage(String name) {
+    return '$name pinned a message';
+  }
+
+  @override
+  String serviceScreenshot(String name) {
+    return '$name took a screenshot';
+  }
+
+  @override
+  String serviceAutoDeleteOn(String name, String time) {
+    return '$name set messages to auto-delete after $time';
+  }
+
+  @override
+  String serviceAutoDeleteOff(String name) {
+    return '$name turned off auto-delete';
+  }
+
+  @override
+  String get serviceUpgraded => 'The group was upgraded to a supergroup';
+
+  @override
+  String serviceVideoChatStarted(String name) {
+    return '$name started a video chat';
+  }
+
+  @override
+  String serviceVideoChatEnded(String duration) {
+    return 'Video chat ended ($duration)';
+  }
+
+  @override
+  String get serviceVideoChatScheduled => 'Video chat scheduled';
+
+  @override
+  String serviceVideoChatInvited(String name, String members) {
+    return '$name invited $members to the video chat';
+  }
+
+  @override
+  String serviceTopicCreated(String title) {
+    return 'Topic «$title» created';
+  }
+
+  @override
+  String serviceTopicEdited(String name) {
+    return '$name changed the topic';
+  }
+
+  @override
+  String serviceContactJoined(String name) {
+    return '$name joined Telegram';
+  }
+
+  @override
+  String serviceThemeChanged(String name) {
+    return '$name changed the chat theme';
+  }
+
+  @override
+  String serviceBackgroundChanged(String name) {
+    return '$name changed the chat wallpaper';
+  }
+
+  @override
+  String serviceGift(String name) {
+    return '$name sent a gift';
+  }
+
+  @override
+  String get servicePayment => 'Payment completed';
+
+  @override
+  String serviceBoost(String name) {
+    return '$name boosted the group';
+  }
+
+  @override
+  String serviceGameScore(String name, int score) {
+    return '$name scored $score';
+  }
+
+  @override
+  String serviceOther(String name) {
+    return '$name performed an action that Mollygram can\'t show yet';
+  }
+
+  @override
+  String get listSeparator => ', ';
+
+  @override
+  String durationHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count hours',
+      one: '1 hour',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String durationDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days',
+      one: '1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String durationWeeks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count weeks',
+      one: '1 week',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String durationMonths(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count months',
+      one: '1 month',
+    );
+    return '$_temp0';
+  }
 }

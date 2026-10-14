@@ -6,12 +6,13 @@ import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../chat/message_tile.dart';
+import '../chat/timeline.dart';
 import '../session/providers.dart';
 import '../window_drag_area.dart';
-import 'format.dart';
 
-/// One conversation: text messages scroll under the floating header and
-/// composer. Media rendering arrives with the chat and media stages.
+/// One conversation: messages scroll under the floating header and
+/// composer.
 class ChatView extends ConsumerStatefulWidget {
   const ChatView({super.key, required this.chatId});
 
@@ -93,6 +94,34 @@ class _ChatViewState extends ConsumerState<ChatView> {
     });
   }
 
+  late final _actions = MessageRowActions(
+    onReaction: (message, reaction, chosen) => unawaited(
+      _quiet(
+        _conversations.toggleReaction(
+          message.chatId,
+          message.id,
+          reaction,
+          chosen: chosen,
+        ),
+      ),
+    ),
+    onNeedReplied: (reply) =>
+        unawaited(_quiet(_conversations.loadReplied(reply.chatId, reply.id))),
+  );
+
+  var _olderScheduled = false;
+
+  /// Asks for the page before the oldest message, once per frame.
+  void _loadOlder() {
+    if (_olderScheduled) return;
+    _olderScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _olderScheduled = false;
+      if (!mounted) return;
+      unawaited(_quiet(_conversations.loadOlder(widget.chatId).then((_) {})));
+    });
+  }
+
   Future<void> _send(String text) async {
     if (text.trim().isEmpty) return;
     final chatId = widget.chatId;
@@ -127,18 +156,17 @@ class _ChatViewState extends ConsumerState<ChatView> {
       children: [
         Positioned.fill(
           child: switch (messages) {
-            AsyncData(value: final list) when list.isEmpty => Center(
-              child: Text(l10n.noTextMessages, style: TextStyle(color: c.fg2)),
-            ),
+            AsyncData(value: final list)
+                when list.isEmpty && store.reachedStart(widget.chatId) =>
+              Center(child: DatePill(l10n.noMessages)),
             AsyncData(value: final list) => _Messages(
               messages: list,
-              senderName: chat?.isGroup ?? false
-                  ? (message) => switch (message.sender) {
-                      final sender? => store.nameOf(sender),
-                      null => null,
-                    }
-                  : null,
+              store: store,
+              chatId: widget.chatId,
+              isGroup: chat?.isGroup ?? false,
               onShown: _shown,
+              onNearTop: _loadOlder,
+              actions: _actions,
             ),
             _ => const SizedBox.shrink(),
           },
@@ -192,66 +220,80 @@ class _ChatViewState extends ConsumerState<ChatView> {
   }
 }
 
+/// The timeline, newest at the bottom: rows of messages and albums with a
+/// date pill above the first message of each day.
 class _Messages extends StatelessWidget {
   const _Messages({
     required this.messages,
+    required this.store,
+    required this.chatId,
+    required this.isGroup,
     required this.onShown,
-    this.senderName,
+    required this.onNearTop,
+    required this.actions,
   });
 
   /// Newest first, so the list starts at the bottom.
   final List<ConversationMessage> messages;
+  final ConversationStore store;
+  final int chatId;
+  final bool isGroup;
 
   /// Called as a message is built, which is when it is on screen or about
   /// to be.
   final void Function(ConversationMessage message) onShown;
 
-  /// The author shown over incoming messages; null outside groups.
-  final String? Function(ConversationMessage message)? senderName;
+  /// Called when the oldest loaded messages come into view.
+  final VoidCallback onNearTop;
+  final MessageRowActions actions;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).toLanguageTag();
+    final items = timelineItems(
+      messages,
+      reachedStart: store.reachedStart(chatId),
+    );
+    final isChannel = store.isChannel(chatId);
+    final lastReadOutbox = store.lastReadOutbox(chatId);
     return ListView.builder(
       reverse: true,
       padding: const EdgeInsets.only(top: 72, bottom: 88),
-      itemCount: messages.length,
+      itemCount: items.length,
+      findChildIndexCallback: (key) {
+        final value = (key as ValueKey<Object>).value;
+        final index = items.indexWhere((item) => item.key == value);
+        return index < 0 ? null : index;
+      },
       itemBuilder: (context, i) {
-        final message = messages[i];
-        final newer = i > 0 ? messages[i - 1] : null;
-        final older = i + 1 < messages.length ? messages[i + 1] : null;
-        final out = message.isOutgoing;
-        onShown(message);
-        // The name goes on the first message of a run from one sender.
-        final startsRun = older == null || older.sender != message.sender;
-        final name = !out && startsRun ? senderName?.call(message) : null;
-        return Center(
-          key: ValueKey(message.id),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 760),
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                24,
-                newer != null && newer.isOutgoing == out ? 0 : 6,
-                24,
-                4,
-              ),
-              child: Align(
-                alignment: out ? Alignment.centerRight : Alignment.centerLeft,
-                child: TextMessageBubble(
-                  text: message.text,
-                  time: formatMessageTime(message.date, locale),
-                  outgoing: out,
-                  sender: name == null || name.isEmpty ? null : name,
-                  status: switch (message.sendState) {
-                    MessageSendState.pending => MessageStatus.sending,
-                    MessageSendState.failed => MessageStatus.failed,
-                    MessageSendState.sent => MessageStatus.none,
-                  },
+        if (i >= items.length - 8) onNearTop();
+        final item = items[i];
+        final Widget child = switch (item) {
+          TimelineDate(:final day) => DatePill(formatDay(l10n, day, locale)),
+          TimelineRow(:final row, :final startsRun, :final endsRun) => () {
+            row.messages.forEach(onShown);
+            return Padding(
+              padding: EdgeInsets.only(top: startsRun ? 6 : 2),
+              child: MessageTile(
+                row: row,
+                store: store,
+                context: MessageRowContext(
+                  isGroup: isGroup,
+                  isChannel: isChannel,
+                  startsRun: startsRun,
+                  endsRun: endsRun,
+                  lastReadOutbox: lastReadOutbox,
                 ),
+                actions: actions,
               ),
-            ),
-          ),
+            );
+          }(),
+        };
+        return Padding(
+          key: ValueKey<Object>(item.key),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: child,
         );
       },
     );

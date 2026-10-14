@@ -23,7 +23,11 @@
   "passwordHint": "Your account is protected with an additional password.",
   "passwordHintWithHint": "Your account is protected with an additional password. Hint: {hint}",
   "@passwordHintWithHint": {
-    "placeholders": { "hint": { "type": "String" } }
+    "placeholders": {
+      "hint": {
+        "type": "String"
+      }
+    }
   },
   "passwordFieldHint": "Password",
   "starting": "Starting Telegram…",
@@ -36,7 +40,11 @@
   "errorTooManyAttempts": "Too many attempts, try again later",
   "errorGeneric": "Something went wrong: {message}",
   "@errorGeneric": {
-    "placeholders": { "message": { "type": "String" } }
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
   },
   "missingKeysTitle": "Telegram API keys are missing",
   "missingKeysHint": "Build the app with --dart-define-from-file=config/telegram.json. The template is config/telegram.example.json.",
@@ -53,7 +61,11 @@
   "send": "Send",
   "previewYou": "You: {text}",
   "@previewYou": {
-    "placeholders": { "text": { "type": "String" } }
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
   },
   "previewPhoto": "Photo",
   "previewVideo": "Video",
@@ -64,6 +76,404 @@
   "previewSticker": "Sticker",
   "previewAnimation": "GIF",
   "previewOther": "Message",
-  "noTextMessages": "No text messages here yet",
-  "sendFailed": "The message wasn't sent. Try again"
+  "sendFailed": "The message wasn't sent. Try again",
+  "noMessages": "No messages here yet",
+  "today": "Today",
+  "yesterday": "Yesterday",
+  "edited": "edited",
+  "forwardedFrom": "Forwarded from {name}",
+  "@forwardedFrom": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deletedMessage": "Deleted message",
+  "loadingMessage": "Loading…",
+  "unknownSender": "Unknown",
+  "hiddenAccount": "Hidden account",
+  "download": "Download",
+  "cancelDownload": "Cancel download",
+  "openFile": "Open",
+  "play": "Play",
+  "pause": "Pause",
+  "close": "Close",
+  "fileSizeBytes": "{size} B",
+  "@fileSizeBytes": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "fileSizeKb": "{size} KB",
+  "@fileSizeKb": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "fileSizeMb": "{size} MB",
+  "@fileSizeMb": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "fileSizeGb": "{size} GB",
+  "@fileSizeGb": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "fileProgress": "{done} of {total}",
+  "@fileProgress": {
+    "placeholders": {
+      "done": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "contentLocation": "Location",
+  "contentLiveLocation": "Live location",
+  "contentContact": "Contact",
+  "contentPoll": "Poll",
+  "contentQuiz": "Quiz",
+  "pollVotes": "{count, plural, =0{No votes} =1{1 vote} other{{count} votes}}",
+  "@pollVotes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "contentGame": "Game",
+  "contentInvoice": "Invoice",
+  "contentStory": "Story",
+  "contentChecklist": "Checklist",
+  "contentGiveaway": "Giveaway",
+  "contentPaidMedia": "Paid media",
+  "contentExpiredPhoto": "The photo has expired",
+  "contentExpiredVideo": "The video has expired",
+  "contentExpiredVideoNote": "The video message has expired",
+  "contentExpiredVoiceNote": "The voice message has expired",
+  "contentUnsupported": "This message isn't supported in Mollygram yet",
+  "callOutgoing": "Outgoing call",
+  "callIncoming": "Incoming call",
+  "callVideoOutgoing": "Outgoing video call",
+  "callVideoIncoming": "Incoming video call",
+  "callMissed": "Missed call",
+  "callDeclined": "Declined call",
+  "callCancelled": "Cancelled call",
+  "durationMinutes": "{count, plural, =1{1 min} other{{count} min}}",
+  "@durationMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "durationSeconds": "{count} s",
+  "@durationSeconds": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "serviceGroupCreated": "{name} created the group «{title}»",
+  "@serviceGroupCreated": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceChannelCreated": "Channel created",
+  "serviceTitleChanged": "{name} changed the group name to «{title}»",
+  "@serviceTitleChanged": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceChannelTitleChanged": "Channel name changed to «{title}»",
+  "@serviceChannelTitleChanged": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "servicePhotoChanged": "{name} updated the group photo",
+  "@servicePhotoChanged": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceChannelPhotoChanged": "Channel photo updated",
+  "servicePhotoRemoved": "{name} removed the group photo",
+  "@servicePhotoRemoved": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceChannelPhotoRemoved": "Channel photo removed",
+  "serviceJoined": "{name} joined the group",
+  "@serviceJoined": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceAdded": "{name} added {members}",
+  "@serviceAdded": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "members": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceJoinedByLink": "{name} joined the group via invite link",
+  "@serviceJoinedByLink": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceJoinedByRequest": "{name} was accepted to the group",
+  "@serviceJoinedByRequest": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceLeft": "{name} left the group",
+  "@serviceLeft": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceRemoved": "{name} removed {member}",
+  "@serviceRemoved": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "member": {
+        "type": "String"
+      }
+    }
+  },
+  "servicePinned": "{name} pinned «{text}»",
+  "@servicePinned": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "servicePinnedMessage": "{name} pinned a message",
+  "@servicePinnedMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceScreenshot": "{name} took a screenshot",
+  "@serviceScreenshot": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceAutoDeleteOn": "{name} set messages to auto-delete after {time}",
+  "@serviceAutoDeleteOn": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceAutoDeleteOff": "{name} turned off auto-delete",
+  "@serviceAutoDeleteOff": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceUpgraded": "The group was upgraded to a supergroup",
+  "serviceVideoChatStarted": "{name} started a video chat",
+  "@serviceVideoChatStarted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceVideoChatEnded": "Video chat ended ({duration})",
+  "@serviceVideoChatEnded": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceVideoChatScheduled": "Video chat scheduled",
+  "serviceVideoChatInvited": "{name} invited {members} to the video chat",
+  "@serviceVideoChatInvited": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "members": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceTopicCreated": "Topic «{title}» created",
+  "@serviceTopicCreated": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceTopicEdited": "{name} changed the topic",
+  "@serviceTopicEdited": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceContactJoined": "{name} joined Telegram",
+  "@serviceContactJoined": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceThemeChanged": "{name} changed the chat theme",
+  "@serviceThemeChanged": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceBackgroundChanged": "{name} changed the chat wallpaper",
+  "@serviceBackgroundChanged": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceGift": "{name} sent a gift",
+  "@serviceGift": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "servicePayment": "Payment completed",
+  "serviceBoost": "{name} boosted the group",
+  "@serviceBoost": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "serviceGameScore": "{name} scored {score}",
+  "@serviceGameScore": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "serviceOther": "{name} performed an action that Mollygram can't show yet",
+  "@serviceOther": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "listSeparator": ", ",
+  "durationHours": "{count, plural, =1{1 hour} other{{count} hours}}",
+  "@durationHours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "durationDays": "{count, plural, =1{1 day} other{{count} days}}",
+  "@durationDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "durationWeeks": "{count, plural, =1{1 week} other{{count} weeks}}",
+  "@durationWeeks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "durationMonths": "{count, plural, =1{1 month} other{{count} months}}",
+  "@durationMonths": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }
