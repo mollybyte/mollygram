@@ -53,6 +53,16 @@ void main() {
     await subscription.cancel();
   });
 
+  test('reports a chat TDLib no longer has', () async {
+    json.missingChats.add(42);
+    expect(await controller.loadChat(42), isFalse);
+    expect(json.sent.single, {
+      '@type': 'getChat',
+      'chat_id': 42,
+      '@extra': json.sent.single['@extra'],
+    });
+  });
+
   test('keeps loading pages until TDLib reports the end', () async {
     await controller.start();
     expect(controller.hasMore(), isTrue);
@@ -127,6 +137,7 @@ final class _FakeTdJson implements td.TdJson {
   final _queue = Queue<String>();
   final sent = <Map<String, Object?>>[];
   var endOfList = false;
+  final missingChats = <int>{};
   var _nextClientId = 0;
 
   @override
@@ -143,6 +154,19 @@ final class _FakeTdJson implements td.TdJson {
   void send(int clientId, String request) {
     final decoded = jsonDecode(request) as Map<String, Object?>;
     sent.add(decoded);
+    if (decoded['@type'] == 'getChat' &&
+        missingChats.contains(decoded['chat_id'])) {
+      _queue.add(
+        jsonEncode({
+          '@type': 'error',
+          'code': 400,
+          'message': 'Chat not found',
+          '@client_id': clientId,
+          '@extra': decoded['@extra'],
+        }),
+      );
+      return;
+    }
     if (endOfList && decoded['@type'] == 'loadChats') {
       _queue.add(
         jsonEncode({

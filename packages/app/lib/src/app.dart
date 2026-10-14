@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +9,7 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 import '../l10n/app_localizations.dart';
 import 'auth/sign_in_screen.dart';
 import 'home/home_screen.dart';
+import 'home/workspace_storage.dart';
 import 'session/close_before_exit.dart';
 import 'session/providers.dart';
 
@@ -32,7 +35,8 @@ class MollygramApp extends StatelessWidget {
   );
 }
 
-/// Closes TDLib before the process exits; see [CloseBeforeExit].
+/// Saves the window layout and closes TDLib before the process exits; see
+/// [CloseBeforeExit].
 class _CloseSessionBeforeExit extends ConsumerWidget {
   const _CloseSessionBeforeExit({required this.child});
 
@@ -40,7 +44,11 @@ class _CloseSessionBeforeExit extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) => CloseBeforeExit(
-    close: () async => ref.read(telegramSessionProvider).value?.dispose(),
+    close: () async {
+      // A layout change still waiting to be saved is written first.
+      await ref.read(workspaceSaverProvider).flush();
+      await ref.read(telegramSessionProvider).value?.dispose();
+    },
     child: child,
   );
 }
@@ -73,6 +81,15 @@ class _Authorized extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Signed out: the saved window layout belonged to that account.
+    ref.listen(authorizationStageProvider, (_, next) {
+      switch (next.value?.kind) {
+        case AuthorizationStageKind.phoneNumber ||
+            AuthorizationStageKind.qrCode:
+          unawaited(ref.read(workspaceSaverProvider).clear());
+        default:
+      }
+    });
     final stage = ref.watch(authorizationStageProvider).value;
     if (stage == null) return const SignInScreen.starting();
     if (stage.kind == AuthorizationStageKind.ready) return const HomeScreen();
