@@ -12,6 +12,7 @@ class MgPrimaryButton extends StatelessWidget {
     this.onPressed,
     this.loading = false,
     this.expand = false,
+    this.height = 34,
   });
 
   final String label;
@@ -20,6 +21,9 @@ class MgPrimaryButton extends StatelessWidget {
 
   /// Fills the available width.
   final bool expand;
+
+  /// 34 in forms on glass, 42 on the sign-in screens.
+  final double height;
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +42,7 @@ class MgPrimaryButton extends StatelessWidget {
           child: Opacity(
             opacity: onPressed == null ? 0.45 : 1,
             child: Container(
-              height: 34,
+              height: height,
               padding: const EdgeInsets.symmetric(horizontal: 18),
               alignment: Alignment.center,
               decoration: BoxDecoration(

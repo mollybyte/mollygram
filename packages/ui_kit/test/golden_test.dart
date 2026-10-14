@@ -241,58 +241,122 @@ void main() {
       );
     });
 
-    testWidgets('sign-in card $theme', skip: _skip, (tester) async {
+    testWidgets('sign-in QR $theme', skip: _skip, (tester) async {
       await _shoot(
         tester,
-        GlassScope(
-          child: Stack(
+        SignInPage(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Positioned.fill(child: Wallpaper()),
+              const SignInHeader(
+                leading: QrFrame(qr: _FakeQr(), center: _Mark()),
+                title: 'Log in to Mollygram by QR code',
+              ),
+              const SizedBox(height: 24),
+              const SignInSteps(
+                steps: [
+                  'Open Telegram on your phone',
+                  'Go to Settings > Devices > Link Desktop Device',
+                  'Point your phone at this screen to confirm login',
+                ],
+              ),
+              const SizedBox(height: 28),
               Center(
-                child: GlassCard(
-                  width: 340,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const Text(
-                        'Your phone number',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      const MgTextField(hintText: 'Phone number'),
-                      const SizedBox(height: 10),
-                      const MgTextField(
-                        hintText: 'Code',
-                        errorText: 'Invalid code',
-                      ),
-                      const SizedBox(height: 16),
-                      MgPrimaryButton(
-                        label: 'Next',
-                        expand: true,
-                        onPressed: () {},
-                      ),
-                      const SizedBox(height: 6),
-                      Center(
-                        child: MgTextButton(
-                          label: 'Use a QR code',
-                          onPressed: () {},
-                        ),
-                      ),
-                    ],
-                  ),
+                child: MgTextButton(
+                  label: 'Log in by phone number',
+                  onPressed: () {},
                 ),
               ),
             ],
           ),
         ),
         colors,
-        'sign_in_card_$theme',
-        size: const Size(520, 420),
+        'sign_in_qr_$theme',
+        size: const Size(760, 640),
+      );
+    });
+
+    testWidgets('sign-in phone $theme', skip: _skip, (tester) async {
+      final code = TextEditingController(text: '+7');
+      final number = TextEditingController();
+      addTearDown(code.dispose);
+      addTearDown(number.dispose);
+      await _shoot(
+        tester,
+        SignInPage(
+          onBack: () {},
+          backTooltip: 'Back',
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SignInHeader(
+                title: 'Your phone number',
+                subtitle:
+                    'Please confirm your country code and enter your '
+                    'phone number.',
+              ),
+              const SizedBox(height: 28),
+              PhoneNumberField(
+                country: 'Russian Federation',
+                onCountryTap: () {},
+                codeController: code,
+                numberController: number,
+                numberHint: '900 123 45 67',
+                autofocus: false,
+              ),
+              const SizedBox(height: 32),
+              MgPrimaryButton(
+                label: 'Next',
+                expand: true,
+                height: 42,
+                onPressed: () {},
+              ),
+            ],
+          ),
+        ),
+        colors,
+        'sign_in_phone_$theme',
+        size: const Size(760, 640),
+      );
+    });
+
+    testWidgets('sign-in code $theme', skip: _skip, (tester) async {
+      await _shoot(
+        tester,
+        SignInPage(
+          onBack: () {},
+          backTooltip: 'Back',
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SignInHeader(
+                title: '+7 900 123 45 67',
+                subtitle:
+                    'We have sent the code to the Telegram app on your '
+                    'other device.',
+              ),
+              const SizedBox(height: 28),
+              const MgUnderlineField(
+                hintText: 'Code',
+                errorText: 'Invalid code',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              MgPrimaryButton(
+                label: 'Next',
+                expand: true,
+                height: 42,
+                onPressed: () {},
+              ),
+            ],
+          ),
+        ),
+        colors,
+        'sign_in_code_$theme',
+        size: const Size(760, 640),
       );
     });
 
@@ -321,4 +385,68 @@ void main() {
       );
     });
   }
+}
+
+/// A deterministic stand-in for a QR code.
+class _FakeQr extends StatelessWidget {
+  const _FakeQr();
+
+  @override
+  Widget build(BuildContext context) => CustomPaint(painter: _QrPainter());
+}
+
+class _QrPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    const n = 29;
+    final cell = size.width / n;
+    final paint = Paint()..color = const Color(0xFF000000);
+    bool finder(int x, int y) {
+      for (final (fx, fy) in [(0, 0), (n - 7, 0), (0, n - 7)]) {
+        final dx = x - fx, dy = y - fy;
+        if (dx >= 0 && dx < 7 && dy >= 0 && dy < 7) {
+          final edge = dx == 0 || dx == 6 || dy == 0 || dy == 6;
+          final core = dx >= 2 && dx <= 4 && dy >= 2 && dy <= 4;
+          return edge || core;
+        }
+      }
+      return false;
+    }
+
+    bool inFinder(int x, int y) =>
+        (x < 8 && y < 8) || (x >= n - 8 && y < 8) || (x < 8 && y >= n - 8);
+    var seed = 7;
+    for (var y = 0; y < n; y++) {
+      for (var x = 0; x < n; x++) {
+        seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+        final on = inFinder(x, y) ? finder(x, y) : seed % 3 == 0;
+        if (on) {
+          canvas.drawRRect(
+            RRect.fromRectAndRadius(
+              Rect.fromLTWH(x * cell, y * cell, cell, cell).deflate(0.4),
+              Radius.circular(cell * 0.3),
+            ),
+            paint,
+          );
+        }
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_QrPainter old) => false;
+}
+
+class _Mark extends StatelessWidget {
+  const _Mark();
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 34,
+    height: 34,
+    decoration: BoxDecoration(
+      color: const Color(0xFFD6336C),
+      borderRadius: BorderRadius.circular(9),
+    ),
+  );
 }

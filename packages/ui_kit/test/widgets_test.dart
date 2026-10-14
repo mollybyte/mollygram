@@ -253,7 +253,7 @@ void main() {
           Center(
             child: SizedBox(
               width: 300,
-              child: MgTextField(
+              child: MgUnderlineField(
                 hintText: 'Phone number',
                 errorText: 'Invalid number',
                 onSubmitted: submitted.add,
@@ -365,5 +365,83 @@ void main() {
     }
     expect(taps, 2);
     semantics.dispose();
+  });
+
+  group('sign-in', () {
+    testWidgets('underline field turns accent with focus', (tester) async {
+      await tester.pumpWidget(
+        themed(
+          const Center(
+            child: SizedBox(
+              width: 300,
+              child: MgUnderlineField(hintText: 'Code'),
+            ),
+          ),
+        ),
+      );
+      BorderSide line() =>
+          (tester
+                      .widget<Container>(
+                        find
+                            .descendant(
+                              of: find.byType(MgUnderlineField),
+                              matching: find.byType(Container),
+                            )
+                            .first,
+                      )
+                      .decoration!
+                  as BoxDecoration)
+              .border!
+              .bottom;
+      expect(line().width, 1);
+      await tester.tap(find.byType(TextField));
+      await tester.pump();
+      expect(line().color, MgColors.light.accent);
+      expect(line().width, 2);
+    });
+
+    testWidgets('phone field reports country taps and keeps input', (
+      tester,
+    ) async {
+      final code = TextEditingController(text: '+7');
+      final number = TextEditingController();
+      addTearDown(code.dispose);
+      addTearDown(number.dispose);
+      var taps = 0;
+      await tester.pumpWidget(
+        themed(
+          SignInPage(
+            child: PhoneNumberField(
+              country: 'Russian Federation',
+              onCountryTap: () => taps++,
+              codeController: code,
+              numberController: number,
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Russian Federation'));
+      expect(taps, 1);
+      await tester.enterText(find.byType(TextField).last, '9001234567');
+      expect(number.text, '9001234567');
+      expect(code.text, '+7');
+    });
+
+    testWidgets('sign-in page shows back only when asked', (tester) async {
+      var back = 0;
+      await tester.pumpWidget(themed(const SignInPage(child: SizedBox())));
+      expect(find.byType(MgIconButton), findsNothing);
+      await tester.pumpWidget(
+        themed(
+          SignInPage(
+            onBack: () => back++,
+            backTooltip: 'Back',
+            child: const SizedBox(),
+          ),
+        ),
+      );
+      await tester.tap(find.byType(MgIconButton));
+      expect(back, 1);
+    });
   });
 }

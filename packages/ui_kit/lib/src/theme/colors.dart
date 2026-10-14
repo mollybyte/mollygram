@@ -14,6 +14,7 @@ class MgColors extends ThemeExtension<MgColors> {
     required this.onAccent,
     required this.onAccentSecondary,
     required this.separator,
+    required this.windowBackground,
     required this.bubbleIn,
     required this.bubbleOut,
     required this.bubbleShadow,
@@ -52,6 +53,10 @@ class MgColors extends ThemeExtension<MgColors> {
   /// Secondary text on top of [accent] (rgba(255,255,255,.82)).
   final Color onAccentSecondary;
   final Color separator;
+
+  /// Plain window background for screens without the wallpaper, such as
+  /// sign-in.
+  final Color windowBackground;
 
   /// Incoming message bubble. Also the glass fill when transparency is
   /// reduced, as in the mockup.
@@ -118,6 +123,7 @@ class MgColors extends ThemeExtension<MgColors> {
     onAccent: Color(0xFFFFFFFF),
     onAccentSecondary: Color(0xD1FFFFFF),
     separator: Color(0x14000000),
+    windowBackground: Color(0xFFFFFFFF),
     bubbleIn: Color(0xFFFFFFFF),
     bubbleOut: Color(0xFFEFFDDE),
     bubbleShadow: Color(0x12000000),
@@ -152,6 +158,7 @@ class MgColors extends ThemeExtension<MgColors> {
     onAccent: Color(0xFFFFFFFF),
     onAccentSecondary: Color(0xD1FFFFFF),
     separator: Color(0x17FFFFFF),
+    windowBackground: Color(0xFF1C1C1E),
     bubbleIn: Color(0xFF2A2A2D),
     bubbleOut: Color(0xFF2B5278),
     bubbleShadow: null,
@@ -196,6 +203,7 @@ class MgColors extends ThemeExtension<MgColors> {
     Color? onAccent,
     Color? onAccentSecondary,
     Color? separator,
+    Color? windowBackground,
     Color? bubbleIn,
     Color? bubbleOut,
     Object? bubbleShadow = _keep,
@@ -224,6 +232,7 @@ class MgColors extends ThemeExtension<MgColors> {
       onAccent: onAccent ?? this.onAccent,
       onAccentSecondary: onAccentSecondary ?? this.onAccentSecondary,
       separator: separator ?? this.separator,
+      windowBackground: windowBackground ?? this.windowBackground,
       bubbleIn: bubbleIn ?? this.bubbleIn,
       bubbleOut: bubbleOut ?? this.bubbleOut,
       bubbleShadow: identical(bubbleShadow, _keep)
@@ -260,6 +269,7 @@ class MgColors extends ThemeExtension<MgColors> {
       onAccent: c(onAccent, other.onAccent),
       onAccentSecondary: c(onAccentSecondary, other.onAccentSecondary),
       separator: c(separator, other.separator),
+      windowBackground: c(windowBackground, other.windowBackground),
       bubbleIn: c(bubbleIn, other.bubbleIn),
       bubbleOut: c(bubbleOut, other.bubbleOut),
       bubbleShadow: Color.lerp(bubbleShadow, other.bubbleShadow, t),
