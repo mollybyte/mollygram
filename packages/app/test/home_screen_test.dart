@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 
@@ -8,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mollygram/l10n/app_localizations.dart';
 import 'package:mollygram/src/home/home_screen.dart';
 import 'package:mollygram/src/home/workspace.dart';
+import 'package:mollygram/src/home/workspace_storage.dart';
 import 'package:mollygram/src/session/providers.dart';
 import 'package:mollygram/src/settings/plugins_page.dart';
 import 'package:mollygram_core/mollygram_core.dart';
@@ -64,7 +66,18 @@ void main() {
     }
   }
 
-  Future<ProviderContainer> pump(WidgetTester tester) async {
+  late MemoryWorkspaceStorage storage;
+  late Set<int> missingChats;
+
+  setUp(() {
+    storage = MemoryWorkspaceStorage();
+    missingChats = {};
+  });
+
+  Future<ProviderContainer> pump(
+    WidgetTester tester, {
+    Future<void>? beforeChatsLoad,
+  }) async {
     tester.view
       ..physicalSize = const Size(1400, 900)
       ..devicePixelRatio = 1;
@@ -73,6 +86,11 @@ void main() {
       ProviderScope(
         overrides: [
           telegramSessionProvider.overrideWith((ref) async => session),
+          workspaceStorageProvider.overrideWithValue(storage),
+          chatLoaderProvider.overrideWithValue((id) async {
+            await beforeChatsLoad;
+            return !missingChats.contains(id);
+          }),
           pluginsControllerProvider.overrideWith(
             (ref) => PluginsController(mockPlugins()),
           ),
@@ -218,6 +236,59 @@ void main() {
     expect(find.byType(PluginsScreen), findsNothing);
     // The chat is still where it was.
     expect(header('Anna'), findsOneWidget);
+  });
+
+  testWidgets('saves the layout and restores it without lost chats', (
+    tester,
+  ) async {
+    await pump(tester);
+    await tester.tap(row('Anna'));
+    await settle(tester);
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.altLeft);
+    await tester.tap(row('Vera'));
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.altLeft);
+    await settle(tester);
+    // Saves are batched.
+    await tester.pump(const Duration(seconds: 1));
+    final saved = Workspace.fromJson(storage.saved);
+    expect(
+      [for (final t in saved.tabs) t.panes],
+      [
+        [1],
+        [3],
+      ],
+    );
+
+    // Next launch: Vera's chat is gone.
+    missingChats.add(3);
+    await tester.pumpWidget(const SizedBox());
+    final container = await pump(tester);
+    final restored = container.read(workspaceControllerProvider).value;
+    expect(
+      [for (final t in restored.tabs) t.panes],
+      [
+        [1],
+        [null],
+      ],
+    );
+  });
+
+  testWidgets('restores the saved layout on start', (tester) async {
+    storage.saved = Workspace.initial().open(3).toJson();
+    final container = await pump(tester);
+    expect(container.read(workspaceControllerProvider).value.focusedChat, 3);
+    expect(header('Vera'), findsOneWidget);
+  });
+
+  testWidgets('a chat opened before the layout loads wins', (tester) async {
+    storage.saved = Workspace.initial().open(3).toJson();
+    final loading = Completer<void>();
+    final container = await pump(tester, beforeChatsLoad: loading.future);
+    await tester.tap(row('Anna'));
+    await settle(tester);
+    loading.complete();
+    await settle(tester);
+    expect(container.read(workspaceControllerProvider).value.focusedChat, 1);
   });
 
   test('recent chats put the ones opened here first', () {

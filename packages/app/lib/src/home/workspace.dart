@@ -6,6 +6,7 @@ import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_shell/mollygram_shell.dart';
 
 import '../session/providers.dart';
+import 'workspace_storage.dart';
 
 /// The chats the shell can open and search, backed by the session.
 final chatDirectoryProvider = Provider<TelegramChatDirectory>((ref) {
@@ -19,21 +20,76 @@ final chatDirectoryProvider = Provider<TelegramChatDirectory>((ref) {
   return directory;
 });
 
-/// The window layout: tabs, split panes and the focused chat. A new
-/// session (another account) starts with an empty window.
+/// Whether TDLib still has a chat; loads it when the list hasn't yet.
+final chatLoaderProvider = Provider<Future<bool> Function(int chatId)>((ref) {
+  final chatLists = ref.watch(telegramSessionProvider).requireValue.chatLists;
+  return chatLists.loadChat;
+});
+
+/// The window layout: tabs, split panes and the focused chat.
+///
+/// The layout is saved as it changes and restored on the next launch,
+/// without chats that are gone. Anything the user opens before the saved
+/// layout is read wins over it.
 final workspaceControllerProvider = Provider<WorkspaceController>((ref) {
   final directory = ref.watch(chatDirectoryProvider);
+  final storage = ref.watch(workspaceStorageProvider);
+  final loadChat = ref.watch(chatLoaderProvider);
   final controller = WorkspaceController();
-  void noteFocused() {
+  var disposed = false;
+  var restoring = true;
+  var applyingRestore = false;
+  Timer? saveTimer;
+
+  void onChange() {
     if (controller.value.focusedChat case final chat?) {
       directory.noteOpened(chat);
     }
+    if (applyingRestore) return;
+    // The user got there first: their layout is the one to keep.
+    restoring = false;
+    saveTimer?.cancel();
+    saveTimer = Timer(_saveDelay, () {
+      unawaited(storage.write(controller.value.toJson()));
+    });
   }
 
-  controller.addListener(noteFocused);
-  ref.onDispose(controller.dispose);
+  Future<void> restore() async {
+    final saved = Workspace.fromJson(await storage.read());
+    final chats = {
+      for (final tab in saved.tabs)
+        for (final chat in tab.panes) ?chat,
+    };
+    final known = await Future.wait(chats.map(loadChat));
+    if (disposed || !restoring) return;
+    var workspace = saved;
+    for (final (i, chat) in chats.indexed) {
+      if (!known[i]) workspace = workspace.removeChat(chat);
+    }
+    applyingRestore = true;
+    controller.value = workspace;
+    applyingRestore = false;
+    restoring = false;
+  }
+
+  controller.addListener(onChange);
+  unawaited(restore().catchError((Object _) => restoring = false));
+  ref.onDispose(() {
+    disposed = true;
+    // A change still waiting to be saved is written now, so quitting right
+    // after a click keeps it.
+    if (saveTimer?.isActive ?? false) {
+      saveTimer!.cancel();
+      unawaited(storage.write(controller.value.toJson()));
+    }
+    controller.dispose();
+  });
   return controller;
 });
+
+/// Saves are batched: dragging the split divider changes the layout on
+/// every frame.
+const _saveDelay = Duration(milliseconds: 500);
 
 /// [ChatDirectory] over TDLib: titles from the chat list store, search
 /// through TDLib's own chat and message search. Notifies when the store

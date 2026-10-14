@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +9,7 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 import '../l10n/app_localizations.dart';
 import 'auth/sign_in_screen.dart';
 import 'home/home_screen.dart';
+import 'home/workspace_storage.dart';
 import 'session/close_before_exit.dart';
 import 'session/providers.dart';
 
@@ -73,6 +76,15 @@ class _Authorized extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Signed out: the saved window layout belonged to that account.
+    ref.listen(authorizationStageProvider, (_, next) {
+      switch (next.value?.kind) {
+        case AuthorizationStageKind.phoneNumber ||
+            AuthorizationStageKind.qrCode:
+          unawaited(ref.read(workspaceStorageProvider).clear());
+        default:
+      }
+    });
     final stage = ref.watch(authorizationStageProvider).value;
     if (stage == null) return const SignInScreen.starting();
     if (stage.kind == AuthorizationStageKind.ready) return const HomeScreen();

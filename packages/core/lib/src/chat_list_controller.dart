@@ -50,6 +50,19 @@ final class ChatListController {
     });
   }
 
+  /// Asks TDLib for one chat, such as a chat restored from a saved window
+  /// layout before the list has loaded it. TDLib sends `updateNewChat`
+  /// first, so the chat is in [store] once this returns true. Returns false
+  /// when the chat no longer exists or is not accessible.
+  Future<bool> loadChat(int chatId) async {
+    try {
+      await _client.send(td.GetChat(chatId: chatId));
+      return true;
+    } on td.TdException {
+      return false;
+    }
+  }
+
   Future<void> _loadPage(ChatListLocation list) async {
     try {
       await _client.send(td.LoadChats(chatList: _toTdList(list), limit: 100));
