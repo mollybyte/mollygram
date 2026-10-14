@@ -56,5 +56,7 @@
   "previewAnimation": "GIF",
   "previewOther": "Сообщение",
   "noMessages": "Сообщений пока нет",
-  "sendFailed": "Сообщение не отправлено. Попробуйте ещё раз"
+  "sendFailed": "Сообщение не отправлено. Попробуйте ещё раз",
+  "plugins": "Плагины",
+  "settings": "Настройки"
 }

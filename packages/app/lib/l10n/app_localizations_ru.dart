@@ -191,4 +191,10 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get sendFailed => 'Сообщение не отправлено. Попробуйте ещё раз';
+
+  @override
+  String get plugins => 'Плагины';
+
+  @override
+  String get settings => 'Настройки';
 }

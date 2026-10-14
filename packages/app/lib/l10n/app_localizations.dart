@@ -439,6 +439,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The message wasn\'t sent. Try again'**
   String get sendFailed;
+
+  /// No description provided for @plugins.
+  ///
+  /// In en, this message translates to:
+  /// **'Plugins'**
+  String get plugins;
+
+  /// No description provided for @settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settings;
 }
 
 class _AppLocalizationsDelegate

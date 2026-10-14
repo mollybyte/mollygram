@@ -61,6 +61,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        # plugin_host (quickjs-ng) is a submodule; the app links it.
+        with:
+          submodules: true
       # The project uses a single Flutter version, taken from .fvmrc.
       - name: Read Flutter version
         shell: bash
@@ -117,6 +120,9 @@ jobs:
         working-directory: packages/app
     steps:
       - uses: actions/checkout@v4
+        # plugin_host (quickjs-ng) is a submodule; the app links it.
+        with:
+          submodules: true
       # The project uses a single Flutter version, taken from .fvmrc.
       - name: Read Flutter version
         shell: bash

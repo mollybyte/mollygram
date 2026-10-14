@@ -115,18 +115,6 @@ final chatEntryProvider = StreamProvider.family<ChatListEntry?, int>((
   ).distinct();
 });
 
-/// The chat open in the main pane.
-final selectedChatProvider = NotifierProvider<SelectedChat, int?>(
-  SelectedChat.new,
-);
-
-class SelectedChat extends Notifier<int?> {
-  @override
-  int? build() => null;
-
-  void select(int chatId) => state = chatId;
-}
-
 /// Text messages of one chat, newest first.
 final conversationProvider =
     StreamProvider.family<List<ConversationMessage>, int>((ref, chatId) {

@@ -65,5 +65,7 @@
   "previewAnimation": "GIF",
   "previewOther": "Message",
   "noMessages": "No messages here yet",
-  "sendFailed": "The message wasn't sent. Try again"
+  "sendFailed": "The message wasn't sent. Try again",
+  "plugins": "Plugins",
+  "settings": "Settings"
 }

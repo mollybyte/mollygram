@@ -190,4 +190,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sendFailed => 'The message wasn\'t sent. Try again';
+
+  @override
+  String get plugins => 'Plugins';
+
+  @override
+  String get settings => 'Settings';
 }
