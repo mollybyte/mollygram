@@ -35,7 +35,8 @@ class MollygramApp extends StatelessWidget {
   );
 }
 
-/// Closes TDLib before the process exits; see [CloseBeforeExit].
+/// Saves the window layout and closes TDLib before the process exits; see
+/// [CloseBeforeExit].
 class _CloseSessionBeforeExit extends ConsumerWidget {
   const _CloseSessionBeforeExit({required this.child});
 
@@ -43,7 +44,11 @@ class _CloseSessionBeforeExit extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) => CloseBeforeExit(
-    close: () async => ref.read(telegramSessionProvider).value?.dispose(),
+    close: () async {
+      // A layout change still waiting to be saved is written first.
+      await ref.read(workspaceSaverProvider).flush();
+      await ref.read(telegramSessionProvider).value?.dispose();
+    },
     child: child,
   );
 }
@@ -81,7 +86,7 @@ class _Authorized extends ConsumerWidget {
       switch (next.value?.kind) {
         case AuthorizationStageKind.phoneNumber ||
             AuthorizationStageKind.qrCode:
-          unawaited(ref.read(workspaceStorageProvider).clear());
+          unawaited(ref.read(workspaceSaverProvider).clear());
         default:
       }
     });

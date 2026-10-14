@@ -33,13 +33,12 @@ final chatLoaderProvider = Provider<Future<bool> Function(int chatId)>((ref) {
 /// layout is read wins over it.
 final workspaceControllerProvider = Provider<WorkspaceController>((ref) {
   final directory = ref.watch(chatDirectoryProvider);
-  final storage = ref.watch(workspaceStorageProvider);
+  final saver = ref.watch(workspaceSaverProvider);
   final loadChat = ref.watch(chatLoaderProvider);
   final controller = WorkspaceController();
   var disposed = false;
   var restoring = true;
   var applyingRestore = false;
-  Timer? saveTimer;
 
   void onChange() {
     if (controller.value.focusedChat case final chat?) {
@@ -48,14 +47,11 @@ final workspaceControllerProvider = Provider<WorkspaceController>((ref) {
     if (applyingRestore) return;
     // The user got there first: their layout is the one to keep.
     restoring = false;
-    saveTimer?.cancel();
-    saveTimer = Timer(_saveDelay, () {
-      unawaited(storage.write(controller.value.toJson()));
-    });
+    saver.schedule(controller.value.toJson());
   }
 
   Future<void> restore() async {
-    final saved = Workspace.fromJson(await storage.read());
+    final saved = Workspace.fromJson(await saver.read());
     final chats = {
       for (final tab in saved.tabs)
         for (final chat in tab.panes) ?chat,
@@ -76,20 +72,11 @@ final workspaceControllerProvider = Provider<WorkspaceController>((ref) {
   unawaited(restore().catchError((Object _) => restoring = false));
   ref.onDispose(() {
     disposed = true;
-    // A change still waiting to be saved is written now, so quitting right
-    // after a click keeps it.
-    if (saveTimer?.isActive ?? false) {
-      saveTimer!.cancel();
-      unawaited(storage.write(controller.value.toJson()));
-    }
+    unawaited(saver.flush());
     controller.dispose();
   });
   return controller;
 });
-
-/// Saves are batched: dragging the split divider changes the layout on
-/// every frame.
-const _saveDelay = Duration(milliseconds: 500);
 
 /// [ChatDirectory] over TDLib: titles from the chat list store, search
 /// through TDLib's own chat and message search. Notifies when the store
