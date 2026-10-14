@@ -18,6 +18,7 @@ void main() {
   late TelegramSession session;
 
   setUp(() async {
+    _shownChat.value = 7;
     json = _FakeTdJson();
     session = await TelegramSession.attach(
       td.Td.custom(json, td.InlineTdEventSource(json)),
@@ -205,6 +206,23 @@ void main() {
     expect(find.text('Editing'), findsNothing);
   });
 
+  testWidgets('drops an edit, not the draft, when the chat changes', (
+    tester,
+  ) async {
+    await pump(tester);
+    await rightClick(tester, 'Mine');
+    await tester.tap(find.text('Edit'));
+    await tester.pump();
+    expect(find.text('Editing'), findsOneWidget);
+
+    _shownChat.value = 8;
+    await tester.pump();
+
+    final field = tester.widget<TextField>(find.byType(TextField));
+    expect(field.controller!.text, isEmpty);
+    expect(find.text('Editing'), findsNothing);
+  });
+
   testWidgets('deletes a message for everyone after asking', (tester) async {
     await pump(tester);
 
@@ -297,9 +315,15 @@ class _Host extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) =>
       ref.watch(telegramSessionProvider).hasValue
-      ? const ChatView(chatId: 7)
+      ? ValueListenableBuilder(
+          valueListenable: _shownChat,
+          builder: (context, chatId, _) => ChatView(chatId: chatId),
+        )
       : const SizedBox();
 }
+
+/// The chat the host shows; tests switch it.
+final _shownChat = ValueNotifier(7);
 
 /// Oldest first: two messages from Boris, one from Vera, one from us.
 final _history = [

@@ -30,6 +30,19 @@ class _ForwardPicker extends ConsumerStatefulWidget {
 
 class _ForwardPickerState extends ConsumerState<_ForwardPicker> {
   var _query = '';
+  final _search = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _search.requestFocus();
+  }
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,17 +73,15 @@ class _ForwardPickerState extends ConsumerState<_ForwardPicker> {
                 style: mgTextStyle(c, weight: FontWeight.w600),
               ),
             ),
-            Focus(
-              autofocus: true,
-              child: MgSearchField(
-                hintText: l10n.forwardSearch,
-                onChanged: (value) => setState(() => _query = value),
-                onSubmitted: (_) {
-                  if (matches.isNotEmpty) {
-                    Navigator.of(context).pop(matches.first.id);
-                  }
-                },
-              ),
+            MgSearchField(
+              focusNode: _search,
+              hintText: l10n.forwardSearch,
+              onChanged: (value) => setState(() => _query = value),
+              onSubmitted: (_) {
+                if (matches.isNotEmpty) {
+                  Navigator.of(context).pop(matches.first.id);
+                }
+              },
             ),
             const SizedBox(height: 8),
             Expanded(

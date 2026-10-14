@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 
 import 'conversation_store.dart';
+import 'text_edit.dart';
 
 /// Loads and maintains conversation timelines from TDLib.
 final class ConversationController {
@@ -201,11 +202,18 @@ final class ConversationController {
     _add(message);
   }
 
-  /// Replaces the text of a text message, or the caption of a media one.
-  /// The new version arrives through updateMessageContent.
+  /// Replaces the text of a text message, or the caption of a media one,
+  /// keeping the formatting of the parts that did not change. The new
+  /// version arrives through updateMessageContent.
   Future<void> editText(int chatId, int messageId, String text) async {
-    final formatted = td.FormattedText(text: text, entities: const []);
     final content = store.message(chatId, messageId)?.content;
+    final current = content == null ? null : captionOf(content);
+    final formatted = td.FormattedText(
+      text: text,
+      entities: current == null
+          ? const []
+          : carryEntities(current.text, text, current.entities),
+    );
     if (content == null || content is td.MessageText) {
       await _client.send(
         td.EditMessageText(
@@ -223,7 +231,14 @@ final class ConversationController {
           chatId: chatId,
           messageId: messageId,
           caption: formatted,
-          showCaptionAboveMedia: false,
+          showCaptionAboveMedia: switch (content) {
+            td.MessagePhoto(:final showCaptionAboveMedia) ||
+            td.MessageVideo(:final showCaptionAboveMedia) ||
+            td.MessageAnimation(
+              :final showCaptionAboveMedia,
+            ) => showCaptionAboveMedia,
+            _ => false,
+          },
         ),
       );
     }

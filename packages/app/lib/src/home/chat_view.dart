@@ -39,6 +39,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
   /// it pushed aside, which comes back when editing ends.
   ConversationMessage? _editing;
   String _setAside = '';
+  ConversationMessage? _replyAside;
 
   /// Incoming messages already reported to TDLib as viewed.
   final _viewed = <int>{};
@@ -64,10 +65,14 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _close(old.chatId);
     _viewed.clear();
     _toView.clear();
+    // An edit belongs to the old chat: give back the draft it set aside.
+    if (_editing != null) _draft.text = _setAside;
     _sendFailed = false;
+    _editFailed = false;
     _replyTo = null;
     _editing = null;
     _setAside = '';
+    _replyAside = null;
     _open(widget.chatId);
   }
 
@@ -154,13 +159,19 @@ class _ChatViewState extends ConsumerState<ChatView> {
   }
 
   void _reply(ConversationMessage message) {
+    // The chat may have changed while the menu was open.
+    if (message.chatId != widget.chatId) return;
     if (_editing != null) _stopEditing();
     setState(() => _replyTo = message);
     _focus.requestFocus();
   }
 
   void _edit(ConversationMessage message) {
-    if (_editing == null) _setAside = _draft.text;
+    if (message.chatId != widget.chatId) return;
+    if (_editing == null) {
+      _setAside = _draft.text;
+      _replyAside = _replyTo;
+    }
     final text = message.text;
     setState(() {
       _editing = message;
@@ -176,7 +187,12 @@ class _ChatViewState extends ConsumerState<ChatView> {
   void _stopEditing() {
     final draft = _setAside;
     _setAside = '';
-    setState(() => _editing = null);
+    setState(() {
+      _editing = null;
+      _editFailed = false;
+      _replyTo = _replyAside;
+      _replyAside = null;
+    });
     _draft.value = TextEditingValue(
       text: draft,
       selection: TextSelection.collapsed(offset: draft.length),
@@ -195,7 +211,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
   /// The up arrow in an empty composer edits the last message the user
   /// sent, as in the official apps.
   Future<void> _editLast() async {
-    final messages = _conversations.store.messagesFor(widget.chatId);
+    final chatId = widget.chatId;
+    final messages = _conversations.store.messagesFor(chatId);
     // Newest first.
     for (final message in messages) {
       if (!message.isOutgoing || message.sendState != MessageSendState.sent) {
@@ -211,7 +228,10 @@ class _ChatViewState extends ConsumerState<ChatView> {
       } on Object {
         return;
       }
-      if (!mounted || !properties.canBeEdited || _draft.text.isNotEmpty) {
+      if (!mounted ||
+          widget.chatId != chatId ||
+          !properties.canBeEdited ||
+          _draft.text.isNotEmpty) {
         return;
       }
       _edit(message);

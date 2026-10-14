@@ -53,7 +53,7 @@ Future<void> showMessageMenu(
     final results = await Future.wait<Object>([
       conversations.propertiesOf(chatId, target.id),
       conversations
-          .quickReactions(chatId, target.id)
+          .quickReactions(chatId, row.primary.id)
           .catchError((Object _) => const <String>[]),
     ]);
     properties = results[0] as td.MessageProperties;
@@ -64,17 +64,19 @@ Future<void> showMessageMenu(
   }
   if (!context.mounted) return;
 
+  // Reactions go where the tile draws them: on the row's last message.
+  final reacted = row.primary;
   final chosen = <String>{
     for (final reaction
-        in target.message.interactionInfo?.reactions?.reactions ??
+        in reacted.message.interactionInfo?.reactions?.reactions ??
             const <td.MessageReaction>[])
       if (reaction.isChosen)
         if (reaction.type case td.ReactionTypeEmoji(:final emoji)) emoji,
   };
   final protected =
-      properties == null ||
-      properties.hasProtectedContentByCurrentUser ||
-      properties.hasProtectedContentByOtherUser;
+      properties != null &&
+      (properties.hasProtectedContentByCurrentUser ||
+          properties.hasProtectedContentByOtherUser);
   final canDelete =
       properties != null &&
       (properties.canBeDeletedOnlyForSelf ||
@@ -142,7 +144,7 @@ Future<void> showMessageMenu(
               conversations
                   .toggleReaction(
                     chatId,
-                    target.id,
+                    reacted.id,
                     td.ReactionTypeEmoji(emoji: emoji),
                     chosen: chosen.contains(emoji),
                   )
