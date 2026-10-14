@@ -82,6 +82,28 @@
   "openFile": "Open",
   "play": "Play",
   "pause": "Pause",
+  "menuReply": "Reply",
+  "menuEdit": "Edit",
+  "menuCopyText": "Copy text",
+  "menuCopyLink": "Copy link",
+  "menuForward": "Forward",
+  "menuDelete": "Delete",
+  "cancel": "Cancel",
+  "deleteMessageTitle": "Delete message?",
+  "deleteMessagesTitle": "{count, plural, one{Delete {count} message?} other{Delete {count} messages?}}",
+  "@deleteMessagesTitle": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "deleteForEveryone": "Delete for everyone",
+  "deleteAlsoFor": "Also delete for {name}",
+  "@deleteAlsoFor": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "editingMessage": "Editing",
+  "forwardTitle": "Forward to chat",
+  "forwardSearch": "Search chats",
+  "noChatsFound": "No chats found",
+  "editFailed": "Couldn't save the changes",
   "close": "Close",
   "fileSizeBytes": "{size} B",
   "@fileSizeBytes": {

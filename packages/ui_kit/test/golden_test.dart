@@ -1,6 +1,7 @@
 @Tags(['golden'])
 library;
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -382,6 +383,72 @@ void main() {
         colors,
         'icons_$theme',
         size: const Size(380, 120),
+      );
+    });
+
+    testWidgets('message menu $theme', skip: _skip, (tester) async {
+      tester.view.physicalSize = const Size(640, 420);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        themed(
+          Stack(
+            children: [
+              const Positioned.fill(child: Wallpaper()),
+              Positioned(
+                left: 24,
+                right: 24,
+                bottom: 12,
+                child: Composer(
+                  labels: _labels,
+                  header: ComposerContextBar(
+                    title: 'Alina',
+                    text: 'Did the new build land on your Mac?',
+                    closeTooltip: 'Close',
+                    onClose: () {},
+                  ),
+                ),
+              ),
+            ],
+          ),
+          colors: colors,
+        ),
+      );
+      final context = tester.element(find.byType(Composer));
+      unawaited(
+        showMgMenu(
+          context,
+          position: const Offset(60, 30),
+          header: ReactionBar(
+            reactions: const ['a', 'b', 'c', 'd', 'e', 'f'],
+            chosen: const {'b'},
+            onPick: (_) {},
+          ),
+          items: [
+            MgMenuItem(label: 'Reply', onSelected: () {}),
+            MgMenuItem(label: 'Edit', onSelected: () {}),
+            MgMenuItem(label: 'Copy text', onSelected: () {}),
+            MgMenuItem(label: 'Forward', onSelected: () {}),
+            MgMenuItem(label: 'Delete', destructive: true, onSelected: () {}),
+          ],
+        ),
+      );
+      await tester.pump();
+      unawaited(
+        showMgConfirm(
+          context,
+          title: 'Delete message?',
+          confirmLabel: 'Delete',
+          cancelLabel: 'Cancel',
+          option: 'Also delete for Alina',
+          optionValue: true,
+          destructive: true,
+        ),
+      );
+      await tester.pump();
+      await expectLater(
+        find.byType(MaterialApp),
+        matchesGoldenFile('goldens/message_menu_$theme.png'),
       );
     });
   }
