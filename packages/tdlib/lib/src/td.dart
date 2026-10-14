@@ -50,17 +50,31 @@ final class Td {
   /// [libraryPath] sets the path to libtdjson; without it the library is
   /// looked up by its standard name. If [checkVersion] is true, the library
   /// version is checked against [tdlibVersion].
+  ///
+  /// [logVerbosity] sets TDLib's internal log level before anything else
+  /// runs: 0 fatal, 1 errors, 2 warnings, 3 info, 4 debug, 5 verbose. TDLib's
+  /// own default is 5, which writes every update to stderr. The default here
+  /// is 1 and can be raised for a build with
+  /// `--dart-define=TDLIB_LOG_VERBOSITY=<level>`.
   static Future<Td> start({
     String? libraryPath,
     bool checkVersion = true,
+    int logVerbosity = defaultLogVerbosity,
   }) async {
     final json = TdJsonFfi.open(libraryPath);
+    _execute(json, SetLogVerbosityLevel(newVerbosityLevel: logVerbosity));
     if (checkVersion) _checkVersion(json);
     final source = await IsolateTdEventSource.spawn(
       () => TdJsonFfi.open(libraryPath),
     );
     return Td._(json, source);
   }
+
+  /// The log level [start] uses unless told otherwise.
+  static const defaultLogVerbosity = int.fromEnvironment(
+    'TDLIB_LOG_VERBOSITY',
+    defaultValue: 1,
+  );
 
   /// Creates a TDLib instance with the given [json] and [source].
   ///
