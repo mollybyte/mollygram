@@ -2,6 +2,15 @@ import Cocoa
 import FlutterMacOS
 
 class MainFlutterWindow: NSWindow {
+  /// Where the window buttons go, in points from the window's top-left
+  /// corner. The sidebar island is inset 8 pt and its title bar row is 44 pt
+  /// tall (SidebarIsland in ui_kit), so the buttons are centered in that row
+  /// (8 + 44 / 2) with the same 15 pt gap to the island's left edge as to its
+  /// top edge.
+  private static let buttonsCenterY: CGFloat = 30
+  private static let buttonsLeft: CGFloat = 23
+  private static let buttonsSpacing: CGFloat = 20
+
   override func awakeFromNib() {
     let flutterViewController = FlutterViewController()
     self.contentViewController = flutterViewController
@@ -37,5 +46,48 @@ class MainFlutterWindow: NSWindow {
     RegisterGeneratedPlugins(registry: flutterViewController)
 
     super.awakeFromNib()
+    placeWindowButtons()
+  }
+
+  // AppKit puts the buttons back at their default spot whenever it lays out
+  // the title bar (resize, full screen, key state), so they are moved again
+  // after every layout pass.
+  override func layoutIfNeeded() {
+    super.layoutIfNeeded()
+    placeWindowButtons()
+  }
+
+  private func placeWindowButtons() {
+    // In full screen the buttons live in the menu-bar reveal; leave them.
+    if styleMask.contains(.fullScreen) { return }
+    guard
+      let close = standardWindowButton(.closeButton),
+      let titlebar = close.superview,
+      let container = titlebar.superview,
+      let frameView = container.superview
+    else { return }
+    let buttons: [NSView] = [
+      close,
+      standardWindowButton(.miniaturizeButton),
+      standardWindowButton(.zoomButton),
+    ].compactMap { $0 }
+
+    // The default title bar is too short for the buttons to sit 30 pt down,
+    // so it grows to just below them. It must stay above the search field
+    // (52 pt), or it would take its clicks.
+    let buttonHeight = close.frame.height
+    let height = (Self.buttonsCenterY + buttonHeight / 2 + 4).rounded()
+    let frame = NSRect(
+      x: 0, y: frameView.bounds.height - height,
+      width: frameView.bounds.width, height: height)
+    if container.frame != frame { container.frame = frame }
+    if titlebar.frame != container.bounds { titlebar.frame = container.bounds }
+
+    // The title bar is not flipped: y counts up from its bottom edge.
+    let y = (height - Self.buttonsCenterY - buttonHeight / 2).rounded()
+    for (i, button) in buttons.enumerated() {
+      let origin = NSPoint(x: Self.buttonsLeft + CGFloat(i) * Self.buttonsSpacing, y: y)
+      if button.frame.origin != origin { button.setFrameOrigin(origin) }
+    }
   }
 }
