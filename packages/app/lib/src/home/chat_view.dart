@@ -93,6 +93,17 @@ class _ChatViewState extends ConsumerState<ChatView> {
     });
   }
 
+  /// Called while one of the oldest loaded messages is built: asks TDLib
+  /// for the page before it.
+  void _nearTop() {
+    final chatId = widget.chatId;
+    if (!_conversations.hasOlder(chatId)) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || widget.chatId != chatId) return;
+      unawaited(_quiet(_conversations.loadOlder(chatId)));
+    });
+  }
+
   Future<void> _send(String text) async {
     if (text.trim().isEmpty) return;
     final chatId = widget.chatId;
@@ -139,6 +150,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
                     }
                   : null,
               onShown: _shown,
+              onNearTop: _nearTop,
             ),
             _ => const SizedBox.shrink(),
           },
@@ -196,6 +208,7 @@ class _Messages extends StatelessWidget {
   const _Messages({
     required this.messages,
     required this.onShown,
+    required this.onNearTop,
     this.senderName,
   });
 
@@ -205,6 +218,12 @@ class _Messages extends StatelessWidget {
   /// Called as a message is built, which is when it is on screen or about
   /// to be.
   final void Function(ConversationMessage message) onShown;
+
+  /// Called while one of the oldest loaded messages is built.
+  final VoidCallback onNearTop;
+
+  /// How many messages before the oldest the previous page is asked for.
+  static const _preload = 15;
 
   /// The author shown over incoming messages; null outside groups.
   final String? Function(ConversationMessage message)? senderName;
@@ -222,6 +241,7 @@ class _Messages extends StatelessWidget {
         final older = i + 1 < messages.length ? messages[i + 1] : null;
         final out = message.isOutgoing;
         onShown(message);
+        if (i >= messages.length - _preload) onNearTop();
         // The name goes on the first message of a run from one sender.
         final startsRun = older == null || older.sender != message.sender;
         final name = !out && startsRun ? senderName?.call(message) : null;

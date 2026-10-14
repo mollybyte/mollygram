@@ -18,6 +18,11 @@ final class ConversationController {
 
   /// Messages that arrived while a chat's history was loading, by chat.
   final _arrivedDuringLoad = <int, Set<int>>{};
+
+  /// The oldest message id loaded per chat, and chats whose history ended.
+  final _oldestLoaded = <int, int>{};
+  final _historyEnd = <int>{};
+  final _loadingOlder = <int, Future<void>>{};
   StreamSubscription<td.TdObject>? _subscription;
 
   Stream<void> get changes => _changes.stream;
@@ -29,28 +34,84 @@ final class ConversationController {
     _subscription = _client.updates.listen(_onUpdate);
   }
 
-  Future<void> loadHistory(int chatId, {int fromMessageId = 0}) async {
+  /// Loads the newest messages of [chatId], replacing what was loaded.
+  ///
+  /// TDLib often answers the first request with only a message or two
+  /// while it fetches the rest, so older pages are asked for until the
+  /// screen has [fill] text messages or the history ends.
+  Future<void> loadHistory(int chatId, {int fill = 40}) async {
+    _oldestLoaded.remove(chatId);
+    _historyEnd.remove(chatId);
     final arrived = _arrivedDuringLoad[chatId] ??= {};
-    final td.Messages response;
+    final List<td.Message> page;
     try {
-      response = await _client.send(
-        td.GetChatHistory(
-          chatId: chatId,
-          fromMessageId: fromMessageId,
-          offset: 0,
-          limit: 100,
-          onlyLocal: false,
-        ),
-      );
+      page = await _historyPage(chatId, fromMessageId: 0);
     } finally {
       _arrivedDuringLoad.remove(chatId);
     }
     // Updates kept coming while the request was in flight; a message they
     // added may be missing from the page, so it is kept.
     store.replaceHistory(chatId, [
-      for (final message in response.messages) ?_textMessageFrom(message),
+      for (final message in page) ?_textMessageFrom(message),
     ], keep: arrived);
     _changes.add(null);
+    // A few pages at most: media-only stretches have no text to show.
+    for (var i = 0; i < 5; i++) {
+      if (!hasOlder(chatId) || store.messagesFor(chatId).length >= fill) break;
+      await loadOlder(chatId);
+    }
+  }
+
+  /// Whether TDLib may have messages older than the loaded ones.
+  bool hasOlder(int chatId) => !_historyEnd.contains(chatId);
+
+  /// Loads the page before the oldest loaded message. Calls made while a
+  /// page is loading share it.
+  Future<void> loadOlder(int chatId) {
+    if (!hasOlder(chatId)) return Future.value();
+    return _loadingOlder[chatId] ??= _loadOlderPage(chatId).whenComplete(() {
+      _loadingOlder.remove(chatId);
+    });
+  }
+
+  Future<void> _loadOlderPage(int chatId) async {
+    final oldest = _oldestLoaded[chatId];
+    if (oldest == null) return;
+    final page = await _historyPage(chatId, fromMessageId: oldest);
+    for (final message in page) {
+      if (_textMessageFrom(message) case final text?) store.upsert(text);
+    }
+    if (!_changes.isClosed) _changes.add(null);
+  }
+
+  /// One `getChatHistory` page; tracks the oldest message seen (of any
+  /// kind, so pages of media don't stall paging) and the end of history.
+  Future<List<td.Message>> _historyPage(
+    int chatId, {
+    required int fromMessageId,
+  }) async {
+    final response = await _client.send(
+      td.GetChatHistory(
+        chatId: chatId,
+        fromMessageId: fromMessageId,
+        offset: 0,
+        limit: 100,
+        onlyLocal: false,
+      ),
+    );
+    final messages = response.messages;
+    var oldest = _oldestLoaded[chatId];
+    final before = oldest;
+    for (final message in messages) {
+      if (oldest == null || message.id < oldest) oldest = message.id;
+    }
+    // An empty page, or one with nothing older, means the history ended.
+    if (oldest == null || oldest == before) {
+      _historyEnd.add(chatId);
+    } else {
+      _oldestLoaded[chatId] = oldest;
+    }
+    return messages;
   }
 
   /// Tells TDLib the chat is on screen. Supergroups and channels get all

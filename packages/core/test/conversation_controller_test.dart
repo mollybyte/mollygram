@@ -26,7 +26,7 @@ void main() {
     await controller.loadHistory(7);
 
     expect(controller.store.messagesFor(7).map((message) => message.text), [
-      'From history',
+      'Message 10',
     ]);
 
     json.push({
@@ -37,7 +37,7 @@ void main() {
 
     expect(controller.store.messagesFor(7).map((message) => message.text), [
       'Live',
-      'From history',
+      'Message 10',
     ]);
   });
 
@@ -194,6 +194,61 @@ void main() {
     expect(controller.store.nameOf(const MessageSenderId.chat(1)), isNull);
   });
 
+  test('pages back through history until TDLib has no more', () async {
+    json.historyPages = {
+      0: [12],
+      12: [11, 10],
+      10: [],
+    };
+    await controller.start();
+
+    // The first answer is short, so older pages are fetched to fill the
+    // screen, until the empty page ends the history.
+    await controller.loadHistory(7);
+
+    expect(controller.store.messagesFor(7).map((message) => message.id), [
+      12,
+      11,
+      10,
+    ]);
+    expect(controller.hasOlder(7), isFalse);
+    expect(
+      [
+        for (final r in json.sent)
+          if (r['@type'] == 'getChatHistory') r['from_message_id'],
+      ],
+      [0, 12, 10],
+    );
+
+    await controller.loadOlder(7);
+    expect(
+      json.sent.where((r) => r['@type'] == 'getChatHistory'),
+      hasLength(3),
+    );
+  });
+
+  test('loads older messages on request', () async {
+    json.historyPages = {
+      0: [12],
+      12: [11],
+    };
+    await controller.start();
+    await controller.loadHistory(7, fill: 1);
+    expect(controller.store.messagesFor(7).map((message) => message.id), [12]);
+    expect(controller.hasOlder(7), isTrue);
+
+    await Future.wait([controller.loadOlder(7), controller.loadOlder(7)]);
+
+    expect(controller.store.messagesFor(7).map((message) => message.id), [
+      12,
+      11,
+    ]);
+    expect(
+      json.sent.where((r) => r['@type'] == 'getChatHistory'),
+      hasLength(2),
+    );
+  });
+
   test('opens, views and closes a chat through TDLib', () async {
     await controller.start();
 
@@ -257,6 +312,10 @@ final class _FakeTdJson implements td.TdJson {
   final _queue = Queue<String>();
   final sent = <Map<String, Object?>>[];
 
+  /// Message ids returned by `getChatHistory`, by `from_message_id`; when
+  /// null every request returns message 10.
+  Map<int, List<int>>? historyPages;
+
   /// Delivered as `updateNewMessage` before the history response.
   td.Message? liveDuringHistory;
   var _nextClientId = 0;
@@ -286,7 +345,9 @@ final class _FakeTdJson implements td.TdJson {
         '@type': 'messages',
         'total_count': 1,
         'messages': [
-          _message(id: 10, chatId: 7, text: 'From history').toJson(),
+          for (final id
+              in historyPages?[decoded['from_message_id']] ?? const [10])
+            _message(id: id, chatId: 7, text: 'Message $id').toJson(),
         ],
       },
       'sendMessage' => _message(
