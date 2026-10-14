@@ -197,8 +197,10 @@ Items 1–8: about 6–9 weeks for one-to-one calls. Items 9–10: another 4–6
 8. **App size.** Adds roughly 30–50 MB to the universal app (estimate). Acceptable for a desktop client; tdesktop carries the same.
 9. **The 26 ms spike after player recreation** noted in the prototype is a media_kit issue, but remote video in calls uses its own texture path, so it does not carry over.
 
-## Decisions to make
+## Decisions
 
-1. **Audio module:** WebRTC CoreAudio first (recommended) or tdesktop's OpenAL module from the start.
-2. **H.264:** VideoToolbox, openh264 only where tg_owt needs it (recommended), or ship openh264 as tdesktop does.
-3. **Scope of the first release:** one-to-one voice and video plus screen sharing (recommended), group calls right after.
+Agreed on 2026-10-14:
+
+1. **Audio module:** WebRTC CoreAudio first. tdesktop's OpenAL module stays the fallback if real-hardware testing shows problems.
+2. **H.264:** VideoToolbox for encoding and decoding; openh264 only where tg_owt requires it.
+3. **Scope of the first release:** one-to-one voice and video plus screen sharing. Group calls come right after.
