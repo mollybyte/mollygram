@@ -69,6 +69,7 @@ class MessageRowActions {
   const MessageRowActions({
     required this.onReaction,
     required this.onNeedReplied,
+    this.onMenu,
   });
 
   /// Adds the reaction, or takes it back when the user had chosen it.
@@ -81,6 +82,9 @@ class MessageRowActions {
 
   /// The original of a reply isn't loaded yet.
   final void Function(ConversationMessage reply) onNeedReplied;
+
+  /// A right click on the row, at [position] in global coordinates.
+  final void Function(MessageRow row, Offset position)? onMenu;
 }
 
 /// A message, or an album, in Telegram's flat layout: no bubbles, the
@@ -136,7 +140,8 @@ class MessageTile extends StatelessWidget {
     );
     final reactions = message.message.interactionInfo?.reactions?.reactions;
     final name = nameOfSender(l10n, store, message.sender);
-    return Padding(
+    final onMenu = actions.onMenu;
+    final tile = Padding(
       padding: EdgeInsets.only(top: context.startsRun ? 10 : 4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -199,6 +204,12 @@ class MessageTile extends StatelessWidget {
           Padding(padding: const EdgeInsets.only(top: 1), child: meta),
         ],
       ),
+    );
+    if (onMenu == null) return tile;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onSecondaryTapUp: (details) => onMenu(row, details.globalPosition),
+      child: tile,
     );
   }
 }

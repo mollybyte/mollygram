@@ -5,6 +5,8 @@ import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 import 'package:test/test.dart';
 
+import 'support/messages.dart';
+
 void main() {
   late _FakeTdJson json;
   late td.Td tdlib;
@@ -295,6 +297,75 @@ void main() {
     );
   });
 
+  test('sends a reply to the chosen message', () async {
+    await controller.start();
+
+    await controller.sendText(7, 'Sure', replyTo: 10);
+
+    final send = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    expect(send['reply_to'], containsPair('message_id', 10));
+    expect(
+      send['reply_to'],
+      containsPair('@type', 'inputMessageReplyToMessage'),
+    );
+  });
+
+  test('edits text messages and captions with the right request', () async {
+    await controller.start();
+    controller.store.replaceHistory(7, [
+      ConversationMessage(tdMessage(id: 1, chatId: 7, text: 'Hi')),
+      ConversationMessage(
+        tdMessage(
+          id: 2,
+          chatId: 7,
+          content: td.MessagePhoto(
+            photo: const td.Photo(hasStickers: false, sizes: []),
+            caption: const td.FormattedText(text: 'Sea', entities: []),
+            showCaptionAboveMedia: false,
+            hasSpoiler: false,
+            isSecret: false,
+          ),
+        ),
+      ),
+    ]);
+
+    await controller.editText(7, 1, 'Hello');
+    await controller.editText(7, 2, 'Sea view');
+
+    expect(
+      json.sent.map((r) => r['@type']),
+      containsAllInOrder(['editMessageText', 'editMessageCaption']),
+    );
+    final caption = json.sent.last['caption']! as Map;
+    expect(caption['text'], 'Sea view');
+  });
+
+  test('deletes and forwards through TDLib', () async {
+    await controller.start();
+
+    await controller.deleteMessages(7, [1, 2], revoke: true);
+    await controller.deleteMessages(7, [], revoke: true);
+    await controller.forwardMessages(8, 7, [3]);
+
+    final types = json.sent.map((r) => r['@type']).toList();
+    expect(types.where((t) => t == 'deleteMessages'), hasLength(1));
+    final delete = json.sent.firstWhere((r) => r['@type'] == 'deleteMessages');
+    expect(delete['message_ids'], [1, 2]);
+    expect(delete['revoke'], isTrue);
+    final forward = json.sent.firstWhere(
+      (r) => r['@type'] == 'forwardMessages',
+    );
+    expect(forward['chat_id'], 8);
+    expect(forward['from_chat_id'], 7);
+  });
+
+  test('offers free emoji reactions once each, in order', () async {
+    await controller.start();
+
+    expect(await controller.quickReactions(7, 1), ['👍', '❤', '😁']);
+    expect(await controller.quickReactions(7, 1, limit: 2), ['👍', '❤']);
+  });
+
   test('keeps the sender of each message', () async {
     await controller.start();
     await controller.loadHistory(7);
@@ -410,6 +481,36 @@ final class _FakeTdJson implements td.TdJson {
             message.toJson(),
         ],
       },
+      'editMessageText' || 'editMessageCaption' => _message(
+        id: decoded['message_id']! as int,
+        chatId: 7,
+        text: 'Edited',
+      ).toJson(),
+      'forwardMessages' => {
+        '@type': 'messages',
+        'total_count': 0,
+        'messages': <Object?>[],
+      },
+      'getMessageAvailableReactions' => {
+        '@type': 'availableReactions',
+        'top_reactions': [
+          _reaction({'@type': 'reactionTypeEmoji', 'emoji': '👍'}),
+          _reaction({
+            '@type': 'reactionTypeEmoji',
+            'emoji': '🔥',
+          }, premium: true),
+          _reaction({'@type': 'reactionTypeCustomEmoji', 'custom_emoji_id': 9}),
+        ],
+        'recent_reactions': [
+          _reaction({'@type': 'reactionTypeEmoji', 'emoji': '👍'}),
+        ],
+        'popular_reactions': [
+          _reaction({'@type': 'reactionTypeEmoji', 'emoji': '❤'}),
+          _reaction({'@type': 'reactionTypeEmoji', 'emoji': '😁'}),
+        ],
+        'allow_custom_emoji': true,
+        'are_tags': false,
+      },
       'getRepliedMessage' when repliedError != null => {
         '@type': 'error',
         'code': repliedError,
@@ -446,3 +547,8 @@ final class _FakeTdJson implements td.TdJson {
   void push(Map<String, Object?> update) =>
       _queue.add(jsonEncode({...update, '@client_id': 1}));
 }
+
+Map<String, Object?> _reaction(
+  Map<String, Object?> type, {
+  bool premium = false,
+}) => {'@type': 'availableReaction', 'type': type, 'needs_premium': premium};

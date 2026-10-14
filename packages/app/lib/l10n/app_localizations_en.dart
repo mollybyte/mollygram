@@ -233,6 +233,64 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pause => 'Pause';
 
   @override
+  String get menuReply => 'Reply';
+
+  @override
+  String get menuEdit => 'Edit';
+
+  @override
+  String get menuCopyText => 'Copy text';
+
+  @override
+  String get menuCopyLink => 'Copy link';
+
+  @override
+  String get menuForward => 'Forward';
+
+  @override
+  String get menuDelete => 'Delete';
+
+  @override
+  String get cancel => 'Cancel';
+
+  @override
+  String get deleteMessageTitle => 'Delete message?';
+
+  @override
+  String deleteMessagesTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Delete $count messages?',
+      one: 'Delete $count message?',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get deleteForEveryone => 'Delete for everyone';
+
+  @override
+  String deleteAlsoFor(String name) {
+    return 'Also delete for $name';
+  }
+
+  @override
+  String get editingMessage => 'Editing';
+
+  @override
+  String get forwardTitle => 'Forward to chat';
+
+  @override
+  String get forwardSearch => 'Search chats';
+
+  @override
+  String get noChatsFound => 'No chats found';
+
+  @override
+  String get editFailed => 'Couldn\'t save the changes';
+
+  @override
   String get close => 'Close';
 
   @override

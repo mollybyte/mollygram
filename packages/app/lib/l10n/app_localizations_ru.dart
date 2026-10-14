@@ -234,6 +234,65 @@ class AppLocalizationsRu extends AppLocalizations {
   String get pause => 'Пауза';
 
   @override
+  String get menuReply => 'Ответить';
+
+  @override
+  String get menuEdit => 'Изменить';
+
+  @override
+  String get menuCopyText => 'Копировать текст';
+
+  @override
+  String get menuCopyLink => 'Копировать ссылку';
+
+  @override
+  String get menuForward => 'Переслать';
+
+  @override
+  String get menuDelete => 'Удалить';
+
+  @override
+  String get cancel => 'Отмена';
+
+  @override
+  String get deleteMessageTitle => 'Удалить сообщение?';
+
+  @override
+  String deleteMessagesTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Удалить $count сообщений?',
+      few: 'Удалить $count сообщения?',
+      one: 'Удалить $count сообщение?',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get deleteForEveryone => 'Удалить у всех';
+
+  @override
+  String deleteAlsoFor(String name) {
+    return 'Также удалить для $name';
+  }
+
+  @override
+  String get editingMessage => 'Редактирование';
+
+  @override
+  String get forwardTitle => 'Переслать в чат';
+
+  @override
+  String get forwardSearch => 'Поиск чатов';
+
+  @override
+  String get noChatsFound => 'Чаты не найдены';
+
+  @override
+  String get editFailed => 'Не удалось сохранить изменения';
+
+  @override
   String get close => 'Закрыть';
 
   @override

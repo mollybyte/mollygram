@@ -518,6 +518,102 @@ abstract class AppLocalizations {
   /// **'Pause'**
   String get pause;
 
+  /// No description provided for @menuReply.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply'**
+  String get menuReply;
+
+  /// No description provided for @menuEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get menuEdit;
+
+  /// No description provided for @menuCopyText.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy text'**
+  String get menuCopyText;
+
+  /// No description provided for @menuCopyLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy link'**
+  String get menuCopyLink;
+
+  /// No description provided for @menuForward.
+  ///
+  /// In en, this message translates to:
+  /// **'Forward'**
+  String get menuForward;
+
+  /// No description provided for @menuDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get menuDelete;
+
+  /// No description provided for @cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
+
+  /// No description provided for @deleteMessageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete message?'**
+  String get deleteMessageTitle;
+
+  /// No description provided for @deleteMessagesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{Delete {count} message?} other{Delete {count} messages?}}'**
+  String deleteMessagesTitle(int count);
+
+  /// No description provided for @deleteForEveryone.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete for everyone'**
+  String get deleteForEveryone;
+
+  /// No description provided for @deleteAlsoFor.
+  ///
+  /// In en, this message translates to:
+  /// **'Also delete for {name}'**
+  String deleteAlsoFor(String name);
+
+  /// No description provided for @editingMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Editing'**
+  String get editingMessage;
+
+  /// No description provided for @forwardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Forward to chat'**
+  String get forwardTitle;
+
+  /// No description provided for @forwardSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search chats'**
+  String get forwardSearch;
+
+  /// No description provided for @noChatsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No chats found'**
+  String get noChatsFound;
+
+  /// No description provided for @editFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save the changes'**
+  String get editFailed;
+
   /// No description provided for @close.
   ///
   /// In en, this message translates to:

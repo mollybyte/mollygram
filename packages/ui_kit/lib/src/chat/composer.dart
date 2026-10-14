@@ -39,6 +39,9 @@ class Composer extends StatefulWidget {
     this.onAttach,
     this.onEmoji,
     this.onRecord,
+    this.onCancel,
+    this.onEditLast,
+    this.header,
     this.maxLines = 8,
   });
 
@@ -52,6 +55,16 @@ class Composer extends StatefulWidget {
   final VoidCallback? onAttach;
   final VoidCallback? onEmoji;
   final VoidCallback? onRecord;
+
+  /// Esc in the text field, such as to stop replying or editing.
+  final VoidCallback? onCancel;
+
+  /// The up arrow in an empty field: edit the last message sent.
+  final VoidCallback? onEditLast;
+
+  /// Drawn above the text field inside the glass, such as the message
+  /// being replied to.
+  final Widget? header;
   final int maxLines;
 
   /// The composer is at most 712 px wide, centered in the chat.
@@ -110,7 +123,29 @@ class _ComposerState extends State<Composer> {
       _send();
       return KeyEventResult.handled;
     }
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    if (event.logicalKey == LogicalKeyboardKey.escape &&
+        widget.onCancel != null) {
+      widget.onCancel!();
+      return KeyEventResult.handled;
+    }
+    if (event.logicalKey == LogicalKeyboardKey.arrowUp &&
+        widget.onEditLast != null &&
+        _text.text.isEmpty) {
+      widget.onEditLast!();
+      return KeyEventResult.handled;
+    }
     return KeyEventResult.ignored;
+  }
+
+  Widget _withHeader(Widget field) {
+    final header = widget.header;
+    if (header == null) return field;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [header, field],
+    );
   }
 
   @override
@@ -122,62 +157,64 @@ class _ComposerState extends State<Composer> {
     final composer = Glass(
       radius: 22,
       padding: const EdgeInsets.fromLTRB(6, 4, 4, 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          MgIconButton(
-            icon: MgIcons.attach,
-            tooltip: l.attach,
-            iconSize: 18,
-            onPressed: widget.onAttach,
-          ),
-          const SizedBox(width: 2),
-          Expanded(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 32),
-              child: Center(
-                widthFactor: 1,
-                child: Focus(
-                  onKeyEvent: _onKey,
-                  skipTraversal: true,
-                  child: TextField(
-                    controller: _text,
-                    focusNode: widget.focusNode,
-                    minLines: 1,
-                    maxLines: widget.maxLines,
-                    keyboardType: TextInputType.multiline,
-                    style: style,
-                    cursorHeight: 16,
-                    decoration: InputDecoration.collapsed(
-                      hintText: l.hint,
-                      hintStyle: style.copyWith(color: c.fg2),
+      child: _withHeader(
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            MgIconButton(
+              icon: MgIcons.attach,
+              tooltip: l.attach,
+              iconSize: 18,
+              onPressed: widget.onAttach,
+            ),
+            const SizedBox(width: 2),
+            Expanded(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 32),
+                child: Center(
+                  widthFactor: 1,
+                  child: Focus(
+                    onKeyEvent: _onKey,
+                    skipTraversal: true,
+                    child: TextField(
+                      controller: _text,
+                      focusNode: widget.focusNode,
+                      minLines: 1,
+                      maxLines: widget.maxLines,
+                      keyboardType: TextInputType.multiline,
+                      style: style,
+                      cursorHeight: 16,
+                      decoration: InputDecoration.collapsed(
+                        hintText: l.hint,
+                        hintStyle: style.copyWith(color: c.fg2),
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(width: 2),
-          MgIconButton(
-            icon: MgIcons.emoji,
-            tooltip: l.emoji,
-            iconSize: 18,
-            onPressed: widget.onEmoji,
-          ),
-          const SizedBox(width: 2),
-          if (hasDraft)
-            MgSendButton(
-              tooltip: l.send,
-              onPressed: widget.onSend == null ? null : _send,
-            )
-          else
+            const SizedBox(width: 2),
             MgIconButton(
-              icon: MgIcons.mic,
-              tooltip: l.record,
+              icon: MgIcons.emoji,
+              tooltip: l.emoji,
               iconSize: 18,
-              onPressed: widget.onRecord,
+              onPressed: widget.onEmoji,
             ),
-        ],
+            const SizedBox(width: 2),
+            if (hasDraft)
+              MgSendButton(
+                tooltip: l.send,
+                onPressed: widget.onSend == null ? null : _send,
+              )
+            else
+              MgIconButton(
+                icon: MgIcons.mic,
+                tooltip: l.record,
+                iconSize: 18,
+                onPressed: widget.onRecord,
+              ),
+          ],
+        ),
       ),
     );
     return Center(

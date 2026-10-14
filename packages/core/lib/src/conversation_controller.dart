@@ -173,7 +173,8 @@ final class ConversationController {
     );
   }
 
-  Future<void> sendText(int chatId, String text) async {
+  /// Sends [text], as a reply to [replyTo] when it is set.
+  Future<void> sendText(int chatId, String text, {int? replyTo}) async {
     if (text.trim().isEmpty) {
       throw ArgumentError.value(
         text,
@@ -184,6 +185,13 @@ final class ConversationController {
     final message = await _client.send(
       td.SendMessage(
         chatId: chatId,
+        replyTo: replyTo == null
+            ? null
+            : td.InputMessageReplyToMessage(
+                messageId: replyTo,
+                checklistTaskId: 0,
+                pollOptionId: '',
+              ),
         inputMessageContent: td.InputMessageText(
           text: td.FormattedText(text: text, entities: const []),
           clearDraft: true,
@@ -191,6 +199,116 @@ final class ConversationController {
       ),
     );
     _add(message);
+  }
+
+  /// Replaces the text of a text message, or the caption of a media one.
+  /// The new version arrives through updateMessageContent.
+  Future<void> editText(int chatId, int messageId, String text) async {
+    final formatted = td.FormattedText(text: text, entities: const []);
+    final content = store.message(chatId, messageId)?.content;
+    if (content == null || content is td.MessageText) {
+      await _client.send(
+        td.EditMessageText(
+          chatId: chatId,
+          messageId: messageId,
+          inputMessageContent: td.InputMessageText(
+            text: formatted,
+            clearDraft: false,
+          ),
+        ),
+      );
+    } else {
+      await _client.send(
+        td.EditMessageCaption(
+          chatId: chatId,
+          messageId: messageId,
+          caption: formatted,
+          showCaptionAboveMedia: false,
+        ),
+      );
+    }
+  }
+
+  /// Deletes messages for the user, and for everyone when [revoke] is set.
+  /// They leave the timeline through updateDeleteMessages.
+  Future<void> deleteMessages(
+    int chatId,
+    List<int> messageIds, {
+    required bool revoke,
+  }) async {
+    if (messageIds.isEmpty) return;
+    await _client.send(
+      td.DeleteMessages(chatId: chatId, messageIds: messageIds, revoke: revoke),
+    );
+  }
+
+  /// Forwards messages of [fromChatId] to [toChatId].
+  Future<void> forwardMessages(
+    int toChatId,
+    int fromChatId,
+    List<int> messageIds,
+  ) async {
+    if (messageIds.isEmpty) return;
+    await _client.send(
+      td.ForwardMessages(
+        chatId: toChatId,
+        fromChatId: fromChatId,
+        messageIds: messageIds,
+        sendCopy: false,
+        removeCaption: false,
+      ),
+    );
+  }
+
+  /// What the user may do with a message: reply, edit, delete, forward.
+  Future<td.MessageProperties> propertiesOf(int chatId, int messageId) =>
+      _client.send(
+        td.GetMessageProperties(chatId: chatId, messageId: messageId),
+      );
+
+  /// The emoji reactions offered first for a message, at most [limit].
+  /// Custom emoji reactions are left out until the app draws them.
+  Future<List<String>> quickReactions(
+    int chatId,
+    int messageId, {
+    int limit = 8,
+  }) async {
+    final available = await _client.send(
+      td.GetMessageAvailableReactions(
+        chatId: chatId,
+        messageId: messageId,
+        rowSize: limit,
+      ),
+    );
+    final emoji = <String>[];
+    for (final reaction in [
+      ...available.topReactions,
+      ...available.recentReactions,
+      ...available.popularReactions,
+    ]) {
+      if (emoji.length == limit) break;
+      if (reaction.needsPremium) continue;
+      if (reaction.type case td.ReactionTypeEmoji(emoji: final value)) {
+        if (!emoji.contains(value)) emoji.add(value);
+      }
+    }
+    return emoji;
+  }
+
+  /// A t.me link to the message, for public chats and channels.
+  Future<String> linkOf(int chatId, int messageId) async {
+    final link = await _client.send(
+      td.GetMessageLink(
+        chatId: chatId,
+        messageId: messageId,
+        mediaTimestamp: 0,
+        checklistTaskId: 0,
+        pollOptionId: '',
+        forAlbum: false,
+        inMessageThread: false,
+      ),
+    );
+    return link.link;
   }
 
   /// Announces a change, unless the controller is already closed: a reply

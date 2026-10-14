@@ -1,8 +1,9 @@
 import 'dart:collection';
 import 'dart:convert';
-import 'dart:typed_data';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mollygram/l10n/app_localizations.dart';
@@ -49,6 +50,16 @@ void main() {
       ProviderScope(
         overrides: [
           telegramSessionProvider.overrideWith((ref) async => session),
+          chatListProvider.overrideWith(
+            (ref, list) => Stream.value([
+              ChatListEntry(
+                id: 9,
+                title: 'Saved',
+                unreadCount: 0,
+                positions: const [],
+              ),
+            ]),
+          ),
           chatEntryProvider.overrideWith(
             (ref, chatId) => Stream.value(
               ChatListEntry(
@@ -136,6 +147,122 @@ void main() {
 
     expect(find.text('Boris'), findsOneWidget);
     expect(find.text('Vera'), findsOneWidget);
+  });
+
+  Future<void> rightClick(WidgetTester tester, String text) async {
+    await tester.tap(find.text(text), buttons: kSecondaryButton);
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+  }
+
+  testWidgets('replies to a message from its menu', (tester) async {
+    await pump(tester);
+
+    await rightClick(tester, 'From Vera');
+    expect(find.text('👍'), findsOneWidget);
+    expect(find.text('❤'), findsOneWidget);
+    expect(find.text('Edit'), findsNothing);
+    await tester.tap(find.text('Reply'));
+    await tester.pump();
+
+    // The bar above the composer names who is being answered.
+    expect(find.text('Vera'), findsWidgets);
+    await tester.enterText(find.byType(TextField), 'Sure');
+    await tester.pump();
+    await tester.tap(find.byType(MgSendButton));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+
+    final send = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    expect((send['reply_to']! as Map)['message_id'], 12);
+    expect(find.byType(ComposerContextBar), findsNothing);
+  });
+
+  testWidgets('edits the last sent message with the up arrow', (tester) async {
+    await pump(tester);
+    await tester.enterText(find.byType(TextField), 'Draft');
+    await tester.enterText(find.byType(TextField), '');
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+
+    final field = tester.widget<TextField>(find.byType(TextField));
+    expect(field.controller!.text, 'Mine');
+    expect(find.text('Editing'), findsOneWidget);
+
+    field.controller!.text = 'Mine, fixed';
+    await tester.pump();
+    await tester.tap(find.byType(MgSendButton));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+
+    final edit = json.sent.lastWhere((r) => r['@type'] == 'editMessageText');
+    expect(edit['message_id'], 13);
+    expect(
+      ((edit['input_message_content']! as Map)['text']! as Map)['text'],
+      'Mine, fixed',
+    );
+    expect(find.text('Editing'), findsNothing);
+  });
+
+  testWidgets('deletes a message for everyone after asking', (tester) async {
+    await pump(tester);
+
+    await rightClick(tester, 'From Boris');
+    await tester.tap(find.text('Delete'));
+    await tester.pump();
+    expect(find.text('Delete message?'), findsOneWidget);
+    // The checkbox starts on; the confirm button is the second Delete.
+    await tester.tap(find.text('Delete').last);
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+
+    final delete = json.sent.lastWhere((r) => r['@type'] == 'deleteMessages');
+    expect(delete['message_ids'], [10]);
+    expect(delete['revoke'], isTrue);
+  });
+
+  testWidgets('forwards a message to the chat picked', (tester) async {
+    await pump(tester);
+
+    await rightClick(tester, 'From Vera');
+    await tester.tap(find.text('Forward'));
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('Forward to chat'), findsOneWidget);
+    await tester.tap(find.text('Saved'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+
+    final forward = json.sent.lastWhere((r) => r['@type'] == 'forwardMessages');
+    expect(forward['chat_id'], 9);
+    expect(forward['message_ids'], [12]);
+  });
+
+  testWidgets('copies the text of a message', (tester) async {
+    String? copied;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData') {
+          copied = (call.arguments as Map)['text'] as String?;
+        }
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+    await pump(tester);
+
+    await rightClick(tester, 'Boris again');
+    await tester.tap(find.text('Copy text'));
+    await tester.pump();
+
+    expect(copied, 'Boris again');
   });
 
   testWidgets('gives the text back when sending fails', (tester) async {
@@ -263,6 +390,51 @@ final class _FakeTdJson implements td.TdJson {
         '@type': 'error',
         'code': 403,
         'message': 'CHAT_WRITE_FORBIDDEN',
+      },
+      'sendMessage' => _message(
+        id: 20,
+        senderId: 1,
+        text: 'Sent',
+        outgoing: true,
+      ).toJson(),
+      'editMessageText' => _message(
+        id: decoded['message_id']! as int,
+        senderId: 1,
+        text: 'Edited',
+        outgoing: true,
+      ).toJson(),
+      'forwardMessages' => {
+        '@type': 'messages',
+        'total_count': 0,
+        'messages': <Object?>[],
+      },
+      'getMessageProperties' => {
+        '@type': 'messageProperties',
+        'can_be_replied': true,
+        'can_be_edited': decoded['message_id'] == 13,
+        'can_be_forwarded': true,
+        'can_be_deleted_only_for_self': true,
+        'can_be_deleted_for_all_users': true,
+      },
+      'getMessageAvailableReactions' => {
+        '@type': 'availableReactions',
+        'top_reactions': [
+          for (final emoji in ['👍', '❤', '👍'])
+            {
+              '@type': 'availableReaction',
+              'type': {'@type': 'reactionTypeEmoji', 'emoji': emoji},
+              'needs_premium': false,
+            },
+          {
+            '@type': 'availableReaction',
+            'type': {'@type': 'reactionTypeCustomEmoji', 'custom_emoji_id': 5},
+            'needs_premium': false,
+          },
+        ],
+        'recent_reactions': <Object?>[],
+        'popular_reactions': <Object?>[],
+        'allow_custom_emoji': true,
+        'are_tags': false,
       },
       _ => {'@type': 'ok'},
     };

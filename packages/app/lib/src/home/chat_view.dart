@@ -4,9 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mollygram_core/mollygram_core.dart';
+import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../chat/describe.dart';
+import '../chat/forward_picker.dart';
+import '../chat/message_actions.dart';
 import '../chat/message_tile.dart';
 import '../chat/timeline.dart';
 import '../session/providers.dart';
@@ -25,7 +29,16 @@ class ChatView extends ConsumerStatefulWidget {
 
 class _ChatViewState extends ConsumerState<ChatView> {
   final _draft = TextEditingController();
+  final _focus = FocusNode();
   late final ConversationController _conversations;
+
+  /// The message the next one answers, shown above the composer.
+  ConversationMessage? _replyTo;
+
+  /// The message whose text is in the composer for editing, and the draft
+  /// it pushed aside, which comes back when editing ends.
+  ConversationMessage? _editing;
+  String _setAside = '';
 
   /// Incoming messages already reported to TDLib as viewed.
   final _viewed = <int>{};
@@ -52,6 +65,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _viewed.clear();
     _toView.clear();
     _sendFailed = false;
+    _replyTo = null;
+    _editing = null;
+    _setAside = '';
     _open(widget.chatId);
   }
 
@@ -59,6 +75,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
   void dispose() {
     _close(widget.chatId);
     _draft.dispose();
+    _focus.dispose();
     super.dispose();
   }
 
@@ -74,8 +91,11 @@ class _ChatViewState extends ConsumerState<ChatView> {
       request.catchError((Object _) {});
 
   void _clearSendError() {
-    if (_sendFailed && _draft.text.isNotEmpty) {
-      setState(() => _sendFailed = false);
+    if ((_sendFailed || _editFailed) && _draft.text.isNotEmpty) {
+      setState(() {
+        _sendFailed = false;
+        _editFailed = false;
+      });
     }
   }
 
@@ -111,7 +131,103 @@ class _ChatViewState extends ConsumerState<ChatView> {
     ),
     onNeedReplied: (reply) =>
         unawaited(_quiet(_conversations.loadReplied(reply.chatId, reply.id))),
+    onMenu: (row, position) => unawaited(_showMenu(row, position)),
   );
+
+  Future<void> _showMenu(MessageRow row, Offset position) {
+    final store = _conversations.store;
+    final chat = ref.read(chatEntryProvider(widget.chatId)).value;
+    final isPrivate =
+        chat != null && !chat.isGroup && !store.isChannel(widget.chatId);
+    return showMessageMenu(
+      context,
+      conversations: _conversations,
+      row: row,
+      position: position,
+      peerName: isPrivate ? chat.title : null,
+      handlers: MessageMenuHandlers(
+        onReply: _reply,
+        onEdit: _edit,
+        onForward: (messages) => unawaited(_forward(messages)),
+      ),
+    );
+  }
+
+  void _reply(ConversationMessage message) {
+    if (_editing != null) _stopEditing();
+    setState(() => _replyTo = message);
+    _focus.requestFocus();
+  }
+
+  void _edit(ConversationMessage message) {
+    if (_editing == null) _setAside = _draft.text;
+    final text = message.text;
+    setState(() {
+      _editing = message;
+      _replyTo = null;
+    });
+    _draft.value = TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
+    );
+    _focus.requestFocus();
+  }
+
+  void _stopEditing() {
+    final draft = _setAside;
+    _setAside = '';
+    setState(() => _editing = null);
+    _draft.value = TextEditingValue(
+      text: draft,
+      selection: TextSelection.collapsed(offset: draft.length),
+    );
+  }
+
+  /// Esc: stop editing first, then stop replying.
+  void _cancel() {
+    if (_editing != null) {
+      _stopEditing();
+    } else if (_replyTo != null) {
+      setState(() => _replyTo = null);
+    }
+  }
+
+  /// The up arrow in an empty composer edits the last message the user
+  /// sent, as in the official apps.
+  Future<void> _editLast() async {
+    final messages = _conversations.store.messagesFor(widget.chatId);
+    // Newest first.
+    for (final message in messages) {
+      if (!message.isOutgoing || message.sendState != MessageSendState.sent) {
+        continue;
+      }
+      if (message.text.isEmpty) return;
+      final td.MessageProperties properties;
+      try {
+        properties = await _conversations.propertiesOf(
+          message.chatId,
+          message.id,
+        );
+      } on Object {
+        return;
+      }
+      if (!mounted || !properties.canBeEdited || _draft.text.isNotEmpty) {
+        return;
+      }
+      _edit(message);
+      return;
+    }
+  }
+
+  Future<void> _forward(List<ConversationMessage> messages) async {
+    final target = await pickForwardTarget(context);
+    if (target == null || messages.isEmpty) return;
+    await _quiet(
+      _conversations.forwardMessages(target, messages.first.chatId, [
+        for (final message in messages) message.id,
+      ]),
+    );
+  }
 
   var _olderScheduled = false;
 
@@ -128,11 +244,17 @@ class _ChatViewState extends ConsumerState<ChatView> {
 
   Future<void> _send(String text) async {
     if (text.trim().isEmpty) return;
+    final editing = _editing;
+    if (editing != null) return _saveEdit(editing, text);
     final chatId = widget.chatId;
+    final replyTo = _replyTo;
     _draft.clear();
-    setState(() => _sendFailed = false);
+    setState(() {
+      _sendFailed = false;
+      _replyTo = null;
+    });
     try {
-      await _conversations.sendText(chatId, text);
+      await _conversations.sendText(chatId, text, replyTo: replyTo?.id);
     } catch (_) {
       // Give the text back rather than lose it, unless the user has
       // started typing something else or moved to another chat.
@@ -143,8 +265,50 @@ class _ChatViewState extends ConsumerState<ChatView> {
           selection: TextSelection.collapsed(offset: text.length),
         );
       }
-      setState(() => _sendFailed = true);
+      setState(() {
+        _sendFailed = true;
+        _replyTo ??= replyTo;
+      });
     }
+  }
+
+  Future<void> _saveEdit(ConversationMessage message, String text) async {
+    if (text == message.text) return _stopEditing();
+    _stopEditing();
+    try {
+      await _conversations.editText(message.chatId, message.id, text);
+    } catch (_) {
+      if (!mounted || widget.chatId != message.chatId) return;
+      // Put the edit back so the change is not lost.
+      _edit(message);
+      _draft.value = TextEditingValue(
+        text: text,
+        selection: TextSelection.collapsed(offset: text.length),
+      );
+      setState(() => _editFailed = true);
+    }
+  }
+
+  var _editFailed = false;
+
+  Widget? _composerHeader(AppLocalizations l10n) {
+    final editing = _editing;
+    if (editing != null) {
+      return ComposerContextBar(
+        title: l10n.editingMessage,
+        text: describeContent(l10n, editing.content),
+        closeTooltip: l10n.close,
+        onClose: _stopEditing,
+      );
+    }
+    final reply = _replyTo;
+    if (reply == null) return null;
+    return ComposerContextBar(
+      title: nameOfSender(l10n, _conversations.store, reply.sender),
+      text: describeContent(l10n, reply.content),
+      closeTooltip: l10n.close,
+      onClose: () => setState(() => _replyTo = null),
+    );
   }
 
   /// False while the chat sits in a background tab (tickers are off there).
@@ -196,11 +360,11 @@ class _ChatViewState extends ConsumerState<ChatView> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (_sendFailed)
+              if (_sendFailed || _editFailed)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 6),
                   child: Text(
-                    l10n.sendFailed,
+                    _editFailed ? l10n.editFailed : l10n.sendFailed,
                     textAlign: TextAlign.center,
                     style: mgTextStyle(
                       c,
@@ -211,6 +375,10 @@ class _ChatViewState extends ConsumerState<ChatView> {
                 ),
               Composer(
                 controller: _draft,
+                focusNode: _focus,
+                header: _composerHeader(l10n),
+                onCancel: _editing != null || _replyTo != null ? _cancel : null,
+                onEditLast: () => unawaited(_editLast()),
                 labels: ComposerLabels(
                   hint: l10n.messageHint,
                   attach: l10n.attach,
