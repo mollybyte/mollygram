@@ -102,17 +102,21 @@ jobs:
             exit 1
           fi
 
-      - name: Read Flutter version
-        run: echo "FLUTTER_VERSION=$(jq -r .flutter .fvmrc)" >> "$GITHUB_ENV"
-      - uses: subosito/flutter-action@v2
+      # The test runs outside the pub workspace, which would pull in Flutter
+      # and every app dependency; this package only needs ffi and test.
+      # The SDK is the Dart of the Flutter version in .fvmrc.
+      - uses: dart-lang/setup-dart@v1
         with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          channel: stable
-          cache: true
+          sdk: '3.13.5'
       - name: FFI smoke test
+        timeout-minutes: 15
         run: |
-          flutter pub get
-          cd packages/calls
+          dir="$RUNNER_TEMP/calls"
+          cp -R packages/calls "$dir"
+          rm -rf "$dir/native"
+          sed -i '' '/^resolution: workspace$/d' "$dir/pubspec.yaml"
+          cd "$dir"
+          dart pub get
           MGCALLS_PATH="$MGCALLS_WORK/out/libmgcalls.dylib" dart test test/native_test.dart --reporter expanded
 
       - uses: actions/upload-artifact@v4
