@@ -250,7 +250,7 @@ void main() {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SignInHeader(
-                leading: QrFrame(qr: _FakeQr(), center: _Mark()),
+                leading: QrFrame(qr: _FakeQr()),
                 title: 'Log in to Mollygram by QR code',
               ),
               const SizedBox(height: 24),
@@ -435,18 +435,4 @@ class _QrPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_QrPainter old) => false;
-}
-
-class _Mark extends StatelessWidget {
-  const _Mark();
-
-  @override
-  Widget build(BuildContext context) => Container(
-    width: 34,
-    height: 34,
-    decoration: BoxDecoration(
-      color: const Color(0xFFD6336C),
-      borderRadius: BorderRadius.circular(9),
-    ),
-  );
 }
