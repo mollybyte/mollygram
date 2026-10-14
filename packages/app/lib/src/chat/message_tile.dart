@@ -8,6 +8,7 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../home/format.dart';
+import 'concealed.dart';
 import 'describe.dart';
 import 'file_content.dart';
 import 'formatted_text.dart';
@@ -70,6 +71,7 @@ class MessageRowActions {
     required this.onReaction,
     required this.onNeedReplied,
     this.onMenu,
+    this.onOpen,
   });
 
   /// Adds the reaction, or takes it back when the user had chosen it.
@@ -85,6 +87,9 @@ class MessageRowActions {
 
   /// A right click on the row, at [position] in global coordinates.
   final void Function(MessageRow row, Offset position)? onMenu;
+
+  /// The user revealed self-destructing media, which starts its timer.
+  final void Function(ConversationMessage message)? onOpen;
 }
 
 /// A message, or an album, in Telegram's flat layout: no bubbles, the
@@ -288,6 +293,17 @@ class _MessageBody extends StatelessWidget {
 
   Widget _content(BuildContext context, AppLocalizations l10n) {
     final content = message.content;
+    final restriction = message.message.restrictionInfo?.restrictionReason;
+    if (restriction != null && restriction.isNotEmpty) {
+      final c = MgColors.of(context);
+      return Text(
+        restriction,
+        style: mgTextStyle(
+          c,
+          color: c.fg2,
+        ).copyWith(fontStyle: FontStyle.italic),
+      );
+    }
     switch (content) {
       case td.MessageSticker(:final sticker):
         return StickerContent(sticker: sticker);
@@ -301,10 +317,20 @@ class _MessageBody extends StatelessWidget {
       case td.MessageDice(:final emoji):
         return _BigEmoji(emoji);
       case td.MessageVideoNote(:final videoNote):
-        return VideoNoteContent(
+        final note = VideoNoteContent(
           chatId: message.chatId,
           messageId: message.id,
           videoNote: videoNote,
+        );
+        final reason = concealmentOf(message);
+        if (reason == null) return note;
+        return ClipOval(
+          child: Concealed(
+            reason: reason,
+            minithumbnail: videoNote.minithumbnail,
+            size: const Size.square(VideoNoteContent.side),
+            child: note,
+          ),
         );
       case td.MessageText(:final text, linkPreview: null)
           when text.entities.isEmpty && isEmojiOnly(text.text):
@@ -347,34 +373,30 @@ class _MessageBody extends StatelessWidget {
         );
       default:
     }
-    final visual = _visualFor(row);
+    final visual = _visualFor(row, actions.onOpen);
     if (visual != null) {
       final caption = _caption(row);
+      final media = Padding(
+        padding: const EdgeInsets.only(top: 2),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: visual.widget,
+        ),
+      );
+      if (caption == null) return media;
+      final text = ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: math.max(visual.width, 420)),
+        child: FormattedTextView(text: caption.text),
+      );
       return Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 2),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: visual.widget,
-            ),
-          ),
-          if (caption != null)
-            ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: math.max(visual.width, 420),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: FormattedTextView(text: caption),
-              ),
-            ),
-        ],
+        children: caption.above
+            ? [text, const SizedBox(height: 2), media]
+            : [media, const SizedBox(height: 4), text],
       );
     }
-    return otherContent(context, content) ??
+    return otherContent(context, content, isOutgoing: message.isOutgoing) ??
         Text(describeContent(l10n, content));
   }
 
@@ -476,10 +498,20 @@ class _MessageBody extends StatelessWidget {
     _ => null,
   };
 
-  static td.FormattedText? _caption(MessageRow row) {
+  /// The caption of a row's media and whether it goes above the media.
+  static ({td.FormattedText text, bool above})? _caption(MessageRow row) {
     for (final m in row.messages) {
       final caption = captionOf(m.content);
-      if (caption != null && caption.text.isNotEmpty) return caption;
+      if (caption == null || caption.text.isEmpty) continue;
+      final above = switch (m.content) {
+        td.MessagePhoto(:final showCaptionAboveMedia) ||
+        td.MessageVideo(:final showCaptionAboveMedia) ||
+        td.MessageAnimation(
+          :final showCaptionAboveMedia,
+        ) => showCaptionAboveMedia,
+        _ => false,
+      };
+      return (text: caption, above: above);
     }
     return null;
   }
@@ -488,37 +520,60 @@ class _MessageBody extends StatelessWidget {
 /// The media of a row and the width it takes.
 typedef _Visual = ({Widget widget, double width});
 
-_Visual? _visualFor(MessageRow row) {
-  if (row.messages.length > 1) return _album(row);
-  final content = row.primary.content;
-  switch (content) {
+_Visual? _visualFor(
+  MessageRow row,
+  void Function(ConversationMessage message)? onOpen,
+) {
+  if (row.messages.length > 1) return _album(row, onOpen);
+  final message = row.primary;
+  final Widget media;
+  final Size size;
+  switch (message.content) {
     case td.MessagePhoto(:final photo):
       final largest = photo.sizes.isEmpty ? null : photo.sizes.last;
-      final size = fitMedia(largest?.width ?? 0, largest?.height ?? 0);
-      return (
-        widget: PhotoContent(photo: photo, size: size),
-        width: size.width,
-      );
+      size = fitMedia(largest?.width ?? 0, largest?.height ?? 0);
+      media = PhotoContent(photo: photo, size: size);
     case td.MessageVideo(:final video):
-      final size = fitMedia(video.width, video.height);
-      return (
-        widget: VideoContent(video: video, size: size),
-        width: size.width,
-      );
+      size = fitMedia(video.width, video.height);
+      media = VideoContent(video: video, size: size);
     case td.MessageAnimation(:final animation):
-      final size = fitMedia(animation.width, animation.height);
-      return (
-        widget: AnimationContent(animation: animation, size: size),
-        width: size.width,
-      );
+      size = fitMedia(animation.width, animation.height);
+      media = AnimationContent(animation: animation, size: size);
     default:
       return null;
   }
+  return (
+    widget: _concealIfNeeded(message, size, media, onOpen),
+    width: size.width,
+  );
+}
+
+/// [media] behind a tap-to-show cover when [message] asks for one.
+Widget _concealIfNeeded(
+  ConversationMessage message,
+  Size size,
+  Widget media,
+  void Function(ConversationMessage message)? onOpen,
+) {
+  final reason = concealmentOf(message);
+  if (reason == null) return media;
+  return Concealed(
+    reason: reason,
+    minithumbnail: minithumbnailOf(message.content),
+    size: size,
+    onReveal: reason == Concealment.secret && onOpen != null
+        ? () => onOpen(message)
+        : null,
+    child: media,
+  );
 }
 
 /// Photos and videos sent together, in justified rows: every row is as
 /// wide as the bubble and as tall as its pictures' proportions allow.
-_Visual _album(MessageRow row) {
+_Visual _album(
+  MessageRow row,
+  void Function(ConversationMessage message)? onOpen,
+) {
   const width = kMaxMediaWidth;
   const gap = 2.0;
   final items = row.messages;
@@ -554,10 +609,18 @@ _Visual _album(MessageRow row) {
             if (i > 0) const SizedBox(width: gap),
             Expanded(
               flex: (ratios[i] * 1000).round(),
-              child: _albumCell(
-                cells[i],
-                Size((width - gap * (count - 1)) * ratios[i] / sum, height),
-              ),
+              child: () {
+                final size = Size(
+                  (width - gap * (count - 1)) * ratios[i] / sum,
+                  height,
+                );
+                return _concealIfNeeded(
+                  cells[i],
+                  size,
+                  _albumCell(cells[i], size),
+                  onOpen,
+                );
+              }(),
             ),
           ],
         ],

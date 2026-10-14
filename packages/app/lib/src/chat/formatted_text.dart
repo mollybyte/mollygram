@@ -114,6 +114,9 @@ List<InlineSpan> buildEntitySpans(
     GestureRecognizer? recognizer;
     MouseCursor? cursor;
     for (final e in covering) {
+      // A link may be split by formatting nested in it; its target is the
+      // whole entity, not this piece.
+      final whole = s.substring(e.offset, e.offset + e.length);
       switch (e.type) {
         case td.TextEntityTypeBold():
           style = style.copyWith(fontWeight: FontWeight.w600);
@@ -141,7 +144,7 @@ List<InlineSpan> buildEntitySpans(
           style = style.copyWith(fontStyle: FontStyle.italic);
         case td.TextEntityTypeUrl():
           style = style.copyWith(color: colors.accent);
-          recognizer = onLink?.call(piece);
+          recognizer = onLink?.call(whole);
           cursor = SystemMouseCursors.click;
         case td.TextEntityTypeTextUrl(:final url):
           style = style.copyWith(color: colors.accent);
@@ -149,15 +152,15 @@ List<InlineSpan> buildEntitySpans(
           cursor = SystemMouseCursors.click;
         case td.TextEntityTypeEmailAddress():
           style = style.copyWith(color: colors.accent);
-          recognizer = onLink?.call('mailto:$piece');
+          recognizer = onLink?.call('mailto:$whole');
           cursor = SystemMouseCursors.click;
         case td.TextEntityTypePhoneNumber():
           style = style.copyWith(color: colors.accent);
-          recognizer = onLink?.call('tel:$piece');
+          recognizer = onLink?.call('tel:$whole');
           cursor = SystemMouseCursors.click;
         case td.TextEntityTypeMention():
           style = style.copyWith(color: colors.accent);
-          recognizer = onLink?.call('https://t.me/${piece.substring(1)}');
+          recognizer = onLink?.call('https://t.me/${whole.substring(1)}');
           cursor = SystemMouseCursors.click;
         case td.TextEntityTypeMentionName() ||
             td.TextEntityTypeHashtag() ||

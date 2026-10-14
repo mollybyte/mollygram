@@ -61,6 +61,53 @@ void main() {
   });
 
   group('Composer', () {
+    testWidgets('pastes text over the selection when the app passes', (
+      tester,
+    ) async {
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async => call.method == 'Clipboard.getData'
+            ? <String, Object?>{'text': 'big'}
+            : null,
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+      final controller = TextEditingController(text: 'a small cat');
+      addTearDown(controller.dispose);
+      var asked = 0;
+      await tester.pumpWidget(
+        themed(
+          Composer(
+            labels: _labels,
+            controller: controller,
+            onPaste: () async {
+              asked++;
+              return false;
+            },
+          ),
+        ),
+      );
+      await tester.tap(find.byType(TextField));
+      controller.selection = const TextSelection(
+        baseOffset: 2,
+        extentOffset: 7,
+      );
+      await tester.pump();
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.metaLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyV);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.metaLeft);
+      await tester.pump();
+
+      expect(asked, 1);
+      expect(controller.text, 'a big cat');
+      expect(controller.selection, const TextSelection.collapsed(offset: 5));
+    }, variant: TargetPlatformVariant.only(TargetPlatform.macOS));
+
     testWidgets('shows the microphone until there is a draft', (tester) async {
       await tester.pumpWidget(themed(const Composer(labels: _labels)));
       expect(find.byType(MgSendButton), findsNothing);

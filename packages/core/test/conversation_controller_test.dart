@@ -359,11 +359,120 @@ void main() {
     expect(forward['from_chat_id'], 7);
   });
 
+  test('sends files as albums with the caption on the first', () async {
+    await controller.start();
+
+    await controller.sendFiles(
+      7,
+      const [
+        OutgoingFile(path: '/a.jpg', kind: OutgoingKind.photo),
+        OutgoingFile(path: '/b.mp4', kind: OutgoingKind.video),
+        OutgoingFile(path: '/c.pdf', kind: OutgoingKind.document),
+      ],
+      caption: 'Trip',
+      replyTo: 10,
+    );
+
+    final album = json.sent.firstWhere((r) => r['@type'] == 'sendMessageAlbum');
+    final contents = album['input_message_contents']! as List;
+    expect(contents, hasLength(2));
+    expect(((contents[0] as Map)['caption']! as Map)['text'], 'Trip');
+    expect((contents[1] as Map)['caption'], isNull);
+    expect(album['reply_to'], containsPair('message_id', 10));
+
+    final single = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    expect(
+      (single['input_message_content']! as Map)['@type'],
+      'inputMessageDocument',
+    );
+    expect(single['reply_to'], isNull);
+    expect(controller.store.message(7, 30), isNotNull);
+  });
+
+  test('sends a caption too long for media as its own message', () async {
+    await controller.start();
+
+    await controller.sendFiles(
+      7,
+      const [OutgoingFile(path: '/a.jpg', kind: OutgoingKind.photo)],
+      caption: 'A rather long caption',
+      replyTo: 10,
+    );
+
+    final sends = [
+      for (final r in json.sent)
+        if (r['@type'] == 'sendMessage') r,
+    ];
+    expect(sends, hasLength(2));
+    final text = sends.first['input_message_content']! as Map;
+    expect(text['@type'], 'inputMessageText');
+    expect((text['text']! as Map)['text'], 'A rather long caption');
+    expect(sends.first['reply_to'], containsPair('message_id', 10));
+    final photo = sends.last['input_message_content']! as Map;
+    expect(photo['@type'], 'inputMessagePhoto');
+    expect(photo['caption'], isNull);
+    expect(sends.last['reply_to'], isNull);
+  });
+
   test('offers free emoji reactions once each, in order', () async {
     await controller.start();
 
     expect(await controller.quickReactions(7, 1), ['👍', '❤', '😁']);
     expect(await controller.quickReactions(7, 1, limit: 2), ['👍', '❤']);
+    // TDLib takes rows of 5 to 25.
+    final rows = [
+      for (final r in json.sent)
+        if (r['@type'] == 'getMessageAvailableReactions') r['row_size'],
+    ];
+    expect(rows, [8, 5]);
+
+    json.reactionsUnavailable = {'@type': 'reactionUnavailabilityReasonGuest'};
+    expect(await controller.quickReactions(7, 1), isEmpty);
+  });
+
+  test('announces a new avatar or colour of a sender', () async {
+    await controller.start();
+    var changes = 0;
+    controller.changes.listen((_) => changes++);
+
+    json.push({
+      '@type': 'updateChatAccentColors',
+      'chat_id': 7,
+      'accent_color_id': 3,
+      'background_custom_emoji_id': 0,
+      'profile_accent_color_id': -1,
+      'profile_background_custom_emoji_id': 0,
+    });
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    expect(changes, 1);
+    expect(controller.store.colorOf(const MessageSenderId.chat(7)), 3);
+  });
+
+  test('shows ephemeral content instead of the regular one', () async {
+    await controller.start();
+    await controller.loadHistory(7);
+
+    json.push({
+      '@type': 'updateMessageEphemeralContent',
+      'chat_id': 7,
+      'message_id': 10,
+      'ephemeral_content': {
+        '@type': 'ephemeralMessageContent',
+        'can_be_saved': true,
+        'has_timestamped_media': false,
+        'content': {
+          '@type': 'messageText',
+          'text': {
+            '@type': 'formattedText',
+            'text': 'Secret',
+            'entities': <Object?>[],
+          },
+        },
+      },
+    });
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+
+    expect(controller.store.message(7, 10)?.text, 'Secret');
   });
 
   test('keeps the sender of each message', () async {
@@ -448,6 +557,9 @@ final class _FakeTdJson implements td.TdJson {
 
   /// When set, getRepliedMessage fails with this TDLib error code.
   int? repliedError;
+
+  /// When set, reactions come back unavailable for this reason.
+  Map<String, Object?>? reactionsUnavailable;
   var _nextClientId = 0;
 
   @override
@@ -486,6 +598,14 @@ final class _FakeTdJson implements td.TdJson {
         chatId: 7,
         text: 'Edited',
       ).toJson(),
+      'sendMessageAlbum' => {
+        '@type': 'messages',
+        'total_count': 2,
+        'messages': [
+          _message(id: 30, chatId: 7, text: '').toJson(),
+          _message(id: 31, chatId: 7, text: '').toJson(),
+        ],
+      },
       'forwardMessages' => {
         '@type': 'messages',
         'total_count': 0,
@@ -510,6 +630,7 @@ final class _FakeTdJson implements td.TdJson {
         ],
         'allow_custom_emoji': true,
         'are_tags': false,
+        'unavailability_reason': reactionsUnavailable,
       },
       'getRepliedMessage' when repliedError != null => {
         '@type': 'error',
@@ -527,6 +648,10 @@ final class _FakeTdJson implements td.TdJson {
         text: 'Sent text',
         sendingState: const td.MessageSendingStatePending(sendingId: 1),
       ).toJson(),
+      'getOption' when decoded['name'] == 'message_caption_length_max' => {
+        '@type': 'optionValueInteger',
+        'value': '10',
+      },
       _ => {'@type': 'ok'},
     };
     _queue.add(

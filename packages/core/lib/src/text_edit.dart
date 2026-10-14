@@ -4,56 +4,168 @@ import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 /// the same text, so that fixing a typo keeps the bold, links and
 /// mentions around it.
 ///
-/// The edit is taken as one changed span between the common start and the
-/// common end of both texts. Entities before it stay, entities after it
-/// shift by the change in length, an entity around it grows or shrinks
-/// with it, and one that overlaps it is cut at its edge. Offsets are in
-/// UTF-16 code units, as in TDLib and Dart strings.
+/// The texts are compared character by character; every character the
+/// edit kept carries its formatting along, and text typed inside an
+/// entity or right after its end joins it. Entities TDLib finds by
+/// itself (plain URLs, @mentions, hashtags) are left out: it detects them
+/// again, and refuses them in an edit. Offsets are in UTF-16 code units,
+/// as in TDLib and Dart strings.
 List<td.TextEntity> carryEntities(
   String before,
   String after,
   List<td.TextEntity> entities,
 ) {
-  if (entities.isEmpty || before == after) return entities;
-  final shortest = before.length < after.length ? before.length : after.length;
-  var prefix = 0;
-  while (prefix < shortest &&
-      before.codeUnitAt(prefix) == after.codeUnitAt(prefix)) {
-    prefix++;
+  final manual = [
+    for (final entity in entities)
+      if (_isManual(entity.type)) entity,
+  ];
+  if (manual.isEmpty || before == after) return manual;
+  final kept = _keptPositions(before, after);
+
+  // The new position of the first kept character at or after [index].
+  int endAt(int index) {
+    for (var i = index; i < before.length; i++) {
+      if (kept[i] >= 0) return kept[i];
+    }
+    return after.length;
   }
-  var suffix = 0;
-  while (suffix < shortest - prefix &&
-      before.codeUnitAt(before.length - 1 - suffix) ==
-          after.codeUnitAt(after.length - 1 - suffix)) {
-    suffix++;
-  }
-  // The changed span: [prefix, oldEnd) before, [prefix, newEnd) after.
-  final oldEnd = before.length - suffix;
-  final newEnd = after.length - suffix;
-  final delta = after.length - before.length;
 
   final carried = <td.TextEntity>[];
-  for (final entity in entities) {
-    var start = entity.offset;
-    var end = entity.offset + entity.length;
-    if (end <= prefix) {
-      // Before the change.
-    } else if (start >= oldEnd) {
-      start += delta;
-      end += delta;
-    } else if (start <= prefix && end >= oldEnd) {
-      end += delta;
-    } else if (start < prefix) {
-      end = prefix;
-    } else {
-      start = newEnd;
-      end = end <= oldEnd ? newEnd : end + delta;
+  for (final entity in manual) {
+    final start = entity.offset;
+    final end = entity.offset + entity.length;
+    // An entity starts at its first character the edit kept; one whose
+    // every character was deleted goes with them.
+    int? newStart;
+    for (var i = start; i < end && i < before.length; i++) {
+      if (kept[i] >= 0) {
+        newStart = kept[i];
+        break;
+      }
     }
-    if (end > start) {
+    if (newStart == null) continue;
+    final newEnd = endAt(end);
+    if (newEnd > newStart) {
       carried.add(
-        td.TextEntity(offset: start, length: end - start, type: entity.type),
+        td.TextEntity(
+          offset: newStart,
+          length: newEnd - newStart,
+          type: entity.type,
+        ),
       );
     }
   }
   return carried;
+}
+
+/// Formatting the user sets, as opposed to what TDLib detects by itself.
+bool _isManual(td.TextEntityType type) => switch (type) {
+  td.TextEntityTypeBold() ||
+  td.TextEntityTypeItalic() ||
+  td.TextEntityTypeUnderline() ||
+  td.TextEntityTypeStrikethrough() ||
+  td.TextEntityTypeSpoiler() ||
+  td.TextEntityTypeCode() ||
+  td.TextEntityTypePre() ||
+  td.TextEntityTypePreCode() ||
+  td.TextEntityTypeBlockQuote() ||
+  td.TextEntityTypeExpandableBlockQuote() ||
+  td.TextEntityTypeTextUrl() ||
+  td.TextEntityTypeMentionName() ||
+  td.TextEntityTypeCustomEmoji() ||
+  td.TextEntityTypeDateTime() => true,
+  _ => false,
+};
+
+/// For each code unit of [before], its index in [after] when the edit
+/// kept it, otherwise -1. Uses Myers' diff; a rewrite too large for it is
+/// treated as one change between the common start and end.
+List<int> _keptPositions(String before, String after) {
+  final n = before.length;
+  final m = after.length;
+  final kept = List.filled(n, -1);
+  var prefix = 0;
+  while (prefix < n &&
+      prefix < m &&
+      before.codeUnitAt(prefix) == after.codeUnitAt(prefix)) {
+    kept[prefix] = prefix;
+    prefix++;
+  }
+  var suffix = 0;
+  while (suffix < n - prefix &&
+      suffix < m - prefix &&
+      before.codeUnitAt(n - 1 - suffix) == after.codeUnitAt(m - 1 - suffix)) {
+    kept[n - 1 - suffix] = m - 1 - suffix;
+    suffix++;
+  }
+  final a = before.substring(prefix, n - suffix);
+  final b = after.substring(prefix, m - suffix);
+  for (final (i, j) in _myers(a, b, maxEdits: 400)) {
+    kept[prefix + i] = prefix + j;
+  }
+  return kept;
+}
+
+/// The matching pairs (index in [a], index in [b]) of a shortest edit
+/// from [a] to [b], or none when it takes more than [maxEdits] edits.
+List<(int, int)> _myers(String a, String b, {required int maxEdits}) {
+  final n = a.length;
+  final m = b.length;
+  if (n == 0 || m == 0) return const [];
+  final max = n + m;
+  final limit = maxEdits < max ? maxEdits : max;
+  final offset = limit + 1;
+  final v = List.filled(2 * limit + 3, 0);
+  final trace = <List<int>>[];
+  for (var d = 0; d <= limit; d++) {
+    trace.add(List.of(v));
+    for (var k = -d; k <= d; k += 2) {
+      var x = (k == -d || (k != d && v[offset + k - 1] < v[offset + k + 1]))
+          ? v[offset + k + 1]
+          : v[offset + k - 1] + 1;
+      var y = x - k;
+      while (x < n && y < m && a.codeUnitAt(x) == b.codeUnitAt(y)) {
+        x++;
+        y++;
+      }
+      v[offset + k] = x;
+      if (x >= n && y >= m) return _backtrack(trace, d, n, m, offset);
+    }
+  }
+  return const [];
+}
+
+List<(int, int)> _backtrack(
+  List<List<int>> trace,
+  int depth,
+  int n,
+  int m,
+  int offset,
+) {
+  final pairs = <(int, int)>[];
+  var x = n;
+  var y = m;
+  for (var d = depth; d > 0; d--) {
+    final v = trace[d];
+    final k = x - y;
+    final previousK =
+        (k == -d || (k != d && v[offset + k - 1] < v[offset + k + 1]))
+        ? k + 1
+        : k - 1;
+    final previousX = v[offset + previousK];
+    final previousY = previousX - previousK;
+    while (x > previousX && y > previousY) {
+      x--;
+      y--;
+      pairs.add((x, y));
+    }
+    x = previousX;
+    y = previousY;
+  }
+  while (x > 0 && y > 0) {
+    x--;
+    y--;
+    pairs.add((x, y));
+  }
+  return pairs;
 }

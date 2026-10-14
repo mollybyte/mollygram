@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 
 import 'conversation_store.dart';
+import 'outgoing_file.dart';
 import 'text_edit.dart';
 
 /// Loads and maintains conversation timelines from TDLib.
@@ -202,6 +203,82 @@ final class ConversationController {
     _add(message);
   }
 
+  int? _captionMax;
+
+  /// The longest caption the server takes, 1024 when TDLib can't say.
+  Future<int> _captionLimit() async {
+    if (_captionMax case final max?) return max;
+    try {
+      final option = await _client.send(
+        const td.GetOption(name: 'message_caption_length_max'),
+      );
+      if (option is td.OptionValueInteger && option.value > 0) {
+        return _captionMax = option.value;
+      }
+    } on Object {
+      // Fall through to the default.
+    }
+    return 1024;
+  }
+
+  /// Sends local files, grouped into albums as [groupForSending] does.
+  /// [caption] goes under the first file, and the first message answers
+  /// [replyTo] when it is set.
+  Future<void> sendFiles(
+    int chatId,
+    List<OutgoingFile> files, {
+    String caption = '',
+    int? replyTo,
+  }) async {
+    // A caption longer than the server takes goes first as its own
+    // message, as the official apps do.
+    if (caption.trim().isNotEmpty && caption.length > await _captionLimit()) {
+      await sendText(chatId, caption, replyTo: replyTo);
+      caption = '';
+      replyTo = null;
+    }
+    var first = true;
+    for (final group in groupForSending(files)) {
+      final reply = first && replyTo != null
+          ? td.InputMessageReplyToMessage(
+              messageId: replyTo,
+              checklistTaskId: 0,
+              pollOptionId: '',
+            )
+          : null;
+      final contents = [
+        for (final (i, file) in group.indexed)
+          inputContentOf(
+            file,
+            caption: first && i == 0 && caption.trim().isNotEmpty
+                ? td.FormattedText(text: caption, entities: const [])
+                : null,
+          ),
+      ];
+      first = false;
+      if (contents.length == 1) {
+        _add(
+          await _client.send(
+            td.SendMessage(
+              chatId: chatId,
+              replyTo: reply,
+              inputMessageContent: contents.single,
+            ),
+          ),
+        );
+      } else {
+        final sent = await _client.send(
+          td.SendMessageAlbum(
+            chatId: chatId,
+            replyTo: reply,
+            inputMessageContents: contents,
+          ),
+        );
+        sent.messages.forEach(_add);
+      }
+    }
+  }
+
   /// Replaces the text of a text message, or the caption of a media one,
   /// keeping the formatting of the parts that did not change. The new
   /// version arrives through updateMessageContent.
@@ -221,6 +298,10 @@ final class ConversationController {
           messageId: messageId,
           inputMessageContent: td.InputMessageText(
             text: formatted,
+            linkPreviewOptions: switch (content) {
+              td.MessageText(:final linkPreviewOptions) => linkPreviewOptions,
+              _ => null,
+            },
             clearDraft: false,
           ),
         ),
@@ -292,9 +373,13 @@ final class ConversationController {
       td.GetMessageAvailableReactions(
         chatId: chatId,
         messageId: messageId,
-        rowSize: limit,
+        // TDLib accepts rows of 5 to 25.
+        rowSize: limit.clamp(5, 25),
       ),
     );
+    // The user can't react here, for example without Premium in a chat
+    // that only allows paid reactions.
+    if (available.unavailabilityReason != null) return const [];
     final emoji = <String>[];
     for (final reaction in [
       ...available.topReactions,
@@ -339,14 +424,15 @@ final class ConversationController {
 
   void _onUpdate(td.TdObject object) {
     switch (object) {
-      // Sender names on screen follow renames. updateUser also comes for
-      // status and other changes, so only a new name is announced.
+      // Sender names and avatars on screen follow their changes.
       case td.UpdateUser(:final user):
         final sender = MessageSenderId.user(user.id);
-        store
-          ..setColor(sender, user.accentColorId)
-          ..setPhoto(sender, user.profilePhoto?.small);
-        if (store.setUserName(user.id, _nameOf(user))) _notify();
+        // updateUser also comes for status and other changes, so only a new
+        // name, colour or photo is announced.
+        final color = store.setColor(sender, user.accentColorId);
+        final photo = store.setPhoto(sender, user.profilePhoto?.small);
+        final name = store.setUserName(user.id, _nameOf(user));
+        if (color || photo || name) _notify();
       case td.UpdateNewChat(:final chat):
         store
           ..setChatTitle(chat.id, chat.title)
@@ -370,9 +456,21 @@ final class ConversationController {
       case td.UpdateChatTitle(:final chatId, :final title):
         if (store.setChatTitle(chatId, title)) _notify();
       case td.UpdateChatPhoto(:final chatId, :final photo):
-        store.setPhoto(MessageSenderId.chat(chatId), photo?.small);
+        if (store.setPhoto(MessageSenderId.chat(chatId), photo?.small)) {
+          _notify();
+        }
       case td.UpdateChatAccentColors(:final chatId, :final accentColorId):
-        store.setColor(MessageSenderId.chat(chatId), accentColorId);
+        if (store.setColor(MessageSenderId.chat(chatId), accentColorId)) {
+          _notify();
+        }
+      case td.UpdateMessageEphemeralContent(
+        :final chatId,
+        :final messageId,
+        :final ephemeralContent,
+      ):
+        _patch(chatId, messageId, {
+          'ephemeral_content': ephemeralContent?.toJson(),
+        });
       case td.UpdateNewMessage(:final message):
         _add(message);
       // A sent message first arrives with a temporary id; TDLib then replaces
