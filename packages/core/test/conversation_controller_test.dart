@@ -389,6 +389,31 @@ void main() {
     expect(controller.store.message(7, 30), isNotNull);
   });
 
+  test('sends a caption too long for media as its own message', () async {
+    await controller.start();
+
+    await controller.sendFiles(
+      7,
+      const [OutgoingFile(path: '/a.jpg', kind: OutgoingKind.photo)],
+      caption: 'A rather long caption',
+      replyTo: 10,
+    );
+
+    final sends = [
+      for (final r in json.sent)
+        if (r['@type'] == 'sendMessage') r,
+    ];
+    expect(sends, hasLength(2));
+    final text = sends.first['input_message_content']! as Map;
+    expect(text['@type'], 'inputMessageText');
+    expect((text['text']! as Map)['text'], 'A rather long caption');
+    expect(sends.first['reply_to'], containsPair('message_id', 10));
+    final photo = sends.last['input_message_content']! as Map;
+    expect(photo['@type'], 'inputMessagePhoto');
+    expect(photo['caption'], isNull);
+    expect(sends.last['reply_to'], isNull);
+  });
+
   test('offers free emoji reactions once each, in order', () async {
     await controller.start();
 
@@ -623,6 +648,10 @@ final class _FakeTdJson implements td.TdJson {
         text: 'Sent text',
         sendingState: const td.MessageSendingStatePending(sendingId: 1),
       ).toJson(),
+      'getOption' when decoded['name'] == 'message_caption_length_max' => {
+        '@type': 'optionValueInteger',
+        'value': '10',
+      },
       _ => {'@type': 'ok'},
     };
     _queue.add(

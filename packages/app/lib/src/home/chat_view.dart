@@ -354,11 +354,33 @@ class _ChatViewState extends ConsumerState<ChatView> {
       if (await Clipboard.hasStrings()) return false;
       final image = await _pastedImage();
       if (image == null) return false;
-      files = [image];
+      if (!mounted) return true;
+      await _offerFiles([image], temporary: true);
+      return true;
     }
     if (!mounted) return true;
     await _offerFiles(files);
     return true;
+  }
+
+  /// Where pasted images are saved. TDLib reads them while uploading,
+  /// which may go on after a relaunch, so only day-old ones are removed.
+  static Future<Directory> _pasteDirectory() async {
+    final directory = Directory(
+      '${(await getTemporaryDirectory()).path}/Pasted',
+    );
+    await directory.create(recursive: true);
+    final dayAgo = DateTime.now().subtract(const Duration(days: 1));
+    await for (final entry in directory.list()) {
+      try {
+        if (entry is File && (await entry.lastModified()).isBefore(dayAgo)) {
+          await entry.delete();
+        }
+      } on FileSystemException {
+        // Gone already, or in use; the next paste tries again.
+      }
+    }
+    return directory;
   }
 
   /// The image on the clipboard, saved as a PNG file, or null.
@@ -373,7 +395,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
       frame.image.dispose();
       codec.dispose();
       if (png == null) return null;
-      final directory = await getTemporaryDirectory();
+      final directory = await _pasteDirectory();
       final file = File(
         '${directory.path}/Pasted ${DateTime.now().millisecondsSinceEpoch}.png',
       );
@@ -390,7 +412,12 @@ class _ChatViewState extends ConsumerState<ChatView> {
       if (path.isNotEmpty && FileSystemEntity.isFileSync(path)) path,
   ];
 
-  Future<void> _offerFiles(List<String> picked) async {
+  /// Offers [picked] for sending. [temporary] files were made for this
+  /// offer and are deleted when it is cancelled.
+  Future<void> _offerFiles(
+    List<String> picked, {
+    bool temporary = false,
+  }) async {
     final paths = _onlyFiles(picked);
     if (paths.isEmpty) return;
     final chatId = widget.chatId;
@@ -402,6 +429,11 @@ class _ChatViewState extends ConsumerState<ChatView> {
       paths: paths,
       caption: useDraft ? _draft.text : '',
     );
+    if (choice == null && temporary) {
+      for (final path in paths) {
+        unawaited(File(path).delete().then((_) {}, onError: (Object _) {}));
+      }
+    }
     if (choice == null || !mounted || widget.chatId != chatId) return;
     final replyTo = _replyTo;
     setState(() {

@@ -203,6 +203,24 @@ final class ConversationController {
     _add(message);
   }
 
+  int? _captionMax;
+
+  /// The longest caption the server takes, 1024 when TDLib can't say.
+  Future<int> _captionLimit() async {
+    if (_captionMax case final max?) return max;
+    try {
+      final option = await _client.send(
+        const td.GetOption(name: 'message_caption_length_max'),
+      );
+      if (option is td.OptionValueInteger && option.value > 0) {
+        return _captionMax = option.value;
+      }
+    } on Object {
+      // Fall through to the default.
+    }
+    return 1024;
+  }
+
   /// Sends local files, grouped into albums as [groupForSending] does.
   /// [caption] goes under the first file, and the first message answers
   /// [replyTo] when it is set.
@@ -212,6 +230,13 @@ final class ConversationController {
     String caption = '',
     int? replyTo,
   }) async {
+    // A caption longer than the server takes goes first as its own
+    // message, as the official apps do.
+    if (caption.trim().isNotEmpty && caption.length > await _captionLimit()) {
+      await sendText(chatId, caption, replyTo: replyTo);
+      caption = '';
+      replyTo = null;
+    }
     var first = true;
     for (final group in groupForSending(files)) {
       final reply = first && replyTo != null

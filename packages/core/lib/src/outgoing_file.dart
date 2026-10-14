@@ -40,7 +40,9 @@ final class OutgoingFile {
 
 // HEIC and BMP go as files: Telegram takes neither as a photo.
 const _photo = {'jpg', 'jpeg', 'png', 'webp'};
-const _video = {'mp4', 'mov', 'm4v', 'webm', 'mkv', 'avi'};
+// Telegram plays MPEG-4 with H.264 inline; WebM, MKV and AVI would need
+// transcoding first, so they go as files.
+const _video = {'mp4', 'mov', 'm4v'};
 const _audio = {'mp3', 'm4a', 'aac', 'flac', 'ogg', 'oga', 'opus', 'wav'};
 
 /// Whether Telegram takes a picture of [width] x [height] pixels and
