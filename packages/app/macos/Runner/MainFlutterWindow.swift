@@ -72,14 +72,18 @@ class MainFlutterWindow: NSWindow {
       standardWindowButton(.zoomButton),
     ].compactMap { $0 }
 
-    // The default title bar is too short for the buttons to sit 30 pt down,
-    // so it grows to just below them. It must stay above the search field
-    // (52 pt), or it would take its clicks.
+    // The native title bar takes the clicks it covers, so it is cut down to
+    // just around the buttons: tall enough for them to sit 30 pt down, above
+    // the search field (52 pt), and no wider than the buttons, so the rest
+    // of the sidebar's title row (drag area, actions) stays Flutter's.
     let buttonHeight = close.frame.height
     let height = (Self.buttonsCenterY + buttonHeight / 2 + 4).rounded()
+    let width = min(
+      frameView.bounds.width,
+      Self.buttonsLeft + CGFloat(buttons.count - 1) * Self.buttonsSpacing
+        + close.frame.width + 4)
     let frame = NSRect(
-      x: 0, y: frameView.bounds.height - height,
-      width: frameView.bounds.width, height: height)
+      x: 0, y: frameView.bounds.height - height, width: width, height: height)
     if container.frame != frame { container.frame = frame }
     if titlebar.frame != container.bounds { titlebar.frame = container.bounds }
 
