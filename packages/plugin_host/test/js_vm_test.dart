@@ -50,6 +50,23 @@ void main() {
     expect(r.status, JsStatus.outOfMemory);
   });
 
+  test('running out of memory is reported even if the code catches it', () {
+    final small = JsVm(
+      host: (_, _) => null,
+      limits: const JsLimits(memoryBytes: 4 << 20),
+    );
+    addTearDown(small.dispose);
+    final r = small.eval('''
+      const a = [];
+      try { for (;;) a.push("x".repeat(1024)); } catch (e) {}
+      a.length = 0;
+      "survived";
+    ''');
+    expect(r.status, JsStatus.outOfMemory);
+    // The next entry starts clean once memory is freed.
+    expect(small.eval('1 + 1').value, 2);
+  });
+
   test('deep recursion does not crash the process', () {
     final r = vm.eval('function f(n) { return f(n + 1) + 1 } f(0)');
     expect(r.status, JsStatus.exception);

@@ -1,6 +1,8 @@
 import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// An empty window. The UI and sign-in will arrive in the next stage.
+import 'src/app.dart';
+
 void main() {
-  runApp(const ColoredBox(color: Color(0xFFFFFFFF)));
+  runApp(const ProviderScope(child: MollygramApp()));
 }
