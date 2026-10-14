@@ -475,5 +475,7 @@
         "type": "int"
       }
     }
-  }
+  },
+  "plugins": "Plugins",
+  "settings": "Settings"
 }

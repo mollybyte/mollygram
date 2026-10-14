@@ -2,11 +2,13 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart' show Theme;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mollygram_shell/mollygram_shell.dart';
+import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 /// Window screenshots for visual review, not golden tests:
 /// MG_SHOT_DIR=/path flutter test test/screenshot_test.dart. Skipped when the
@@ -56,7 +58,7 @@ void main() {
           ..selectTab(0);
         addTearDown(controller.dispose);
         final shell = GlobalKey<WorkspaceShellState>();
-        final colors = dark ? ShellColors.dark : ShellColors.light;
+        final colors = dark ? MgColors.dark : MgColors.light;
 
         await tester.pumpWidget(
           RepaintBoundary(
@@ -64,8 +66,8 @@ void main() {
             child: WidgetsApp(
               color: colors.accent,
               debugShowCheckedModeBanner: false,
-              builder: (context, _) => ShellTheme(
-                colors: colors,
+              builder: (context, _) => Theme(
+                data: buildMgTheme(colors),
                 child: DefaultTextStyle(
                   style: TextStyle(
                     fontFamily: 'Inter',
@@ -159,7 +161,7 @@ class _Sidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = ShellTheme.of(context);
+    final c = MgColors.of(context);
     return Padding(
       padding: const EdgeInsets.all(8),
       child: Container(
@@ -181,7 +183,7 @@ class _Sidebar extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    const MonogramAvatar(initials: '', size: 42),
+                    const MonogramAvatar(name: '', size: 42),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(
@@ -219,7 +221,7 @@ class _Bar extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     height: height,
     decoration: BoxDecoration(
-      color: on ? const Color(0x99FFFFFF) : ShellTheme.of(context).field,
+      color: on ? const Color(0x99FFFFFF) : MgColors.of(context).field,
       borderRadius: BorderRadius.circular(height / 2),
     ),
   );

@@ -562,4 +562,10 @@ class AppLocalizationsRu extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get plugins => 'Плагины';
+
+  @override
+  String get settings => 'Настройки';
 }

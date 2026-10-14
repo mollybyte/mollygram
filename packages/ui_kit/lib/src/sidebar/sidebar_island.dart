@@ -8,8 +8,10 @@ import '../theme/theme.dart';
 /// 8 px from the window edges, radius 16).
 ///
 /// The 44 px title bar reserves [titleBarInset] on the left for the system
-/// window buttons; [titleBarFill] fills the free space (the app puts its
-/// window drag area there) and [actions] sit on the right.
+/// window buttons (on macOS the runner centers them in this row, see
+/// MainFlutterWindow.swift; keep the two in sync); [titleBarFill] fills the
+/// free space (the app puts its window drag area there) and [actions] sit on
+/// the right.
 class SidebarIsland extends StatelessWidget {
   const SidebarIsland({
     super.key,

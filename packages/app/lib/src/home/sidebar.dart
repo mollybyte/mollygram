@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:mollygram_core/mollygram_core.dart';
+import 'package:mollygram_shell/mollygram_shell.dart';
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../session/providers.dart';
 import '../window_drag_area.dart';
 import 'format.dart';
+import 'workspace.dart';
 
 /// The floating glass island with folders and the chat list.
 class Sidebar extends ConsumerStatefulWidget {
@@ -112,25 +115,41 @@ class _ChatList extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).toLanguageTag();
     final unread = NumberFormat.compact(locale: locale);
-    final selected = ref.watch(selectedChatProvider);
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(6, 0, 6, 8),
-      itemCount: chats.length,
-      itemBuilder: (context, i) {
-        final chat = chats[i];
-        final last = chat.lastMessage;
-        if (i >= chats.length - _preload) onNearEnd?.call();
-        return ChatListTile(
-          key: ValueKey(chat.id),
-          title: chat.title,
-          subtitle: formatPreview(l10n, last),
-          time: last == null ? '' : formatChatTime(last.date, locale),
-          unread: chat.unreadCount,
-          unreadLabel: unread.format(chat.unreadCount),
-          selected: chat.id == selected,
-          onTap: () => ref.read(selectedChatProvider.notifier).select(chat.id),
+    final workspace = ref.watch(workspaceControllerProvider);
+    return ValueListenableBuilder(
+      valueListenable: workspace,
+      builder: (context, layout, _) {
+        final selected = layout.focusedChat;
+        return ListView.builder(
+          padding: const EdgeInsets.fromLTRB(6, 0, 6, 8),
+          itemCount: chats.length,
+          itemBuilder: (context, i) {
+            final chat = chats[i];
+            final last = chat.lastMessage;
+            if (i >= chats.length - _preload) onNearEnd?.call();
+            return ChatListTile(
+              key: ValueKey(chat.id),
+              title: chat.title,
+              subtitle: formatPreview(l10n, last),
+              time: last == null ? '' : formatChatTime(last.date, locale),
+              unread: chat.unreadCount,
+              unreadLabel: unread.format(chat.unreadCount),
+              selected: chat.id == selected,
+              onTap: () => workspace.open(chat.id, target: _clickTarget()),
+            );
+          },
         );
       },
     );
   }
+}
+
+/// Where a click on a chat opens it, as in the palette: ⌘-click (Ctrl-click
+/// off macOS) beside the current chat, ⌥-click in a new tab.
+OpenTarget _clickTarget() {
+  final keys = HardwareKeyboard.instance;
+  final primary = usesCommandKey ? keys.isMetaPressed : keys.isControlPressed;
+  if (primary) return OpenTarget.split;
+  if (keys.isAltPressed) return OpenTarget.newTab;
+  return OpenTarget.current;
 }

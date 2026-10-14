@@ -15,7 +15,10 @@ void main() {
     'libtdjson matches the schema and responds to a client',
     () async {
       final td = await Td.start(libraryPath: path);
-      td.execute(const SetLogVerbosityLevel(newVerbosityLevel: 1));
+      expect(
+        td.execute(const GetLogVerbosityLevel()).verbosityLevel,
+        Td.defaultLogVerbosity,
+      );
       final version = td.execute(const GetOption(name: 'version'));
       expect((version as OptionValueString).value, tdlibVersion);
 

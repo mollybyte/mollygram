@@ -140,5 +140,7 @@
   "durationHours": "{count, plural, one{{count} час} few{{count} часа} other{{count} часов}}",
   "durationDays": "{count, plural, one{{count} день} few{{count} дня} other{{count} дней}}",
   "durationWeeks": "{count, plural, one{{count} неделю} few{{count} недели} other{{count} недель}}",
-  "durationMonths": "{count, plural, one{{count} месяц} few{{count} месяца} other{{count} месяцев}}"
+  "durationMonths": "{count, plural, one{{count} месяц} few{{count} месяца} other{{count} месяцев}}",
+  "plugins": "Плагины",
+  "settings": "Настройки"
 }

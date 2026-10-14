@@ -109,10 +109,13 @@ class WorkspaceShellState extends State<WorkspaceShell> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 if (workspace.tabs.length > 1)
-                  TabStrip(
-                    controller: widget.controller,
+                  _DirectoryListener(
                     directory: widget.directory,
-                    strings: strings,
+                    builder: (context) => TabStrip(
+                      controller: widget.controller,
+                      directory: widget.directory,
+                      strings: strings,
+                    ),
                   ),
                 Expanded(
                   child: WorkspaceView(
@@ -169,6 +172,24 @@ class WorkspaceShellState extends State<WorkspaceShell> {
       ),
     );
   }
+}
+
+/// Builds again when the directory is a [Listenable] and changes, so tab
+/// titles follow chat renames.
+class _DirectoryListener extends StatelessWidget {
+  const _DirectoryListener({required this.directory, required this.builder});
+
+  final ChatDirectory directory;
+  final WidgetBuilder builder;
+
+  @override
+  Widget build(BuildContext context) => switch (directory) {
+    final Listenable listenable => ListenableBuilder(
+      listenable: listenable,
+      builder: (context, _) => builder(context),
+    ),
+    _ => builder(context),
+  };
 }
 
 /// Centers the palette over the chat area, 120 px from the top.

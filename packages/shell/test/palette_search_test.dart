@@ -88,18 +88,6 @@ void main() {
     });
   });
 
-  group('ChatSummary.initials', () {
-    String ini(String t) => ChatSummary(id: 0, title: t).initials;
-
-    test('two words, one word, non-latin, symbols', () {
-      expect(ini('Anna Morris'), 'AM');
-      expect(ini('dad'), 'D');
-      expect(ini('Аня Морозова'), 'АМ');
-      expect(ini('— Product team'), 'PT');
-      expect(ini('  '), '');
-    });
-  });
-
   test('Russian plural for new messages', () {
     final ru = ShellStrings.ru;
     expect(ru.newMessages(1), '1 новое');

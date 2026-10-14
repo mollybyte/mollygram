@@ -7,6 +7,7 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 import '../l10n/app_localizations.dart';
 import 'auth/sign_in_screen.dart';
 import 'home/home_screen.dart';
+import 'session/close_before_exit.dart';
 import 'session/providers.dart';
 
 class MollygramApp extends StatelessWidget {
@@ -25,7 +26,22 @@ class MollygramApp extends StatelessWidget {
       GlobalCupertinoLocalizations.delegate,
     ],
     supportedLocales: AppLocalizations.supportedLocales,
-    home: const Material(type: MaterialType.transparency, child: _Root()),
+    home: const _CloseSessionBeforeExit(
+      child: Material(type: MaterialType.transparency, child: _Root()),
+    ),
+  );
+}
+
+/// Closes TDLib before the process exits; see [CloseBeforeExit].
+class _CloseSessionBeforeExit extends ConsumerWidget {
+  const _CloseSessionBeforeExit({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => CloseBeforeExit(
+    close: () async => ref.read(telegramSessionProvider).value?.dispose(),
+    child: child,
   );
 }
 

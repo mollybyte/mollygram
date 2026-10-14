@@ -12,7 +12,6 @@ export 'src/palette/palette_search.dart';
 export 'src/shortcuts.dart'
     show ShellShortcuts, primaryShortcut, shortcutLabel, usesCommandKey;
 export 'src/widgets/command_palette.dart' show CommandPalette;
-export 'src/widgets/shell_theme.dart';
 export 'src/widgets/tab_strip.dart' show TabStrip, tabTitle;
 export 'src/widgets/workspace_shell.dart';
 export 'src/widgets/workspace_view.dart';
