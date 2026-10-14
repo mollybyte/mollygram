@@ -53,10 +53,12 @@ void main() {
     },
   );
 
-  test(
-    'reports missing credentials without crashing the TDLib receive loop',
-    () async {
-      final session = await TelegramSession.attach(
+  test('fails to start when TDLib rejects its parameters', () async {
+    // Missing credentials are refused before anything is sent; a wrong
+    // database key would fail the same way. Either must reach the caller
+    // instead of leaving the app on the starting screen.
+    await expectLater(
+      TelegramSession.attach(
         tdlib,
         parameters: TdlibParameters(
           api: const TelegramApiConfig(apiId: 0, apiHash: ''),
@@ -67,17 +69,44 @@ void main() {
           deviceModel: 'Mac',
           applicationVersion: '0.1.0',
         ),
-      );
+      ),
+      throwsA(isA<StateError>()),
+    );
+  });
 
-      await expectLater(session.errors.first, completion(isA<StateError>()));
-      await session.dispose();
-    },
-  );
+  test('reports a parameter error returned by TDLib', () async {
+    json.failParameters = true;
+    await expectLater(
+      TelegramSession.attach(
+        tdlib,
+        parameters: TdlibParameters(
+          api: const TelegramApiConfig(
+            apiId: 12345,
+            apiHash: '0123456789abcdef0123456789abcdef',
+          ),
+          databaseDirectory: '/tmp/mollygram/database',
+          filesDirectory: '/tmp/mollygram/files',
+          databaseEncryptionKey: Uint8List.fromList([1, 2, 3]),
+          systemLanguageCode: 'en',
+          deviceModel: 'Mac',
+          applicationVersion: '0.1.0',
+        ),
+      ),
+      throwsA(
+        isA<td.TdException>().having(
+          (error) => error.message,
+          'message',
+          'Wrong database encryption key',
+        ),
+      ),
+    );
+  });
 }
 
 final class _FakeTdJson implements td.TdJson {
   final _queue = Queue<String>();
   final sent = <Map<String, Object?>>[];
+  var failParameters = false;
   var _nextClientId = 0;
 
   @override
@@ -98,6 +127,18 @@ final class _FakeTdJson implements td.TdJson {
       _queue.add(
         jsonEncode({
           '@type': 'authorizationStateWaitTdlibParameters',
+          '@client_id': clientId,
+          '@extra': decoded['@extra'],
+        }),
+      );
+      return;
+    }
+    if (failParameters && decoded['@type'] == 'setTdlibParameters') {
+      _queue.add(
+        jsonEncode({
+          '@type': 'error',
+          'code': 401,
+          'message': 'Wrong database encryption key',
           '@client_id': clientId,
           '@extra': decoded['@extra'],
         }),

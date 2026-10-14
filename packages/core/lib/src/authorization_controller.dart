@@ -15,6 +15,7 @@ final class AuthorizationController {
 
   final td.TdClient _client;
   final _stages = StreamController<AuthorizationStage>.broadcast(sync: true);
+  final _closed = Completer<void>();
   StreamSubscription<td.TdObject>? _subscription;
   AuthorizationStage? _currentStage;
 
@@ -38,6 +39,26 @@ final class AuthorizationController {
   Future<void> requestQrCode() =>
       _client.send(const td.RequestQrCodeAuthentication(otherUserIds: []));
 
+  /// Leaves the QR code step so the user can sign in by phone number.
+  ///
+  /// TDLib has no way back from `authorizationStateWaitOtherDeviceConfirmation`
+  /// to the phone number step: `setAuthenticationPhoneNumber` is rejected
+  /// there. The only exit is `logOut`, which drops the unfinished
+  /// authorization and closes this client. The caller then starts a new
+  /// session, which begins at the phone number step.
+  ///
+  /// Completes once TDLib reports the client closed, or after [timeout].
+  Future<void> abandonQrCode({
+    Duration timeout = const Duration(seconds: 10),
+  }) async {
+    try {
+      await _client.send(const td.LogOut());
+    } on td.TdClientClosed {
+      return;
+    }
+    await _closed.future.timeout(timeout, onTimeout: () {});
+  }
+
   Future<void> submitCode(String code) =>
       _client.send(td.CheckAuthenticationCode(code: code));
 
@@ -54,6 +75,7 @@ final class AuthorizationController {
           PhoneCountry(
             code: country.countryCode,
             name: country.name,
+            englishName: country.englishName,
             callingCodes: country.callingCodes,
           ),
     ]..sort((a, b) => a.name.compareTo(b.name));
@@ -76,6 +98,9 @@ final class AuthorizationController {
 
   void _publish(td.TdObject object) {
     if (object is td.AuthorizationState) {
+      if (object is td.AuthorizationStateClosed && !_closed.isCompleted) {
+        _closed.complete();
+      }
       final stage = AuthorizationStage.from(object);
       _currentStage = stage;
       _stages.add(stage);

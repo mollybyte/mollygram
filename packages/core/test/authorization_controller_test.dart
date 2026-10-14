@@ -17,6 +17,23 @@ void main() {
           return [
             {'@type': 'authorizationStateWaitPhoneNumber'},
           ];
+        case 'getCountries':
+          return [
+            {
+              '@type': 'countries',
+              'countries': [
+                {
+                  '@type': 'countryInfo',
+                  'country_code': 'DE',
+                  'name': 'Deutschland',
+                  'english_name': 'Germany',
+                  'is_hidden': false,
+                  'calling_codes': ['49'],
+                },
+              ],
+            },
+          ];
+        case 'logOut':
         case 'close':
           return [
             {'@type': 'ok'},
@@ -87,6 +104,29 @@ void main() {
     expect(stages.last.kind, AuthorizationStageKind.qrCode);
     expect(stages.last.qrLink, 'tg://login?token=updated');
     await subscription.cancel();
+  });
+
+  test('leaves the QR step by logging out and waits for the close', () async {
+    final stages = <AuthorizationStage>[];
+    final subscription = controller.stages.listen(stages.add);
+    await controller.start();
+
+    await controller.abandonQrCode();
+
+    expect(json.sent.last['@type'], 'logOut');
+    expect(stages.last.kind, AuthorizationStageKind.closing);
+    await subscription.cancel();
+  });
+
+  test('keeps the English country name for search', () async {
+    final country = (await controller.countries()).single;
+
+    expect(country.name, 'Deutschland');
+    expect(country.englishName, 'Germany');
+    expect(country.matches('germ'), isTrue);
+    expect(country.matches('deutsch'), isTrue);
+    expect(country.matches('+49'), isTrue);
+    expect(country.matches('France'), isFalse);
   });
 }
 

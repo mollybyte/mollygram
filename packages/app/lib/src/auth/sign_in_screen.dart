@@ -103,6 +103,7 @@ class _SignInFlowState extends ConsumerState<_SignInFlow> {
     _code.addListener(_codeChanged);
     _number.addListener(_redraw);
     _input.addListener(_redraw);
+    _wantsPhone = ref.read(preferPhoneSignInProvider);
     _requestQrIfNeeded();
     _loadCountries();
   }
@@ -146,7 +147,8 @@ class _SignInFlowState extends ConsumerState<_SignInFlow> {
       AuthorizationStageKind.code => _View.code,
       AuthorizationStageKind.password => _View.password,
       AuthorizationStageKind.tdlibParameters ||
-      AuthorizationStageKind.ready => _View.waiting,
+      AuthorizationStageKind.ready ||
+      AuthorizationStageKind.closing => _View.waiting,
       AuthorizationStageKind.unavailable => _View.unsupported,
     };
   }
@@ -219,18 +221,29 @@ class _SignInFlowState extends ConsumerState<_SignInFlow> {
   }
 
   void _fail(Object error, {bool showPhone = false}) {
+    if (showPhone) ref.read(preferPhoneSignInProvider.notifier).set(true);
     setState(() {
       _error = _describe(AppLocalizations.of(context), error);
       if (showPhone) _wantsPhone = true;
     });
   }
 
-  void _openPhone() => setState(() {
-    _wantsPhone = true;
-    _error = null;
-  });
+  void _openPhone() {
+    ref.read(preferPhoneSignInProvider.notifier).set(true);
+    if (_kind == AuthorizationStageKind.qrCode) {
+      // TDLib can't leave the QR step for the phone number one, so the
+      // session restarts and this screen comes back on the phone form.
+      _run(ref.read(signInActionsProvider).leaveQrCode);
+      return;
+    }
+    setState(() {
+      _wantsPhone = true;
+      _error = null;
+    });
+  }
 
   void _openQr() {
+    ref.read(preferPhoneSignInProvider.notifier).set(false);
     setState(() {
       _wantsPhone = false;
       _error = null;

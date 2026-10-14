@@ -32,7 +32,9 @@ void main() {
           theme: buildMgTheme(MgColors.light),
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          home: Material(child: SignInScreen(stage: stage)),
+          home: Material(
+            child: SignInScreen(key: ValueKey(stage.kind), stage: stage),
+          ),
         ),
       ),
     );
@@ -49,10 +51,27 @@ void main() {
     expect(find.text('Log in by phone number'), findsOneWidget);
   });
 
-  testWidgets('submits the phone number with the detected country code', (
+  testWidgets('leaves the QR step by restarting into the phone form', (
     tester,
   ) async {
     await pump(tester, const AuthorizationStage.qrCode(link: 'tg://login?x'));
+
+    await tester.tap(find.text('Log in by phone number'));
+    await tester.pump();
+    expect(actions.calls, ['leaveQr']);
+
+    // The restarted session starts at the phone number step; the screen
+    // opens on the form and doesn't ask for a new QR code.
+    await pump(tester, const AuthorizationStage.phoneNumber());
+    await tester.pumpAndSettle();
+    expect(find.text('Your phone number'), findsOneWidget);
+    expect(actions.calls, ['leaveQr']);
+  });
+
+  testWidgets('submits the phone number with the detected country code', (
+    tester,
+  ) async {
+    await pump(tester, const AuthorizationStage.phoneNumber());
 
     await tester.tap(find.text('Log in by phone number'));
     await tester.pumpAndSettle();
@@ -62,13 +81,13 @@ void main() {
     await tester.enterText(find.byType(TextField).last, '900 123-45-67');
     await tester.pump();
     await tester.tap(find.text('Next'));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 300));
 
-    expect(actions.calls, ['phone:+79001234567']);
+    expect(actions.calls, ['qr', 'phone:+79001234567']);
   });
 
   testWidgets('picks a country from the list', (tester) async {
-    await pump(tester, const AuthorizationStage.qrCode(link: 'tg://login?x'));
+    await pump(tester, const AuthorizationStage.phoneNumber());
     await tester.tap(find.text('Log in by phone number'));
     await tester.pumpAndSettle();
 
@@ -148,6 +167,9 @@ final class _FakeActions implements SignInActions {
 
   @override
   Future<void> requestQrCode() => _call('qr');
+
+  @override
+  Future<void> leaveQrCode() => _call('leaveQr');
 
   @override
   Future<void> submitPhone(String phoneNumber) => _call('phone:$phoneNumber');

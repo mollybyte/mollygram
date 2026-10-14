@@ -4,16 +4,32 @@ final class PhoneCountry {
     required this.code,
     required this.name,
     required this.callingCodes,
-  });
+    String? englishName,
+  }) : englishName = englishName ?? name;
 
   /// ISO 3166-1 alpha-2 code, such as `RU`.
   final String code;
 
-  /// The name in the language TDLib was started with.
+  /// The name TDLib shows: in the language of its language pack, or the
+  /// country's native name.
   final String name;
+
+  /// The English name, such as `Germany` where [name] is `Deutschland`.
+  final String englishName;
 
   /// Calling codes without the plus sign, such as `7`.
   final List<String> callingCodes;
+
+  /// Whether a search for [query] should find this country: by either name
+  /// or by calling code.
+  bool matches(String query) {
+    final q = query.trim().toLowerCase();
+    if (q.isEmpty) return true;
+    final digits = q.startsWith('+') ? q.substring(1) : q;
+    return name.toLowerCase().contains(q) ||
+        englishName.toLowerCase().contains(q) ||
+        (digits.isNotEmpty && callingCodes.any((c) => c.startsWith(digits)));
+  }
 }
 
 /// Finds the country whose calling code is the longest prefix of [digits].

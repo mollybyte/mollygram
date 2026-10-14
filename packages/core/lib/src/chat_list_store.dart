@@ -75,10 +75,15 @@ final class ChatListEntry {
     required this.unreadCount,
     required List<ChatListPosition> positions,
     this.lastMessage,
+    this.isGroup = false,
   }) : positions = List.unmodifiable(positions);
 
   final int id;
   final String title;
+
+  /// A basic group or a supergroup that is not a channel: incoming messages
+  /// come from different people, so they show the sender's name.
+  final bool isGroup;
   final int unreadCount;
   final List<ChatListPosition> positions;
   final ChatPreview? lastMessage;
@@ -98,6 +103,7 @@ final class ChatListEntry {
   }) => ChatListEntry(
     id: id,
     title: title ?? this.title,
+    isGroup: isGroup,
     unreadCount: unreadCount ?? this.unreadCount,
     positions: positions ?? this.positions,
     lastMessage: lastMessage == null ? this.lastMessage : lastMessage(),
@@ -119,9 +125,10 @@ final class ChatFolder {
 
 /// In-memory projection of TDLib's chat-list updates.
 ///
-/// TDLib defines ordering by `(position.order, chat.id)` descending, with
-/// pinned chats first. This store makes that rule explicit rather than letting
-/// each presentation layer implement its own sort.
+/// TDLib defines ordering by `(position.order, chat.id)` descending and
+/// nothing else: pinned chats already have the largest orders. This store
+/// makes that rule explicit rather than letting each presentation layer
+/// implement its own sort.
 final class ChatListStore {
   final _chats = <int, ChatListEntry>{};
   List<ChatFolder> _folders = const [];
@@ -198,9 +205,6 @@ final class ChatListStore {
     result.sort((a, b) {
       final aPosition = a.positionFor(list)!;
       final bPosition = b.positionFor(list)!;
-      if (aPosition.isPinned != bPosition.isPinned) {
-        return aPosition.isPinned ? -1 : 1;
-      }
       final order = bPosition.order.compareTo(aPosition.order);
       return order != 0 ? order : b.id.compareTo(a.id);
     });

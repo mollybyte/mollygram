@@ -64,5 +64,6 @@
   "previewSticker": "Sticker",
   "previewAnimation": "GIF",
   "previewOther": "Message",
-  "noTextMessages": "No text messages here yet"
+  "noTextMessages": "No text messages here yet",
+  "sendFailed": "The message wasn't sent. Try again"
 }

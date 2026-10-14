@@ -188,4 +188,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get noTextMessages => 'Текстовых сообщений пока нет';
+
+  @override
+  String get sendFailed => 'Сообщение не отправлено. Попробуйте ещё раз';
 }

@@ -433,6 +433,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No text messages here yet'**
   String get noTextMessages;
+
+  /// No description provided for @sendFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The message wasn\'t sent. Try again'**
+  String get sendFailed;
 }
 
 class _AppLocalizationsDelegate

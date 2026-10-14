@@ -126,6 +126,11 @@ abstract final class MgIcons {
     '<path d="M1.5 12.5l4.5 4.5L15.5 7.5M11 16.5l.5.5L21 7.5"/>',
     stroke: 2,
   );
+  static const failed = MgIconData(
+    'failed',
+    '<circle cx="12" cy="12" r="8"/><path d="M12 8v4.5M12 16h.01"/>',
+    stroke: 2,
+  );
   static const read = MgIconData(
     'read',
     '<path d="M2 13l4 4 7-8M10 16l1 1 7-8"/>',
@@ -183,6 +188,7 @@ abstract final class MgIcons {
     sent,
     sending,
     readTicks,
+    failed,
     read,
     split,
     tabs,
