@@ -1,0 +1,185 @@
+name: Calls
+
+# Builds libmgcalls for macOS (arm64 + x86_64 in one universal dylib):
+# tgcalls + tg_owt (WebRTC) + codecs, all static, exporting only the mg_call*
+# C API. Pins live in packages/calls/calls.json, the recipe in
+# packages/calls/native. The slow stages (codecs, tg_owt) are cached by their
+# pins and scripts. On main the result is published to a calls-<sha> release.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - packages/calls/calls.json
+      - packages/calls/native/**
+      - .github/workflows/calls.yml
+  pull_request:
+    paths:
+      - packages/calls/calls.json
+      - packages/calls/native/**
+      - .github/workflows/calls.yml
+
+concurrency:
+  group: calls-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  MACOSX_DEPLOYMENT_TARGET: '11.0'
+
+jobs:
+  macos:
+    name: macOS ${{ matrix.arch }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            os: macos-15
+          - arch: x86_64
+            os: macos-15-intel
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 300
+    env:
+      MGCALLS_WORK: ${{ github.workspace }}/.calls-build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tools
+        run: brew install meson ninja nasm
+
+      - name: Cache key
+        run: echo "DEPS_KEY=calls-deps-${{ matrix.arch }}-${{ hashFiles('packages/calls/calls.json', 'packages/calls/native/env.sh', 'packages/calls/native/deps.sh') }}" >> "$GITHUB_ENV"
+
+      # Codecs and OpenSSL. Saved right after the build, so a later failure
+      # does not throw them away.
+      - name: Restore dependencies
+        id: deps
+        uses: actions/cache/restore@v4
+        with:
+          path: .calls-build/prefix
+          key: ${{ env.DEPS_KEY }}
+      - name: Build dependencies
+        if: steps.deps.outputs.cache-hit != 'true'
+        run: packages/calls/native/deps.sh deps
+      - if: steps.deps.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .calls-build/prefix
+          key: ${{ env.DEPS_KEY }}
+
+      - name: Restore tg_owt
+        id: tg_owt
+        uses: actions/cache/restore@v4
+        with:
+          path: .calls-build/tg_owt
+          key: ${{ env.DEPS_KEY }}-tg_owt
+      - name: Build tg_owt
+        if: steps.tg_owt.outputs.cache-hit != 'true'
+        run: packages/calls/native/deps.sh tg_owt
+      - if: steps.tg_owt.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .calls-build/tg_owt
+          key: ${{ env.DEPS_KEY }}-tg_owt
+
+      - name: Build libmgcalls
+        run: packages/calls/native/build.sh
+
+      - name: Check exports and linkage
+        run: |
+          lib=.calls-build/out/libmgcalls.dylib
+          ls -lh "$lib"
+          lipo -archs "$lib" | grep -qx ${{ matrix.arch }}
+          otool -L "$lib"
+          if otool -L "$lib" | tail -n +2 | grep -v -E '^[[:space:]]+(/usr/lib/|/System/|@rpath/libmgcalls)'; then
+            echo "::error::libmgcalls links to libraries outside the system"
+            exit 1
+          fi
+          nm -gU "$lib"
+          if nm -gU "$lib" | awk '{print $NF}' | grep -v '^_mg_call'; then
+            echo "::error::libmgcalls exports symbols outside the mg_call* API"
+            exit 1
+          fi
+
+      - name: Read Flutter version
+        run: echo "FLUTTER_VERSION=$(jq -r .flutter .fvmrc)" >> "$GITHUB_ENV"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - name: FFI smoke test
+        run: |
+          flutter pub get
+          cd packages/calls
+          MGCALLS_PATH="$MGCALLS_WORK/out/libmgcalls.dylib" dart test test/native_test.dart --reporter expanded
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: libmgcalls-macos-${{ matrix.arch }}
+          path: .calls-build/out/libmgcalls.dylib
+          if-no-files-found: error
+
+  universal:
+    name: macOS universal
+    needs: macos
+    runs-on: macos-15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: libmgcalls-macos-*
+      - name: Create universal dylib
+        run: |
+          mkdir -p dist
+          lipo -create \
+            libmgcalls-macos-arm64/libmgcalls.dylib \
+            libmgcalls-macos-x86_64/libmgcalls.dylib \
+            -output dist/libmgcalls.dylib
+          lipo -archs dist/libmgcalls.dylib
+          ls -lh dist/libmgcalls.dylib
+      - name: Smoke test
+        run: |
+          python3 - <<'PY'
+          import ctypes, json
+          lib = ctypes.CDLL("dist/libmgcalls.dylib")
+          lib.mg_calls_versions_json.restype = ctypes.c_char_p
+          print("versions", json.loads(lib.mg_calls_versions_json()))
+          print("max layer", lib.mg_calls_max_layer())
+          PY
+      - name: Package
+        run: |
+          cd dist
+          zip -q libmgcalls-macos-universal.zip libmgcalls.dylib
+          shasum -a 256 libmgcalls-macos-universal.zip > libmgcalls-macos-universal.zip.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: libmgcalls-macos-universal
+          path: dist/libmgcalls-macos-universal.zip*
+          if-no-files-found: error
+      - name: Read pins
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: actions/checkout@v4
+        with:
+          path: repo
+          sparse-checkout: packages/calls/calls.json
+      - name: Publish
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          pins=repo/packages/calls/calls.json
+          tag="calls-${GITHUB_SHA::7}"
+          cat > notes.md <<EOF
+          libmgcalls for macOS (arm64 + x86_64): tgcalls $(jq -r .tgcalls $pins | cut -c1-7) and tg_owt $(jq -r .tg_owt $pins | cut -c1-7) with OpenSSL $(jq -r .openssl $pins), Opus, libvpx, openh264 and an FFmpeg subset linked statically. Exports only the mg_call* C API. Minimum macOS ${MACOSX_DEPLOYMENT_TARGET}.
+          EOF
+          gh release create "$tag" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "libmgcalls ${GITHUB_SHA::7}" \
+            --notes-file notes.md \
+            --latest=false \
+            dist/libmgcalls-macos-universal.zip \
+            dist/libmgcalls-macos-universal.zip.sha256

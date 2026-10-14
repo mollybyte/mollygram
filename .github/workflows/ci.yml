@@ -11,6 +11,7 @@ on:
     branches: [main]
     paths:
       - packages/tdlib/**
+      - packages/calls/**
       - packages/core/**
       - packages/ui_kit/**
       - packages/media/**
@@ -27,6 +28,7 @@ on:
     types: [opened, synchronize, reopened, labeled]
     paths:
       - packages/tdlib/**
+      - packages/calls/**
       - packages/core/**
       - packages/ui_kit/**
       - packages/media/**
@@ -50,7 +52,7 @@ concurrency:
 env:
   # Monorepo packages checked by this workflow. plugin_host
   # is checked by its own job.
-  PACKAGES: tdlib core ui_kit media shell app
+  PACKAGES: tdlib calls core ui_kit media shell app
 
 jobs:
   analyze:

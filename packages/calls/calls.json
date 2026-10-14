@@ -1,0 +1,13 @@
+{
+  "tgcalls": "1c236c09f8d8569fead14bd68000618a52051225",
+  "tg_owt": "d1cf250ea73de26c4c1f0a3c8173eb2648efbb04",
+  "patches": "aec474953ff7ee9b6e4cd9b8658288ea86d124f3",
+  "rnnoise": "d8ea2b0ec6a88f8a68d6904d75e33b4f09cb2987",
+  "openssl": "3.5.9",
+  "openssl_sha256": "603f5602e2eef00d77fbd429d34dcd5822bb301757a1bc9cdb24c670f1eb859a",
+  "opus": "v1.5.2",
+  "libvpx": "v1.14.1",
+  "openh264": "v2.6.0",
+  "mozjpeg": "v4.1.5",
+  "ffmpeg": "n8.1.3"
+}
