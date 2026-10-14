@@ -114,6 +114,14 @@ final class JsVm {
     return mg_vm_memory_used(_ptr);
   }
 
+  /// Whether the heap limit refused an allocation during the current entry
+  /// into JS. Meant for [JsHostHandler]: the call that is running will also
+  /// end with [JsStatus.outOfMemory].
+  bool get outOfMemory {
+    _checkAlive();
+    return mg_vm_out_of_memory(_ptr) != 0;
+  }
+
   JsResult eval(String code, {String filename = '<eval>', Duration? budget}) {
     _checkAlive();
     return using((arena) {

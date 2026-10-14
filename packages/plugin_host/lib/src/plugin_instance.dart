@@ -409,6 +409,9 @@ final class PluginInstance {
   }
 
   void _disable(String reason, JsStatus? status) {
+    // Running out of memory in a promise job is reported twice: by the host
+    // call that sees the rejection and by the job queue run.
+    if (_status == PluginStatus.disabled) return;
     _status = PluginStatus.disabled;
     _disabledReason = reason;
     _logs.add('disabled: $reason');
@@ -422,8 +425,7 @@ final class PluginInstance {
     _runs.clear();
   }
 
-  bool get _nearMemoryLimit =>
-      (_vm?.memoryUsed ?? 0) > policy.limits.memoryBytes ~/ 10 * 9;
+  bool get _outOfMemory => _vm?.outOfMemory ?? false;
 
   static String _firstLine(String s) => s.split('\n').first;
 
@@ -438,8 +440,8 @@ final class PluginInstance {
           if (c != null && !c.isCompleted) {
             if (args.containsKey('error')) {
               // Running out of memory inside an async handler arrives here
-              // as a plain promise rejection, so check how full the heap is.
-              if (_nearMemoryLimit) {
+              // as a plain promise rejection.
+              if (_outOfMemory) {
                 _disable('exceeded the memory limit', JsStatus.outOfMemory);
                 c.completeError(_PluginFailure('exceeded the memory limit'));
                 return null;
