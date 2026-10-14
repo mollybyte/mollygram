@@ -13,11 +13,17 @@ on:
     paths:
       - packages/calls/calls.json
       - packages/calls/native/**
+      - packages/calls/lib/**
+      - packages/calls/test/**
+      - packages/calls/pubspec.yaml
       - .github/workflows/calls.yml
   pull_request:
     paths:
       - packages/calls/calls.json
       - packages/calls/native/**
+      - packages/calls/lib/**
+      - packages/calls/test/**
+      - packages/calls/pubspec.yaml
       - .github/workflows/calls.yml
 
 concurrency:
@@ -49,7 +55,7 @@ jobs:
         run: brew install meson ninja nasm
 
       - name: Cache key
-        run: echo "DEPS_KEY=calls-deps-${{ matrix.arch }}-${{ hashFiles('packages/calls/calls.json', 'packages/calls/native/env.sh', 'packages/calls/native/deps.sh') }}" >> "$GITHUB_ENV"
+        run: echo "DEPS_KEY=calls-deps-${{ matrix.arch }}-macos${{ env.MACOSX_DEPLOYMENT_TARGET }}-${{ hashFiles('packages/calls/calls.json', 'packages/calls/native/env.sh', 'packages/calls/native/deps.sh') }}" >> "$GITHUB_ENV"
 
       # Codecs and OpenSSL. Saved right after the build, so a later failure
       # does not throw them away.
@@ -179,11 +185,18 @@ jobs:
           cat > notes.md <<EOF
           libmgcalls for macOS (arm64 + x86_64): tgcalls $(jq -r .tgcalls $pins | cut -c1-7) and tg_owt $(jq -r .tg_owt $pins | cut -c1-7) with OpenSSL $(jq -r .openssl $pins), Opus, libvpx, openh264 and an FFmpeg subset linked statically. Exports only the mg_call* C API. Minimum macOS ${MACOSX_DEPLOYMENT_TARGET}.
           EOF
-          gh release create "$tag" \
-            --repo "$GITHUB_REPOSITORY" \
-            --target "$GITHUB_SHA" \
-            --title "libmgcalls ${GITHUB_SHA::7}" \
-            --notes-file notes.md \
-            --latest=false \
-            dist/libmgcalls-macos-universal.zip \
-            dist/libmgcalls-macos-universal.zip.sha256
+          # Reruns and manual runs on the same commit replace the assets.
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$tag" --repo "$GITHUB_REPOSITORY" --clobber \
+              dist/libmgcalls-macos-universal.zip \
+              dist/libmgcalls-macos-universal.zip.sha256
+          else
+            gh release create "$tag" \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" \
+              --title "libmgcalls ${GITHUB_SHA::7}" \
+              --notes-file notes.md \
+              --latest=false \
+              dist/libmgcalls-macos-universal.zip \
+              dist/libmgcalls-macos-universal.zip.sha256
+          fi
