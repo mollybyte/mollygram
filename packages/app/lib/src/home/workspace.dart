@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_shell/mollygram_shell.dart';
@@ -7,7 +10,13 @@ import '../session/providers.dart';
 /// The chats the shell can open and search, backed by the session.
 final chatDirectoryProvider = Provider<TelegramChatDirectory>((ref) {
   final session = ref.watch(telegramSessionProvider).requireValue;
-  return TelegramChatDirectory(session.chatLists.store, session.search);
+  final directory = TelegramChatDirectory(
+    session.chatLists.store,
+    session.search,
+    changes: session.chatLists.changes,
+  );
+  ref.onDispose(directory.dispose);
+  return directory;
 });
 
 /// The window layout: tabs, split panes and the focused chat. A new
@@ -27,12 +36,16 @@ final workspaceControllerProvider = Provider<WorkspaceController>((ref) {
 });
 
 /// [ChatDirectory] over TDLib: titles from the chat list store, search
-/// through TDLib's own chat and message search.
-class TelegramChatDirectory implements ChatDirectory {
-  TelegramChatDirectory(this._store, this._search);
+/// through TDLib's own chat and message search. Notifies when the store
+/// changes, so tab titles follow renames.
+class TelegramChatDirectory extends ChangeNotifier implements ChatDirectory {
+  TelegramChatDirectory(this._store, this._search, {Stream<void>? changes}) {
+    _changes = changes?.listen((_) => notifyListeners());
+  }
 
   final ChatListStore _store;
   final ChatSearch _search;
+  StreamSubscription<void>? _changes;
 
   /// Chats focused in this session, most recent first.
   final _recent = <int>[];
@@ -85,6 +98,12 @@ class TelegramChatDirectory implements ChatDirectory {
           isFile: message.isFile,
         ),
     ];
+  }
+
+  @override
+  void dispose() {
+    unawaited(_changes?.cancel());
+    super.dispose();
   }
 
   static ChatSummary _summary(ChatListEntry entry) => ChatSummary(

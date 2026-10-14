@@ -51,6 +51,9 @@ class MessageHit {
 /// The shell depends only on this interface, so it works against
 /// [MockChatDirectory] in tests and the TDLib-backed implementation in the
 /// app.
+///
+/// A directory that is also a [Listenable] should notify when chats change
+/// (a rename, a new unread count); the tab strip then shows the new titles.
 abstract interface class ChatDirectory {
   /// A chat by id, or `null` if it is not known (yet).
   ChatSummary? chat(ChatId id);

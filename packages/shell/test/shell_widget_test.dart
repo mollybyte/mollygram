@@ -298,4 +298,125 @@ void main() {
     expect(find.text('Команды'), findsOneWidget);
     expect(find.text('Открыть второй чат в сплите'), findsOneWidget);
   });
+
+  testWidgets('hidden tabs keep their panes alive with tickers off', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1440, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final created = <int>[];
+    final visible = <int, bool>{};
+    await tester.pumpWidget(
+      WidgetsApp(
+        color: const Color(0xFF0071E3),
+        builder: (context, _) => WorkspaceShell(
+          controller: controller,
+          directory: directory,
+          strings: ShellStrings.en,
+          paneBuilder: (context, chat, focused) => chat == null
+              ? const SizedBox()
+              : _ProbePane(chat: chat, created: created, visible: visible),
+        ),
+      ),
+    );
+    controller
+      ..open(1)
+      ..open(2, target: OpenTarget.newTab);
+    await tester.pump();
+    expect(visible, {1: false, 2: true});
+
+    controller.selectTab(0);
+    await tester.pump();
+    controller.selectTab(1);
+    await tester.pump();
+    // Each chat was built once: switching tabs did not recreate it.
+    expect(created, [1, 2]);
+    expect(visible, {1: false, 2: true});
+  });
+
+  testWidgets('tab titles follow a listenable directory', (tester) async {
+    tester.view.physicalSize = const Size(1440, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final names = _RenamingDirectory();
+    addTearDown(names.dispose);
+    controller
+      ..open(1)
+      ..open(2, target: OpenTarget.newTab);
+    await tester.pumpWidget(
+      WidgetsApp(
+        color: const Color(0xFF0071E3),
+        builder: (context, _) => WorkspaceShell(
+          controller: controller,
+          directory: names,
+          strings: ShellStrings.en,
+          paneBuilder: (context, chat, focused) => const SizedBox(),
+        ),
+      ),
+    );
+    expect(find.text('Anna Morris'), findsOneWidget);
+
+    names.rename(1, 'Anna');
+    await tester.pump();
+    expect(find.text('Anna Morris'), findsNothing);
+    expect(find.text('Anna'), findsOneWidget);
+  });
+}
+
+class _ProbePane extends StatefulWidget {
+  const _ProbePane({
+    required this.chat,
+    required this.created,
+    required this.visible,
+  });
+
+  final int chat;
+  final List<int> created;
+  final Map<int, bool> visible;
+
+  @override
+  State<_ProbePane> createState() => _ProbePaneState();
+}
+
+class _ProbePaneState extends State<_ProbePane> {
+  @override
+  void initState() {
+    super.initState();
+    widget.created.add(widget.chat);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    widget.visible[widget.chat] = TickerMode.valuesOf(context).enabled;
+    return Text('chat ${widget.chat}');
+  }
+}
+
+class _RenamingDirectory extends ChangeNotifier implements ChatDirectory {
+  final _inner = MockChatDirectory();
+  final _names = <int, String>{};
+
+  void rename(int id, String title) {
+    _names[id] = title;
+    notifyListeners();
+  }
+
+  @override
+  ChatSummary? chat(ChatId id) => switch (_inner.chat(id)) {
+    final c? => ChatSummary(id: c.id, title: _names[id] ?? c.title),
+    null => null,
+  };
+
+  @override
+  List<ChatSummary> recentChats({int limit = 5}) =>
+      _inner.recentChats(limit: limit);
+
+  @override
+  Future<List<ChatSummary>> searchChats(String query, {int limit = 8}) =>
+      _inner.searchChats(query, limit: limit);
+
+  @override
+  Future<List<MessageHit>> searchMessages(String query, {int limit = 8}) =>
+      _inner.searchMessages(query, limit: limit);
 }

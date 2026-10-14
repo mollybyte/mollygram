@@ -81,6 +81,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
   /// Called for each incoming message as it is laid out on screen; the ids
   /// are sent to TDLib together after the frame.
   void _shown(ConversationMessage message) {
+    // A chat in a background tab stays built but is not on screen; its
+    // messages count as read once the tab comes forward.
+    if (!_onScreen) return;
     if (message.isOutgoing || !_viewed.add(message.id)) return;
     _toView.add(message.id);
     if (_viewScheduled) return;
@@ -126,8 +129,12 @@ class _ChatViewState extends ConsumerState<ChatView> {
     }
   }
 
+  /// False while the chat sits in a background tab (tickers are off there).
+  var _onScreen = true;
+
   @override
   Widget build(BuildContext context) {
+    _onScreen = TickerMode.valuesOf(context).enabled;
     final c = MgColors.of(context);
     final l10n = AppLocalizations.of(context);
     final session = ref.watch(telegramSessionProvider).requireValue;

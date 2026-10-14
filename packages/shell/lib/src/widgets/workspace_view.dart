@@ -11,7 +11,11 @@ typedef PaneBuilder = Widget Function(
   bool focused,
 );
 
-/// The active tab: one pane, or two with a draggable divider.
+/// The tabs of the window. Only the active one is shown, but every tab
+/// stays mounted, so a chat keeps its draft and scroll position while
+/// another tab is in front. Hidden tabs have tickers off ([TickerMode]),
+/// which panes can read to tell whether they are on screen, and cannot
+/// take focus.
 class WorkspaceView extends StatelessWidget {
   const WorkspaceView({
     super.key,
@@ -29,13 +33,62 @@ class WorkspaceView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tab = controller.value.activeTab;
+    final workspace = controller.value;
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        for (final (i, tab) in workspace.tabs.indexed)
+          _TabView(
+            // Keyed by tab, so moving or closing other tabs keeps its state.
+            key: ValueKey(('tab', tab.id)),
+            tab: tab,
+            active: i == workspace.active,
+            controller: controller,
+            paneBuilder: paneBuilder,
+            strings: strings,
+          ),
+      ],
+    );
+  }
+}
+
+/// One tab: one pane, or two with a draggable divider.
+class _TabView extends StatelessWidget {
+  const _TabView({
+    super.key,
+    required this.tab,
+    required this.active,
+    required this.controller,
+    required this.paneBuilder,
+    required this.strings,
+  });
+
+  final WorkspaceTab tab;
+  final bool active;
+  final WorkspaceController controller;
+  final PaneBuilder paneBuilder;
+  final ShellStrings strings;
+
+  @override
+  Widget build(BuildContext context) {
+    return Offstage(
+      offstage: !active,
+      child: TickerMode(
+        enabled: active,
+        child: ExcludeFocus(excluding: !active, child: _panes()),
+      ),
+    );
+  }
+
+  Widget _panes() {
     Widget pane(int i) => _Pane(
-      // Keyed by tab and chat so switching tabs never reuses another chat's
-      // state.
+      // Keyed by tab and chat so a pane never reuses another chat's state.
       key: ValueKey(('pane', tab.id, i, tab.panes[i])),
       onFocus: () => controller.focusPane(i),
-      child: paneBuilder(context, tab.panes[i], tab.focus == i),
+      child: Builder(
+        builder: (context) =>
+            paneBuilder(context, tab.panes[i], active && tab.focus == i),
+      ),
     );
 
     if (!tab.isSplit) return pane(0);
@@ -43,12 +96,12 @@ class WorkspaceView extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        final left = (width - dividerHitWidth) * tab.split;
+        final left = (width - WorkspaceView.dividerHitWidth) * tab.split;
         return Stack(
           children: [
             Positioned(left: 0, top: 0, bottom: 0, width: left, child: pane(0)),
             Positioned(
-              left: left + dividerHitWidth,
+              left: left + WorkspaceView.dividerHitWidth,
               top: 0,
               bottom: 0,
               right: 0,
@@ -58,14 +111,14 @@ class WorkspaceView extends StatelessWidget {
               left: left,
               top: 0,
               bottom: 0,
-              width: dividerHitWidth,
+              width: WorkspaceView.dividerHitWidth,
               child: _Divider(
                 label: strings.splitDivider,
                 onDrag: (dx) => controller.setSplit(
                   (controller.value.activeTab.split *
-                              (width - dividerHitWidth) +
+                              (width - WorkspaceView.dividerHitWidth) +
                           dx) /
-                      (width - dividerHitWidth),
+                      (width - WorkspaceView.dividerHitWidth),
                 ),
                 onReset: () => controller.setSplit(WorkspaceTab.defaultSplit),
               ),

@@ -149,6 +149,29 @@ void main() {
     expect(header('Vera'), findsOneWidget);
   });
 
+  testWidgets('a draft survives switching tabs', (tester) async {
+    final composer = find.descendant(
+      of: find.byType(Composer),
+      matching: find.byType(TextField),
+    );
+    await pump(tester);
+    await tester.tap(row('Anna'));
+    await settle(tester);
+    await tester.enterText(composer, 'Half a thought');
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.altLeft);
+    await tester.tap(row('Vera'));
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.altLeft);
+    await settle(tester);
+    expect(header('Vera'), findsOneWidget);
+
+    await tester.tap(row('Anna'));
+    await settle(tester);
+    expect(header('Anna'), findsOneWidget);
+    final field = tester.widget<TextField>(composer);
+    expect(field.controller!.text, 'Half a thought');
+  });
+
   testWidgets('the palette lists recent chats and opens one', (tester) async {
     final container = await pump(tester);
     await tester.tap(row('Boris'));

@@ -5,6 +5,7 @@ import 'package:mollygram_plugins_ui/mollygram_plugins_ui.dart';
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../window_drag_area.dart';
 
 /// The plugins list: the built-in plugins for now. Installing third-party
 /// plugins and running them in the sandbox come with the plugins stage.
@@ -28,6 +29,10 @@ class PluginsPage extends ConsumerWidget {
   /// (`_Layout` in mollygram_plugins_ui puts the pane at 276).
   static const _backLeft = 276.0 + 10;
 
+  /// The empty band at the top, over the list's room for the window
+  /// buttons and above the plugin details.
+  static const _titleBarHeight = 38.0;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
@@ -49,6 +54,14 @@ class PluginsPage extends ConsumerWidget {
                         locale: Localizations.localeOf(context).languageCode,
                         brightness: c.brightness,
                       ),
+                    ),
+                    // The title bar is hidden: this strip drags the window.
+                    const Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: _titleBarHeight,
+                      child: WindowDragArea(),
                     ),
                     Positioned(
                       top: 6,
