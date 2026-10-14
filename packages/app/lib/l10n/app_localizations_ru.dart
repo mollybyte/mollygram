@@ -293,6 +293,42 @@ class AppLocalizationsRu extends AppLocalizations {
   String get editFailed => 'Не удалось сохранить изменения';
 
   @override
+  String attachTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Отправить $count файлов',
+      few: 'Отправить $count файла',
+      one: 'Отправить $count файл',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String attachPhotosTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Отправить $count фото',
+      few: 'Отправить $count фото',
+      one: 'Отправить $count фото',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get sendAsFiles => 'Отправить как файлы';
+
+  @override
+  String get captionHint => 'Добавить подпись';
+
+  @override
+  String get dropFiles => 'Перетащите файлы сюда, чтобы отправить';
+
+  @override
+  String get attachFailed => 'Не удалось отправить файлы';
+
+  @override
   String get close => 'Закрыть';
 
   @override

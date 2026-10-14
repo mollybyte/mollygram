@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 
 import 'conversation_store.dart';
+import 'outgoing_file.dart';
 import 'text_edit.dart';
 
 /// Loads and maintains conversation timelines from TDLib.
@@ -200,6 +201,57 @@ final class ConversationController {
       ),
     );
     _add(message);
+  }
+
+  /// Sends local files, grouped into albums as [groupForSending] does.
+  /// [caption] goes under the first file, and the first message answers
+  /// [replyTo] when it is set.
+  Future<void> sendFiles(
+    int chatId,
+    List<OutgoingFile> files, {
+    String caption = '',
+    int? replyTo,
+  }) async {
+    var first = true;
+    for (final group in groupForSending(files)) {
+      final reply = first && replyTo != null
+          ? td.InputMessageReplyToMessage(
+              messageId: replyTo,
+              checklistTaskId: 0,
+              pollOptionId: '',
+            )
+          : null;
+      final contents = [
+        for (final (i, file) in group.indexed)
+          inputContentOf(
+            file,
+            caption: first && i == 0 && caption.trim().isNotEmpty
+                ? td.FormattedText(text: caption, entities: const [])
+                : null,
+          ),
+      ];
+      first = false;
+      if (contents.length == 1) {
+        _add(
+          await _client.send(
+            td.SendMessage(
+              chatId: chatId,
+              replyTo: reply,
+              inputMessageContent: contents.single,
+            ),
+          ),
+        );
+      } else {
+        final sent = await _client.send(
+          td.SendMessageAlbum(
+            chatId: chatId,
+            replyTo: reply,
+            inputMessageContents: contents,
+          ),
+        );
+        sent.messages.forEach(_add);
+      }
+    }
   }
 
   /// Replaces the text of a text message, or the caption of a media one,

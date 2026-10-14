@@ -614,6 +614,42 @@ abstract class AppLocalizations {
   /// **'Couldn\'t save the changes'**
   String get editFailed;
 
+  /// No description provided for @attachTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{Send {count} file} other{Send {count} files}}'**
+  String attachTitle(int count);
+
+  /// No description provided for @attachPhotosTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{Send {count} photo} other{Send {count} photos}}'**
+  String attachPhotosTitle(int count);
+
+  /// No description provided for @sendAsFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Send as files'**
+  String get sendAsFiles;
+
+  /// No description provided for @captionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a caption'**
+  String get captionHint;
+
+  /// No description provided for @dropFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop files here to send them'**
+  String get dropFiles;
+
+  /// No description provided for @attachFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t send the files'**
+  String get attachFailed;
+
   /// No description provided for @close.
   ///
   /// In en, this message translates to:

@@ -359,6 +359,36 @@ void main() {
     expect(forward['from_chat_id'], 7);
   });
 
+  test('sends files as albums with the caption on the first', () async {
+    await controller.start();
+
+    await controller.sendFiles(
+      7,
+      const [
+        OutgoingFile(path: '/a.jpg', kind: OutgoingKind.photo),
+        OutgoingFile(path: '/b.mp4', kind: OutgoingKind.video),
+        OutgoingFile(path: '/c.pdf', kind: OutgoingKind.document),
+      ],
+      caption: 'Trip',
+      replyTo: 10,
+    );
+
+    final album = json.sent.firstWhere((r) => r['@type'] == 'sendMessageAlbum');
+    final contents = album['input_message_contents']! as List;
+    expect(contents, hasLength(2));
+    expect(((contents[0] as Map)['caption']! as Map)['text'], 'Trip');
+    expect((contents[1] as Map)['caption'], isNull);
+    expect(album['reply_to'], containsPair('message_id', 10));
+
+    final single = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    expect(
+      (single['input_message_content']! as Map)['@type'],
+      'inputMessageDocument',
+    );
+    expect(single['reply_to'], isNull);
+    expect(controller.store.message(7, 30), isNotNull);
+  });
+
   test('offers free emoji reactions once each, in order', () async {
     await controller.start();
 
@@ -486,6 +516,14 @@ final class _FakeTdJson implements td.TdJson {
         chatId: 7,
         text: 'Edited',
       ).toJson(),
+      'sendMessageAlbum' => {
+        '@type': 'messages',
+        'total_count': 2,
+        'messages': [
+          _message(id: 30, chatId: 7, text: '').toJson(),
+          _message(id: 31, chatId: 7, text: '').toJson(),
+        ],
+      },
       'forwardMessages' => {
         '@type': 'messages',
         'total_count': 0,

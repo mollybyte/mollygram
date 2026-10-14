@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -41,6 +43,7 @@ class Composer extends StatefulWidget {
     this.onRecord,
     this.onCancel,
     this.onEditLast,
+    this.onPaste,
     this.header,
     this.maxLines = 8,
   });
@@ -61,6 +64,11 @@ class Composer extends StatefulWidget {
 
   /// The up arrow in an empty field: edit the last message sent.
   final VoidCallback? onEditLast;
+
+  /// Cmd+V (Ctrl+V elsewhere). Completes with true when it took what is
+  /// on the clipboard, such as files or an image; otherwise the text on the
+  /// clipboard is pasted as usual.
+  final Future<bool> Function()? onPaste;
 
   /// Drawn above the text field inside the glass, such as the message
   /// being replied to.
@@ -115,6 +123,17 @@ class _ComposerState extends State<Composer> {
     widget.onSend?.call(text);
   }
 
+  Future<void> _paste() async {
+    if (await widget.onPaste!()) return;
+    final text = (await Clipboard.getData(Clipboard.kTextPlain))?.text;
+    if (text == null || text.isEmpty || !mounted) return;
+    final value = _text.value;
+    final selection = value.selection.isValid
+        ? value.selection
+        : TextSelection.collapsed(offset: value.text.length);
+    _text.value = value.replaced(selection, text);
+  }
+
   KeyEventResult _onKey(FocusNode node, KeyEvent event) {
     if (widget.onSend != null &&
         event is KeyDownEvent &&
@@ -124,6 +143,15 @@ class _ComposerState extends State<Composer> {
       return KeyEventResult.handled;
     }
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    final keyboard = HardwareKeyboard.instance;
+    if (widget.onPaste != null &&
+        event.logicalKey == LogicalKeyboardKey.keyV &&
+        (keyboard.isMetaPressed || keyboard.isControlPressed) &&
+        !keyboard.isShiftPressed &&
+        !keyboard.isAltPressed) {
+      unawaited(_paste());
+      return KeyEventResult.handled;
+    }
     if (event.logicalKey == LogicalKeyboardKey.escape &&
         widget.onCancel != null) {
       widget.onCancel!();

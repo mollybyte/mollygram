@@ -1,13 +1,22 @@
 import 'dart:async';
+import 'dart:io';
+import 'dart:ui' as ui;
 
+import 'package:desktop_drop/desktop_drop.dart';
+import 'package:file_selector/file_selector.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mollygram_core/mollygram_core.dart';
+import 'package:mollygram_media/mollygram_media.dart';
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
+import 'package:pasteboard/pasteboard.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../chat/attachment_preview.dart';
 import '../chat/describe.dart';
 import '../chat/forward_picker.dart';
 import '../chat/message_actions.dart';
@@ -45,7 +54,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
   final _viewed = <int>{};
   final _toView = <int>{};
   var _viewScheduled = false;
-  var _sendFailed = false;
+
+  /// What went wrong last, shown above the composer until the user types.
+  _Failure? _failure;
 
   @override
   void initState() {
@@ -67,8 +78,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _toView.clear();
     // An edit belongs to the old chat: give back the draft it set aside.
     if (_editing != null) _draft.text = _setAside;
-    _sendFailed = false;
-    _editFailed = false;
+    _failure = null;
     _replyTo = null;
     _editing = null;
     _setAside = '';
@@ -96,11 +106,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
       request.catchError((Object _) {});
 
   void _clearSendError() {
-    if ((_sendFailed || _editFailed) && _draft.text.isNotEmpty) {
-      setState(() {
-        _sendFailed = false;
-        _editFailed = false;
-      });
+    if (_failure != null && _draft.text.isNotEmpty) {
+      setState(() => _failure = null);
     }
   }
 
@@ -189,7 +196,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _setAside = '';
     setState(() {
       _editing = null;
-      _editFailed = false;
+      if (_failure == _Failure.edit) _failure = null;
       _replyTo = _replyAside;
       _replyAside = null;
     });
@@ -270,7 +277,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     final replyTo = _replyTo;
     _draft.clear();
     setState(() {
-      _sendFailed = false;
+      _failure = null;
       _replyTo = null;
     });
     try {
@@ -286,7 +293,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
         );
       }
       setState(() {
-        _sendFailed = true;
+        _failure = _Failure.send;
         _replyTo ??= replyTo;
       });
     }
@@ -305,11 +312,110 @@ class _ChatViewState extends ConsumerState<ChatView> {
         text: text,
         selection: TextSelection.collapsed(offset: text.length),
       );
-      setState(() => _editFailed = true);
+      setState(() => _failure = _Failure.edit);
     }
   }
 
-  var _editFailed = false;
+  /// The attach button: pick files, then confirm them in the preview.
+  Future<void> _chooseFiles() async {
+    final picked = await openFiles();
+    if (!mounted || picked.isEmpty) return;
+    await _offerFiles([for (final file in picked) file.path]);
+  }
+
+  /// Cmd+V: files copied in Finder or an image take the place of text.
+  Future<bool> _paste() async {
+    List<String> files;
+    try {
+      files = await Pasteboard.files();
+    } on Object {
+      files = const [];
+    }
+    if (files.isEmpty) {
+      Uint8List? image;
+      try {
+        image = await Pasteboard.image;
+      } on Object {
+        image = null;
+      }
+      if (image == null || image.isEmpty) return false;
+      final directory = await getTemporaryDirectory();
+      final file = File(
+        '${directory.path}/Pasted ${DateTime.now().millisecondsSinceEpoch}.png',
+      );
+      await file.writeAsBytes(image);
+      files = [file.path];
+    }
+    if (!mounted) return true;
+    await _offerFiles(files);
+    return true;
+  }
+
+  Future<void> _offerFiles(List<String> paths) async {
+    if (paths.isEmpty) return;
+    final chatId = widget.chatId;
+    // The draft becomes the caption, as in the official apps; not while
+    // editing, where the composer holds another message's text.
+    final useDraft = _editing == null;
+    final choice = await showAttachmentPreview(
+      context,
+      paths: paths,
+      caption: useDraft ? _draft.text : '',
+    );
+    if (choice == null || !mounted || widget.chatId != chatId) return;
+    final replyTo = _replyTo;
+    setState(() {
+      _failure = null;
+      _replyTo = null;
+    });
+    if (useDraft) _draft.clear();
+    try {
+      await _conversations.sendFiles(
+        chatId,
+        await Future.wait(choice.files.map(_measure)),
+        caption: choice.caption,
+        replyTo: replyTo?.id,
+      );
+    } catch (_) {
+      if (!mounted || widget.chatId != chatId) return;
+      setState(() => _failure = _Failure.attach);
+    }
+  }
+
+  /// Adds the pixel size and length the server shows before it has the
+  /// file itself.
+  static Future<OutgoingFile> _measure(OutgoingFile file) async {
+    switch (file.kind) {
+      case OutgoingKind.photo:
+        try {
+          final buffer = await ui.ImmutableBuffer.fromFilePath(file.path);
+          final image = await ui.ImageDescriptor.encoded(buffer);
+          final measured = OutgoingFile(
+            path: file.path,
+            kind: file.kind,
+            width: image.width,
+            height: image.height,
+          );
+          image.dispose();
+          buffer.dispose();
+          return measured;
+        } on Object {
+          return file;
+        }
+      case OutgoingKind.video || OutgoingKind.animation || OutgoingKind.audio:
+        final info = await probeMedia(file.path);
+        if (info == null) return file;
+        return OutgoingFile(
+          path: file.path,
+          kind: file.kind,
+          width: info.width,
+          height: info.height,
+          duration: info.duration.inSeconds,
+        );
+      case OutgoingKind.document:
+        return file;
+    }
+  }
 
   Widget? _composerHeader(AppLocalizations l10n) {
     final editing = _editing;
@@ -331,6 +437,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
     );
   }
 
+  /// Files are being dragged over the chat.
+  var _dragging = false;
+
   /// False while the chat sits in a background tab (tickers are off there).
   var _onScreen = true;
 
@@ -344,77 +453,110 @@ class _ChatViewState extends ConsumerState<ChatView> {
     final messages = ref.watch(conversationProvider(widget.chatId));
     final store = session.conversations.store;
 
-    return Stack(
-      children: [
-        Positioned.fill(
-          child: switch (messages) {
-            AsyncData(value: final list)
-                when list.isEmpty && store.reachedStart(widget.chatId) =>
-              Center(child: DatePill(l10n.noMessages)),
-            AsyncData(value: final list) => _Messages(
-              messages: list,
-              store: store,
-              chatId: widget.chatId,
-              isGroup: chat?.isGroup ?? false,
-              onShown: _shown,
-              onNearTop: _loadOlder,
-              actions: _actions,
-            ),
-            _ => const SizedBox.shrink(),
-          },
-        ),
-        Positioned(
-          top: 10,
-          left: 14,
-          right: 14,
-          child: ChatHeaderBar(
-            title: ChatTitleCapsule(title: chat?.title ?? ''),
-            actions: const SizedBox.shrink(),
-            fill: const WindowDragArea(),
+    return DropTarget(
+      onDragEntered: (_) => setState(() => _dragging = true),
+      onDragExited: (_) => setState(() => _dragging = false),
+      onDragDone: (details) {
+        setState(() => _dragging = false);
+        unawaited(_offerFiles([for (final file in details.files) file.path]));
+      },
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: switch (messages) {
+              AsyncData(value: final list)
+                  when list.isEmpty && store.reachedStart(widget.chatId) =>
+                Center(child: DatePill(l10n.noMessages)),
+              AsyncData(value: final list) => _Messages(
+                messages: list,
+                store: store,
+                chatId: widget.chatId,
+                isGroup: chat?.isGroup ?? false,
+                onShown: _shown,
+                onNearTop: _loadOlder,
+                actions: _actions,
+              ),
+              _ => const SizedBox.shrink(),
+            },
           ),
-        ),
-        Positioned(
-          left: 24,
-          right: 24,
-          bottom: 12,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (_sendFailed || _editFailed)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: Text(
-                    _editFailed ? l10n.editFailed : l10n.sendFailed,
-                    textAlign: TextAlign.center,
-                    style: mgTextStyle(
-                      c,
-                      size: MgType.small,
-                      color: MessageMeta.failedColor,
+          Positioned(
+            top: 10,
+            left: 14,
+            right: 14,
+            child: ChatHeaderBar(
+              title: ChatTitleCapsule(title: chat?.title ?? ''),
+              actions: const SizedBox.shrink(),
+              fill: const WindowDragArea(),
+            ),
+          ),
+          Positioned(
+            left: 24,
+            right: 24,
+            bottom: 12,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (_failure case final failure?)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Text(
+                      switch (failure) {
+                        _Failure.send => l10n.sendFailed,
+                        _Failure.edit => l10n.editFailed,
+                        _Failure.attach => l10n.attachFailed,
+                      },
+                      textAlign: TextAlign.center,
+                      style: mgTextStyle(
+                        c,
+                        size: MgType.small,
+                        color: MessageMeta.failedColor,
+                      ),
                     ),
                   ),
+                Composer(
+                  controller: _draft,
+                  focusNode: _focus,
+                  header: _composerHeader(l10n),
+                  onCancel: _editing != null || _replyTo != null
+                      ? _cancel
+                      : null,
+                  onEditLast: () => unawaited(_editLast()),
+                  onAttach: () => unawaited(_chooseFiles()),
+                  onPaste: _paste,
+                  labels: ComposerLabels(
+                    hint: l10n.messageHint,
+                    attach: l10n.attach,
+                    emoji: l10n.emoji,
+                    record: l10n.record,
+                    send: l10n.send,
+                  ),
+                  onSend: (text) => unawaited(_send(text)),
                 ),
-              Composer(
-                controller: _draft,
-                focusNode: _focus,
-                header: _composerHeader(l10n),
-                onCancel: _editing != null || _replyTo != null ? _cancel : null,
-                onEditLast: () => unawaited(_editLast()),
-                labels: ComposerLabels(
-                  hint: l10n.messageHint,
-                  attach: l10n.attach,
-                  emoji: l10n.emoji,
-                  record: l10n.record,
-                  send: l10n.send,
-                ),
-                onSend: (text) => unawaited(_send(text)),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ],
+          if (_dragging)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: Center(
+                  child: Glass(
+                    radius: 14,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 22,
+                      vertical: 14,
+                    ),
+                    child: Text(l10n.dropFiles, style: mgTextStyle(c)),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
+
+enum _Failure { send, edit, attach }
 
 /// The timeline, newest at the bottom: rows of messages and albums with a
 /// date pill above the first message of each day.

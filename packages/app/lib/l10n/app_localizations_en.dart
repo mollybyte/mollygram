@@ -291,6 +291,40 @@ class AppLocalizationsEn extends AppLocalizations {
   String get editFailed => 'Couldn\'t save the changes';
 
   @override
+  String attachTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Send $count files',
+      one: 'Send $count file',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String attachPhotosTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Send $count photos',
+      one: 'Send $count photo',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get sendAsFiles => 'Send as files';
+
+  @override
+  String get captionHint => 'Add a caption';
+
+  @override
+  String get dropFiles => 'Drop files here to send them';
+
+  @override
+  String get attachFailed => 'Couldn\'t send the files';
+
+  @override
   String get close => 'Close';
 
   @override

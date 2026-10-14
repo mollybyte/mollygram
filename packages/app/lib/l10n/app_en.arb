@@ -104,6 +104,18 @@
   "forwardSearch": "Search chats",
   "noChatsFound": "No chats found",
   "editFailed": "Couldn't save the changes",
+  "attachTitle": "{count, plural, one{Send {count} file} other{Send {count} files}}",
+  "@attachTitle": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "attachPhotosTitle": "{count, plural, one{Send {count} photo} other{Send {count} photos}}",
+  "@attachPhotosTitle": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "sendAsFiles": "Send as files",
+  "captionHint": "Add a caption",
+  "dropFiles": "Drop files here to send them",
+  "attachFailed": "Couldn't send the files",
   "close": "Close",
   "fileSizeBytes": "{size} B",
   "@fileSizeBytes": {
