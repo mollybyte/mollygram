@@ -1,0 +1,22 @@
+name: mollygram_media_example
+description: Frame benchmark for video message playback in mollygram_media.
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+  flutter: ">=3.47.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  media_kit_libs_video: ^1.0.7
+  mollygram_media: any
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: false
+  assets:
+    - assets/

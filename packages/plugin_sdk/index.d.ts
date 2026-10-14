@@ -1,4 +1,4 @@
-// Mollygram plugin SDK types, version 1.0.
+// Mollygram plugin SDK types, version 1.1.
 // A plugin runs in quickjs-ng without DOM, Node, fetch or timers.
 // Everything that reaches the outside goes through the global `mg` object and
 // is checked against the permissions in manifest.yaml. Spec: docs/plugins.md.
@@ -59,6 +59,9 @@ declare namespace Mg {
   interface CodePayload { message: Message; language?: string; code: string }
   interface ActionPayload { action: string; payload?: unknown; message?: Message }
 
+  /** SDK 1.1. Hide the message, or collapse it into a row showing `reason`. */
+  type FilterResult = void | { filter: "hide" | "collapse"; reason?: string };
+
   interface Events {
     "app.ready": [void, void];
     "chat.opened": [{ chatId: ChatId }, void];
@@ -69,6 +72,10 @@ declare namespace Mg {
     "message.render.code": [CodePayload, UiNode[] | void];
     "message.render.voice": [RenderPayload, UiNode[] | void];
     "message.render.round": [RenderPayload, UiNode[] | void];
+    /** SDK 1.1. A block below the message text, for example a translation. */
+    "message.render.text": [RenderPayload, UiNode[] | void];
+    /** SDK 1.1. Called before a message is shown. */
+    "message.filter": [MessagePayload, FilterResult];
     "ui.action": [ActionPayload, UiNode[] | void];
     "notification.incoming": [Notification, InterceptResult<Notification> | { defer: number }];
     "settings.changed": [{ key: string; value: unknown }, void];
@@ -117,6 +124,23 @@ declare const mg: {
   readonly messages: {
     get(chatId: Mg.ChatId, messageId: Mg.MessageId): Promise<Mg.Message | null>;
     history(chatId: Mg.ChatId, options?: { limit?: number; before?: Mg.MessageId }): Promise<Mg.Message[]>;
+    /**
+     * SDK 1.1. Translates a message with Telegram's own translation, so its
+     * text goes nowhere it has not been already. `to` is a language code.
+     */
+    translate(chatId: Mg.ChatId, messageId: Mg.MessageId, options: { to: string }): Promise<{ text: string }>;
+  };
+
+  /** SDK 1.1. No permission needed: everything runs on the device. */
+  readonly text: {
+    /** Detects the language of a text; `null` when unsure. */
+    detectLanguage(text: string): Promise<{ language: string; confidence: number } | null>;
+  };
+
+  /** SDK 1.1. */
+  readonly app: {
+    /** The app's UI language, for example "en" or "ru". */
+    locale(): string;
   };
 
   /** Requires `composer.write`. */

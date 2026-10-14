@@ -1,0 +1,4 @@
+analyzer:
+  exclude:
+    - macos/**
+include: ../analysis_options.yaml

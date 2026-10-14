@@ -6,7 +6,7 @@ import 'permissions.dart';
 ///
 /// A plugin specifies a range in the `sdk` field; compatibility is checked
 /// against the major version.
-const hostSdkVersion = (major: 1, minor: 0);
+const hostSdkVersion = (major: 1, minor: 1);
 
 final class ManifestException implements Exception {
   ManifestException(this.errors);
@@ -151,12 +151,13 @@ final class PluginManifest {
       );
     }
     final sdk = str('sdk');
+    int? sdkMinor;
     if (sdk != null) {
       final m = _sdkRange.firstMatch(sdk);
       if (m == null) {
         errors.add('sdk must be a range like ^1.0');
       } else {
-        final major = int.parse(m[1]!), minor = int.parse(m[2]!);
+        final major = int.parse(m[1]!), minor = sdkMinor = int.parse(m[2]!);
         if (major != hostSdkVersion.major || minor > hostSdkVersion.minor) {
           errors.add(
             'plugin requires SDK $sdk, host implements '
@@ -188,6 +189,9 @@ final class PluginManifest {
           if (event == null) {
             errors.add('unknown hook "$h"');
             continue;
+          }
+          if (sdkMinor != null && event.sinceMinor > sdkMinor) {
+            errors.add('hook "$h" requires sdk ^1.${event.sinceMinor}');
           }
           final missing = event.requires(permissions);
           if (missing != null) {

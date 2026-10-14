@@ -1,6 +1,6 @@
 {
   "name": "@mollygram/plugin-sdk",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Types for Mollygram JS plugins",
   "license": "GPL-3.0-only",
   "types": "index.d.ts",
