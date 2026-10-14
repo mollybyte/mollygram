@@ -15,7 +15,6 @@ dependencies:
     sdk: flutter
   flutter_riverpod: ^3.4.3
   flutter_secure_storage: ^11.2.0
-  flutter_svg: ^2.3.0
   intl: ^0.20.3
   # Native libmpv for mollygram_media. In a pub workspace media_kit_video
   # links against it as soon as any member depends on the libs package.
@@ -35,3 +34,5 @@ dev_dependencies:
 flutter:
   generate: true
   uses-material-design: false
+  assets:
+    - assets/app_icon.png

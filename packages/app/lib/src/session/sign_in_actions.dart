@@ -7,6 +7,12 @@ abstract interface class SignInActions {
   Future<void> requestQrCode();
   Future<void> submitCode(String code);
   Future<void> submitPassword(String password);
+
+  /// Countries for the phone form, sorted by name.
+  Future<List<PhoneCountry>> countries();
+
+  /// The user's country code guessed from the IP address.
+  Future<String> currentCountryCode();
 }
 
 final class SessionSignInActions implements SignInActions {
@@ -27,4 +33,10 @@ final class SessionSignInActions implements SignInActions {
   @override
   Future<void> submitPassword(String password) =>
       _controller.submitPassword(password);
+
+  @override
+  Future<List<PhoneCountry>> countries() => _controller.countries();
+
+  @override
+  Future<String> currentCountryCode() => _controller.currentCountryCode();
 }

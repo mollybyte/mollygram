@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mollygram_core/mollygram_core.dart';
+import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../l10n/app_localizations.dart';
 import 'auth/sign_in_screen.dart';
 import 'home/home_screen.dart';
 import 'session/providers.dart';
-import 'ui/glass.dart';
-import 'ui/theme.dart';
 
 class MollygramApp extends StatelessWidget {
   const MollygramApp({super.key});
@@ -17,8 +16,8 @@ class MollygramApp extends StatelessWidget {
   Widget build(BuildContext context) => MaterialApp(
     onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
     debugShowCheckedModeBanner: false,
-    theme: buildTheme(MgColors.light),
-    darkTheme: buildTheme(MgColors.darkTheme),
+    theme: buildMgTheme(MgColors.light),
+    darkTheme: buildMgTheme(MgColors.dark),
     localizationsDelegates: const [
       AppLocalizations.delegate,
       GlobalMaterialLocalizations.delegate,
@@ -26,10 +25,7 @@ class MollygramApp extends StatelessWidget {
       GlobalCupertinoLocalizations.delegate,
     ],
     supportedLocales: AppLocalizations.supportedLocales,
-    home: const GlassSettings(
-      blur: true,
-      child: Material(type: MaterialType.transparency, child: _Root()),
-    ),
+    home: const Material(type: MaterialType.transparency, child: _Root()),
   );
 }
 

@@ -46,11 +46,3 @@ String formatPreview(AppLocalizations l10n, ChatPreview? preview) {
   };
   return preview.isOutgoing ? l10n.previewYou(body) : body;
 }
-
-/// One or two letters for a monogram avatar.
-String initialsOf(String title) {
-  final words = title.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty);
-  final letters = words.take(2).map((w) => String.fromCharCode(w.runes.first));
-  final initials = letters.join().toUpperCase();
-  return initials.isEmpty ? '?' : initials;
-}

@@ -104,35 +104,53 @@ abstract class AppLocalizations {
   /// **'Mollygram'**
   String get appTitle;
 
-  /// No description provided for @signInTitle.
+  /// No description provided for @back.
   ///
   /// In en, this message translates to:
-  /// **'Sign in to Telegram'**
-  String get signInTitle;
+  /// **'Back'**
+  String get back;
 
-  /// No description provided for @signInQrSteps.
+  /// No description provided for @qrTitle.
   ///
   /// In en, this message translates to:
-  /// **'Open Telegram on your phone, go to Settings > Devices > Link Desktop Device and scan this code.'**
-  String get signInQrSteps;
+  /// **'Log in to Mollygram by QR code'**
+  String get qrTitle;
 
-  /// No description provided for @signInQrLoading.
+  /// No description provided for @qrStep1.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Telegram on your phone'**
+  String get qrStep1;
+
+  /// No description provided for @qrStep2.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to Settings > Devices > Link Desktop Device'**
+  String get qrStep2;
+
+  /// No description provided for @qrStep3.
+  ///
+  /// In en, this message translates to:
+  /// **'Point your phone at this screen to confirm login'**
+  String get qrStep3;
+
+  /// No description provided for @qrLoading.
   ///
   /// In en, this message translates to:
   /// **'Loading the code…'**
-  String get signInQrLoading;
+  String get qrLoading;
 
-  /// No description provided for @signInWithPhone.
+  /// No description provided for @logInByPhone.
   ///
   /// In en, this message translates to:
-  /// **'Sign in with phone number'**
-  String get signInWithPhone;
+  /// **'Log in by phone number'**
+  String get logInByPhone;
 
-  /// No description provided for @signInWithQr.
+  /// No description provided for @logInByQr.
   ///
   /// In en, this message translates to:
-  /// **'Sign in with QR code'**
-  String get signInWithQr;
+  /// **'Log in by QR code'**
+  String get logInByQr;
 
   /// No description provided for @phoneTitle.
   ///
@@ -143,44 +161,56 @@ abstract class AppLocalizations {
   /// No description provided for @phoneHint.
   ///
   /// In en, this message translates to:
-  /// **'Enter your number in international format, starting with +.'**
+  /// **'Please confirm your country code and enter your phone number.'**
   String get phoneHint;
 
-  /// No description provided for @phoneLabel.
+  /// No description provided for @phoneNumberHint.
   ///
   /// In en, this message translates to:
   /// **'Phone number'**
-  String get phoneLabel;
+  String get phoneNumberHint;
 
-  /// No description provided for @continueAction.
+  /// No description provided for @country.
   ///
   /// In en, this message translates to:
-  /// **'Continue'**
-  String get continueAction;
+  /// **'Country'**
+  String get country;
 
-  /// No description provided for @codeTitle.
+  /// No description provided for @next.
   ///
   /// In en, this message translates to:
-  /// **'Enter the code'**
-  String get codeTitle;
+  /// **'Next'**
+  String get next;
 
   /// No description provided for @codeHint.
   ///
   /// In en, this message translates to:
-  /// **'Telegram sent a code to the app on your other device or by SMS.'**
+  /// **'Code'**
   String get codeHint;
 
-  /// No description provided for @codeLabel.
+  /// No description provided for @codeSentApp.
   ///
   /// In en, this message translates to:
-  /// **'Code'**
-  String get codeLabel;
+  /// **'We have sent the code to the Telegram app on your other device.'**
+  String get codeSentApp;
 
-  /// No description provided for @wrongNumber.
+  /// No description provided for @codeSentSms.
   ///
   /// In en, this message translates to:
-  /// **'Wrong number?'**
-  String get wrongNumber;
+  /// **'We have sent you a code via SMS.'**
+  String get codeSentSms;
+
+  /// No description provided for @codeSentCall.
+  ///
+  /// In en, this message translates to:
+  /// **'We are calling you to dictate the code.'**
+  String get codeSentCall;
+
+  /// No description provided for @codeSentOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the code you received.'**
+  String get codeSentOther;
 
   /// No description provided for @passwordTitle.
   ///
@@ -200,11 +230,11 @@ abstract class AppLocalizations {
   /// **'Your account is protected with an additional password. Hint: {hint}'**
   String passwordHintWithHint(String hint);
 
-  /// No description provided for @passwordLabel.
+  /// No description provided for @passwordFieldHint.
   ///
   /// In en, this message translates to:
   /// **'Password'**
-  String get passwordLabel;
+  String get passwordFieldHint;
 
   /// No description provided for @starting.
   ///
@@ -212,40 +242,46 @@ abstract class AppLocalizations {
   /// **'Starting Telegram…'**
   String get starting;
 
+  /// No description provided for @unsupportedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish signing up in the official app'**
+  String get unsupportedTitle;
+
   /// No description provided for @unsupportedStep.
   ///
   /// In en, this message translates to:
-  /// **'This sign-in step is not supported yet. Finish signing up in the official app, then try again.'**
+  /// **'This sign-in step is not supported yet. Finish signing up in the official Telegram app, then try again.'**
   String get unsupportedStep;
 
   /// No description provided for @errorInvalidPhone.
   ///
   /// In en, this message translates to:
-  /// **'This phone number is not valid.'**
+  /// **'Invalid phone number'**
   String get errorInvalidPhone;
 
   /// No description provided for @errorInvalidCode.
   ///
   /// In en, this message translates to:
-  /// **'This code is not valid.'**
+  /// **'Invalid code'**
   String get errorInvalidCode;
 
   /// No description provided for @errorCodeExpired.
   ///
   /// In en, this message translates to:
-  /// **'The code has expired. Request a new one.'**
+  /// **'The code has expired, request a new one'**
   String get errorCodeExpired;
 
   /// No description provided for @errorInvalidPassword.
   ///
   /// In en, this message translates to:
-  /// **'Wrong password.'**
+  /// **'Wrong password'**
   String get errorInvalidPassword;
 
   /// No description provided for @errorTooManyAttempts.
   ///
   /// In en, this message translates to:
-  /// **'Too many attempts. Try again later.'**
+  /// **'Too many attempts, try again later'**
   String get errorTooManyAttempts;
 
   /// No description provided for @errorGeneric.
@@ -290,6 +326,12 @@ abstract class AppLocalizations {
   /// **'No chats yet'**
   String get noChats;
 
+  /// No description provided for @nothingFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing found'**
+  String get nothingFound;
+
   /// No description provided for @selectChat.
   ///
   /// In en, this message translates to:
@@ -302,17 +344,29 @@ abstract class AppLocalizations {
   /// **'Message'**
   String get messageHint;
 
+  /// No description provided for @attach.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach'**
+  String get attach;
+
+  /// No description provided for @emoji.
+  ///
+  /// In en, this message translates to:
+  /// **'Emoji and stickers'**
+  String get emoji;
+
+  /// No description provided for @record.
+  ///
+  /// In en, this message translates to:
+  /// **'Record a voice or video message'**
+  String get record;
+
   /// No description provided for @send.
   ///
   /// In en, this message translates to:
   /// **'Send'**
   String get send;
-
-  /// No description provided for @newMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'New message'**
-  String get newMessage;
 
   /// No description provided for @previewYou.
   ///

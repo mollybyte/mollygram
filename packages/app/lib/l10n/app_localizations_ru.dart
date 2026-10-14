@@ -13,45 +13,61 @@ class AppLocalizationsRu extends AppLocalizations {
   String get appTitle => 'Mollygram';
 
   @override
-  String get signInTitle => 'Вход в Telegram';
+  String get back => 'Назад';
 
   @override
-  String get signInQrSteps =>
-      'Откройте Telegram на телефоне, перейдите в Настройки > Устройства > Подключить устройство и отсканируйте этот код.';
+  String get qrTitle => 'Вход в Mollygram по QR-коду';
 
   @override
-  String get signInQrLoading => 'Загружаем код…';
+  String get qrStep1 => 'Откройте Telegram на телефоне';
 
   @override
-  String get signInWithPhone => 'Войти по номеру телефона';
+  String get qrStep2 =>
+      'Перейдите в Настройки > Устройства > Подключить устройство';
 
   @override
-  String get signInWithQr => 'Войти по QR-коду';
+  String get qrStep3 =>
+      'Наведите телефон на этот экран, чтобы подтвердить вход';
+
+  @override
+  String get qrLoading => 'Загружаем код…';
+
+  @override
+  String get logInByPhone => 'Вход по номеру телефона';
+
+  @override
+  String get logInByQr => 'Вход по QR-коду';
 
   @override
   String get phoneTitle => 'Ваш номер телефона';
 
   @override
-  String get phoneHint => 'Введите номер в международном формате, начиная с +.';
+  String get phoneHint => 'Проверьте код страны и введите номер телефона.';
 
   @override
-  String get phoneLabel => 'Номер телефона';
+  String get phoneNumberHint => 'Номер телефона';
 
   @override
-  String get continueAction => 'Продолжить';
+  String get country => 'Страна';
 
   @override
-  String get codeTitle => 'Введите код';
+  String get next => 'Далее';
 
   @override
-  String get codeHint =>
-      'Telegram отправил код в приложение на другом устройстве или по SMS.';
+  String get codeHint => 'Код';
 
   @override
-  String get codeLabel => 'Код';
+  String get codeSentApp =>
+      'Мы отправили код в приложение Telegram на другом устройстве.';
 
   @override
-  String get wrongNumber => 'Другой номер?';
+  String get codeSentSms => 'Мы отправили код в SMS.';
+
+  @override
+  String get codeSentCall => 'Мы звоним вам, чтобы продиктовать код.';
+
+  @override
+  String get codeSentOther => 'Введите полученный код.';
 
   @override
   String get passwordTitle => 'Двухэтапная проверка';
@@ -65,29 +81,33 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get passwordLabel => 'Пароль';
+  String get passwordFieldHint => 'Пароль';
 
   @override
   String get starting => 'Запускаем Telegram…';
 
   @override
+  String get unsupportedTitle =>
+      'Завершите регистрацию в официальном приложении';
+
+  @override
   String get unsupportedStep =>
-      'Этот шаг входа пока не поддерживается. Завершите регистрацию в официальном приложении и попробуйте снова.';
+      'Этот шаг входа пока не поддерживается. Завершите регистрацию в официальном приложении Telegram и попробуйте снова.';
 
   @override
-  String get errorInvalidPhone => 'Неверный номер телефона.';
+  String get errorInvalidPhone => 'Неверный номер телефона';
 
   @override
-  String get errorInvalidCode => 'Неверный код.';
+  String get errorInvalidCode => 'Неверный код';
 
   @override
-  String get errorCodeExpired => 'Срок действия кода истёк, запросите новый.';
+  String get errorCodeExpired => 'Срок действия кода истёк, запросите новый';
 
   @override
-  String get errorInvalidPassword => 'Неверный пароль.';
+  String get errorInvalidPassword => 'Неверный пароль';
 
   @override
-  String get errorTooManyAttempts => 'Слишком много попыток, попробуйте позже.';
+  String get errorTooManyAttempts => 'Слишком много попыток, попробуйте позже';
 
   @override
   String errorGeneric(String message) {
@@ -114,16 +134,25 @@ class AppLocalizationsRu extends AppLocalizations {
   String get noChats => 'Чатов пока нет';
 
   @override
+  String get nothingFound => 'Ничего не найдено';
+
+  @override
   String get selectChat => 'Выберите чат, чтобы начать общение';
 
   @override
   String get messageHint => 'Сообщение';
 
   @override
-  String get send => 'Отправить';
+  String get attach => 'Прикрепить';
 
   @override
-  String get newMessage => 'Новое сообщение';
+  String get emoji => 'Эмодзи и стикеры';
+
+  @override
+  String get record => 'Записать голосовое или видеосообщение';
+
+  @override
+  String get send => 'Отправить';
 
   @override
   String previewYou(String text) {

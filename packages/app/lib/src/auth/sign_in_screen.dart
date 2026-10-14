@@ -3,19 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' show TdException;
+import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../session/providers.dart';
-import '../ui/glass.dart';
-import '../ui/theme.dart';
-import '../ui/wallpaper.dart';
-import '../ui/widgets.dart';
+import '../window_drag_area.dart';
+import 'country_picker.dart';
 import 'qr_view.dart';
 
-/// Sign-in on top of the wallpaper: one floating glass card.
-///
-/// The QR code comes first, as in the official desktop app; the phone number
-/// form is one click away.
+/// Sign-in as in the official Telegram apps: a plain window with one
+/// centered column. The QR code comes first; the phone number is one click
+/// away.
 class SignInScreen extends StatelessWidget {
   const SignInScreen({super.key, required AuthorizationStage this.stage})
     : _title = null,
@@ -42,45 +40,12 @@ class SignInScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final stage = this.stage;
     final title = _title;
-    final Widget content;
-    if (title != null) {
-      content = _Heading(title: title, description: _description!);
-    } else if (stage == null) {
-      content = const _Starting();
-    } else {
-      content = _SignInFlow(stage: stage);
-    }
-    return BackdropGroup(
-      child: Stack(
-        children: [
-          const Positioned.fill(child: Wallpaper()),
-          const Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 44,
-            child: WindowDragArea(),
-          ),
-          Center(
-            child: SizedBox(
-              width: 348,
-              child: Glass(
-                radius: 20,
-                padding: const EdgeInsets.fromLTRB(28, 28, 28, 24),
-                child: DefaultTextStyle.merge(
-                  style: mgText(MgColors.of(context)),
-                  child: AnimatedSize(
-                    duration: const Duration(milliseconds: 160),
-                    curve: Curves.easeOut,
-                    alignment: Alignment.topCenter,
-                    child: content,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+    if (stage != null) return _SignInFlow(stage: stage);
+    return SignInPage(
+      titleBarFill: const WindowDragArea(),
+      child: title != null
+          ? SignInHeader(title: title, subtitle: _description)
+          : const _Starting(),
     );
   }
 }
@@ -102,6 +67,11 @@ class _Starting extends StatelessWidget {
   );
 }
 
+/// What the user is looking at, which is not always TDLib's step: the
+/// phone form can be opened over the QR code, and over the code step to
+/// change the number.
+enum _View { qr, phone, countries, code, password, waiting, unsupported }
+
 class _SignInFlow extends ConsumerStatefulWidget {
   const _SignInFlow({required this.stage});
 
@@ -112,18 +82,29 @@ class _SignInFlow extends ConsumerStatefulWidget {
 }
 
 class _SignInFlowState extends ConsumerState<_SignInFlow> {
-  /// The user chose the phone number instead of the QR code, or asked to
-  /// change the number while TDLib waits for a code.
+  final _code = TextEditingController(text: '+');
+  final _number = TextEditingController();
+  final _numberFocus = FocusNode();
+  final _input = TextEditingController();
+
   bool _wantsPhone = false;
+  bool _picking = false;
   bool _busy = false;
   String? _error;
+  List<PhoneCountry> _countries = const [];
+  PhoneCountry? _country;
+  String? _homeCountry;
 
   AuthorizationStageKind get _kind => widget.stage.kind;
 
   @override
   void initState() {
     super.initState();
+    _code.addListener(_codeChanged);
+    _number.addListener(_redraw);
+    _input.addListener(_redraw);
     _requestQrIfNeeded();
+    _loadCountries();
   }
 
   @override
@@ -131,24 +112,99 @@ class _SignInFlowState extends ConsumerState<_SignInFlow> {
     super.didUpdateWidget(old);
     if (old.stage.kind == _kind) return;
     _error = null;
+    _input.clear();
     if (_kind == AuthorizationStageKind.code ||
         _kind == AuthorizationStageKind.password) {
       _wantsPhone = false;
+      _picking = false;
     }
     _requestQrIfNeeded();
   }
 
+  @override
+  void dispose() {
+    _code.dispose();
+    _number.dispose();
+    _numberFocus.dispose();
+    _input.dispose();
+    super.dispose();
+  }
+
+  void _redraw() => setState(() {});
+
+  _View get _view {
+    final phoneStep =
+        _kind == AuthorizationStageKind.phoneNumber ||
+        _kind == AuthorizationStageKind.qrCode ||
+        _kind == AuthorizationStageKind.code;
+    if (_wantsPhone && phoneStep) {
+      return _picking ? _View.countries : _View.phone;
+    }
+    return switch (_kind) {
+      AuthorizationStageKind.phoneNumber ||
+      AuthorizationStageKind.qrCode => _View.qr,
+      AuthorizationStageKind.code => _View.code,
+      AuthorizationStageKind.password => _View.password,
+      AuthorizationStageKind.tdlibParameters ||
+      AuthorizationStageKind.ready => _View.waiting,
+      AuthorizationStageKind.unavailable => _View.unsupported,
+    };
+  }
+
   void _requestQrIfNeeded() {
     if (_kind != AuthorizationStageKind.phoneNumber || _wantsPhone) return;
-    final actions = ref.read(signInActionsProvider);
-    // A failed QR request (no network, an old account type) falls back to
-    // the phone number form.
-    actions.requestQrCode().catchError((Object error) {
+    // A failed QR request (no network, say) falls back to the phone form.
+    ref.read(signInActionsProvider).requestQrCode().catchError((Object error) {
       if (mounted) _fail(error, showPhone: true);
     });
   }
 
+  Future<void> _loadCountries() async {
+    final actions = ref.read(signInActionsProvider);
+    try {
+      final (countries, home) = await (
+        actions.countries(),
+        actions.currentCountryCode(),
+      ).wait;
+      if (!mounted) return;
+      setState(() {
+        _countries = countries;
+        _homeCountry = home;
+      });
+      final current = countries.where((c) => c.code == home).firstOrNull;
+      if (current != null && _code.text == '+') _selectCountry(current);
+    } catch (_) {
+      // The form still works with a typed code; only the name is missing.
+    }
+  }
+
+  void _codeChanged() {
+    final digits = _code.text.replaceAll(RegExp(r'\D'), '');
+    final country = countryForDigits(
+      _countries,
+      digits,
+      preferred: _country?.code ?? _homeCountry,
+    );
+    if (country?.code != _country?.code) setState(() => _country = country);
+    if (!_code.text.startsWith('+')) {
+      _code.value = TextEditingValue(
+        text: '+$digits',
+        selection: TextSelection.collapsed(offset: digits.length + 1),
+      );
+    }
+  }
+
+  void _selectCountry(PhoneCountry country) {
+    setState(() {
+      _country = country;
+      _picking = false;
+    });
+    _code.text = '+${country.callingCodes.first}';
+    _numberFocus.requestFocus();
+  }
+
   Future<void> _run(Future<void> Function() request) async {
+    if (_busy) return;
     setState(() {
       _busy = true;
       _error = null;
@@ -169,7 +225,12 @@ class _SignInFlowState extends ConsumerState<_SignInFlow> {
     });
   }
 
-  void _showQr() {
+  void _openPhone() => setState(() {
+    _wantsPhone = true;
+    _error = null;
+  });
+
+  void _openQr() {
     setState(() {
       _wantsPhone = false;
       _error = null;
@@ -177,81 +238,193 @@ class _SignInFlowState extends ConsumerState<_SignInFlow> {
     _requestQrIfNeeded();
   }
 
+  String get _phoneDigits =>
+      (_code.text + _number.text).replaceAll(RegExp(r'\D'), '');
+
+  void _submitPhone() {
+    if (_number.text.trim().isEmpty) return;
+    final actions = ref.read(signInActionsProvider);
+    _run(() async {
+      await actions.submitPhone('+$_phoneDigits');
+      if (mounted) setState(() => _wantsPhone = false);
+    });
+  }
+
+  void _submitInput() {
+    final value = _input.text;
+    if (value.trim().isEmpty) return;
+    final actions = ref.read(signInActionsProvider);
+    _run(
+      () => _kind == AuthorizationStageKind.password
+          ? actions.submitPassword(value)
+          : actions.submitCode(value.trim()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final actions = ref.watch(signInActionsProvider);
-    final phoneStep =
-        _kind == AuthorizationStageKind.phoneNumber ||
-        _kind == AuthorizationStageKind.qrCode ||
-        _kind == AuthorizationStageKind.code;
-
-    if (_wantsPhone && phoneStep) {
-      return _Form(
-        key: const ValueKey('phone'),
-        title: l10n.phoneTitle,
-        description: l10n.phoneHint,
-        label: l10n.phoneLabel,
-        keyboardType: TextInputType.phone,
-        busy: _busy,
-        error: _error,
-        onSubmit: (value) => _run(() async {
-          await actions.submitPhone(value.trim());
-          if (mounted) setState(() => _wantsPhone = false);
-        }),
-        secondary: _kind == AuthorizationStageKind.code
-            ? null
-            : _LinkButton(l10n.signInWithQr, onTap: _showQr),
-      );
-    }
-
-    return switch (_kind) {
-      AuthorizationStageKind.phoneNumber ||
-      AuthorizationStageKind.qrCode => _Qr(
-        key: const ValueKey('qr'),
-        link: widget.stage.qrLink,
-        error: _error,
-        onPhone: () => setState(() {
-          _wantsPhone = true;
-          _error = null;
-        }),
+    final view = _view;
+    return SignInPage(
+      titleBarFill: const WindowDragArea(),
+      backTooltip: l10n.back,
+      onBack: switch (view) {
+        _View.countries => () => setState(() => _picking = false),
+        _View.phone when _kind != AuthorizationStageKind.code => _openQr,
+        _View.phone => () => setState(() => _wantsPhone = false),
+        _View.code => _openPhone,
+        _ => null,
+      },
+      child: KeyedSubtree(
+        key: ValueKey(view),
+        child: switch (view) {
+          _View.qr => _qr(l10n),
+          _View.phone => _phone(l10n),
+          _View.countries => CountryPicker(
+            countries: _countries,
+            searchHint: l10n.searchHint,
+            emptyText: l10n.nothingFound,
+            onSelected: _selectCountry,
+          ),
+          _View.code => _form(
+            title: widget.stage.phoneNumber,
+            subtitle: switch (widget.stage.codeDelivery) {
+              CodeDelivery.app => l10n.codeSentApp,
+              CodeDelivery.sms => l10n.codeSentSms,
+              CodeDelivery.call => l10n.codeSentCall,
+              CodeDelivery.other => l10n.codeSentOther,
+            },
+            hint: l10n.codeHint,
+            keyboardType: TextInputType.number,
+            center: true,
+          ),
+          _View.password => _form(
+            title: l10n.passwordTitle,
+            subtitle: widget.stage.passwordHint.isEmpty
+                ? l10n.passwordHint
+                : l10n.passwordHintWithHint(widget.stage.passwordHint),
+            hint: l10n.passwordFieldHint,
+            obscureText: true,
+          ),
+          _View.waiting => const _Starting(),
+          _View.unsupported => SignInHeader(
+            title: l10n.unsupportedTitle,
+            subtitle: l10n.unsupportedStep,
+          ),
+        },
       ),
-      AuthorizationStageKind.code => _Form(
-        key: const ValueKey('code'),
-        title: l10n.codeTitle,
-        description: l10n.codeHint,
-        label: l10n.codeLabel,
-        keyboardType: TextInputType.number,
-        busy: _busy,
-        error: _error,
-        onSubmit: (value) => _run(() => actions.submitCode(value.trim())),
-        secondary: _LinkButton(
-          l10n.wrongNumber,
-          onTap: () => setState(() {
-            _wantsPhone = true;
-            _error = null;
-          }),
+    );
+  }
+
+  Widget _qr(AppLocalizations l10n) {
+    final link = widget.stage.qrLink;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SignInHeader(
+          leading: QrFrame(
+            qr: link == null
+                ? const Center(child: CupertinoActivityIndicator())
+                : QrView(data: link, color: const Color(0xFF000000)),
+            center: link == null
+                ? null
+                : ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.asset(
+                      'assets/app_icon.png',
+                      width: 36,
+                      height: 36,
+                      semanticLabel: l10n.appTitle,
+                    ),
+                  ),
+          ),
+          title: l10n.qrTitle,
         ),
+        const SizedBox(height: 24),
+        SignInSteps(steps: [l10n.qrStep1, l10n.qrStep2, l10n.qrStep3]),
+        if (_error != null) ...[
+          const SizedBox(height: 16),
+          _ErrorText(_error!),
+        ],
+        const SizedBox(height: 28),
+        Center(
+          child: MgTextButton(label: l10n.logInByPhone, onPressed: _openPhone),
+        ),
+      ],
+    );
+  }
+
+  Widget _phone(AppLocalizations l10n) => Column(
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      SignInHeader(title: l10n.phoneTitle, subtitle: l10n.phoneHint),
+      const SizedBox(height: 28),
+      PhoneNumberField(
+        country: _country?.name ?? l10n.country,
+        onCountryTap: _countries.isEmpty
+            ? null
+            : () => setState(() => _picking = true),
+        codeController: _code,
+        numberController: _number,
+        numberFocusNode: _numberFocus,
+        numberHint: l10n.phoneNumberHint,
+        errorText: _error,
+        onSubmitted: (_) => _submitPhone(),
       ),
-      AuthorizationStageKind.password => _Form(
-        key: const ValueKey('password'),
-        title: l10n.passwordTitle,
-        description: widget.stage.passwordHint.isEmpty
-            ? l10n.passwordHint
-            : l10n.passwordHintWithHint(widget.stage.passwordHint),
-        label: l10n.passwordLabel,
-        obscureText: true,
-        busy: _busy,
-        error: _error,
-        onSubmit: (value) => _run(() => actions.submitPassword(value)),
+      const SizedBox(height: 32),
+      MgPrimaryButton(
+        label: l10n.next,
+        expand: true,
+        height: 42,
+        loading: _busy,
+        onPressed: _number.text.trim().isEmpty ? null : _submitPhone,
       ),
-      AuthorizationStageKind.tdlibParameters ||
-      AuthorizationStageKind.ready => const _Starting(),
-      AuthorizationStageKind.unavailable => _Heading(
-        title: l10n.signInTitle,
-        description: l10n.unsupportedStep,
-      ),
-    };
+      if (_kind != AuthorizationStageKind.code) ...[
+        const SizedBox(height: 16),
+        Center(
+          child: MgTextButton(label: l10n.logInByQr, onPressed: _openQr),
+        ),
+      ],
+    ],
+  );
+
+  Widget _form({
+    required String title,
+    required String subtitle,
+    required String hint,
+    TextInputType? keyboardType,
+    bool obscureText = false,
+    bool center = false,
+  }) {
+    final l10n = AppLocalizations.of(context);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SignInHeader(title: title, subtitle: subtitle),
+        const SizedBox(height: 28),
+        MgUnderlineField(
+          controller: _input,
+          hintText: hint,
+          keyboardType: keyboardType,
+          obscureText: obscureText,
+          autofocus: true,
+          textAlign: center ? TextAlign.center : TextAlign.start,
+          errorText: _error,
+          onSubmitted: (_) => _submitInput(),
+        ),
+        const SizedBox(height: 32),
+        MgPrimaryButton(
+          label: l10n.next,
+          expand: true,
+          height: 42,
+          loading: _busy,
+          onPressed: _input.text.trim().isEmpty ? null : _submitInput,
+        ),
+      ],
+    );
   }
 }
 
@@ -269,280 +442,19 @@ String _describe(AppLocalizations l10n, Object error) {
   return l10n.errorGeneric(message);
 }
 
-class _Qr extends StatelessWidget {
-  const _Qr({super.key, required this.link, required this.onPhone, this.error});
-
-  final String? link;
-  final VoidCallback onPhone;
-  final String? error;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final link = this.link;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 196,
-          height: 196,
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFFFFFF),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: link == null
-              ? Center(
-                  child: Text(
-                    l10n.signInQrLoading,
-                    style: const TextStyle(color: Color(0xFF86868B)),
-                  ),
-                )
-              : QrView(data: link, color: const Color(0xFF1D1D1F)),
-        ),
-        const SizedBox(height: 20),
-        _Heading(
-          title: l10n.signInTitle,
-          description: l10n.signInQrSteps,
-          center: true,
-        ),
-        if (error != null) ...[const SizedBox(height: 10), _ErrorText(error!)],
-        const SizedBox(height: 14),
-        _LinkButton(l10n.signInWithPhone, onTap: onPhone),
-      ],
-    );
-  }
-}
-
-class _Form extends StatefulWidget {
-  const _Form({
-    super.key,
-    required this.title,
-    required this.description,
-    required this.label,
-    required this.onSubmit,
-    required this.busy,
-    this.error,
-    this.keyboardType,
-    this.obscureText = false,
-    this.secondary,
-  });
-
-  final String title;
-  final String description;
-  final String label;
-  final ValueChanged<String> onSubmit;
-  final bool busy;
-  final String? error;
-  final TextInputType? keyboardType;
-  final bool obscureText;
-  final Widget? secondary;
-
-  @override
-  State<_Form> createState() => _FormState();
-}
-
-class _FormState extends State<_Form> {
-  final _input = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    _input.addListener(() => setState(() {}));
-  }
-
-  @override
-  void dispose() {
-    _input.dispose();
-    super.dispose();
-  }
-
-  void _submit() {
-    if (widget.busy || _input.text.trim().isEmpty) return;
-    widget.onSubmit(_input.text);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final c = MgColors.of(context);
-    final l10n = AppLocalizations.of(context);
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _Heading(title: widget.title, description: widget.description),
-        const SizedBox(height: 18),
-        Container(
-          height: 34,
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          alignment: Alignment.centerLeft,
-          decoration: BoxDecoration(
-            color: c.field,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: TextField(
-            controller: _input,
-            autofocus: true,
-            obscureText: widget.obscureText,
-            keyboardType: widget.keyboardType,
-            enabled: !widget.busy,
-            onSubmitted: (_) => _submit(),
-            style: mgText(c, size: 13.5),
-            cursorHeight: 16,
-            decoration: InputDecoration.collapsed(
-              hintText: widget.label,
-              hintStyle: mgText(c, size: 13.5).copyWith(color: c.fg2),
-            ),
-          ),
-        ),
-        if (widget.error != null) ...[
-          const SizedBox(height: 8),
-          _ErrorText(widget.error!),
-        ],
-        const SizedBox(height: 14),
-        _PrimaryButton(
-          label: l10n.continueAction,
-          busy: widget.busy,
-          onTap: _input.text.trim().isEmpty ? null : _submit,
-        ),
-        if (widget.secondary != null) ...[
-          const SizedBox(height: 10),
-          Center(child: widget.secondary),
-        ],
-      ],
-    );
-  }
-}
-
-class _Heading extends StatelessWidget {
-  const _Heading({
-    required this.title,
-    required this.description,
-    this.center = false,
-  });
-
-  final String title;
-  final String description;
-  final bool center;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = MgColors.of(context);
-    final align = center ? TextAlign.center : TextAlign.start;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: center
-          ? CrossAxisAlignment.center
-          : CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          textAlign: align,
-          style: mgText(c, size: 15, weight: FontWeight.w600),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          description,
-          textAlign: align,
-          style: mgText(c).copyWith(color: c.fg2),
-        ),
-      ],
-    );
-  }
-}
-
 class _ErrorText extends StatelessWidget {
   const _ErrorText(this.text);
 
   final String text;
 
   @override
-  Widget build(BuildContext context) {
-    final dark = MgColors.of(context).dark;
-    return Text(
-      text,
-      style: TextStyle(
-        fontSize: 12,
-        color: dark ? const Color(0xFFFF453A) : const Color(0xFFD70015),
-      ),
-    );
-  }
-}
-
-class _PrimaryButton extends StatelessWidget {
-  const _PrimaryButton({
-    required this.label,
-    required this.busy,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool busy;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = MgColors.of(context);
-    final enabled = onTap != null && !busy;
-    return Semantics(
-      button: true,
-      enabled: enabled,
-      child: MouseRegion(
-        cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
-        child: GestureDetector(
-          onTap: enabled ? onTap : null,
-          child: AnimatedOpacity(
-            duration: const Duration(milliseconds: 120),
-            opacity: enabled || busy ? 1 : 0.45,
-            child: Container(
-              height: 34,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: c.accent,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: busy
-                  ? const CupertinoActivityIndicator(
-                      color: Color(0xFFFFFFFF),
-                      radius: 8,
-                    )
-                  : Text(
-                      label,
-                      style: const TextStyle(
-                        color: Color(0xFFFFFFFF),
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _LinkButton extends StatelessWidget {
-  const _LinkButton(this.label, {required this.onTap});
-
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => Semantics(
-    button: true,
-    child: MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Text(
-            label,
-            style: TextStyle(color: MgColors.of(context).accent),
-          ),
-        ),
-      ),
+  Widget build(BuildContext context) => Text(
+    text,
+    textAlign: TextAlign.center,
+    style: mgTextStyle(
+      MgColors.of(context),
+      size: MgType.small,
+      color: MgUnderlineField.errorColor,
     ),
   );
 }

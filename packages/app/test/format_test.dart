@@ -8,12 +8,6 @@ import 'package:mollygram_core/mollygram_core.dart';
 void main() {
   setUpAll(() => initializeDateFormatting());
 
-  test('builds monogram initials from up to two words', () {
-    expect(initialsOf('Alina Petrova Smith'), 'AP');
-    expect(initialsOf('  mollygram '), 'M');
-    expect(initialsOf(''), '?');
-  });
-
   test('labels media and outgoing previews', () {
     final en = AppLocalizationsEn();
     const photo = ChatPreview(
