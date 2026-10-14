@@ -73,7 +73,7 @@ static int64_t mg_now_ns(void) {
 // listens to. Which of these happens depends on the platform's malloc
 // rounding, so heap-usage heuristics are not reliable (they missed it on
 // Windows). A refused allocation sets a flag that the next return to the
-// host turns into MG_OUT_OF_MEMORY.
+// host turns into MG_OUT_OF_MEMORY. So does the system allocator failing.
 static size_t mg_usable(const void *p) {
   return p == NULL ? 0 : js__malloc_usable_size(p);
 }
@@ -90,6 +90,7 @@ static void *mg_malloc(void *opaque, size_t size) {
   MgVm *vm = opaque;
   if (!mg_admit(vm, 0, size)) return NULL;
   void *p = malloc(size);
+  if (p == NULL && size != 0) vm->out_of_memory = 1;
   vm->heap_used += (int64_t)mg_usable(p);
   return p;
 }
@@ -99,6 +100,7 @@ static void *mg_calloc(void *opaque, size_t count, size_t size) {
   if (size != 0 && count > SIZE_MAX / size) return NULL;
   if (!mg_admit(vm, 0, count * size)) return NULL;
   void *p = calloc(count, size);
+  if (p == NULL && count * size != 0) vm->out_of_memory = 1;
   vm->heap_used += (int64_t)mg_usable(p);
   return p;
 }
@@ -114,6 +116,7 @@ static void *mg_realloc(void *opaque, void *ptr, size_t size) {
   size_t old = mg_usable(ptr);
   if (size > old && !mg_admit(vm, old, size)) return NULL;
   void *p = realloc(ptr, size);
+  if (p == NULL && size != 0) vm->out_of_memory = 1;
   // realloc(p, 0) may free p and return NULL.
   if (p != NULL || size == 0) vm->heap_used += (int64_t)mg_usable(p) - (int64_t)old;
   return p;
@@ -233,7 +236,6 @@ static int mg_take_exception(MgVm *vm, char **out) {
   int status = MG_EXCEPTION;
   if (vm->interrupted) status = MG_TIMEOUT;
   const char *msg = JS_ToCString(ctx, exc);
-  if (vm->out_of_memory) status = MG_OUT_OF_MEMORY;
   size_t len = 0;
   char *text = NULL;
   if (JS_IsError(exc)) {
@@ -262,6 +264,8 @@ static int mg_take_exception(MgVm *vm, char **out) {
   }
   JS_FreeCString(ctx, msg);
   JS_FreeValue(ctx, exc);
+  // Checked last: formatting the error above may be what hits the limit.
+  if (vm->out_of_memory) status = MG_OUT_OF_MEMORY;
   *out = text;
   return status;
 }

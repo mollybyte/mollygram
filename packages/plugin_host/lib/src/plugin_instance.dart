@@ -438,14 +438,15 @@ final class PluginInstance {
         case 'run.done':
           final c = _runs.remove(args['id']);
           if (c != null && !c.isCompleted) {
+            // Running out of memory inside an async handler arrives here as
+            // a plain promise rejection, or as a result if the handler
+            // caught it. Either way the result must not be used.
+            if (_outOfMemory) {
+              _disable('exceeded the memory limit', JsStatus.outOfMemory);
+              c.completeError(_PluginFailure('exceeded the memory limit'));
+              return null;
+            }
             if (args.containsKey('error')) {
-              // Running out of memory inside an async handler arrives here
-              // as a plain promise rejection.
-              if (_outOfMemory) {
-                _disable('exceeded the memory limit', JsStatus.outOfMemory);
-                c.completeError(_PluginFailure('exceeded the memory limit'));
-                return null;
-              }
               _strike(_firstLine('${args['error']}'));
               c.completeError(_PluginFailure(_firstLine('${args['error']}')));
             } else {
