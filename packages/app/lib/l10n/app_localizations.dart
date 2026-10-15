@@ -1802,6 +1802,12 @@ abstract class AppLocalizations {
   /// **'Checklist'**
   String get contentChecklist;
 
+  /// No description provided for @checklistProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} of {total} completed'**
+  String checklistProgress(int done, int total);
+
   /// No description provided for @contentGiveaway.
   ///
   /// In en, this message translates to:

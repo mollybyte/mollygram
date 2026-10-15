@@ -399,6 +399,22 @@ final class ConversationController {
         ),
       );
 
+  /// Marks task [taskId] of the checklist in message [messageId] as done,
+  /// or as not done again.
+  Future<void> markChecklistTask(
+    int chatId,
+    int messageId,
+    int taskId, {
+    required bool done,
+  }) => _client.send(
+    td.MarkChecklistTasksAsDone(
+      chatId: chatId,
+      messageId: messageId,
+      markedAsDoneTaskIds: done ? [taskId] : const [],
+      markedAsNotDoneTaskIds: done ? const [] : [taskId],
+    ),
+  );
+
   /// Presses a bot's inline button that carries [data]: the bot's answer,
   /// a notification or a URL to open, or nothing.
   Future<td.CallbackQueryAnswer> callbackQuery(

@@ -1029,6 +1029,11 @@ class AppLocalizationsRu extends AppLocalizations {
   String get contentChecklist => 'Список задач';
 
   @override
+  String checklistProgress(int done, int total) {
+    return '$done из $total выполнено';
+  }
+
+  @override
   String get contentGiveaway => 'Розыгрыш';
 
   @override

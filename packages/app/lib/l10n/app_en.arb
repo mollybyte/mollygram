@@ -368,6 +368,10 @@
   "contentInvoice": "Invoice",
   "contentStory": "Story",
   "contentChecklist": "Checklist",
+  "checklistProgress": "{done} of {total} completed",
+  "@checklistProgress": {
+    "placeholders": { "done": { "type": "int" }, "total": { "type": "int" } }
+  },
   "contentGiveaway": "Giveaway",
   "contentPaidMedia": "Paid media",
   "contentExpiredPhoto": "The photo has expired",

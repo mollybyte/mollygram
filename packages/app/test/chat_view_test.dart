@@ -1040,6 +1040,27 @@ void main() {
     expect(find.byTooltip('Back to the chat'), findsOneWidget);
   });
 
+  testWidgets('shows a checklist and marks a task done', (tester) async {
+    json.history = [_checklistMessage(), ..._history];
+    await pump(tester);
+    expect(
+      find.textContaining('Groceries', findRichText: true),
+      findsOneWidget,
+    );
+    expect(find.text('Checklist'), findsOneWidget);
+    expect(find.text('1 of 2 completed'), findsOneWidget);
+
+    await tester.tap(find.textContaining('Bread', findRichText: true));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    final sent = json.sent.lastWhere(
+      (r) => r['@type'] == 'markChecklistTasksAsDone',
+    );
+    expect(sent['message_id'], 18);
+    expect(sent['marked_as_done_task_ids'], [2]);
+    expect(sent['marked_as_not_done_task_ids'], isEmpty);
+  });
+
   testWidgets('lists who voted for an option of a public poll', (tester) async {
     json.history = [_pollMessage(chosen: 1, public: true), ..._history];
     await pump(tester);
@@ -2683,6 +2704,33 @@ td.Message _pollMessage({
     poll: _poll(chosen: chosen, multiple: multiple, public: public),
     description: const td.FormattedText(text: '', entities: []),
     canAddOption: false,
+  ).toJson(),
+});
+
+td.Message _checklistMessage() => td.Message.fromJson({
+  ..._message(id: 18, senderId: 1, text: '', outgoing: true).toJson(),
+  'content': td.MessageChecklist(
+    list: td.Checklist(
+      title: const td.FormattedText(text: 'Groceries', entities: []),
+      tasks: [
+        td.ChecklistTask(
+          id: 1,
+          text: const td.FormattedText(text: 'Milk', entities: []),
+          completedBy: const td.MessageSenderUser(userId: 2),
+          completionDate: 1760000400,
+        ),
+        td.ChecklistTask(
+          id: 2,
+          text: const td.FormattedText(text: 'Bread', entities: []),
+          completedBy: null,
+          completionDate: 0,
+        ),
+      ],
+      othersCanAddTasks: false,
+      canAddTasks: true,
+      othersCanMarkTasksAsDone: true,
+      canMarkTasksAsDone: true,
+    ),
   ).toJson(),
 });
 
