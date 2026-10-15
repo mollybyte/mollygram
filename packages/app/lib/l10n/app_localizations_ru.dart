@@ -1784,4 +1784,29 @@ class AppLocalizationsRu extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get keepDeletedMessages => 'Сохранять удалённые сообщения';
+
+  @override
+  String get keepDeletedMessagesHint =>
+      'Сообщения, которые удалили другие, останутся здесь';
+
+  @override
+  String get keepEditHistory => 'Сохранять историю правок';
+
+  @override
+  String get keepEditHistoryHint =>
+      'Прежние версии изменённых сообщений останутся здесь';
+
+  @override
+  String get storedMessagesAbout =>
+      'Хранится в зашифрованном виде только на этом Mac, для сообщений, которые Mollygram видел, пока был открыт. Никуда не отправляется.';
+
+  @override
+  String get clearStoredData => 'Очистить сохранённые данные';
+
+  @override
+  String get clearStoredDataTitle =>
+      'Удалить сохранённые на этом Mac удалённые сообщения и историю правок?';
 }

@@ -263,6 +263,22 @@ void main() {
       expect(ghost.withGhost(false), const PrivacySettings());
     });
 
+    test('keeping messages is saved and stays out of ghost mode', () {
+      const keep = PrivacySettings(
+        keepDeletedMessages: true,
+        keepEditHistory: true,
+      );
+      expect(keep.keepsMessages, isTrue);
+      expect(keep.anyOn, isFalse);
+      expect(
+        PrivacySettings.fromJson(jsonDecode(jsonEncode(keep.toJson()))),
+        keep,
+      );
+      final ghost = keep.withGhost(true);
+      expect(ghost.keepDeletedMessages && ghost.keepEditHistory, isTrue);
+      expect(ghost.withGhost(false), keep);
+    });
+
     test('ghost mode off brings back the switches from before', () {
       const mix = PrivacySettings(hideTyping: true, stayOffline: true);
       final ghost = mix.withGhost(true);

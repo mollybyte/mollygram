@@ -480,5 +480,12 @@
   "pinnedCount": "{count, plural, one{{count} закреплённое сообщение} few{{count} закреплённых сообщения} other{{count} закреплённых сообщений}}",
   "backToChat": "Назад в чат",
   "unpinAll": "Открепить все",
-  "unpinAllTitle": "{count, plural, one{Открепить {count} сообщение?} few{Открепить все {count} сообщения?} other{Открепить все {count} сообщений?}}"
+  "unpinAllTitle": "{count, plural, one{Открепить {count} сообщение?} few{Открепить все {count} сообщения?} other{Открепить все {count} сообщений?}}",
+  "keepDeletedMessages": "Сохранять удалённые сообщения",
+  "keepDeletedMessagesHint": "Сообщения, которые удалили другие, останутся здесь",
+  "keepEditHistory": "Сохранять историю правок",
+  "keepEditHistoryHint": "Прежние версии изменённых сообщений останутся здесь",
+  "storedMessagesAbout": "Хранится в зашифрованном виде только на этом Mac, для сообщений, которые Mollygram видел, пока был открыт. Никуда не отправляется.",
+  "clearStoredData": "Очистить сохранённые данные",
+  "clearStoredDataTitle": "Удалить сохранённые на этом Mac удалённые сообщения и историю правок?"
 }

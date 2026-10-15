@@ -30,7 +30,7 @@ Updated 2026-10-15.
 | — | Tabs, split, palette | done (#17, #27, #28) | Workspace model, ⌘K palette with `>` `@` `#`, layout restore | Tabs and split survive a restart |
 | M1 | Daily driver | in progress | Notifications, unread handling and jumps, statuses, chat list actions and archive, emoji and stickers, voice recording, rich text, links, profiles, basic settings | A week of daily use instead of the official client with no crash |
 | M2 | Full chat | in progress | Every message type can be sent, gallery viewer, search inside chats, shared media, topics, comments, bots | Nothing you can do in a TelegramSwift chat is missing |
-| M3 | Privacy extras | not started | Ghost mode, saved deleted messages, edit history, local encrypted store, EXIF stripping, risky switches from [forks-research.md](forks-research.md) | A second-account test shows no read, typing or online leaks in ghost mode, and a deleted message stays visible with a mark |
+| M3 | Privacy extras | in progress | Ghost mode, saved deleted messages, edit history, local encrypted store, EXIF stripping, risky switches from [forks-research.md](forks-research.md) | A second-account test shows no read, typing or online leaks in ghost mode, and a deleted message stays visible with a mark |
 | M4 | Media quality | partial | Circle recording at up to 640×640 and 120 fps, uncompressed sending by default, media editor, parallel downloads, PiP | A circle recorded in Mollygram plays correctly in the official iOS and Android clients |
 | M5 | Plugins | partial (#6, #18) | Install from file, update consent, the three mock plugins (code highlight, quiet hours, translator), app services for plugins | A hostile test plugin cannot leave its permissions or stall the UI |
 | M6 | Chats and account management | not started | Create and manage groups and channels, admin tools, contacts, own profile, privacy settings, folder editor, secret chats, multiple accounts | Everything in TelegramSwift's chat and account management is there |
@@ -82,8 +82,8 @@ Decisions from the original plan checked against `main` on 2026-10-15.
 | Message list as a `CustomScrollView` anchored on a message id, paging both ways | Yes: `TimelineView` with `TimelineScrollController`, `loadAround` and `loadNewer` in core | Done with the unread work |
 | One command registry (`Actions`/`Intents`) for palette, menus, shortcuts, plugins and `tg://` links | Started: `CommandRegistry` in `packages/app/lib/src/commands` feeds the palette, the app's shortcuts and `tg://` links | Move menus and plugin commands onto it |
 | Multi-account ready: one client id and data folder per account | Yes: `accounts/<slot>/` with an index and a keychain key per slot (`account_storage.dart`); the old `tdlib/` folder is moved on first launch | Account switching UI in M6 |
-| Own drift + SQLCipher database for deleted messages, edit history, workspace, plugin data | Not yet; the workspace is saved to `workspace.json` | Database lands with M3; the workspace can stay in JSON |
-| Ghost mode as one filter on outgoing TDLib requests | Not yet: `viewMessages` is called directly from `ConversationController` | Route through one filter in M3 |
+| Own drift + SQLCipher database for deleted messages, edit history, workspace, plugin data | Done for deleted messages and edit history ([privacy-store.md](privacy-store.md)); the workspace stays in `workspace.json` | Plugin data can move in when plugins need storage |
+| Ghost mode as one filter on outgoing TDLib requests | Done: `PrivacyGuard` on `TdClient.filter` | — |
 | Windows and Linux builds on every PR | Changed: desktop builds run on `main` and on PRs labelled `full-ci` (#12) | Accepted to save CI time |
 | macOS integration tests and a frame-budget check in CI | Not yet: frame numbers come from `packages/media/example` on a real Mac | Add before M8; the removed prototype's glass + feed benchmark (`prototype/lib/perf` in #4) is a starting point |
 

@@ -699,5 +699,12 @@
   "unpinAllTitle": "{count, plural, one{Unpin {count} message?} other{Unpin all {count} messages?}}",
   "@unpinAllTitle": {
     "placeholders": { "count": { "type": "int" } }
-  }
+  },
+  "keepDeletedMessages": "Keep deleted messages",
+  "keepDeletedMessagesHint": "Messages others delete stay readable here",
+  "keepEditHistory": "Keep edit history",
+  "keepEditHistoryHint": "Earlier versions of edited messages stay readable here",
+  "storedMessagesAbout": "Kept encrypted on this Mac only, for messages Mollygram saw while it was open. Nothing is sent anywhere.",
+  "clearStoredData": "Clear stored data",
+  "clearStoredDataTitle": "Clear the deleted messages and edit history kept on this Mac?"
 }

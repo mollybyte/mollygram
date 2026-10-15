@@ -1764,4 +1764,29 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get keepDeletedMessages => 'Keep deleted messages';
+
+  @override
+  String get keepDeletedMessagesHint =>
+      'Messages others delete stay readable here';
+
+  @override
+  String get keepEditHistory => 'Keep edit history';
+
+  @override
+  String get keepEditHistoryHint =>
+      'Earlier versions of edited messages stay readable here';
+
+  @override
+  String get storedMessagesAbout =>
+      'Kept encrypted on this Mac only, for messages Mollygram saw while it was open. Nothing is sent anywhere.';
+
+  @override
+  String get clearStoredData => 'Clear stored data';
+
+  @override
+  String get clearStoredDataTitle =>
+      'Clear the deleted messages and edit history kept on this Mac?';
 }

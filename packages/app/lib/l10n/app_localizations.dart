@@ -2983,6 +2983,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, one{Unpin {count} message?} other{Unpin all {count} messages?}}'**
   String unpinAllTitle(int count);
+
+  /// No description provided for @keepDeletedMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep deleted messages'**
+  String get keepDeletedMessages;
+
+  /// No description provided for @keepDeletedMessagesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages others delete stay readable here'**
+  String get keepDeletedMessagesHint;
+
+  /// No description provided for @keepEditHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep edit history'**
+  String get keepEditHistory;
+
+  /// No description provided for @keepEditHistoryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Earlier versions of edited messages stay readable here'**
+  String get keepEditHistoryHint;
+
+  /// No description provided for @storedMessagesAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'Kept encrypted on this Mac only, for messages Mollygram saw while it was open. Nothing is sent anywhere.'**
+  String get storedMessagesAbout;
+
+  /// No description provided for @clearStoredData.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear stored data'**
+  String get clearStoredData;
+
+  /// No description provided for @clearStoredDataTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear the deleted messages and edit history kept on this Mac?'**
+  String get clearStoredDataTitle;
 }
 
 class _AppLocalizationsDelegate

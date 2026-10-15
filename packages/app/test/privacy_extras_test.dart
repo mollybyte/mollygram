@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mollygram/l10n/app_localizations.dart';
 import 'package:mollygram/src/home/workspace_storage.dart';
 import 'package:mollygram/src/privacy/ghost_mode_capsule.dart';
+import 'package:mollygram/src/privacy/message_store.dart';
 import 'package:mollygram/src/privacy/privacy_settings.dart';
 import 'package:mollygram/src/session/providers.dart';
 import 'package:mollygram/src/session/telegram_session_launcher.dart';
@@ -29,6 +30,9 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           privacySettingsStorageProvider.overrideWithValue(storage),
+          messageStoreOpenerProvider.overrideWithValue(
+            () => MessageStore.memory(),
+          ),
           telegramApiConfigProvider.overrideWithValue(
             const TelegramApiConfig(
               apiId: 12345,
@@ -79,6 +83,23 @@ void main() {
       expect(session.privacy.settings.isGhost, isTrue);
     });
 
+    test('the keep switches reach the capture', () async {
+      final container = create(
+        const PrivacySettings(keepDeletedMessages: true).toJson(),
+      );
+      final subscription = container.listen(telegramSessionProvider, (_, _) {});
+      addTearDown(subscription.close);
+      final session = await container.read(telegramSessionProvider.future);
+      expect(session.capture.keepDeleted, isTrue);
+      expect(session.capture.keepEdits, isFalse);
+      expect(session.capture.store, isNotNull);
+
+      container
+          .read(privacySettingsProvider.notifier)
+          .update((s) => s.copyWith(keepEditHistory: true));
+      expect(session.capture.keepEdits, isTrue);
+    });
+
     test('a change reaches the running session and is saved', () async {
       final container = create(null);
       final subscription = container.listen(telegramSessionProvider, (_, _) {});
@@ -121,6 +142,13 @@ void main() {
 
   group('page and capsule', () {
     late MemoryPrivacySettingsStorage storage;
+    var storedSize = 0;
+    var cleared = 0;
+
+    setUp(() {
+      storedSize = 0;
+      cleared = 0;
+    });
 
     Future<ProviderContainer> pump(WidgetTester tester, Widget child) async {
       storage = MemoryPrivacySettingsStorage();
@@ -132,6 +160,11 @@ void main() {
             telegramSessionProvider.overrideWith(
               (ref) => Completer<TelegramSession>().future,
             ),
+            storedMessagesSizeProvider.overrideWith((ref) async => storedSize),
+            clearStoredMessagesProvider.overrideWithValue(() async {
+              cleared++;
+              storedSize = 0;
+            }),
           ],
           child: MaterialApp(
             theme: buildMgTheme(MgColors.light),
@@ -213,6 +246,47 @@ void main() {
       expect(settings.stayOffline, isFalse);
       expect(settings.hideContentOpened, isFalse);
       expect(switchOn(tester, "Don't show typing"), isTrue);
+    });
+
+    testWidgets('keeping messages is off by default and not ghost mode', (
+      tester,
+    ) async {
+      final container = await pump(tester, const PrivacyExtrasPage());
+      expect(switchOn(tester, 'Keep deleted messages'), isFalse);
+      expect(switchOn(tester, 'Keep edit history'), isFalse);
+
+      await tester.tap(find.text('Ghost mode'));
+      await tester.pumpAndSettle();
+      expect(switchOn(tester, 'Keep deleted messages'), isFalse);
+
+      await tester.ensureVisible(find.text('Keep edit history'));
+      await tester.tap(find.text('Keep edit history'));
+      await tester.pumpAndSettle();
+      final settings = container.read(privacySettingsProvider);
+      expect(settings.keepEditHistory, isTrue);
+      expect(settings.isGhost, isTrue);
+      expect(PrivacySettings.fromJson(storage.saved).keepEditHistory, isTrue);
+    });
+
+    testWidgets('clears the stored data after asking', (tester) async {
+      storedSize = 4200;
+      await pump(tester, const PrivacyExtrasPage());
+      final row = find.byKey(const ValueKey('clearStoredData'));
+      await tester.ensureVisible(row);
+      expect(find.text('4.2 KB'), findsOneWidget);
+
+      await tester.tap(row);
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          'Clear the deleted messages and edit history kept on this Mac?',
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Clear'));
+      await tester.pumpAndSettle();
+
+      expect(cleared, 1);
     });
 
     testWidgets('each switch turns on only itself', (tester) async {
