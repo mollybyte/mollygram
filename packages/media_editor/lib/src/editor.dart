@@ -8,9 +8,11 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import 'model/crop_geometry.dart';
 import 'model/media_edit.dart';
+import 'model/stroke.dart';
 import 'render/render.dart';
 import 'strings.dart';
 import 'ui/controls.dart';
+import 'ui/draw_panel.dart';
 import 'ui/editor_icons.dart';
 import 'ui/stage.dart';
 
@@ -72,7 +74,7 @@ Future<MediaEditResult?> showMediaEditor(
 );
 
 /// The editor's tools. [none] shows the result.
-enum EditorTool { none, crop }
+enum EditorTool { none, crop, draw }
 
 /// The editor screen. Use [showMediaEditor] to open it.
 class MediaEditorPage extends StatefulWidget {
@@ -108,6 +110,14 @@ class _MediaEditorPageState extends State<MediaEditorPage>
   final _undo = <MediaEdit>[];
   final _redo = <MediaEdit>[];
   var _tool = EditorTool.none;
+
+  // Drawing.
+  var _brush = BrushTool.pen;
+  var _color = brushColors[1];
+
+  /// Line width, 0 thin to 1 thick.
+  var _thickness = 0.35;
+  List<Offset>? _livePoints;
 
   /// The crop while a handle is dragged, before it lands in history.
   Rect? _liveCrop;
@@ -260,7 +270,10 @@ class _MediaEditorPageState extends State<MediaEditorPage>
 
   void _setTool(EditorTool tool) {
     if (_saving) return;
-    setState(() => _tool = _tool == tool ? EditorTool.none : tool);
+    setState(() {
+      _tool = _tool == tool ? EditorTool.none : tool;
+      _hoverHandle = null;
+    });
     if (_tool == EditorTool.crop) {
       _cropMode.animateTo(1, curve: _ease);
     } else {
@@ -368,11 +381,81 @@ class _MediaEditorPageState extends State<MediaEditorPage>
   StageLayout get _layout =>
       _layoutFor(_edit, _ease.transform(_cropMode.value), _shownCrop);
 
+  // Drawing.
+
+  bool get _drawing => _tool == EditorTool.draw && !_saving;
+
+  /// The width of a stroke of [_brush] as a fraction of the picture's
+  /// shorter side.
+  double get _strokeWidth {
+    final base = ui.lerpDouble(0.003, 0.03, _thickness)!;
+    return switch (_brush) {
+      BrushTool.pen || BrushTool.arrow => base,
+      BrushTool.marker => base * 2.4,
+      BrushTool.eraser => base * 2.6,
+    };
+  }
+
+  Stroke? get _liveStroke {
+    final points = _livePoints;
+    if (points == null) return null;
+    return Stroke(
+      tool: _brush,
+      color: _color,
+      width: _strokeWidth,
+      points: points,
+    );
+  }
+
+  /// [point] on the stage as a normalized point of the oriented picture.
+  Offset _toPicture(Offset point) {
+    final layout = _layout;
+    final oriented = _edit.orientedSize(_source);
+    final scale = layout.scale;
+    if (scale <= 0) return Offset.zero;
+    final px = (point - layout.dest.topLeft) / scale + layout.viewport.topLeft;
+    return Offset(
+      (px.dx / oriented.width).clamp(0.0, 1.0),
+      (px.dy / oriented.height).clamp(0.0, 1.0),
+    );
+  }
+
+  void _onDrawStart(Offset point) =>
+      setState(() => _livePoints = [_toPicture(point)]);
+
+  void _onDrawUpdate(Offset point) {
+    final points = _livePoints;
+    if (points == null) return;
+    final next = _toPicture(point);
+    // Skip points closer than a pixel: they only add noise to the curve.
+    final scale = _layout.scale;
+    final oriented = _edit.orientedSize(_source);
+    final last = points.last;
+    final moved = Offset(
+      (next.dx - last.dx) * oriented.width,
+      (next.dy - last.dy) * oriented.height,
+    );
+    if (moved.distance * scale < 1) return;
+    setState(() => _livePoints = [...points, next]);
+  }
+
+  void _onDrawEnd() {
+    final stroke = _liveStroke;
+    if (stroke == null) return;
+    setState(() => _livePoints = null);
+    _commit(_edit.withStroke(stroke));
+  }
+
+  void _setBrush(BrushTool brush) => setState(() => _brush = brush);
+  void _setColor(Color color) => setState(() => _color = color);
+  void _setThickness(double value) => setState(() => _thickness = value);
+
   // Crop dragging.
 
   bool get _cropping => _tool == EditorTool.crop && !_saving;
 
   void _onPanStart(DragStartDetails details) {
+    if (_drawing) return _onDrawStart(details.localPosition);
     if (!_cropping) return;
     final layout = _layout;
     final handle = hitCropHandle(details.localPosition, layout.crop);
@@ -389,6 +472,7 @@ class _MediaEditorPageState extends State<MediaEditorPage>
   }
 
   void _onPanUpdate(DragUpdateDetails details) {
+    if (_drawing) return _onDrawUpdate(details.localPosition);
     final handle = _dragHandle;
     if (handle == null) return;
     final layout = _layout;
@@ -408,6 +492,7 @@ class _MediaEditorPageState extends State<MediaEditorPage>
   }
 
   void _onPanEnd([Object? _]) {
+    if (_livePoints != null) return _onDrawEnd();
     final crop = _liveCrop;
     if (_dragHandle == null || crop == null) return;
     _grid.animateTo(0.35, curve: Curves.easeOut);
@@ -447,6 +532,12 @@ class _MediaEditorPageState extends State<MediaEditorPage>
         ): _redoEdit,
         SingleActivator(LogicalKeyboardKey.keyR, meta: ctrl, control: !ctrl):
             _rotate,
+        SingleActivator(
+          LogicalKeyboardKey.keyD,
+          meta: ctrl,
+          control: !ctrl,
+        ): () =>
+            _setTool(EditorTool.draw),
       },
       child: Focus(
         autofocus: true,
@@ -471,6 +562,17 @@ class _MediaEditorPageState extends State<MediaEditorPage>
                     _ToolPanel(
                       visible: _tool == EditorTool.crop,
                       child: _cropPanel(s),
+                    ),
+                    _ToolPanel(
+                      visible: _tool == EditorTool.draw,
+                      child: DrawPanel(
+                        brush: _brush,
+                        color: _color,
+                        thickness: _thickness,
+                        onBrush: _setBrush,
+                        onColor: _setColor,
+                        onThickness: _setThickness,
+                      ),
                     ),
                     const SizedBox(height: 10),
                     _mainBar(c, s),
@@ -498,7 +600,9 @@ class _MediaEditorPageState extends State<MediaEditorPage>
       builder: (context, constraints) {
         _stage = constraints.biggest;
         return MouseRegion(
-          cursor: _cropping
+          cursor: _drawing
+              ? SystemMouseCursors.precise
+              : _cropping
               ? cursorFor(
                   _dragHandle ?? _hoverHandle,
                   dragging: _dragHandle != null,
@@ -546,6 +650,7 @@ class _MediaEditorPageState extends State<MediaEditorPage>
                         outsideOpacity: mode * (c.isDark ? 0.3 : 0.38),
                         frameOpacity: mode,
                         gridOpacity: _grid.value,
+                        liveStroke: _liveStroke,
                       ),
                     ),
                   ),
@@ -586,6 +691,12 @@ class _MediaEditorPageState extends State<MediaEditorPage>
               tooltip: s.crop,
               selected: _tool == EditorTool.crop,
               onPressed: ready ? () => _setTool(EditorTool.crop) : null,
+            ),
+            MgIconButton(
+              icon: EditorIcons.pen,
+              tooltip: s.draw,
+              selected: _tool == EditorTool.draw,
+              onPressed: ready ? () => _setTool(EditorTool.draw) : null,
             ),
             const Spacer(),
             if (_saveFailed) ...[

@@ -118,9 +118,38 @@ void main() {
       expect(find.byType(MgSendButton), findsNothing);
 
       await tester.enterText(find.byType(TextField), 'hi');
-      await tester.pump();
+      await tester.pumpAndSettle();
       expect(find.byType(MgSendButton), findsOneWidget);
       expect(find.byTooltip(_labels.record), findsNothing);
+    });
+
+    testWidgets('a replacement covers the field and keeps the record button', (
+      tester,
+    ) async {
+      const button = SizedBox(key: ValueKey('rec'), width: 32, height: 32);
+      await tester.pumpWidget(
+        themed(const Composer(labels: _labels, recordButton: button)),
+      );
+      expect(find.byKey(const ValueKey('rec')), findsOneWidget);
+      final buttonElement = tester.element(find.byKey(const ValueKey('rec')));
+
+      await tester.pumpWidget(
+        themed(
+          const Composer(
+            labels: _labels,
+            recordButton: button,
+            replacement: Text('0:01', key: ValueKey('bar')),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('bar')), findsOneWidget);
+      // The same element: a press on it keeps going.
+      expect(tester.element(find.byKey(const ValueKey('rec'))), buttonElement);
+      // The field is still there for when the recording ends, but takes no
+      // taps.
+      await tester.tap(find.byType(TextField), warnIfMissed: false);
+      expect(tester.testTextInput.isVisible, isFalse);
     });
 
     testWidgets('sends on the button and on Enter, not on Shift+Enter', (
@@ -384,15 +413,19 @@ void main() {
     final empty = TextEditingController();
     addTearDown(full.dispose);
     addTearDown(empty.dispose);
-    Future<void> pump(TextEditingController c) => tester.pumpWidget(
-      themed(Composer(labels: _labels, controller: c, onSend: (_) {})),
-    );
+    Future<void> pump(TextEditingController c) async {
+      await tester.pumpWidget(
+        themed(Composer(labels: _labels, controller: c, onSend: (_) {})),
+      );
+      await tester.pumpAndSettle();
+    }
+
     await pump(full);
     expect(find.byType(MgSendButton), findsOneWidget);
     await pump(empty);
     expect(find.byType(MgSendButton), findsNothing);
     empty.text = 'x';
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(find.byType(MgSendButton), findsOneWidget);
   });
 

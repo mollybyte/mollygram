@@ -26,6 +26,7 @@ import '../chat/message_tile.dart';
 import '../chat/timeline_scroll.dart';
 import '../chat/timeline_view.dart';
 import '../session/providers.dart';
+import '../voice/voice_record_composer.dart';
 import '../window_drag_area.dart';
 
 /// One conversation: messages scroll under the floating header and
@@ -65,6 +66,11 @@ class _ChatViewState extends ConsumerState<ChatView> {
   var _panelOpen = false;
 
   final _scroll = TimelineScrollController();
+  final _timelineKey = GlobalKey();
+
+  /// Where the user was before a jump, so the down button takes them
+  /// back there first, as in the official app.
+  int? _returnTo;
 
   /// The message the timeline grows from: the first unread one when the
   /// chat opened, or where a jump went. Null keeps the newest at the
@@ -122,6 +128,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _anchor = null;
     _unreadFrom = null;
     _flashId = null;
+    _returnTo = null;
     _pinnedIndex = 0;
     _flashTimer?.cancel();
     _scroll.pinToBottom();
@@ -263,14 +270,29 @@ class _ChatViewState extends ConsumerState<ChatView> {
     if (position.isScrollingNotifier.value || fromBottom < 2) {
       _scroll.pinned = atEnd && fromBottom < 2;
     }
-    _away.value = !atEnd || fromBottom > 360;
+    // Back at the bottom on their own: there is nowhere to return to.
+    if (atEnd && fromBottom < 2 && _returnTo != null) {
+      setState(() => _returnTo = null);
+    }
+    _away.value = !atEnd || fromBottom > 360 || _returnTo != null;
   }
 
   /// Scrolls to [messageId], loading the history around it when it is
-  /// outside what is loaded, and lights it up.
-  Future<void> _jumpTo(int messageId) async {
+  /// outside what is loaded, and lights it up. The first jump away from
+  /// a place other than the bottom remembers it for the down button.
+  Future<void> _jumpTo(int messageId, {bool remember = true}) async {
     final chatId = widget.chatId;
     final store = _conversations.store;
+    if (remember &&
+        _returnTo == null &&
+        !_scroll.pinned &&
+        _scroll.hasClients) {
+      final viewport = _scroll.position.viewportDimension;
+      _returnTo = TimelineView.rowAt(
+        _timelineKey,
+        viewport - TimelineView.bottomInset - 4,
+      )?.messageId;
+    }
     if (!store.contains(chatId, messageId)) {
       try {
         await _conversations.loadAround(chatId, messageId);
@@ -299,6 +321,11 @@ class _ChatViewState extends ConsumerState<ChatView> {
   /// screen scrolls, as in the official app.
   Future<void> _toBottom() async {
     final chatId = widget.chatId;
+    if (_returnTo case final back?) {
+      setState(() => _returnTo = null);
+      await _jumpTo(back, remember: false);
+      return;
+    }
     if (!_conversations.store.reachedEnd(chatId)) {
       try {
         await _conversations.loadHistory(chatId, atUnread: false);
@@ -486,6 +513,31 @@ class _ChatViewState extends ConsumerState<ChatView> {
     unawaited(_toLatestForSend());
     try {
       await _conversations.sendSticker(chatId, sticker, replyTo: replyTo?.id);
+    } catch (_) {
+      if (!mounted || widget.chatId != chatId) return;
+      setState(() {
+        _failure = _Failure.send;
+        _replyTo ??= replyTo;
+      });
+    }
+  }
+
+  /// Sends a voice message recorded in the composer (lib/src/voice).
+  Future<void> _sendVoice(RecordedVoice voice) async {
+    final chatId = widget.chatId;
+    final replyTo = _replyTo;
+    setState(() {
+      _failure = null;
+      _replyTo = null;
+    });
+    try {
+      await _conversations.sendVoiceNote(
+        chatId,
+        path: voice.path,
+        duration: voice.duration,
+        waveform: voice.waveform,
+        replyTo: replyTo?.id,
+      );
     } catch (_) {
       if (!mounted || widget.chatId != chatId) return;
       setState(() {
@@ -870,7 +922,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
               valueListenable: _away,
               builder: (context, away, _) => JumpButton(
                 icon: MgIcons.arrowDown,
-                tooltip: l10n.scrollToBottom,
+                tooltip: _returnTo != null
+                    ? l10n.backToPrevious
+                    : l10n.scrollToBottom,
                 visible: away,
                 count: unread,
                 countLabel: compact.format(unread),
@@ -925,6 +979,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
               AsyncData(value: final list) => () {
                 _placeUnread(list);
                 return TimelineView(
+                  key: _timelineKey,
                   messages: list,
                   store: store,
                   chatId: widget.chatId,
@@ -1008,26 +1063,32 @@ class _ChatViewState extends ConsumerState<ChatView> {
                   ),
                 TapRegion(
                   groupId: _EmojiPanelRegion,
-                  child: Composer(
-                    controller: _draft,
-                    focusNode: _focus,
-                    header: _composerHeader(l10n),
-                    onCancel: _panelOpen || _editing != null || _replyTo != null
-                        ? _cancel
-                        : null,
-                    onEditLast: () => unawaited(_editLast()),
-                    onAttach: () => unawaited(_chooseFiles()),
-                    onEmoji: _togglePanel,
-                    onPaste: _paste,
-                    allowEmpty: _editing != null && _isCaption(_editing!),
-                    labels: ComposerLabels(
-                      hint: l10n.messageHint,
-                      attach: l10n.attach,
-                      emoji: l10n.emoji,
-                      record: l10n.record,
-                      send: l10n.send,
+                  child: VoiceRecordComposer(
+                    onRecorded: _sendVoice,
+                    builder: (context, recordButton, recordingBar) => Composer(
+                      controller: _draft,
+                      focusNode: _focus,
+                      header: _composerHeader(l10n),
+                      onCancel:
+                          _panelOpen || _editing != null || _replyTo != null
+                          ? _cancel
+                          : null,
+                      onEditLast: () => unawaited(_editLast()),
+                      onAttach: () => unawaited(_chooseFiles()),
+                      onEmoji: _togglePanel,
+                      onPaste: _paste,
+                      allowEmpty: _editing != null && _isCaption(_editing!),
+                      labels: ComposerLabels(
+                        hint: l10n.messageHint,
+                        attach: l10n.attach,
+                        emoji: l10n.emoji,
+                        record: l10n.record,
+                        send: l10n.send,
+                      ),
+                      onSend: (text) => unawaited(_send(text)),
+                      recordButton: recordButton,
+                      replacement: recordingBar,
                     ),
-                    onSend: (text) => unawaited(_send(text)),
                   ),
                 ),
               ],
