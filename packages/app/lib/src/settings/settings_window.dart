@@ -318,40 +318,30 @@ class _SettingsWindowState extends ConsumerState<SettingsWindow>
               height: SettingsWindow.titleBarHeight,
               child: Padding(
                 // The close button sits over the right end.
-                padding: const EdgeInsets.fromLTRB(10, 0, 48, 0),
-                child: Row(
-                  children: [
-                    AnimatedSize(
-                      duration: settingsMotion,
-                      curve: settingsCurve,
-                      child: _nested.isEmpty
-                          ? const SizedBox(width: 10)
-                          : Padding(
-                              padding: const EdgeInsets.only(right: 4),
-                              child: MgIconButton(
-                                icon: MgIcons.back,
-                                tooltip: l10n.back,
-                                onPressed: _back,
-                              ),
-                            ),
-                    ),
-                    Expanded(
-                      child: Semantics(
-                        header: true,
-                        child: Text(
-                          title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: mgTextStyle(
-                            c,
-                            size: 15,
-                            weight: FontWeight.w700,
-                            height: 1.2,
-                          ),
+                padding: const EdgeInsets.only(right: 48),
+                // The back button is drawn over this band, above the window
+                // drag area (see the pane below); the title makes room.
+                child: AnimatedPadding(
+                  duration: settingsMotion,
+                  curve: settingsCurve,
+                  padding: EdgeInsets.only(left: _nested.isEmpty ? 20 : 46),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Semantics(
+                      header: true,
+                      child: Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: mgTextStyle(
+                          c,
+                          size: 15,
+                          weight: FontWeight.w700,
+                          height: 1.2,
                         ),
                       ),
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -365,8 +355,8 @@ class _SettingsWindowState extends ConsumerState<SettingsWindow>
         Positioned.fill(
           child: _PageSwitcher(pageKey: pageKey, child: content),
         ),
-        // The title bar is hidden: the band drags the window. The buttons
-        // in it are painted above, so they still take clicks.
+        // The title bar is hidden: the band drags the window. The back and
+        // close buttons are painted above it, so they take the clicks.
         const Positioned(
           top: 0,
           left: 0,
@@ -374,6 +364,16 @@ class _SettingsWindowState extends ConsumerState<SettingsWindow>
           height: 38,
           child: WindowDragArea(),
         ),
+        if (_nested.isNotEmpty)
+          Positioned(
+            top: 12,
+            left: 10,
+            child: MgIconButton(
+              icon: MgIcons.back,
+              tooltip: l10n.back,
+              onPressed: _back,
+            ),
+          ),
         Positioned(
           top: 12,
           right: 10,

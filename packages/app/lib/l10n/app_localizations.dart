@@ -1496,6 +1496,36 @@ abstract class AppLocalizations {
   /// **'Terminate all other sessions?'**
   String get terminateOthersTitle;
 
+  /// No description provided for @logOutFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t log out. Check the connection and try again.'**
+  String get logOutFailed;
+
+  /// No description provided for @connectedBot.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected business bot'**
+  String get connectedBot;
+
+  /// No description provided for @connectedBotHint.
+  ///
+  /// In en, this message translates to:
+  /// **'This bot can read and answer your business chats.'**
+  String get connectedBotHint;
+
+  /// No description provided for @disconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect'**
+  String get disconnect;
+
+  /// No description provided for @disconnectBotTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect {name}?'**
+  String disconnectBotTitle(String name);
+
   /// No description provided for @emojiTab.
   ///
   /// In en, this message translates to:

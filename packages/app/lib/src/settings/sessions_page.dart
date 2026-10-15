@@ -15,6 +15,12 @@ final activeSessionsProvider = FutureProvider.autoDispose<List<ActiveSession>>(
       ref.watch(telegramSessionProvider).requireValue.account.activeSessions(),
 );
 
+/// The business bot connected to the account; null when there is none.
+final connectedBotProvider = FutureProvider.autoDispose<ConnectedBot?>(
+  (ref) =>
+      ref.watch(telegramSessionProvider).requireValue.account.connectedBot(),
+);
+
 /// Privacy and security. Only the sessions for now; the privacy rules
 /// join them with the account management milestone.
 class PrivacyPage extends ConsumerWidget {
@@ -131,6 +137,28 @@ class _ActiveSessionsPageState extends ConsumerState<ActiveSessionsPage> {
     await _run({for (final s in others) s.id}, _account.terminateOtherSessions);
   }
 
+  Future<void> _disconnect(ConnectedBot bot) async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await showMgConfirm(
+      context,
+      title: l10n.disconnectBotTitle(bot.name),
+      message: l10n.connectedBotHint,
+      confirmLabel: l10n.disconnect,
+      cancelLabel: l10n.cancel,
+      destructive: true,
+    );
+    if (confirmed == null || !mounted) return;
+    try {
+      await _account.disconnectBot(bot.userId);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = AppLocalizations.of(context).saveFailed);
+      }
+      return;
+    }
+    ref.invalidate(connectedBotProvider);
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = MgColors.of(context);
@@ -160,8 +188,28 @@ class _ActiveSessionsPageState extends ConsumerState<ActiveSessionsPage> {
       for (final s in sessions)
         if (!s.isCurrent && !_ending.contains(s.id)) s,
     ];
+    final bot = ref.watch(connectedBotProvider).value;
     return SettingsPage(
       children: [
+        // TDLib asks for the connected bot to be shown with the sessions.
+        if (bot != null)
+          SettingsGroup(
+            key: const ValueKey('connectedBot'),
+            title: l10n.connectedBot,
+            footer: SettingsFooter(l10n.connectedBotHint),
+            children: [
+              SettingsRow(
+                leading: MonogramAvatar(name: bot.name, size: 28),
+                title: bot.name,
+                subtitle: bot.username.isEmpty ? null : '@${bot.username}',
+                trailing: SettingsButton(
+                  label: l10n.disconnect,
+                  destructive: true,
+                  onPressed: () => _disconnect(bot),
+                ),
+              ),
+            ],
+          ),
         if (current.isNotEmpty)
           SettingsGroup(
             title: l10n.thisDevice,

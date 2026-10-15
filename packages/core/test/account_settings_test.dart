@@ -52,6 +52,7 @@ void main() {
         'type': {'@type': 'userTypeRegular'},
         'is_premium': true,
       },
+      'getOption': {'@type': 'optionValueEmpty'},
       'getUserFullInfo': {
         '@type': 'userFullInfo',
         'bio': {'@type': 'formattedText', 'text': 'Hi', 'entities': <Object>[]},
@@ -69,10 +70,13 @@ void main() {
     expect(profile.bio, 'Hi');
     expect(profile.bioLimit, 140);
     expect(profile.photo, isNull);
-    expect(client.sent.last, {'@type': 'getUserFullInfo', 'user_id': 42});
+    expect(
+      client.sent,
+      contains(equals({'@type': 'getUserFullInfo', 'user_id': 42})),
+    );
   });
 
-  test('lists this session first, then the most recently active', () async {
+  test('keeps the TDLib session order with this session on top', () async {
     final (settings, _) = account({
       'getActiveSessions': {
         '@type': 'sessions',
@@ -86,10 +90,84 @@ void main() {
     });
     final sessions = await settings.activeSessions();
 
-    expect([for (final s in sessions) s.id], [3, 2, 1]);
+    expect([for (final s in sessions) s.id], [3, 1, 2]);
     expect(sessions.first.isCurrent, isTrue);
     expect(sessions.first.application, 'Telegram macOS 11.2');
     expect(sessions.first.device, 'MacBook Pro, macOS 15.1');
+  });
+
+  test('takes the bio limit from the option when TDLib has it', () async {
+    Map<String, Map<String, Object?>> responses(Map<String, Object?> option) =>
+        {
+          'getMe': {
+            '@type': 'user',
+            'id': 42,
+            'status': {'@type': 'userStatusEmpty'},
+            'type': {'@type': 'userTypeRegular'},
+          },
+          'getUserFullInfo': {
+            '@type': 'userFullInfo',
+            'gift_settings': {
+              '@type': 'giftSettings',
+              'accepted_gift_types': {'@type': 'acceptedGiftTypes'},
+            },
+          },
+          'getOption': option,
+        };
+    final (withOption, _) = account(
+      responses({'@type': 'optionValueInteger', 'value': '120'}),
+    );
+    expect((await withOption.profile()).bioLimit, 120);
+    await tdlib.close();
+
+    final (without, _) = account(
+      responses({'@type': 'error', 'code': 400, 'message': 'Option not found'}),
+    );
+    expect((await without.profile()).bioLimit, 70);
+  });
+
+  test('reads the connected business bot, or none', () async {
+    final (settings, client) = account({
+      'getBusinessConnectedBot': {
+        '@type': 'businessConnectedBotInfo',
+        'bot': {
+          '@type': 'businessConnectedBot',
+          'bot_user_id': 7,
+          'recipients': {'@type': 'businessRecipients'},
+          'rights': {'@type': 'businessBotRights'},
+        },
+      },
+      'getUser': {
+        '@type': 'user',
+        'id': 7,
+        'first_name': 'Shop bot',
+        'usernames': {
+          '@type': 'usernames',
+          'active_usernames': ['shopbot'],
+        },
+        'status': {'@type': 'userStatusEmpty'},
+        'type': {'@type': 'userTypeBot'},
+      },
+      'deleteBusinessConnectedBot': {'@type': 'ok'},
+    });
+    final bot = await settings.connectedBot();
+    expect(bot?.name, 'Shop bot');
+    expect(bot?.username, 'shopbot');
+    await settings.disconnectBot(7);
+    expect(client.sent.last, {
+      '@type': 'deleteBusinessConnectedBot',
+      'bot_user_id': 7,
+    });
+    await tdlib.close();
+
+    final (none, _) = account({
+      'getBusinessConnectedBot': {
+        '@type': 'error',
+        'code': 404,
+        'message': 'Not Found',
+      },
+    });
+    expect(await none.connectedBot(), isNull);
   });
 
   test('terminates one session or all the others', () async {

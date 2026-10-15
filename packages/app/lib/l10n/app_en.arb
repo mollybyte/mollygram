@@ -380,6 +380,14 @@
   "terminateOthers": "Terminate all other sessions",
   "terminateOthersHint": "Logs out every device except this one.",
   "terminateOthersTitle": "Terminate all other sessions?",
+  "logOutFailed": "Couldn't log out. Check the connection and try again.",
+  "connectedBot": "Connected business bot",
+  "connectedBotHint": "This bot can read and answer your business chats.",
+  "disconnect": "Disconnect",
+  "disconnectBotTitle": "Disconnect {name}?",
+  "@disconnectBotTitle": {
+    "placeholders": { "name": { "type": "String" } }
+  },
   "emojiTab": "Emoji",
   "stickersTab": "Stickers",
   "emojiSearch": "Search emoji",

@@ -11,7 +11,8 @@ final class AccountProfile {
     required this.bio,
     required this.isPremium,
     this.photo,
-  });
+    int? bioLimit,
+  }) : bioLimit = bioLimit ?? (isPremium ? 140 : 70);
 
   final int userId;
   final String firstName;
@@ -30,8 +31,9 @@ final class AccountProfile {
 
   String get name => [firstName, lastName].where((s) => s.isNotEmpty).join(' ');
 
-  /// Telegram's limit for [bio]: longer for Premium users.
-  int get bioLimit => isPremium ? 140 : 70;
+  /// Telegram's limit for [bio], in characters: the `bio_length_max`
+  /// option, or the usual 70 (140 with Premium) when TDLib has none.
+  final int bioLimit;
 }
 
 /// Why a username can't be used, found before asking Telegram.
@@ -68,6 +70,21 @@ UsernameIssue? usernameIssue(String username) {
   if (username.length > 32) return UsernameIssue.tooLong;
   if (username.endsWith('_')) return UsernameIssue.endsWithUnderscore;
   return null;
+}
+
+/// A business bot that can act for the account.
+final class ConnectedBot {
+  const ConnectedBot({
+    required this.userId,
+    required this.name,
+    required this.username,
+  });
+
+  final int userId;
+  final String name;
+
+  /// Without the @; empty when the bot has none.
+  final String username;
 }
 
 /// One device or app signed in to the account.
@@ -128,6 +145,17 @@ final class AccountSettings {
   Future<AccountProfile> profile() async {
     final me = await _client.send(const td.GetMe());
     final full = await _client.send(td.GetUserFullInfo(userId: me.id));
+    int? bioLimit;
+    try {
+      final option = await _client.send(
+        const td.GetOption(name: 'bio_length_max'),
+      );
+      if (option is td.OptionValueInteger && option.value > 0) {
+        bioLimit = option.value;
+      }
+    } on td.TdException {
+      // Missing option: the usual limit applies.
+    }
     return AccountProfile(
       userId: me.id,
       firstName: me.firstName,
@@ -137,6 +165,7 @@ final class AccountSettings {
       bio: full.bio?.text ?? '',
       isPremium: me.isPremium,
       photo: me.profilePhoto?.small,
+      bioLimit: bioLimit,
     );
   }
 
@@ -171,17 +200,40 @@ final class AccountSettings {
     };
   }
 
-  /// Every signed-in session: this one first, then the others from the
-  /// most recently active.
+  /// Every signed-in session in TDLib's order, which the apps are asked
+  /// to keep; this session is moved to the top if it isn't there already.
   Future<List<ActiveSession>> activeSessions() async {
     final result = await _client.send(const td.GetActiveSessions());
     final sessions = [for (final s in result.sessions) ActiveSession.from(s)];
-    sessions.sort((a, b) {
-      if (a.isCurrent != b.isCurrent) return a.isCurrent ? -1 : 1;
-      return b.lastActiveDate.compareTo(a.lastActiveDate);
-    });
-    return sessions;
+    return [
+      ...sessions.where((s) => s.isCurrent),
+      ...sessions.where((s) => !s.isCurrent),
+    ];
   }
+
+  /// The business bot connected to the account, or null when there is
+  /// none. TDLib asks apps to show it with the active sessions.
+  Future<ConnectedBot?> connectedBot() async {
+    try {
+      final info = await _client.send(const td.GetBusinessConnectedBot());
+      final id = info.bot.botUserId;
+      final user = await _client.send(td.GetUser(userId: id));
+      return ConnectedBot(
+        userId: id,
+        name: [
+          user.firstName,
+          user.lastName,
+        ].where((s) => s.isNotEmpty).join(' '),
+        username: user.usernames?.activeUsernames.firstOrNull ?? '',
+      );
+    } on td.TdException {
+      // Not found: no bot is connected.
+      return null;
+    }
+  }
+
+  Future<void> disconnectBot(int botUserId) =>
+      _client.send(td.DeleteBusinessConnectedBot(botUserId: botUserId));
 
   Future<void> terminateSession(int id) =>
       _client.send(td.TerminateSession(sessionId: id));

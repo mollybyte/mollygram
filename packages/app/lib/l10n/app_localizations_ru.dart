@@ -884,6 +884,25 @@ class AppLocalizationsRu extends AppLocalizations {
   String get terminateOthersTitle => 'Завершить все другие сеансы?';
 
   @override
+  String get logOutFailed =>
+      'Не удалось выйти. Проверьте подключение и повторите попытку.';
+
+  @override
+  String get connectedBot => 'Подключённый бизнес-бот';
+
+  @override
+  String get connectedBotHint =>
+      'Этот бот может читать ваши бизнес-чаты и отвечать в них.';
+
+  @override
+  String get disconnect => 'Отключить';
+
+  @override
+  String disconnectBotTitle(String name) {
+    return 'Отключить $name?';
+  }
+
+  @override
   String get emojiTab => 'Эмодзи';
 
   @override

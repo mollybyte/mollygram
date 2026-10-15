@@ -49,10 +49,12 @@ void main() {
 
   var closed = 0;
   var loggedOut = 0;
+  var logOutFails = false;
 
   Future<void> pump(WidgetTester tester, {String section = 'account'}) async {
     closed = 0;
     loggedOut = 0;
+    logOutFails = false;
     tester.view
       ..physicalSize = const Size(1200, 800)
       ..devicePixelRatio = 1;
@@ -64,7 +66,10 @@ void main() {
           pluginsControllerProvider.overrideWith(
             (ref) => PluginsController(mockPlugins()),
           ),
-          logOutProvider.overrideWithValue(() async => loggedOut++),
+          logOutProvider.overrideWithValue(() async {
+            if (logOutFails) throw StateError('offline');
+            loggedOut++;
+          }),
         ],
         child: MaterialApp(
           theme: buildMgTheme(MgColors.light),
@@ -253,6 +258,96 @@ void main() {
     expect(loggedOut, 1);
   });
 
+  testWidgets('a failed log out says so and can be tried again', (
+    tester,
+  ) async {
+    await pump(tester);
+    logOutFails = true;
+    await tester.ensureVisible(find.text('Log out…'));
+    await tester.tap(find.text('Log out…'));
+    await settle(tester);
+    await tester.tap(find.text('Log out'));
+    await settle(tester);
+    expect(
+      find.text("Couldn't log out. Check the connection and try again."),
+      findsOneWidget,
+    );
+
+    logOutFails = false;
+    await tester.tap(find.text('Log out…'));
+    await settle(tester);
+    await tester.tap(find.text('Log out'));
+    await settle(tester);
+    expect(loggedOut, 1);
+  });
+
+  testWidgets('first and last name edits both reach Telegram', (tester) async {
+    await pump(tester);
+    Finder field(String key) => find.descendant(
+      of: find.byKey(ValueKey(key)),
+      matching: find.byType(TextField),
+    );
+    await tester.enterText(field('firstName'), 'Anya');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.enterText(field('lastName'), 'Smirnova');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await settle(tester);
+    expect(json.sent.where((r) => r['@type'] == 'setName').last, {
+      '@type': 'setName',
+      'first_name': 'Anya',
+      'last_name': 'Smirnova',
+    });
+  });
+
+  testWidgets('a username typed just before leaving is checked and saved', (
+    tester,
+  ) async {
+    await pump(tester);
+    await tester.enterText(
+      find.descendant(
+        of: find.byKey(const ValueKey('username')),
+        matching: find.byType(TextField),
+      ),
+      'anna_new',
+    );
+    await tester.tap(find.text('Privacy and security'));
+    await settle(tester);
+    expect(
+      json.sent,
+      contains(equals({'@type': 'setUsername', 'username': 'anna_new'})),
+    );
+  });
+
+  testWidgets('the back button returns from a nested page', (tester) async {
+    await pump(tester, section: 'privacy');
+    await tester.tap(find.byKey(const ValueKey('activeSessions')));
+    await settle(tester);
+    await tester.tap(find.byTooltip('Back'));
+    await settle(tester);
+    expect(find.byKey(const ValueKey('activeSessions')), findsOneWidget);
+  });
+
+  testWidgets('shows the connected business bot and disconnects it', (
+    tester,
+  ) async {
+    json.bot = true;
+    await pump(tester, section: 'privacy');
+    await tester.tap(find.byKey(const ValueKey('activeSessions')));
+    await settle(tester);
+    expect(find.text('Shop bot'), findsOneWidget);
+    await tester.tap(find.text('Disconnect'));
+    await settle(tester);
+    await tester.tap(find.text('Disconnect').last);
+    await settle(tester);
+    expect(
+      json.sent,
+      contains(
+        equals({'@type': 'deleteBusinessConnectedBot', 'bot_user_id': 7}),
+      ),
+    );
+    expect(find.text('Shop bot'), findsNothing);
+  });
+
   testWidgets('shows the plugins page edge to edge', (tester) async {
     await pump(tester);
     await tester.tap(find.text('Plugins'));
@@ -301,6 +396,9 @@ Map<String, Object?> _session(
 final class _FakeTdJson implements td.TdJson {
   final _queue = Queue<String>();
   final sent = <Map<String, Object?>>[];
+
+  /// Whether a business bot is connected.
+  var bot = false;
   var _sessions = [
     _session(2, 'Telegram iOS', '11.2', lastActive: 1700000000),
     _session(1, 'Mollygram', '0.1.0', current: true),
@@ -328,6 +426,8 @@ final class _FakeTdJson implements td.TdJson {
         for (final s in _sessions)
           if (s['id'] != decoded['session_id']) s,
       ];
+    } else if (type == 'deleteBusinessConnectedBot') {
+      bot = false;
     } else if (type == 'terminateAllOtherSessions') {
       _sessions = [
         for (final s in _sessions)
@@ -360,6 +460,28 @@ final class _FakeTdJson implements td.TdJson {
         'inactive_session_ttl_days': 180,
       },
       'checkChatUsername' => {'@type': 'checkChatUsernameResultOk'},
+      'getOption' => {'@type': 'optionValueEmpty'},
+      'getBusinessConnectedBot' when bot => {
+        '@type': 'businessConnectedBotInfo',
+        'bot': {
+          '@type': 'businessConnectedBot',
+          'bot_user_id': 7,
+          'recipients': {'@type': 'businessRecipients'},
+          'rights': {'@type': 'businessBotRights'},
+        },
+      },
+      'getBusinessConnectedBot' => {
+        '@type': 'error',
+        'code': 404,
+        'message': 'Not Found',
+      },
+      'getUser' => {
+        '@type': 'user',
+        'id': 7,
+        'first_name': 'Shop bot',
+        'status': {'@type': 'userStatusEmpty'},
+        'type': {'@type': 'userTypeBot'},
+      },
       _ => {'@type': 'ok'},
     };
     _queue.add(

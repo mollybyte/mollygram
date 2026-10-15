@@ -877,6 +877,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get terminateOthersTitle => 'Terminate all other sessions?';
 
   @override
+  String get logOutFailed =>
+      'Couldn\'t log out. Check the connection and try again.';
+
+  @override
+  String get connectedBot => 'Connected business bot';
+
+  @override
+  String get connectedBotHint =>
+      'This bot can read and answer your business chats.';
+
+  @override
+  String get disconnect => 'Disconnect';
+
+  @override
+  String disconnectBotTitle(String name) {
+    return 'Disconnect $name?';
+  }
+
+  @override
   String get emojiTab => 'Emoji';
 
   @override

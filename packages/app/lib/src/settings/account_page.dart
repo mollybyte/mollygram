@@ -181,6 +181,13 @@ class _AccountFormState extends ConsumerState<_AccountForm> {
   Timer? _usernameCheck;
   var _bioLength = 0;
   var _bioFocused = false;
+  var _loggingOut = false;
+  String? _logOutError;
+
+  /// Both name fields as typed: Telegram takes first and last name in one
+  /// request, so an edit to one must not send the other's old value.
+  late String _firstDraft = _profile.firstName;
+  late String _lastDraft = _profile.lastName;
 
   /// The username the latest check was for, so a late answer about an
   /// older one is dropped.
@@ -198,7 +205,17 @@ class _AccountFormState extends ConsumerState<_AccountForm> {
   void initState() {
     super.initState();
     _account = ref.read(telegramSessionProvider).requireValue.account;
-    _bioLength = _profile.bio.length;
+    _bioLength = _profile.bio.characters.length;
+  }
+
+  @override
+  void didUpdateWidget(_AccountForm old) {
+    super.didUpdateWidget(old);
+    // A fresh profile replaces a draft only where it wasn't edited.
+    if (_firstDraft == old.profile.firstName) {
+      _firstDraft = _profile.firstName;
+    }
+    if (_lastDraft == old.profile.lastName) _lastDraft = _profile.lastName;
   }
 
   @override
@@ -227,14 +244,15 @@ class _AccountFormState extends ConsumerState<_AccountForm> {
   }
 
   Future<bool> _saveName({String? first, String? last}) async {
-    final firstName = (first ?? _profile.firstName).trim();
+    if (first != null) _firstDraft = first;
+    if (last != null) _lastDraft = last;
+    final firstName = _firstDraft.trim();
     if (firstName.isEmpty) {
       if (mounted) setState(() => _nameError = _l10n.firstNameRequired);
       return false;
     }
-    final error = await _save(
-      () => _account.setName(firstName, last ?? _profile.lastName),
-    );
+    final lastName = _lastDraft;
+    final error = await _save(() => _account.setName(firstName, lastName));
     if (mounted) setState(() => _nameError = error);
     return error == null;
   }
@@ -274,14 +292,7 @@ class _AccountFormState extends ConsumerState<_AccountForm> {
 
   Future<bool> _saveUsername(String value) async {
     final name = value.trim();
-    final note = _usernameNote;
-    final free =
-        name.isEmpty ||
-        (note is _UsernameAnswer &&
-            note.name == name &&
-            note.availability == UsernameAvailability.available);
-    // Not checked yet, or taken: the footer already says why.
-    if (!free) return false;
+    if (name.isNotEmpty && !await _isFree(name)) return false;
     final error = await _save(() => _account.setUsername(name));
     if (!mounted) return false;
     setState(() {
@@ -289,6 +300,27 @@ class _AccountFormState extends ConsumerState<_AccountForm> {
       if (error == null) _usernameNote = const _UsernameHint();
     });
     return error == null;
+  }
+
+  /// Whether Telegram takes [name]. A check still waiting for its pause,
+  /// such as when the page closes right after typing, runs now.
+  Future<bool> _isFree(String name) async {
+    if (usernameIssue(name) != null) return false;
+    final note = _usernameNote;
+    if (note is _UsernameAnswer && note.name == name) {
+      return note.availability == UsernameAvailability.available;
+    }
+    _usernameCheck?.cancel();
+    UsernameAvailability answer;
+    try {
+      answer = await _account.checkUsername(_profile.userId, name);
+    } catch (_) {
+      answer = UsernameAvailability.unavailable;
+    }
+    if (mounted && _checking == name) {
+      setState(() => _usernameNote = _UsernameAnswer(name, answer));
+    }
+    return answer == UsernameAvailability.available;
   }
 
   Widget _usernameFooter(AppLocalizations l10n) {
@@ -328,8 +360,21 @@ class _AccountFormState extends ConsumerState<_AccountForm> {
       cancelLabel: l10n.cancel,
       destructive: true,
     );
-    if (confirmed == null) return;
-    await ref.read(logOutProvider)();
+    if (confirmed == null || !mounted) return;
+    setState(() {
+      _loggingOut = true;
+      _logOutError = null;
+    });
+    try {
+      // On success the account is gone and this page with it.
+      await ref.read(logOutProvider)();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _loggingOut = false;
+        _logOutError = l10n.logOutFailed;
+      });
+    }
   }
 
   @override
@@ -375,6 +420,7 @@ class _AccountFormState extends ConsumerState<_AccountForm> {
               label: l10n.firstName,
               value: p.firstName,
               maxLength: 64,
+              onChanged: (v) => _firstDraft = v,
               onCommit: (v) => _saveName(first: v),
             ),
             _FieldRow(
@@ -382,6 +428,7 @@ class _AccountFormState extends ConsumerState<_AccountForm> {
               label: l10n.lastName,
               value: p.lastName,
               maxLength: 64,
+              onChanged: (v) => _lastDraft = v,
               onCommit: (v) => _saveName(last: v),
             ),
           ],
@@ -411,7 +458,8 @@ class _AccountFormState extends ConsumerState<_AccountForm> {
               placeholder: l10n.bio,
               value: p.bio,
               maxLength: p.bioLimit,
-              onChanged: (v) => setState(() => _bioLength = v.length),
+              onChanged: (v) =>
+                  setState(() => _bioLength = v.characters.length),
               onFocusChanged: (f) => setState(() => _bioFocused = f),
               trailing: AnimatedOpacity(
                 duration: settingsMotion,
@@ -439,8 +487,16 @@ class _AccountFormState extends ConsumerState<_AccountForm> {
         const SizedBox(height: 18),
         Align(
           alignment: Alignment.centerRight,
-          child: SettingsButton(label: l10n.logOutButton, onPressed: _logOut),
+          child: SettingsButton(
+            label: l10n.logOutButton,
+            onPressed: _loggingOut ? null : _logOut,
+          ),
         ),
+        if (_logOutError != null)
+          Align(
+            alignment: Alignment.centerRight,
+            child: SettingsFooter(_logOutError!, error: true),
+          ),
       ],
     );
   }
