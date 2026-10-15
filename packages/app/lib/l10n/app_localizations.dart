@@ -326,6 +326,30 @@ abstract class AppLocalizations {
   /// **'No chats yet'**
   String get noChats;
 
+  /// No description provided for @connectionWaitingForNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for network…'**
+  String get connectionWaitingForNetwork;
+
+  /// No description provided for @connectionConnectingToProxy.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting to proxy…'**
+  String get connectionConnectingToProxy;
+
+  /// No description provided for @connectionConnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting…'**
+  String get connectionConnecting;
+
+  /// No description provided for @connectionUpdating.
+  ///
+  /// In en, this message translates to:
+  /// **'Updating…'**
+  String get connectionUpdating;
+
   /// No description provided for @nothingFound.
   ///
   /// In en, this message translates to:
