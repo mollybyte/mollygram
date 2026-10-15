@@ -20,9 +20,8 @@ void main() {
       expect(dark.fg2, isNot(MgColors.dark.fg2));
       // The accent is the one picked, whatever the wallpaper.
       final plain = colorsOf(
-        appThemes(
-          const Preferences(wallpaperPreset: WallpaperPreset.classic),
-        ).light,
+        appThemes(const Preferences(wallpaperPreset: WallpaperPreset.classic))
+            .light,
       );
       expect(light.accent, plain.accent);
     });
