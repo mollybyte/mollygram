@@ -1828,6 +1828,21 @@ class _ChatViewState extends ConsumerState<ChatView> {
         } on td.TdException {
           if (mounted) showMgToast(context, l10n.botNoAnswer);
         }
+      case td.KeyboardButtonTypeRequestChat(:final id):
+        final target = await pickForwardTarget(context);
+        if (target == null || !mounted || widget.chatId != chatId) return;
+        try {
+          await _conversations.shareChatWithBot(
+            chatId,
+            messageId,
+            id,
+            target.chatId,
+          );
+        } on td.TdException {
+          if (mounted) showMgToast(context, l10n.botNoAnswer);
+        }
+      case td.KeyboardButtonTypeRequestLocation():
+        await _sendLocation();
       default:
         break;
     }
