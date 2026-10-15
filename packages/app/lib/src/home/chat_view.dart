@@ -160,6 +160,13 @@ class _ChatViewState extends ConsumerState<ChatView> {
   var _scheduledSeen = -1;
   final _scheduledScroll = TimelineScrollController();
 
+  /// The comments of a post, shown in place of the timeline while open.
+  MessageThread? _thread;
+  StreamSubscription<void>? _threadSub;
+  final _threadScroll = TimelineScrollController();
+  final _threadDraft = RichTextEditingController();
+  final _threadFocus = FocusNode();
+
   /// A join or mute request on its way.
   var _actionPending = false;
 
@@ -240,6 +247,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _returnTo = null;
     _pinnedIndex = 0;
     _pinnedListOpen = false;
+    _dropThread();
     _scheduledOpen = false;
     _scheduled = const [];
     _scheduledSeen = -1;
@@ -261,6 +269,10 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _emojiHints.dispose();
     _commands.dispose();
     _stickerHints.dispose();
+    _dropThread();
+    _threadScroll.dispose();
+    _threadDraft.dispose();
+    _threadFocus.dispose();
     _draft.dispose();
     _focus.dispose();
     _scroll.dispose();
@@ -448,7 +460,97 @@ class _ChatViewState extends ConsumerState<ChatView> {
   }
 
   /// A list in place of the timeline: the pinned or the scheduled messages.
-  bool get _listOpen => _pinnedListOpen || _scheduledOpen;
+  bool get _listOpen => _pinnedListOpen || _scheduledOpen || _thread != null;
+
+  /// Opens the comments under [message], a channel post: its thread in
+  /// the discussion group takes the timeline's place.
+  Future<void> _openComments(ConversationMessage message) async {
+    final chatId = widget.chatId;
+    final MessageThread thread;
+    try {
+      thread = await _conversations.openThread(message.chatId, message.id);
+      await thread.load();
+    } on td.TdException {
+      if (mounted) {
+        showMgToast(context, AppLocalizations.of(context).commentsUnavailable);
+      }
+      return;
+    }
+    if (!mounted || widget.chatId != chatId) {
+      thread.dispose();
+      return;
+    }
+    _dropThread();
+    setState(() {
+      _thread = thread;
+      _selected = null;
+    });
+    _threadSub = thread.changes.listen((_) {
+      if (mounted) setState(() {});
+    });
+    _threadFocus.requestFocus();
+  }
+
+  void _closeThread() {
+    if (_thread == null) return;
+    setState(_dropThread);
+    _focus.requestFocus();
+  }
+
+  void _dropThread() {
+    _threadSub?.cancel();
+    _threadSub = null;
+    _thread?.dispose();
+    _thread = null;
+    _threadDraft.clear();
+  }
+
+  Future<void> _sendComment(String text) async {
+    final thread = _thread;
+    if (thread == null || text.trim().isEmpty) return;
+    final formatted = formattedDraft(text, _threadDraft.ranges);
+    if (formatted.text.isEmpty) return;
+    _threadDraft.clear();
+    try {
+      await thread.send(formatted.text, entities: formatted.entities);
+    } on td.TdException {
+      if (mounted) setState(() => _failure = _Failure.send);
+    }
+  }
+
+  late final _threadActions = MessageRowActions(
+    onReaction: _actions.onReaction,
+    onNeedReplied: _actions.onNeedReplied,
+    onViewMedia: _actions.onViewMedia,
+    onPollVote: _actions.onPollVote,
+    onPollVoters: _actions.onPollVoters,
+    onInlineButton: _actions.onInlineButton,
+  );
+
+  /// The composer under the comments; Esc goes back to the chat.
+  Widget _threadComposer(AppLocalizations l10n, MessageThread thread) => Focus(
+    onKeyEvent: (node, event) {
+      if (event is KeyDownEvent &&
+          event.logicalKey == LogicalKeyboardKey.escape) {
+        _closeThread();
+        return KeyEventResult.handled;
+      }
+      return KeyEventResult.ignored;
+    },
+    child: Composer(
+      controller: _threadDraft,
+      focusNode: _threadFocus,
+      labels: ComposerLabels(
+        hint: l10n.commentHint,
+        attach: l10n.attach,
+        emoji: l10n.emoji,
+        record: l10n.record,
+        send: l10n.send,
+        format: formatLabelsOf(l10n),
+      ),
+      onSend: (text) => unawaited(_sendComment(text)),
+    ),
+  );
 
   void _openScheduled() {
     setState(() {
@@ -651,6 +753,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
         unawaited(_showPollVoters(message, index, position)),
     onInlineButton: (message, button) =>
         unawaited(_pressInlineButton(message, button)),
+    onComments: (message) => unawaited(_openComments(message)),
     onMenu: (row, position) => unawaited(_showMenu(row, position)),
     onViewMedia: (message) => unawaited(
       showChatMediaViewer(
@@ -2153,6 +2256,20 @@ class _ChatViewState extends ConsumerState<ChatView> {
               AsyncData(value: final list)
                   when list.isEmpty && store.reachedStart(widget.chatId) =>
                 Center(child: DatePill(l10n.noMessages)),
+              AsyncData() when _thread != null => TimelineView(
+                key: const ValueKey('commentsThread'),
+                messages: _thread!.messages,
+                store: store,
+                chatId: _thread!.chatId,
+                isGroup: true,
+                controller: _threadScroll,
+                topInset: _topInset,
+                onShown: (message) =>
+                    unawaited(_quiet(_thread!.view([message.id]))),
+                onNearTop: () => unawaited(_quiet(_thread!.loadOlder())),
+                onNearBottom: () {},
+                actions: _threadActions,
+              ),
               AsyncData() when _scheduledOpen => TimelineView(
                 key: const ValueKey('scheduledList'),
                 messages: _scheduled,
@@ -2228,6 +2345,18 @@ class _ChatViewState extends ConsumerState<ChatView> {
                         onResult: (id) => unawaited(_jumpTo(id)),
                         onClose: _closeSearch,
                       ),
+                    )
+                  : _thread != null
+                  ? ChatTitleCapsule(
+                      title: _thread!.replyCount == 0
+                          ? l10n.comments
+                          : l10n.commentCount(_thread!.replyCount),
+                      avatar: MgIconButton(
+                        icon: MgIcons.back,
+                        tooltip: l10n.backToChat,
+                        onPressed: _closeThread,
+                      ),
+                      onTap: _closeThread,
                     )
                   : _scheduledOpen
                   ? ChatTitleCapsule(
@@ -2332,7 +2461,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
                       ),
                     ),
                   ),
-                if (_scheduledOpen)
+                if (_thread case final thread?)
+                  _threadComposer(l10n, thread)
+                else if (_scheduledOpen)
                   _scheduledBar(l10n)
                 else if (_pinnedListOpen)
                   _unpinAllBar(l10n, store)

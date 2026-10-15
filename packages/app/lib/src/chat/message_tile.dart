@@ -98,6 +98,7 @@ class MessageRowActions {
     this.onPollVote,
     this.onPollVoters,
     this.onInlineButton,
+    this.onComments,
   });
 
   /// Adds the reaction, or takes it back when the user had chosen it.
@@ -152,6 +153,9 @@ class MessageRowActions {
     td.InlineKeyboardButton button,
   )?
   onInlineButton;
+
+  /// A click on the comments row under a channel post, which opens them.
+  final void Function(ConversationMessage message)? onComments;
 }
 
 /// A message, or an album, in Telegram's flat layout: no bubbles, the
@@ -298,6 +302,9 @@ class MessageTile extends StatelessWidget {
                   for (final sender in comments.recentReplierIds.take(3))
                     _replierAvatar(l10n, sender),
                 ],
+                onTap: actions.onComments == null
+                    ? null
+                    : () => actions.onComments!(message),
               ),
             ),
           ),

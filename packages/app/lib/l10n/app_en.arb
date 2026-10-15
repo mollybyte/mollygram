@@ -667,6 +667,9 @@
   "noStickerSets": "No stickers yet",
   "forwardedMessages": "Forwarded messages",
   "leaveComment": "Leave a comment",
+  "comments": "Comments",
+  "commentHint": "Comment",
+  "commentsUnavailable": "Couldn't open the comments",
   "commentCount": "{count, plural, one{{count} comment} other{{count} comments}}",
   "@commentCount": {
     "placeholders": { "count": { "type": "int" } }
