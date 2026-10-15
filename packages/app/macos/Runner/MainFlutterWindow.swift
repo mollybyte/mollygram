@@ -21,6 +21,11 @@ class MainFlutterWindow: NSWindow {
 
   override func awakeFromNib() {
     let flutterViewController = FlutterViewController()
+    // The view's own backing is black and shows wherever Flutter's surface
+    // doesn't reach (the rounded corners, a fractional edge pixel); it is
+    // made clear so the window's background, which Dart sets to the
+    // frame's colour, shows there instead.
+    flutterViewController.backgroundColor = .clear
     self.contentViewController = flutterViewController
 
     // Content extends under a transparent title bar: the window buttons stay
@@ -47,6 +52,15 @@ class MainFlutterWindow: NSWindow {
       switch call.method {
       case "startDrag":
         if let event = NSApp.currentEvent { self.performDrag(with: event) }
+        result(nil)
+      case "setBackgroundColor":
+        if let argb = call.arguments as? Int {
+          self.backgroundColor = NSColor(
+            srgbRed: CGFloat((argb >> 16) & 0xFF) / 255,
+            green: CGFloat((argb >> 8) & 0xFF) / 255,
+            blue: CGFloat(argb & 0xFF) / 255,
+            alpha: 1)
+        }
         result(nil)
       case "zoom":
         self.zoom(nil)

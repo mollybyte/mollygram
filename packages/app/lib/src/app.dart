@@ -15,6 +15,7 @@ import 'session/providers.dart';
 import 'settings/appearance.dart';
 import 'settings/preferences.dart';
 import 'settings/privacy/passcode_lock_screen.dart';
+import 'window_background.dart';
 
 class MollygramApp extends ConsumerWidget {
   const MollygramApp({super.key});
@@ -33,8 +34,9 @@ class MollygramApp extends ConsumerWidget {
       // A theme or accent change cross-fades.
       themeAnimationDuration: themeAnimationDuration(preferences.reduceMotion),
       themeAnimationCurve: Curves.easeOut,
-      builder: (context, child) =>
-          AppIconApplier(child: ReduceMotionScope(child: child!)),
+      builder: (context, child) => AppIconApplier(
+        child: ReduceMotionScope(child: WindowBackground(child: child!)),
+      ),
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
