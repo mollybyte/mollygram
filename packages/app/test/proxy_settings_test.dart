@@ -12,6 +12,7 @@ import 'package:mollygram/src/proxy/sign_in_proxy_button.dart';
 import 'package:mollygram/src/session/providers.dart';
 import 'package:mollygram/src/settings/language_page.dart';
 import 'package:mollygram/src/settings/preferences.dart';
+import 'package:mollygram/src/settings/privacy/passcode.dart';
 import 'package:mollygram/src/settings/proxy_page.dart';
 import 'package:mollygram/src/settings/selection_check.dart';
 import 'package:mollygram/src/settings/settings_style.dart';
@@ -386,6 +387,9 @@ void main() {
               const TelegramApiConfig(apiId: 0, apiHash: ''),
             ),
             preferencesStorageProvider.overrideWithValue(storage),
+            // The keychain never answers under flutter test; without a
+            // storage the passcode gate would hide the window.
+            passcodeStorageProvider.overrideWithValue(MemoryPasscodeStorage()),
           ],
           child: const MollygramApp(),
         ),
@@ -418,6 +422,7 @@ void main() {
             initialPreferencesProvider.overrideWithValue(
               Preferences.fromJson({'language': 'russian'}),
             ),
+            passcodeStorageProvider.overrideWithValue(MemoryPasscodeStorage()),
           ],
           child: const MollygramApp(),
         ),
