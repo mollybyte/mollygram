@@ -138,6 +138,7 @@ class _ChatSearchBarState extends State<ChatSearchBar> {
         SharedMediaKind.links => l10n.sharedLinksTab,
         SharedMediaKind.voice => l10n.sharedVoiceTab,
         SharedMediaKind.music => l10n.sharedMusicTab,
+        SharedMediaKind.gifs => l10n.sharedGifsTab,
       };
 
   Future<void> _run() async {

@@ -1329,6 +1329,17 @@ final class ConversationController {
     );
   }
 
+  /// The groups the user and [userId] are both in, as the info panel
+  /// lists them.
+  Future<List<td.Chat>> groupsInCommon(int userId) async {
+    final chats = await _client.send(
+      td.GetGroupsInCommon(userId: userId, offsetChatId: 0, limit: 100),
+    );
+    return Future.wait([
+      for (final id in chats.chatIds) _client.send(td.GetChat(chatId: id)),
+    ]);
+  }
+
   /// The photos of a profile, newest first: a user's profile photos, or
   /// the photos a group or channel has had, from its photo-change
   /// messages. [userId] names the user of a private chat.

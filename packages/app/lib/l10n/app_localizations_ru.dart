@@ -2029,6 +2029,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get sharedMusicTab => 'Музыка';
 
   @override
+  String get sharedGifsTab => 'GIF';
+
+  @override
+  String get sharedGroupsTab => 'Группы';
+
+  @override
   String get sharedMediaEmpty => 'Здесь пока нет фото и видео';
 
   @override
@@ -2042,6 +2048,12 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get sharedMusicEmpty => 'Здесь пока нет музыки';
+
+  @override
+  String get sharedGifsEmpty => 'Здесь пока нет GIF';
+
+  @override
+  String get sharedGroupsEmpty => 'Нет общих групп';
 
   @override
   String get sharedLoadFailed => 'Не удалось загрузить список';

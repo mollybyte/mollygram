@@ -11,7 +11,8 @@ enum SharedMediaKind {
   files,
   links,
   voice,
-  music;
+  music,
+  gifs;
 
   td.SearchMessagesFilter get filter => switch (this) {
     media => const td.SearchMessagesFilterPhotoAndVideo(),
@@ -19,6 +20,7 @@ enum SharedMediaKind {
     links => const td.SearchMessagesFilterUrl(),
     voice => const td.SearchMessagesFilterVoiceNote(),
     music => const td.SearchMessagesFilterAudio(),
+    gifs => const td.SearchMessagesFilterAnimation(),
   };
 }
 

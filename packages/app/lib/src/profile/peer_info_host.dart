@@ -196,7 +196,14 @@ class _PeerInfoHostState extends ConsumerState<PeerInfoHost>
                             onClose: _close,
                             child: SharedMediaView(
                               chatId: _stack.last,
+                              userId:
+                                  ref
+                                      .watch(peerInfoProvider(_stack.last))
+                                      .value
+                                      ?.userId ??
+                                  0,
                               onOpenMessage: _showInChat,
+                              onOpenChat: _message,
                             ),
                           )
                         : PeerInfoPanel(
