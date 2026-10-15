@@ -15,6 +15,7 @@ export 'src/connection_status.dart';
 export 'src/contacts_controller.dart';
 export 'src/conversation_controller.dart';
 export 'src/conversation_store.dart';
+export 'src/downloads_controller.dart';
 export 'src/file_controller.dart';
 export 'src/forum_topics.dart';
 export 'src/link_resolver.dart';

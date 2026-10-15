@@ -9,12 +9,90 @@ import 'package:mollygram/src/settings/storage_page.dart';
 
 void main() {
   group('Preferences', () {
+    test('round-trips the appearance part 2 choices', () {
+      final preferences = const Preferences().copyWith(
+        wallpaperKind: WallpaperKind.image,
+        wallpaperPreset: WallpaperPreset.ocean,
+        wallpaperImage: '/Users/anna/wall.jpg',
+        wallpaperBlur: true,
+        nightSchedule: const NightSchedule(
+          enabled: true,
+          from: 21 * 60,
+          to: 8 * 60,
+        ),
+        mediaCorner: MediaCorner.large,
+        compactLayout: true,
+        appIcon: AppIconChoice.graphite,
+      );
+      final restored = Preferences.fromJson(preferences.toJson());
+
+      expect(restored.wallpaperKind, WallpaperKind.image);
+      expect(restored.wallpaperPreset, WallpaperPreset.ocean);
+      expect(restored.wallpaperImage, '/Users/anna/wall.jpg');
+      expect(restored.wallpaperBlur, isTrue);
+      expect(
+        restored.nightSchedule,
+        const NightSchedule(enabled: true, from: 21 * 60, to: 8 * 60),
+      );
+      expect(restored.mediaCorner, MediaCorner.large);
+      expect(restored.compactLayout, isTrue);
+      expect(restored.appIcon, AppIconChoice.graphite);
+    });
+
+    test(
+      'reads the old wallpaper switch and drops a picture without a path',
+      () {
+        expect(
+          Preferences.fromJson({'wallpaper': false}).wallpaperKind,
+          WallpaperKind.plain,
+        );
+        expect(
+          Preferences.fromJson({'wallpaper': true}).wallpaperKind,
+          WallpaperKind.gradient,
+        );
+        expect(
+          Preferences.fromJson({'wallpaperKind': 'image'}).wallpaperKind,
+          WallpaperKind.gradient,
+        );
+        final cleared = const Preferences()
+            .copyWith(wallpaperImage: '/a.png')
+            .copyWith(clearWallpaperImage: true);
+        expect(cleared.wallpaperImage, isNull);
+      },
+    );
+
+    test('night schedule knows its window and the next change', () {
+      const schedule = NightSchedule(enabled: true, from: 22 * 60, to: 7 * 60);
+      expect(schedule.isNight(DateTime(2026, 1, 1, 23)), isTrue);
+      expect(schedule.isNight(DateTime(2026, 1, 1, 6, 59)), isTrue);
+      expect(schedule.isNight(DateTime(2026, 1, 1, 7)), isFalse);
+      expect(schedule.isNight(DateTime(2026, 1, 1, 12)), isFalse);
+      expect(
+        schedule.nextChange(DateTime(2026, 1, 1, 12)),
+        DateTime(2026, 1, 1, 22),
+      );
+      expect(
+        schedule.nextChange(DateTime(2026, 1, 1, 23)),
+        DateTime(2026, 1, 2, 7),
+      );
+      expect(
+        const NightSchedule(
+          from: 22 * 60,
+          to: 7 * 60,
+        ).isNight(DateTime(2026, 1, 1, 23)),
+        isFalse,
+      );
+      const day = NightSchedule(enabled: true, from: 9 * 60, to: 17 * 60);
+      expect(day.isNight(DateTime(2026, 1, 1, 10)), isTrue);
+      expect(day.isNight(DateTime(2026, 1, 1, 18)), isFalse);
+    });
+
     test('round-trips through JSON', () {
       final preferences = const Preferences()
           .copyWith(
             theme: ThemeMode.dark,
             accent: AccentChoice.teal,
-            wallpaper: false,
+            wallpaperKind: WallpaperKind.plain,
             textSize: 15,
             reduceMotion: true,
             downloadFolder: '/Users/anna/Telegram',
@@ -99,7 +177,7 @@ void main() {
       );
       addTearDown(container.dispose);
       final notifier = container.read(preferencesProvider.notifier);
-      notifier.update((p) => p.copyWith(wallpaper: false));
+      notifier.update((p) => p.copyWith(wallpaperKind: WallpaperKind.plain));
       await notifier.flush();
       expect((storage.saved! as Map)['wallpaper'], isFalse);
 
@@ -115,7 +193,7 @@ void main() {
       );
       addTearDown(container.dispose);
       final notifier = container.read(preferencesProvider.notifier);
-      notifier.update((p) => p.copyWith(wallpaper: false));
+      notifier.update((p) => p.copyWith(wallpaperKind: WallpaperKind.plain));
       final first = notifier.flush();
       await Future<void>.delayed(Duration.zero);
       expect(storage.started, 1);

@@ -4,15 +4,29 @@ import 'theme/colors.dart';
 
 /// The four-point Telegram gradient wallpaper: four elliptical radial
 /// gradients over a base color, as in the mockup.
+///
+/// Without [colors] it paints the theme's wallpaper tokens; with them, the
+/// given four points (top left, top right, bottom right, bottom left) over
+/// [base].
 class Wallpaper extends StatelessWidget {
-  const Wallpaper({super.key});
+  const Wallpaper({super.key, this.base, this.colors})
+    : assert(
+        (base == null) == (colors == null),
+        'base and colors come together',
+      );
+
+  final Color? base;
+  final List<Color>? colors;
 
   @override
   Widget build(BuildContext context) {
     final c = MgColors.of(context);
     return RepaintBoundary(
       child: CustomPaint(
-        painter: _WallpaperPainter(c.wallpaperBase, c.wallpaper),
+        painter: _WallpaperPainter(
+          base ?? c.wallpaperBase,
+          colors ?? c.wallpaper,
+        ),
         child: const SizedBox.expand(),
       ),
     );

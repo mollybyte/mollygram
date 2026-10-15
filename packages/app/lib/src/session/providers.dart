@@ -8,6 +8,7 @@ import 'package:mollygram_tdlib/mollygram_tdlib.dart' show TdClientClosed;
 import '../home/workspace_storage.dart';
 import '../privacy/message_store.dart';
 import '../privacy/privacy_settings.dart';
+import '../settings/preferences.dart';
 import 'sign_in_actions.dart';
 import 'telegram_session_launcher.dart';
 
@@ -55,6 +56,12 @@ final telegramSessionProvider = FutureProvider<TelegramSession>((ref) async {
   }
   // A switch flipped while the session was starting.
   session.privacySettings = ref.read(privacySettingsProvider);
+  // The Data and storage switches reach the files as they change.
+  session.files.autoDownloadKinds = ref.read(autoDownloadKindsProvider);
+  ref.listen(
+    autoDownloadKindsProvider,
+    (_, kinds) => session.files.autoDownloadKinds = kinds,
+  );
   // Online while the window is active, as the official client is.
   final privacy = session.privacy;
   final lifecycle = AppLifecycleListener(

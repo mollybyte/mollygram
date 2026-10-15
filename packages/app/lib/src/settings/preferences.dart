@@ -5,6 +5,7 @@ import 'dart:ui' show Locale, PlatformDispatcher;
 
 import 'package:flutter/material.dart' show ThemeMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mollygram_core/mollygram_core.dart' show MediaDownloadKind;
 import 'package:path_provider/path_provider.dart';
 
 /// The app's accent colors, calm ones only. Blue is the system default.
@@ -42,6 +43,92 @@ final class AutoDownload {
   int get hashCode => Object.hash(wifi, other);
 }
 
+/// The chat background: one of the gradient wallpapers, a plain color or
+/// a picture of the user's own.
+enum WallpaperKind { gradient, plain, image }
+
+/// The built-in four-point gradients. Classic is Telegram's own.
+enum WallpaperPreset { classic, ocean, lavender, sand, graphite }
+
+/// How round photos, videos and cards are in messages.
+enum MediaCorner {
+  small(4),
+  medium(8),
+  large(12);
+
+  const MediaCorner(this.radius);
+
+  final double radius;
+}
+
+/// The Dock icon on macOS. Crimson is the brand icon the app ships with.
+enum AppIconChoice { crimson, blue, graphite }
+
+/// Dark theme by the clock, as Telegram's scheduled night mode.
+final class NightSchedule {
+  const NightSchedule({
+    this.enabled = false,
+    this.from = 22 * 60,
+    this.to = 7 * 60,
+  });
+
+  final bool enabled;
+
+  /// Minutes after midnight when the dark theme starts and ends. A window
+  /// across midnight (22:00 to 07:00) is the usual case.
+  final int from;
+  final int to;
+
+  /// Whether [time] falls in the dark window.
+  bool isNight(DateTime time) {
+    if (!enabled) return false;
+    final now = time.hour * 60 + time.minute;
+    if (from == to) return true;
+    return from < to ? now >= from && now < to : now >= from || now < to;
+  }
+
+  /// The next moment the answer of [isNight] changes, after [time].
+  DateTime nextChange(DateTime time) {
+    final today = DateTime(time.year, time.month, time.day);
+    final now = time.hour * 60 + time.minute;
+    final candidates = [from, to]..sort();
+    for (final minutes in candidates) {
+      if (minutes > now) return today.add(Duration(minutes: minutes));
+    }
+    return today.add(Duration(days: 1, minutes: candidates.first));
+  }
+
+  NightSchedule copyWith({bool? enabled, int? from, int? to}) => NightSchedule(
+    enabled: enabled ?? this.enabled,
+    from: from ?? this.from,
+    to: to ?? this.to,
+  );
+
+  Map<String, Object?> toJson() => {'enabled': enabled, 'from': from, 'to': to};
+
+  static NightSchedule fromJson(Object? json) {
+    if (json is! Map) return const NightSchedule();
+    const defaults = NightSchedule();
+    final from = json['from'];
+    final to = json['to'];
+    return NightSchedule(
+      enabled: _bool(json['enabled']) ?? defaults.enabled,
+      from: from is int ? from.clamp(0, 24 * 60 - 1) : defaults.from,
+      to: to is int ? to.clamp(0, 24 * 60 - 1) : defaults.to,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is NightSchedule &&
+      other.enabled == enabled &&
+      other.from == from &&
+      other.to == to;
+
+  @override
+  int get hashCode => Object.hash(enabled, from, to);
+}
+
 /// The language the app speaks: the system's, or one chosen in Language.
 enum AppLanguage {
   system(null),
@@ -60,7 +147,14 @@ final class Preferences {
   const Preferences({
     this.theme = ThemeMode.system,
     this.accent = AccentChoice.blue,
-    this.wallpaper = true,
+    this.wallpaperKind = WallpaperKind.gradient,
+    this.wallpaperPreset = WallpaperPreset.classic,
+    this.wallpaperImage,
+    this.wallpaperBlur = false,
+    this.nightSchedule = const NightSchedule(),
+    this.mediaCorner = MediaCorner.medium,
+    this.compactLayout = false,
+    this.appIcon = AppIconChoice.crimson,
     this.textSize = defaultTextSize,
     this.reduceMotion = false,
     this.autoDownload = defaultAutoDownload,
@@ -85,8 +179,29 @@ final class Preferences {
   final ThemeMode theme;
   final AccentChoice accent;
 
-  /// The gradient wallpaper behind the chats; off, a plain color.
-  final bool wallpaper;
+  /// What is behind the chats; see [WallpaperKind].
+  final WallpaperKind wallpaperKind;
+
+  /// The gradient shown when [wallpaperKind] is [WallpaperKind.gradient].
+  final WallpaperPreset wallpaperPreset;
+
+  /// The user's picture when [wallpaperKind] is [WallpaperKind.image], as
+  /// a path on this computer.
+  final String? wallpaperImage;
+
+  /// Blurs the picture a little, so the glass and the text read well.
+  final bool wallpaperBlur;
+
+  /// Dark theme by the clock, on top of [theme].
+  final NightSchedule nightSchedule;
+  final MediaCorner mediaCorner;
+
+  /// Tighter chat list rows and less air between messages.
+  final bool compactLayout;
+  final AppIconChoice appIcon;
+
+  /// Something other than a plain color is behind the chats.
+  bool get wallpaper => wallpaperKind != WallpaperKind.plain;
 
   /// Message text size in points, [minTextSize] to [maxTextSize].
   final int textSize;
@@ -115,7 +230,15 @@ final class Preferences {
   Preferences copyWith({
     ThemeMode? theme,
     AccentChoice? accent,
-    bool? wallpaper,
+    WallpaperKind? wallpaperKind,
+    WallpaperPreset? wallpaperPreset,
+    String? wallpaperImage,
+    bool clearWallpaperImage = false,
+    bool? wallpaperBlur,
+    NightSchedule? nightSchedule,
+    MediaCorner? mediaCorner,
+    bool? compactLayout,
+    AppIconChoice? appIcon,
     int? textSize,
     bool? reduceMotion,
     Map<AutoDownloadKind, AutoDownload>? autoDownload,
@@ -127,7 +250,16 @@ final class Preferences {
   }) => Preferences(
     theme: theme ?? this.theme,
     accent: accent ?? this.accent,
-    wallpaper: wallpaper ?? this.wallpaper,
+    wallpaperKind: wallpaperKind ?? this.wallpaperKind,
+    wallpaperPreset: wallpaperPreset ?? this.wallpaperPreset,
+    wallpaperImage: clearWallpaperImage
+        ? null
+        : wallpaperImage ?? this.wallpaperImage,
+    wallpaperBlur: wallpaperBlur ?? this.wallpaperBlur,
+    nightSchedule: nightSchedule ?? this.nightSchedule,
+    mediaCorner: mediaCorner ?? this.mediaCorner,
+    compactLayout: compactLayout ?? this.compactLayout,
+    appIcon: appIcon ?? this.appIcon,
     textSize: (textSize ?? this.textSize).clamp(minTextSize, maxTextSize),
     reduceMotion: reduceMotion ?? this.reduceMotion,
     autoDownload: autoDownload ?? this.autoDownload,
@@ -146,6 +278,14 @@ final class Preferences {
     'theme': theme.name,
     'accent': accent.name,
     'wallpaper': wallpaper,
+    'wallpaperKind': wallpaperKind.name,
+    'wallpaperPreset': wallpaperPreset.name,
+    'wallpaperImage': ?wallpaperImage,
+    'wallpaperBlur': wallpaperBlur,
+    'nightSchedule': nightSchedule.toJson(),
+    'mediaCorner': mediaCorner.name,
+    'compactLayout': compactLayout,
+    'appIcon': appIcon.name,
     'textSize': textSize,
     'reduceMotion': reduceMotion,
     'autoDownload': {
@@ -168,10 +308,31 @@ final class Preferences {
     final size = json['textSize'];
     final folder = json['downloadFolder'];
     final shortcuts = json['shortcuts'];
+    final image = json['wallpaperImage'];
+    // Before wallpaper kinds there was one switch; off meant plain.
+    final kind =
+        _byName(WallpaperKind.values, json['wallpaperKind']) ??
+        (_bool(json['wallpaper']) == false
+            ? WallpaperKind.plain
+            : defaults.wallpaperKind);
     return Preferences(
       theme: _byName(ThemeMode.values, json['theme']) ?? defaults.theme,
       accent: _byName(AccentChoice.values, json['accent']) ?? defaults.accent,
-      wallpaper: _bool(json['wallpaper']) ?? defaults.wallpaper,
+      wallpaperKind: kind == WallpaperKind.image && image is! String
+          ? defaults.wallpaperKind
+          : kind,
+      wallpaperPreset:
+          _byName(WallpaperPreset.values, json['wallpaperPreset']) ??
+          defaults.wallpaperPreset,
+      wallpaperImage: image is String && image.isNotEmpty ? image : null,
+      wallpaperBlur: _bool(json['wallpaperBlur']) ?? defaults.wallpaperBlur,
+      nightSchedule: NightSchedule.fromJson(json['nightSchedule']),
+      mediaCorner:
+          _byName(MediaCorner.values, json['mediaCorner']) ??
+          defaults.mediaCorner,
+      compactLayout: _bool(json['compactLayout']) ?? defaults.compactLayout,
+      appIcon:
+          _byName(AppIconChoice.values, json['appIcon']) ?? defaults.appIcon,
       textSize: size is int
           ? size.clamp(minTextSize, maxTextSize)
           : defaults.textSize,
@@ -345,3 +506,17 @@ final autoDownloadProvider = Provider.family<bool, AutoDownloadKind>(
   (ref, kind) =>
       ref.watch(preferencesProvider.select((p) => p.autoDownloadOf(kind).wifi)),
 );
+
+/// The kinds that may download on their own, for `FileController`.
+final autoDownloadKindsProvider = Provider<Set<MediaDownloadKind>>((ref) {
+  final p = ref.watch(preferencesProvider.select((p) => p.autoDownload));
+  const kinds = {
+    AutoDownloadKind.photos: MediaDownloadKind.photos,
+    AutoDownloadKind.videos: MediaDownloadKind.videos,
+    AutoDownloadKind.files: MediaDownloadKind.files,
+  };
+  return {
+    for (final MapEntry(key: kind, value: media) in kinds.entries)
+      if ((p[kind] ?? Preferences.defaultAutoDownload[kind]!).wifi) media,
+  };
+});

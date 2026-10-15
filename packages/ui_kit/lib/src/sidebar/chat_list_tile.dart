@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../avatar.dart';
 import '../badge.dart';
 import '../theme/colors.dart';
+import '../theme/metrics.dart';
 import '../theme/theme.dart';
 
 /// A row of the chat list (`.row`). Rows are solid, never glass; the
@@ -49,6 +50,7 @@ class _ChatListTileState extends State<ChatListTile> {
   @override
   Widget build(BuildContext context) {
     final c = MgColors.of(context);
+    final metrics = MgMetrics.of(context);
     final on = widget.selected;
     final sub = on ? c.onAccentSecondary : c.fg2;
     return Semantics(
@@ -61,7 +63,10 @@ class _ChatListTileState extends State<ChatListTile> {
           onTap: widget.onTap,
           child: Container(
             margin: const EdgeInsets.only(bottom: 1),
-            padding: const EdgeInsets.all(8),
+            padding: EdgeInsets.symmetric(
+              horizontal: 8,
+              vertical: metrics.rowPadding,
+            ),
             decoration: BoxDecoration(
               color: on
                   ? c.accent
