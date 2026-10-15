@@ -119,7 +119,7 @@ M8 calls and macOS release, M9 after release.
 | Voice message recording | done | Hold, lock, cancel; Opus in Ogg via AudioToolbox on macOS | M | M1 |
 | Video message (circle) recording | partial | Hold, lock, cancel, 60 s limit; 640×640 H.264 via AVFoundation on macOS. Front camera only, no flip or preview before sending | L | M4 |
 | Silent send and scheduled messages, scheduled list | partial | Right click or long press on Send: without sound, or at a day and time; a clock in the composer opens the scheduled list with Send now, Reschedule and Delete; a right click on Send in the attachment preview sends media without sound or at a chosen time | S | M2 |
-| Send as (channel identity) | missing | `ChatInputSendAsView` | S | M6 |
+| Send as (channel identity) | done | Where TDLib sets the chat's `message_sender_id`, the composer shows the identity's avatar before the attach button; a click lists the account and the user's channels (`GetChatAvailableMessageSenders`), Premium-only ones greyed, and picks one with `SetChatMessageSender` | S | M6 |
 | Polls and quizzes creation | done | Attach menu > Poll… in groups and channels: question, up to ten options, anonymous voting, multiple answers, quiz mode with the right answer and an explanation | M | M2 |
 | Location and venue sending | missing | | M | M2 |
 | Contact sending | done | Contact… under the attach button opens a searchable list of contacts; the message shows the monogram, name and number and opens the person | S | M2 |

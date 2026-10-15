@@ -150,6 +150,7 @@ final class ConversationStore {
   final _chatTitles = <int, String>{};
   final _colors = <MessageSenderId, int>{};
   final _photos = <MessageSenderId, td.File>{};
+  final _messageSenders = <int, td.MessageSender>{};
   final _readInbox = <int, int>{};
   final _readOutbox = <int, int>{};
   final _channels = <int>{};
@@ -428,6 +429,24 @@ final class ConversationStore {
   bool setPhoto(MessageSenderId sender, td.File? photo) {
     final changed = _photos[sender]?.id != photo?.id;
     photo == null ? _photos.remove(sender) : _photos[sender] = photo;
+    return changed;
+  }
+
+  /// Who the user posts as in [chatId]: set only where Telegram offers a
+  /// choice, as in a channel's comments or a group the user owns a channel
+  /// in; null everywhere else.
+  td.MessageSender? messageSenderOf(int chatId) => _messageSenders[chatId];
+
+  bool setMessageSender(int chatId, td.MessageSender? sender) {
+    final before = _messageSenders[chatId];
+    final changed =
+        (before == null) != (sender == null) ||
+        (before != null &&
+            sender != null &&
+            MessageSenderId.of(before) != MessageSenderId.of(sender));
+    sender == null
+        ? _messageSenders.remove(chatId)
+        : _messageSenders[chatId] = sender;
     return changed;
   }
 

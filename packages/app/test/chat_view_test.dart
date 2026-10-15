@@ -1213,6 +1213,60 @@ void main() {
     expect(find.byType(StickerSuggestionStrip), findsNothing);
   });
 
+  testWidgets('posts as a channel picked from the composer', (tester) async {
+    final group = _chat(
+      lastRead: 13,
+      unread: 0,
+      last: 13,
+      type: {
+        '@type': 'chatTypeSupergroup',
+        'supergroup_id': 99,
+        'is_channel': false,
+      },
+      sendAs: {'@type': 'messageSenderUser', 'user_id': 1},
+    );
+    json
+      ..push(group)
+      ..push(
+        _supergroup(99, {
+          '@type': 'chatMemberStatusMember',
+          'member_since_date': 0,
+        }),
+      )
+      ..push({
+        '@type': 'updateNewChat',
+        'chat': {
+          ...group['chat']! as Map<String, Object?>,
+          'id': 8,
+          'title': 'News',
+          'type': {
+            '@type': 'chatTypeSupergroup',
+            'supergroup_id': 98,
+            'is_channel': true,
+          },
+        },
+      });
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await pump(tester, group: true);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('sendAs')));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+    expect(find.text('Send as'), findsOneWidget);
+    expect(find.text('Personal account'), findsOneWidget);
+    expect(find.text('News'), findsOneWidget);
+
+    await tester.tap(find.text('News'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+    final sent = json.sent.lastWhere(
+      (r) => r['@type'] == 'setChatMessageSender',
+    );
+    expect(sent['chat_id'], 7);
+    expect((sent['message_sender_id']! as Map)['chat_id'], 8);
+  });
+
   testWidgets('composes a quiz from the attach menu and sends it', (
     tester,
   ) async {
@@ -2220,6 +2274,7 @@ Map<String, Object?> _chat({
   bool scheduled = false,
   int replyMarkup = 0,
   bool empty = false,
+  Map<String, Object?>? sendAs,
 }) => {
   '@type': 'updateNewChat',
   'chat': {
@@ -2227,6 +2282,7 @@ Map<String, Object?> _chat({
     'id': 7,
     'has_scheduled_messages': scheduled,
     'reply_markup_message_id': replyMarkup,
+    'message_sender_id': ?sendAs,
     'type': type,
     'title': 'Boris',
     if (!empty)
@@ -2691,6 +2747,21 @@ final class _FakeTdJson implements td.TdJson {
       },
       'getUser' when decoded['user_id'] == 2 => _user(2, 'Boris'),
       'getUser' when decoded['user_id'] == 3 => _user(3, 'Vera', '79990001122'),
+      'getChatAvailableMessageSenders' => {
+        '@type': 'chatMessageSenders',
+        'senders': [
+          {
+            '@type': 'chatMessageSender',
+            'sender': {'@type': 'messageSenderUser', 'user_id': 1},
+            'needs_premium': false,
+          },
+          {
+            '@type': 'chatMessageSender',
+            'sender': {'@type': 'messageSenderChat', 'chat_id': 8},
+            'needs_premium': false,
+          },
+        ],
+      },
       _ => {'@type': 'ok'},
     };
     _queue.add(

@@ -32,6 +32,7 @@ import '../chat/message_tile.dart';
 import '../chat/poll_composer.dart';
 import '../chat/poll_content.dart';
 import '../chat/schedule_picker.dart';
+import '../chat/send_as.dart';
 import '../chat/slow_mode.dart';
 import '../chat/sticker_suggestions.dart';
 import '../chat/timeline.dart';
@@ -1447,6 +1448,19 @@ class _ChatViewState extends ConsumerState<ChatView> {
     };
   }
 
+  /// The identity the user posts as, before the attach button, where the
+  /// chat offers a choice (see [ConversationStore.messageSenderOf]).
+  Widget? _sendAsButton(ConversationStore store) {
+    final sender = store.messageSenderOf(widget.chatId);
+    if (sender == null) return null;
+    return SendAsButton(
+      chatId: widget.chatId,
+      sender: sender,
+      store: store,
+      conversations: _conversations,
+    );
+  }
+
   /// The bot's menu button before the attach one: its commands, or the
   /// Web App it names.
   Widget? _botMenuButton(AppLocalizations l10n, ConversationStore store) {
@@ -2811,7 +2825,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
                             onAttachMenu: (position) =>
                                 unawaited(_attachMenu(position)),
                             onEmoji: _togglePanel,
-                            leading: _botMenuButton(l10n, store),
+                            leading:
+                                _botMenuButton(l10n, store) ??
+                                _sendAsButton(store),
                             extraButton: _composerExtras(l10n, store),
                             onPaste: _paste,
                             allowEmpty:
