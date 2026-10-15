@@ -284,6 +284,7 @@
   "contentInvoice": "Счёт",
   "contentStory": "История",
   "contentChecklist": "Список задач",
+  "checklistProgress": "{done} из {total} выполнено",
   "contentGiveaway": "Розыгрыш",
   "contentPaidMedia": "Платный контент",
   "contentExpiredPhoto": "Фото больше недоступно",

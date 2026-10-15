@@ -98,6 +98,7 @@ class MessageRowActions {
     this.onTextSelected,
     this.onPollVote,
     this.onPollVoters,
+    this.onChecklistToggle,
     this.onInlineButton,
     this.onComments,
   });
@@ -147,6 +148,11 @@ class MessageRowActions {
     Offset position,
   )?
   onPollVoters;
+
+  /// A click on a task of the checklist in [message], marking it done or
+  /// not done.
+  final void Function(ConversationMessage message, int taskId, bool done)?
+  onChecklistToggle;
 
   /// A press on one of a bot's buttons under [message].
   final void Function(
@@ -712,6 +718,7 @@ class _MessageBody extends StatelessWidget {
     }
     final onPollVote = actions.onPollVote;
     final onPollVoters = actions.onPollVoters;
+    final onChecklistToggle = actions.onChecklistToggle;
     return otherContent(
           context,
           content,
@@ -725,6 +732,10 @@ class _MessageBody extends StatelessWidget {
           recentVoters: content is td.MessagePoll
               ? _recentVoters(context, l10n, content.poll.recentVoterIds)
               : null,
+          onChecklistToggle: onChecklistToggle == null
+              ? null
+              : (taskId, done) => onChecklistToggle(message, taskId, done),
+          completerAvatar: (sender, size) => _senderAvatar(l10n, sender, size),
         ) ??
         Text(describeContent(l10n, content));
   }

@@ -892,6 +892,16 @@ class _ChatViewState extends ConsumerState<ChatView> {
     ),
     onPollVoters: (message, index, position) =>
         unawaited(_showPollVoters(message, index, position)),
+    onChecklistToggle: (message, taskId, done) => unawaited(
+      _quiet(
+        _conversations.markChecklistTask(
+          message.chatId,
+          message.id,
+          taskId,
+          done: done,
+        ),
+      ),
+    ),
     onInlineButton: (message, button) =>
         unawaited(_pressInlineButton(message, button)),
     onComments: (message) => unawaited(_openComments(message)),

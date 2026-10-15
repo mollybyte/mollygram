@@ -4,6 +4,7 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../links/link_router.dart';
+import 'checklist_content.dart';
 import 'formatted_text.dart';
 import 'poll_content.dart';
 
@@ -11,7 +12,9 @@ import 'poll_content.dart';
 /// contacts, polls, calls, games, invoices. Null for anything else.
 /// [isOutgoing] tells a call the user made from one they received;
 /// [onPollVote] lets a poll be voted in, [onPollVoters] lists who voted
-/// for an option and [recentVoters] shows the latest voters' avatars.
+/// for an option and [recentVoters] shows the latest voters' avatars;
+/// [onChecklistToggle] marks a checklist's task done or not done and
+/// [completerAvatar] draws who did it.
 Widget? otherContent(
   BuildContext context,
   td.MessageContent content, {
@@ -19,6 +22,8 @@ Widget? otherContent(
   void Function(List<int> optionIds)? onPollVote,
   void Function(int optionIndex, Offset position)? onPollVoters,
   Widget? recentVoters,
+  void Function(int taskId, bool done)? onChecklistToggle,
+  Widget Function(td.MessageSender sender, double size)? completerAvatar,
 }) {
   final l10n = AppLocalizations.of(context);
   return switch (content) {
@@ -64,7 +69,11 @@ Widget? otherContent(
           : productInfo.title,
       subtitle: productInfo.description.text,
     ),
-    td.MessageChecklist(:final list) => _Checklist(list),
+    td.MessageChecklist(:final list) => ChecklistContent(
+      list: list,
+      onToggle: onChecklistToggle,
+      completerAvatar: completerAvatar,
+    ),
     td.MessageStory() => _Labeled(icon: '◎', title: l10n.contentStory),
     td.MessageGiveaway() || td.MessageGiveawayWinners() => _Labeled(
       icon: '🎁',
@@ -219,32 +228,6 @@ class _Muted extends StatelessWidget {
     return Text(
       text,
       style: mgTextStyle(c, color: c.fg2, weight: FontWeight.w400),
-    );
-  }
-}
-
-/// The question, then each option with its share of the votes. Voting
-/// arrives with the message actions.
-class _Checklist extends StatelessWidget {
-  const _Checklist(this.list);
-
-  final td.Checklist list;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = MgColors.of(context);
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(list.title.text, style: mgTextStyle(c, weight: FontWeight.w600)),
-        const SizedBox(height: 4),
-        for (final task in list.tasks)
-          Text(
-            '${task.completedBy != null ? '☑' : '☐'} ${task.text.text}',
-            style: mgTextStyle(c),
-          ),
-      ],
     );
   }
 }

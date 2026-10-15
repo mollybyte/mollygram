@@ -1017,6 +1017,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contentChecklist => 'Checklist';
 
   @override
+  String checklistProgress(int done, int total) {
+    return '$done of $total completed';
+  }
+
+  @override
   String get contentGiveaway => 'Giveaway';
 
   @override
