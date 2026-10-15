@@ -302,6 +302,8 @@ class MessageTile extends StatelessWidget {
                   for (final sender in comments.recentReplierIds.take(3))
                     _replierAvatar(l10n, sender),
                 ],
+                unread:
+                    comments.lastMessageId > comments.lastReadInboxMessageId,
                 onTap: actions.onComments == null
                     ? null
                     : () => actions.onComments!(message),

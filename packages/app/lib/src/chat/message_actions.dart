@@ -21,7 +21,7 @@ final class MessageMenuHandlers {
     required this.onReply,
     required this.onEdit,
     required this.onForward,
-    required this.onSelect,
+    this.onSelect,
     required this.onQuote,
   });
 
@@ -33,8 +33,9 @@ final class MessageMenuHandlers {
   final void Function(ConversationMessage message) onEdit;
   final void Function(List<ConversationMessage> messages) onForward;
 
-  /// Starts selecting messages with this row, or adds it to the selection.
-  final void Function(MessageRow row) onSelect;
+  /// Starts selecting messages with this row, or adds it to the selection;
+  /// a list without selection, such as a comments thread, leaves it out.
+  final void Function(MessageRow row)? onSelect;
 }
 
 /// The message a command like Reply or Edit acts on in [row]: the one with
@@ -210,10 +211,8 @@ Future<void> showMessageMenu(
               .catchError((Object _) {}),
         ),
       ),
-    MgMenuItem(
-      label: l10n.menuSelect,
-      onSelected: () => handlers.onSelect(row),
-    ),
+    if (handlers.onSelect case final onSelect?)
+      MgMenuItem(label: l10n.menuSelect, onSelected: () => onSelect(row)),
     if (properties?.canReportChat ?? false)
       MgMenuItem(
         label: l10n.menuReport,

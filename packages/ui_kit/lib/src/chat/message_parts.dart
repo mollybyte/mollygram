@@ -211,6 +211,7 @@ class CommentsRow extends StatefulWidget {
     super.key,
     required this.label,
     this.avatars = const [],
+    this.unread = false,
     this.onTap,
   });
 
@@ -218,6 +219,9 @@ class CommentsRow extends StatefulWidget {
 
   /// Up to three small avatars, newest last.
   final List<Widget> avatars;
+
+  /// Comments the user has not read yet: an accent dot after the label.
+  final bool unread;
   final VoidCallback? onTap;
 
   @override
@@ -275,6 +279,19 @@ class _CommentsRowState extends State<CommentsRow> {
               color: c.accent.withValues(alpha: _hover ? 0.75 : 1),
             ),
           ),
+          if (widget.unread)
+            Padding(
+              padding: const EdgeInsets.only(left: 6),
+              child: Container(
+                key: const ValueKey('unreadComments'),
+                width: 7,
+                height: 7,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: c.accent,
+                ),
+              ),
+            ),
         ],
       ),
     );

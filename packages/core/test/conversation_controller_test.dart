@@ -1059,6 +1059,13 @@ void main() {
     expect((sent['reply_to']! as Map)['message_id'], 40);
     expect(thread.messages.first.id, 44);
 
+    // Answering a comment quotes part of it.
+    await thread.send('Fifth', replyTo: 41, quote: 'First', quotePosition: 0);
+    final reply = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    final replyTo = reply['reply_to']! as Map;
+    expect(replyTo['message_id'], 41);
+    expect(((replyTo['quote']! as Map)['text']! as Map)['text'], 'First');
+
     json.push({
       '@type': 'updateDeleteMessages',
       'chat_id': -100,

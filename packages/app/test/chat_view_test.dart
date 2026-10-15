@@ -873,6 +873,51 @@ void main() {
     expect(find.text('Mine'), findsOneWidget);
   });
 
+  testWidgets('answers a comment from its menu, quoting it', (tester) async {
+    json.history = [
+      _message(id: 14, senderId: 2, text: 'Post', comments: 2),
+      ..._history,
+    ];
+    await pump(tester, group: false);
+    await tester.tap(find.text('2 comments'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+
+    await rightClick(tester, 'First comment');
+    // A comments thread has no selection mode.
+    expect(find.text('Select'), findsNothing);
+    await tester.tap(find.text('Reply'));
+    await tester.pump();
+    expect(find.byType(ComposerContextBar), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), 'Answer');
+    await tester.pump();
+    await tester.tap(find.byType(MgSendButton));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    final send = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    expect(send['chat_id'], -100);
+    expect((send['topic_id']! as Map)['message_thread_id'], 40);
+    expect((send['reply_to']! as Map)['message_id'], 41);
+    expect(find.byType(ComposerContextBar), findsNothing);
+
+    // Esc with nothing to cancel goes back to the chat.
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pump();
+    expect(find.text('First comment'), findsNothing);
+  });
+
+  testWidgets('marks a post whose comments are unread', (tester) async {
+    json.history = [
+      _message(id: 14, senderId: 2, text: 'Post', comments: 2, unread: true),
+      _message(id: 15, senderId: 2, text: 'Read post', comments: 1),
+      ..._history,
+    ];
+    await pump(tester, group: false);
+    expect(find.byKey(const ValueKey('unreadComments')), findsOneWidget);
+  });
+
   testWidgets('lists who voted for an option of a public poll', (tester) async {
     json.history = [_pollMessage(chosen: 1, public: true), ..._history];
     await pump(tester);
@@ -1657,6 +1702,7 @@ td.Message _message({
   bool outgoing = false,
   int chatId = 7,
   int? comments,
+  bool unread = false,
 }) => td.Message(
   id: id,
   senderId: td.MessageSenderUser(userId: senderId),
@@ -1677,7 +1723,7 @@ td.Message _message({
             recentReplierIds: const [],
             lastReadInboxMessageId: 0,
             lastReadOutboxMessageId: 0,
-            lastMessageId: 0,
+            lastMessageId: unread ? 1 : 0,
           ),
         ),
   isPaidStarSuggestedPost: false,

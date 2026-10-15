@@ -502,37 +502,170 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _threadSub = null;
     _thread?.dispose();
     _thread = null;
+    _threadReplyTo = null;
+    _threadQuote = null;
+    _threadEditing = null;
     _threadDraft.clear();
+  }
+
+  /// The comment being answered or changed, shown above the composer.
+  ConversationMessage? _threadReplyTo;
+  QuoteSelection? _threadQuote;
+  ConversationMessage? _threadEditing;
+
+  Future<void> _showThreadMenu(MessageRow row, Offset position) {
+    final thread = _thread;
+    if (thread == null) return Future.value();
+    return showMessageMenu(
+      context,
+      conversations: _conversations,
+      row: row,
+      position: position,
+      isShown: () => mounted && _thread == thread,
+      quote: _textSelection,
+      handlers: MessageMenuHandlers(
+        onReply: _replyInThread,
+        onQuote: (message, quote) => _replyInThread(message, quote: quote),
+        onEdit: _editInThread,
+        onForward: (messages) => unawaited(_forward(messages)),
+      ),
+    );
+  }
+
+  void _replyInThread(ConversationMessage message, {QuoteSelection? quote}) {
+    if (_thread?.chatId != message.chatId) return;
+    setState(() {
+      if (_threadEditing != null) {
+        _threadEditing = null;
+        _threadDraft.clear();
+      }
+      _threadReplyTo = message;
+      _threadQuote = quote;
+    });
+    _threadFocus.requestFocus();
+  }
+
+  void _editInThread(ConversationMessage message) {
+    if (_thread?.chatId != message.chatId) return;
+    setState(() {
+      _threadEditing = message;
+      _threadReplyTo = null;
+      _threadQuote = null;
+    });
+    final text = captionOf(message.content);
+    _threadDraft.setFormatted(
+      message.text,
+      text == null ? const [] : draftRanges(text),
+    );
+    _threadFocus.requestFocus();
+  }
+
+  /// Esc under the comments: drop the edit or the reply first, then go
+  /// back to the chat.
+  void _cancelInThread() {
+    if (_threadEditing != null || _threadReplyTo != null) {
+      setState(() {
+        if (_threadEditing != null) _threadDraft.clear();
+        _threadEditing = null;
+        _threadReplyTo = null;
+        _threadQuote = null;
+      });
+    } else {
+      _closeThread();
+    }
   }
 
   Future<void> _sendComment(String text) async {
     final thread = _thread;
-    if (thread == null || text.trim().isEmpty) return;
+    if (thread == null) return;
+    final editing = _threadEditing;
+    if (editing != null && (text.trim().isNotEmpty || _isCaption(editing))) {
+      return _saveCommentEdit(editing, text);
+    }
+    if (text.trim().isEmpty) return;
     final formatted = formattedDraft(text, _threadDraft.ranges);
     if (formatted.text.isEmpty) return;
+    final replyTo = _threadReplyTo;
+    final quote = _threadQuote;
     _threadDraft.clear();
+    setState(() {
+      _threadReplyTo = null;
+      _threadQuote = null;
+    });
     try {
-      await thread.send(formatted.text, entities: formatted.entities);
+      await thread.send(
+        formatted.text,
+        entities: formatted.entities,
+        replyTo: replyTo?.id,
+        quote: quote?.text,
+        quotePosition: quote?.position ?? 0,
+      );
     } on td.TdException {
       if (mounted) setState(() => _failure = _Failure.send);
     }
   }
 
+  Future<void> _saveCommentEdit(
+    ConversationMessage message,
+    String text,
+  ) async {
+    final formatted = formattedDraft(text, _threadDraft.ranges);
+    final old = captionOf(message.content);
+    final unchanged = old != null && sameDraft(formatted, old);
+    if (!unchanged && formatted.text.isEmpty && !_isCaption(message)) return;
+    _threadDraft.clear();
+    setState(() => _threadEditing = null);
+    if (unchanged) return;
+    try {
+      await _conversations.editText(
+        message.chatId,
+        message.id,
+        formatted.text,
+        entities: formatted.entities,
+      );
+    } on td.TdException {
+      if (mounted) setState(() => _failure = _Failure.edit);
+    }
+  }
+
+  Widget? _threadComposerHeader(AppLocalizations l10n) {
+    if (_threadEditing case final editing?) {
+      return ComposerContextBar(
+        title: l10n.editingMessage,
+        text: describeContent(l10n, editing.content),
+        closeTooltip: l10n.close,
+        onClose: _cancelInThread,
+      );
+    }
+    if (_threadReplyTo case final reply?) {
+      return ComposerContextBar(
+        title: nameOfSender(l10n, _conversations.store, reply.sender),
+        text: _threadQuote?.text ?? describeContent(l10n, reply.content),
+        closeTooltip: l10n.close,
+        onClose: _cancelInThread,
+      );
+    }
+    return null;
+  }
+
   late final _threadActions = MessageRowActions(
     onReaction: _actions.onReaction,
     onNeedReplied: _actions.onNeedReplied,
+    onMenu: (row, position) => unawaited(_showThreadMenu(row, position)),
     onViewMedia: _actions.onViewMedia,
+    onTextSelected: _actions.onTextSelected,
     onPollVote: _actions.onPollVote,
     onPollVoters: _actions.onPollVoters,
     onInlineButton: _actions.onInlineButton,
   );
 
-  /// The composer under the comments; Esc goes back to the chat.
+  /// The composer under the comments; Esc cancels the reply or edit, then
+  /// goes back to the chat.
   Widget _threadComposer(AppLocalizations l10n, MessageThread thread) => Focus(
     onKeyEvent: (node, event) {
       if (event is KeyDownEvent &&
           event.logicalKey == LogicalKeyboardKey.escape) {
-        _closeThread();
+        _cancelInThread();
         return KeyEventResult.handled;
       }
       return KeyEventResult.ignored;
@@ -548,6 +681,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
         send: l10n.send,
         format: formatLabelsOf(l10n),
       ),
+      header: _threadComposerHeader(l10n),
+      allowEmpty: _threadEditing != null && _isCaption(_threadEditing!),
       onSend: (text) => unawaited(_sendComment(text)),
     ),
   );
