@@ -1,6 +1,6 @@
 import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import 'settings/appearance.dart';
