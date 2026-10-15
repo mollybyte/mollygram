@@ -192,7 +192,7 @@ class _PickRowState extends State<_PickRow> {
             ),
             child: Row(
               children: [
-                SenderAvatar(name: user.name, size: 30),
+                SenderAvatar(name: user.name, size: 30, photo: user.photo),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(

@@ -9,6 +9,7 @@ import 'package:mollygram_shell/mollygram_shell.dart';
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../avatar/peer_avatar.dart';
 import '../downloads/downloads_bar.dart';
 import '../folders/folder_icons.dart';
 import '../privacy/ghost_mode_capsule.dart';
@@ -617,6 +618,11 @@ class _ChatRowState extends ConsumerState<_ChatRow>
     final draft = chat.draft;
     final tile = ChatListTile(
       title: chat.title,
+      avatar: PeerAvatar.chat(
+        name: chat.title,
+        size: ChatListTile.avatarSize,
+        photo: chat.photo,
+      ),
       subtitle: draft == null
           ? formatPreview(l10n, last)
           : draftText(l10n, draft),

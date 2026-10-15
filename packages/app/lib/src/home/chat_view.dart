@@ -17,6 +17,7 @@ import 'package:pasteboard/pasteboard.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../avatar/peer_avatar.dart';
 import '../chat/attachment_preview.dart';
 import '../chat/audio_player_bar.dart';
 import '../chat/bot_keyboard.dart';
@@ -3576,7 +3577,11 @@ class _ChatViewState extends ConsumerState<ChatView> {
                                   : l10n.savedShowAsChats,
                               onPressed: _toggleSaved,
                             )
-                          : null,
+                          : PeerAvatar.chat(
+                              name: chat?.title ?? '',
+                              size: 32,
+                              photo: chat?.photo,
+                            ),
                       subtitle: secret == null
                           ? ''
                           : secretChatStatusText(

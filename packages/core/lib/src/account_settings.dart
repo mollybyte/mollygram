@@ -78,10 +78,14 @@ final class ConnectedBot {
     required this.userId,
     required this.name,
     required this.username,
+    this.photo,
   });
 
   final int userId;
   final String name;
+
+  /// The bot's small profile photo, if it has one.
+  final td.File? photo;
 
   /// Without the @; empty when the bot has none.
   final String username;
@@ -231,6 +235,7 @@ final class AccountSettings {
         user.lastName,
       ].where((s) => s.isNotEmpty).join(' '),
       username: user.usernames?.activeUsernames.firstOrNull ?? '',
+      photo: user.profilePhoto?.small,
     );
   }
 

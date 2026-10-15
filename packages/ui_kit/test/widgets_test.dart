@@ -22,6 +22,62 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('avatar shows letters only without a photo or preview', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      themed(
+        const Center(child: MonogramAvatar(name: 'Ada Lovelace', size: 42)),
+      ),
+    );
+    expect(find.text('AL'), findsOneWidget);
+
+    await tester.pumpWidget(
+      themed(
+        Center(
+          child: MonogramAvatar(
+            name: 'Ada Lovelace',
+            size: 42,
+            placeholder: MemoryImage(_pixel),
+          ),
+        ),
+      ),
+    );
+    expect(find.text('AL'), findsNothing);
+    expect(find.byType(ImageFiltered), findsOneWidget);
+  });
+
+  testWidgets('a photo decoded now fades in over the preview', (tester) async {
+    final opacity = find.byType(AnimatedOpacity);
+    // A photo the image cache already holds draws at once, so the one
+    // under test must be new to it: fresh bytes, and nothing left over
+    // from an earlier test.
+    imageCache.clear();
+    final photo = MemoryImage(Uint8List.fromList(_pixel));
+    // Decoding runs on a real event loop; the first frame has no image
+    // yet, so the photo starts transparent rather than popping in.
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        themed(
+          Center(
+            child: MonogramAvatar(
+              name: 'Ada',
+              size: 42,
+              placeholder: MemoryImage(_pixel),
+              image: photo,
+            ),
+          ),
+        ),
+      );
+      expect(tester.widget<AnimatedOpacity>(opacity).opacity, 0);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    });
+    await tester.pump();
+    expect(tester.widget<AnimatedOpacity>(opacity).opacity, 1);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('icon names are unique', (tester) async {
     final names = MgIcons.all.map((i) => i.name).toSet();
     expect(names.length, MgIcons.all.length);
@@ -762,3 +818,13 @@ void main() {
     expect(find.text('New secret'), findsOneWidget);
   });
 }
+
+/// A 1x1 gray PNG.
+final _pixel = Uint8List.fromList(const [
+  0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, //
+  0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, //
+  0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4, 0x89, 0x00, 0x00, 0x00, //
+  0x0D, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9C, 0x63, 0x68, 0x68, 0x68, 0xF8, //
+  0x0F, 0x00, 0x05, 0x84, 0x02, 0x80, 0x8C, 0xCD, 0x66, 0x26, 0x00, 0x00, //
+  0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82, //
+]);

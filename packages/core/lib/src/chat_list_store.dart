@@ -1,3 +1,5 @@
+import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
+
 /// A chat-list identity used by TDLib for the main list, archive, or a folder.
 final class ChatListLocation {
   const ChatListLocation._(this.folderId);
@@ -133,10 +135,15 @@ final class ChatListEntry {
     this.mutedByDefault = false,
     this.canDeleteForAll = false,
     this.canDeleteOnlyForSelf = false,
+    this.photo,
   }) : positions = List.unmodifiable(positions);
 
   final int id;
   final String title;
+
+  /// The chat photo (a 160 px `small` file and a blurred minithumbnail), or
+  /// null when the chat has none and a monogram stands in.
+  final td.ChatPhotoInfo? photo;
   final ChatType type;
 
   /// The user of a private or secret chat, or the basic group or
@@ -201,11 +208,13 @@ final class ChatListEntry {
     bool? canDeleteOnlyForSelf,
     List<ChatListPosition>? positions,
     ChatPreview? Function()? lastMessage,
+    td.ChatPhotoInfo? Function()? photo,
     ChatDraft? Function()? draft,
   }) => ChatListEntry(
     id: id,
     title: title ?? this.title,
     type: type,
+    photo: photo == null ? this.photo : photo(),
     peerId: peerId,
     secretChatId: secretChatId,
     unreadCount: unreadCount ?? this.unreadCount,
@@ -295,6 +304,11 @@ final class ChatListStore {
   void updateTitle(int chatId, String title) {
     final chat = _chats[chatId];
     if (chat != null) _chats[chatId] = chat.copyWith(title: title);
+  }
+
+  void updatePhoto(int chatId, td.ChatPhotoInfo? photo) {
+    final chat = _chats[chatId];
+    if (chat != null) _chats[chatId] = chat.copyWith(photo: () => photo);
   }
 
   void updateUnreadCount(int chatId, int unreadCount) {

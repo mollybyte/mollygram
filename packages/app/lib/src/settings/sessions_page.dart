@@ -4,6 +4,7 @@ import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../avatar/peer_avatar.dart';
 import '../home/format.dart';
 import '../session/providers.dart';
 import 'settings_style.dart';
@@ -158,7 +159,7 @@ class _ActiveSessionsPageState extends ConsumerState<ActiveSessionsPage> {
             footer: SettingsFooter(l10n.connectedBotHint),
             children: [
               SettingsRow(
-                leading: MonogramAvatar(name: bot.name, size: 28),
+                leading: PeerAvatar(name: bot.name, size: 28, photo: bot.photo),
                 title: bot.name,
                 subtitle: bot.username.isEmpty ? null : '@${bot.username}',
                 trailing: SettingsButton(
