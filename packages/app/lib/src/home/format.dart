@@ -19,6 +19,13 @@ String formatChatTime(int unixSeconds, String locale, {DateTime? now}) {
 }
 
 /// Message time inside a bubble.
+/// "14 October 2025 at 12:05", for tooltips.
+String formatFullDate(int unixSeconds, String locale) {
+  final date = DateTime.fromMillisecondsSinceEpoch(unixSeconds * 1000);
+  return '${DateFormat.yMMMMd(locale).format(date)}, '
+      '${DateFormat.Hm(locale).format(date)}';
+}
+
 String formatMessageTime(int unixSeconds, String locale) =>
     DateFormat.Hm(locale)
         .format(DateTime.fromMillisecondsSinceEpoch(unixSeconds * 1000));

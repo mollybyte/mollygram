@@ -229,6 +229,36 @@ final class ConversationController {
     _notify();
   }
 
+  /// Who saw [messageId] of [chatId], in a small group; TDLib keeps the
+  /// list only for recent messages.
+  Future<List<td.MessageViewer>> viewers(int chatId, int messageId) async {
+    final viewers = await _client.send(
+      td.GetMessageViewers(chatId: chatId, messageId: messageId),
+    );
+    return viewers.viewers;
+  }
+
+  /// Who reacted to [messageId] of [chatId], newest first, up to [limit].
+  Future<List<td.AddedReaction>> addedReactions(
+    int chatId,
+    int messageId, {
+    int limit = 100,
+  }) async {
+    final added = await _client.send(
+      td.GetMessageAddedReactions(
+        chatId: chatId,
+        messageId: messageId,
+        offset: '',
+        limit: limit,
+      ),
+    );
+    return added.reactions;
+  }
+
+  /// When the other side read [messageId] of [chatId], in a private chat.
+  Future<td.MessageReadDate> readDate(int chatId, int messageId) =>
+      _client.send(td.GetMessageReadDate(chatId: chatId, messageId: messageId));
+
   /// Unpins every message of [chatId].
   Future<void> unpinAll(int chatId) async {
     await _client.send(td.UnpinAllChatMessages(chatId: chatId));

@@ -144,6 +144,23 @@
   "pause": "Pause",
   "menuReply": "Reply",
   "menuQuote": "Quote",
+  "seenBy": "{count, plural, one{Seen by {count}} other{Seen by {count}}}",
+  "@seenBy": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "reactedCount": "{count, plural, one{{count} reaction} other{{count} reactions}}",
+  "@reactedCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "readAt": "Read {time}",
+  "@readAt": {
+    "placeholders": { "time": { "type": "String" } }
+  },
+  "notReadYet": "Not read yet",
+  "editedAt": "Edited {time}",
+  "@editedAt": {
+    "placeholders": { "time": { "type": "String" } }
+  },
   "menuEdit": "Edit",
   "menuCopyText": "Copy text",
   "menuCopyLink": "Copy link",
