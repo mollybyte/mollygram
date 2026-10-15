@@ -64,7 +64,7 @@ M8 calls and macOS release, M9 after release.
 | Date headers and sticky date | done | Date pills, and the top row's date floats while scrolling | | |
 | Jump to date (calendar) | missing | `ChatCalendarModalController` | M | M2 |
 | Header status: online, last seen, members, typing | missing | Header has the slot | S | M1 |
-| Join and mute buttons for channels and groups you are not in | missing | `JoinChat` | S | M1 |
+| Join and mute buttons for channels and groups you are not in | done | Join in place of the composer; Mute and Unmute in channels you only read | | |
 | Open `t.me` and `tg://` links, usernames, hashtags, bot commands | missing | `GetInternalLinkType` | M | M1 |
 | Link previews in messages | partial | Check `MessageText.linkPreview` rendering | M | M1 |
 | Text selection across messages | missing | `ChatSelectText` | M | M2 |

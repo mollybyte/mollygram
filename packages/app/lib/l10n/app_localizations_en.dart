@@ -1060,4 +1060,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get backToPrevious => 'Back to where you were';
+
+  @override
+  String get joinChannel => 'Join channel';
+
+  @override
+  String get joinGroup => 'Join group';
+
+  @override
+  String get muteChat => 'Mute';
+
+  @override
+  String get unmuteChat => 'Unmute';
+
+  @override
+  String get chatUnavailable => 'You can\'t take part in this chat';
+
+  @override
+  String get chatActionFailed => 'Couldn\'t do that, try again';
 }

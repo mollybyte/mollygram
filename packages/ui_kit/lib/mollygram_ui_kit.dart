@@ -7,6 +7,7 @@ library;
 
 export 'src/avatar.dart';
 export 'src/badge.dart';
+export 'src/chat/action_bar.dart';
 export 'src/chat/bubbles.dart';
 export 'src/chat/chat_header.dart';
 export 'src/chat/composer.dart';
