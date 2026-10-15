@@ -66,9 +66,13 @@ The layout follows the official Telegram Desktop, so there is nothing to relearn
 Flutter is installed with [fvm](https://fvm.app). The version is pinned in [`.fvmrc`](.fvmrc) and CI uses the same one. The project tracks the latest stable Flutter.
 
 ```sh
+git clone --recurse-submodules https://github.com/mollybyte/mollygram.git
+cd mollygram
 fvm install
 fvm flutter pub get
 ```
+
+If you cloned without `--recurse-submodules`, run `git submodule update --init --recursive` once: the plugin host builds QuickJS from the [quickjs-ng](https://github.com/quickjs-ng/quickjs) submodule.
 
 The repository is a monorepo on [pub workspaces](https://dart.dev/tools/pub/workspaces): `pub get` at the root installs dependencies for every package.
 
