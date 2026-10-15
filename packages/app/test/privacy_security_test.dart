@@ -198,6 +198,119 @@ void main() {
       expect(find.text('Ivan'), findsNothing);
     });
 
+    List<(Object?, Object?)> pages() => [
+      for (final r in json.sent)
+        if (r['@type'] == 'getBlockedMessageSenders' && r['limit'] != 1)
+          (r['offset'], r['limit']),
+    ];
+
+    testWidgets('pages through a long blocked list', (tester) async {
+      json.blockMany(118); // 120 in all
+      await pump(tester);
+      // Tall enough for every row, so no scrolling is needed.
+      tester.view.physicalSize = const Size(1200, 8000);
+      await tester.tap(find.text('Blocked users'));
+      await settle(tester);
+      await settle(tester);
+      expect(pages(), [(0, 50)]);
+      expect(find.text('P1047'), findsOneWidget);
+      expect(find.text('P1048'), findsNothing);
+
+      await tester.tap(find.text('Show more'));
+      await settle(tester);
+      await settle(tester);
+      expect(pages().last, (50, 50));
+      expect(find.text('P1097'), findsOneWidget);
+
+      // A change reloads all 100 shown, in one page of TDLib's most.
+      json.sent.clear();
+      await tester.tap(find.text('Unblock').first);
+      await settle(tester);
+      await settle(tester);
+      expect(pages(), [(0, 100)]);
+      expect(find.text('Spam bot'), findsNothing);
+      // One fewer blocked: the next one moves up into the 100.
+      expect(find.text('P1098'), findsOneWidget);
+      expect(find.text('P1099'), findsNothing);
+      await tester.tap(find.text('Show more'));
+      await settle(tester);
+      await settle(tester);
+      expect(find.text('P1117'), findsOneWidget);
+      expect(find.text('Show more'), findsNothing);
+    });
+
+    testWidgets('an unblock while a page loads leaves no duplicates', (
+      tester,
+    ) async {
+      json.blockMany(60);
+      await pump(tester);
+      tester.view.physicalSize = const Size(1200, 8000);
+      await tester.tap(find.text('Blocked users'));
+      await settle(tester);
+      await tester.tap(find.text('Show more'));
+      await tester.tap(find.text('Unblock').first);
+      await settle(tester);
+      await settle(tester);
+      // A duplicate row would have failed on its key already.
+      expect(find.text('Spam bot'), findsNothing);
+      expect(find.text('P1059'), findsOneWidget);
+      expect(find.text('P1000'), findsOneWidget);
+    });
+
+    testWidgets('a failed unblock puts the row back', (tester) async {
+      json.failing.add('setMessageSenderBlockList');
+      await pump(tester);
+      await tester.tap(find.text('Blocked users'));
+      await settle(tester);
+      await tester.tap(find.text('Unblock').first);
+      await settle(tester);
+      expect(find.text('Spam bot'), findsOneWidget);
+      expect(find.text("Couldn't save the change."), findsOneWidget);
+    });
+
+    testWidgets('a change made elsewhere while picking is kept', (
+      tester,
+    ) async {
+      await pump(tester);
+      await tester.tap(find.text('Last seen and online'));
+      await settle(tester);
+      await tester.tap(find.text('Always allow'));
+      await settle(tester);
+      await tester.tap(find.text('Add people'));
+      await settle(tester);
+
+      // Vera is always allowed from another device meanwhile.
+      json.push({
+        '@type': 'updateUserPrivacySettingRules',
+        'setting': {'@type': 'userPrivacySettingShowStatus'},
+        'rules': {
+          '@type': 'userPrivacySettingRules',
+          'rules': [
+            {
+              '@type': 'userPrivacySettingRuleAllowUsers',
+              'user_ids': [5],
+            },
+            {'@type': 'userPrivacySettingRuleAllowContacts'},
+          ],
+        },
+      });
+      await tester.runAsync(() => session.security.blocked(limit: 1));
+      await settle(tester);
+
+      await tester.tap(find.text('Ivan').last);
+      await tester.pump();
+      await tester.tap(find.text('Add'));
+      await settle(tester);
+      expect((lastSet()['rules']! as Map)['rules'], [
+        {
+          '@type': 'userPrivacySettingRuleAllowUsers',
+          'user_ids': [5, 6],
+        },
+        {'@type': 'userPrivacySettingRuleAllowContacts'},
+        {'@type': 'userPrivacySettingRuleRestrictAll'},
+      ]);
+    });
+
     testWidgets('blocks and unblocks', (tester) async {
       await pump(tester);
       await tester.tap(find.text('Blocked users'));
@@ -284,6 +397,13 @@ final class _FakeTdJson implements td.TdJson {
 
   var _blocked = [9, 6];
 
+  /// Blocks [count] more made-up people, for paging.
+  void blockMany(int count) =>
+      _blocked = [..._blocked, for (var i = 0; i < count; i++) 1000 + i];
+
+  void push(Map<String, Object?> update) =>
+      _queue.add(jsonEncode({...update, '@client_id': 1}));
+
   @override
   int createClientId() => 1;
 
@@ -335,7 +455,10 @@ final class _FakeTdJson implements td.TdJson {
         '@type': 'messageSenders',
         'total_count': _blocked.length,
         'senders': [
-          for (final id in _blocked.take(decoded['limit']! as int))
+          for (final id
+              in _blocked
+                  .skip(decoded['offset']! as int)
+                  .take(decoded['limit']! as int))
             {'@type': 'messageSenderUser', 'user_id': id},
         ],
       },
@@ -344,7 +467,9 @@ final class _FakeTdJson implements td.TdJson {
         'total_count': 2,
         'user_ids': [5, 6],
       },
-      'getUser' => _users[decoded['user_id']],
+      'getUser' =>
+        _users[decoded['user_id']] ??
+            _user(decoded['user_id']! as int, 'P${decoded['user_id']}'),
       'getActiveSessions' => {
         '@type': 'sessions',
         'sessions': <Object?>[],
@@ -353,7 +478,7 @@ final class _FakeTdJson implements td.TdJson {
       _ => {'@type': 'ok'},
     };
     _queue.add(
-      jsonEncode({...?response, '@client_id': clientId, '@extra': extra}),
+      jsonEncode({...response, '@client_id': clientId, '@extra': extra}),
     );
     if (type == 'close') {
       _queue.add(

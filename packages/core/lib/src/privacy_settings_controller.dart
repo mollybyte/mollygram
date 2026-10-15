@@ -136,12 +136,14 @@ final class PrivacyChoice {
   /// then the audience. Exceptions the audience makes moot are dropped.
   td.UserPrivacySettingRules toTd() => td.UserPrivacySettingRules(
     rules: [
+      // People named one by one come before groups, so someone in
+      // "never allow" stays out even when a group they're in is allowed.
       if (showsAlways && alwaysUsers.isNotEmpty)
         td.UserPrivacySettingRuleAllowUsers(userIds: alwaysUsers),
-      if (showsAlways && alwaysChats.isNotEmpty)
-        td.UserPrivacySettingRuleAllowChatMembers(chatIds: alwaysChats),
       if (showsNever && neverUsers.isNotEmpty)
         td.UserPrivacySettingRuleRestrictUsers(userIds: neverUsers),
+      if (showsAlways && alwaysChats.isNotEmpty)
+        td.UserPrivacySettingRuleAllowChatMembers(chatIds: alwaysChats),
       if (showsNever && neverChats.isNotEmpty)
         td.UserPrivacySettingRuleRestrictChatMembers(chatIds: neverChats),
       ...kept,
@@ -214,12 +216,22 @@ final class PrivacyPeer {
 
 /// One page of the blocked list.
 final class BlockedPage {
-  const BlockedPage({required this.peers, required this.totalCount});
+  const BlockedPage({
+    required this.peers,
+    required this.totalCount,
+    required this.nextOffset,
+  });
 
+  /// The senders of the page that TDLib could name; one it couldn't is
+  /// left out but still counts toward [nextOffset].
   final List<PrivacyPeer> peers;
   final int totalCount;
 
-  bool get hasMore => peers.length < totalCount;
+  /// Where the next page starts: the offset asked for plus every sender
+  /// TDLib returned.
+  final int nextOffset;
+
+  bool get hasMore => nextOffset < totalCount;
 }
 
 /// The account's privacy settings and blocked list, after TelegramSwift's
@@ -233,8 +245,9 @@ final class PrivacySettingsController {
   final _choices = <PrivacyRule, PrivacyChoice>{};
   StreamSubscription<td.TdObject>? _subscription;
 
-  /// How many blocked senders a page asks for.
+  /// How many blocked senders a page asks for; TDLib's most is 100.
   static const pageSize = 50;
+  static const maxPageSize = 100;
 
   /// Fires with a setting that changed, here or on another device.
   Stream<PrivacyRule> get changes => _changes.stream;
@@ -270,10 +283,26 @@ final class PrivacySettingsController {
     return _choices[rule] = PrivacyChoice.fromTd(rules);
   }
 
-  /// Every setting the page lists, asked for at once.
+  /// Every setting the page lists, asked for at once. A setting that
+  /// fails to load is left out, so the others still show; only when all
+  /// fail is the error thrown.
   Future<Map<PrivacyRule, PrivacyChoice>> choices() async {
-    final all = await Future.wait(PrivacyRule.values.map(choice));
-    return {for (var i = 0; i < all.length; i++) PrivacyRule.values[i]: all[i]};
+    Object? error;
+    final all = await Future.wait([
+      for (final rule in PrivacyRule.values)
+        choice(rule).then<PrivacyChoice?>(
+          (value) => value,
+          onError: (Object e) {
+            error = e;
+            return null;
+          },
+        ),
+    ]);
+    final loaded = {
+      for (var i = 0; i < all.length; i++) PrivacyRule.values[i]: ?all[i],
+    };
+    if (loaded.isEmpty && error != null) throw error!;
+    return loaded;
   }
 
   /// Saves [choice]; on failure the setting stays as it was and the
@@ -353,6 +382,7 @@ final class PrivacySettingsController {
     return BlockedPage(
       peers: [...peers.nonNulls],
       totalCount: found.totalCount,
+      nextOffset: offset + found.senders.length,
     );
   }
 

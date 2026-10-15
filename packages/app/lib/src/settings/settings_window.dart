@@ -76,6 +76,8 @@ final settingsSections = <SettingsSection>[
       l10n.activeSessions,
       l10n.thisDevice,
       l10n.terminateOthers,
+      l10n.blockedUsers,
+      for (final rule in privacyPageRules) rule.title(l10n),
     ],
     builder: (context) => const PrivacySecurityPage(),
   ),

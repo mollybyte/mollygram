@@ -2076,7 +2076,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get privacyAlwaysAbout =>
-      'These people are allowed whatever the choice above.';
+      'These people are allowed, whatever the choice above.';
 
   @override
   String get privacyNeverAbout =>
@@ -2107,10 +2107,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Blocked people can\'t message you, call you or add you to groups, and don\'t see your profile photos, online status or last seen time.';
 
   @override
-  String get blockedUsersEmpty => 'No one is blocked';
+  String get blockedUsersEmpty => 'No one is blocked.';
 
   @override
   String get blockSomeone => 'Block someone';
+
+  @override
+  String get privacyNotLoaded => 'Not loaded';
 
   @override
   String get unblock => 'Unblock';

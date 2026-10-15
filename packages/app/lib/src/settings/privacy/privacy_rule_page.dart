@@ -13,17 +13,21 @@ import 'privacy_page.dart';
 import 'privacy_providers.dart';
 import 'user_picker.dart';
 
-/// Saves [choice] for [rule], reporting a failure with the "couldn't
-/// save" text. The setting shown follows the controller, which keeps the
-/// old choice when the save fails.
+/// Applies [change] to [rule] as it is now, so a change made on another
+/// device while a picker was open isn't lost, and saves it. Returns the
+/// "couldn't save" text on failure; the setting shown follows the
+/// controller, which keeps the old choice then.
 Future<String?> _save(
   WidgetRef ref,
   AppLocalizations l10n,
   PrivacyRule rule,
-  PrivacyChoice choice,
+  PrivacyChoice Function(PrivacyChoice current) change,
 ) async {
+  final privacy = ref.read(privacyControllerProvider);
+  final current = privacy.cached(rule);
+  if (current == null) return l10n.saveFailed;
   try {
-    await ref.read(privacyControllerProvider).setChoice(rule, choice);
+    await privacy.setChoice(rule, change(current));
     return null;
   } on Object {
     return l10n.saveFailed;
@@ -61,7 +65,7 @@ class _PrivacyRulePageState extends ConsumerState<PrivacyRulePage> {
       ref,
       l10n,
       rule,
-      current.copyWith(audience: audience),
+      (latest) => latest.copyWith(audience: audience),
     );
     if (!mounted) return;
     setState(() {
@@ -74,10 +78,14 @@ class _PrivacyRulePageState extends ConsumerState<PrivacyRulePage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final rule = widget.rule;
-    final choices = ref.watch(privacyChoicesProvider).value;
+    final loaded = ref.watch(privacyChoicesProvider);
+    final choices = loaded.value;
     final choice = choices?[rule];
     if (choice == null) {
-      return const Center(child: SettingsSpinner());
+      if (loaded.isLoading) return const Center(child: SettingsSpinner());
+      return SettingsPage(
+        children: [SettingsFooter(l10n.privacyLoadFailed, error: true)],
+      );
     }
     final find = choices?[PrivacyRule.findByPhoneNumber];
     final audience = _pending[rule] ?? choice.audience;
@@ -94,28 +102,64 @@ class _PrivacyRulePageState extends ConsumerState<PrivacyRulePage> {
         ),
         // Who can find the user by number matters only while the number
         // itself is hidden from someone.
-        if (rule == PrivacyRule.phoneNumber &&
-            audience != PrivacyAudience.everybody &&
-            find != null)
-          _AudienceGroup(
-            rule: PrivacyRule.findByPhoneNumber,
-            value: _pending[PrivacyRule.findByPhoneNumber] ?? find.audience,
-            footer: PrivacyRule.findByPhoneNumber.about(l10n),
-            onChanged: (value) =>
-                unawaited(_choose(PrivacyRule.findByPhoneNumber, find, value)),
-          ),
+        _Appearing(
+          visible:
+              rule == PrivacyRule.phoneNumber &&
+              audience != PrivacyAudience.everybody &&
+              find != null,
+          child: find == null
+              ? null
+              : _AudienceGroup(
+                  rule: PrivacyRule.findByPhoneNumber,
+                  value:
+                      _pending[PrivacyRule.findByPhoneNumber] ?? find.audience,
+                  footer: PrivacyRule.findByPhoneNumber.about(l10n),
+                  onChanged: (value) => unawaited(
+                    _choose(PrivacyRule.findByPhoneNumber, find, value),
+                  ),
+                ),
+        ),
         if (rule.hasExceptions)
-          SettingsGroup(
-            title: l10n.privacyExceptions,
-            footer: SettingsFooter(l10n.privacyExceptionsAbout),
-            children: [
-              if (shown.showsAlways)
-                _ExceptionsRow(rule: rule, always: true, choice: shown),
-              if (shown.showsNever)
-                _ExceptionsRow(rule: rule, always: false, choice: shown),
-            ],
+          AnimatedSize(
+            duration: settingsMotionOf(context),
+            curve: settingsCurve,
+            alignment: Alignment.topCenter,
+            child: SettingsGroup(
+              title: l10n.privacyExceptions,
+              footer: SettingsFooter(l10n.privacyExceptionsAbout),
+              children: [
+                if (shown.showsAlways)
+                  _ExceptionsRow(rule: rule, always: true, choice: shown),
+                if (shown.showsNever)
+                  _ExceptionsRow(rule: rule, always: false, choice: shown),
+              ],
+            ),
           ),
       ],
+    );
+  }
+}
+
+/// [child] while [visible], growing and fading in and out.
+class _Appearing extends StatelessWidget {
+  const _Appearing({required this.visible, required this.child});
+
+  final bool visible;
+  final Widget? child;
+
+  @override
+  Widget build(BuildContext context) {
+    final motion = settingsMotionOf(context);
+    return AnimatedSize(
+      duration: motion,
+      curve: settingsCurve,
+      alignment: Alignment.topCenter,
+      child: AnimatedSwitcher(
+        duration: motion,
+        child: visible && child != null
+            ? child
+            : const SizedBox(width: double.infinity),
+      ),
     );
   }
 }
@@ -147,25 +191,28 @@ class _AudienceGroup extends StatelessWidget {
           ? null
           : SettingsFooter(footer, error: error),
       children: [
-        for (final audience in rule.audiences)
-          Semantics(
-            selected: audience == value,
-            child: SettingsRow(
-              key: ValueKey((rule, audience)),
-              title: audienceLabel(l10n, audience),
-              trailing: AnimatedOpacity(
-                duration: settingsMotionOf(context),
-                opacity: audience == value ? 1 : 0,
-                child: MgIcon(
-                  checkIcon,
-                  size: 15,
-                  stroke: 2.3,
-                  color: c.accent,
+        // A value set elsewhere that this setting doesn't offer still
+        // shows, ticked.
+        for (final audience in PrivacyAudience.values)
+          if (rule.audiences.contains(audience) || audience == value)
+            Semantics(
+              selected: audience == value,
+              child: SettingsRow(
+                key: ValueKey((rule, audience)),
+                title: audienceLabel(l10n, audience),
+                trailing: AnimatedOpacity(
+                  duration: settingsMotionOf(context),
+                  opacity: audience == value ? 1 : 0,
+                  child: MgIcon(
+                    checkIcon,
+                    size: 15,
+                    stroke: 2.3,
+                    color: c.accent,
+                  ),
                 ),
+                onTap: () => onChanged(audience),
               ),
-              onTap: () => onChanged(audience),
             ),
-          ),
       ],
     );
   }
@@ -250,21 +297,20 @@ class _PrivacyExceptionsPageState extends ConsumerState<PrivacyExceptionsPage> {
     );
   }
 
-  Future<void> _change(
-    PrivacyChoice choice, {
-    required List<int> users,
-    required List<int> chats,
+  /// Edits this page's lists as they are when saved.
+  Future<void> _change({
+    required List<int> Function(List<int> users) users,
+    required List<int> Function(List<int> chats) chats,
   }) async {
     final l10n = AppLocalizations.of(context);
     setState(() => _error = null);
-    final error = await _save(
-      ref,
-      l10n,
-      widget.rule,
-      widget.always
-          ? choice.copyWith(alwaysUsers: users, alwaysChats: chats)
-          : choice.copyWith(neverUsers: users, neverChats: chats),
-    );
+    final error = await _save(ref, l10n, widget.rule, (latest) {
+      final u = users(_users(latest));
+      final c = chats(_chats(latest));
+      return widget.always
+          ? latest.copyWith(alwaysUsers: u, alwaysChats: c)
+          : latest.copyWith(neverUsers: u, neverChats: c);
+    });
     if (mounted) setState(() => _error = error);
   }
 
@@ -278,9 +324,12 @@ class _PrivacyExceptionsPageState extends ConsumerState<PrivacyExceptionsPage> {
     );
     if (picked == null || picked.isEmpty || !mounted) return;
     await _change(
-      choice,
-      users: [..._users(choice), ...picked],
-      chats: _chats(choice),
+      users: (users) => [
+        ...users,
+        for (final id in picked)
+          if (!users.contains(id)) id,
+      ],
+      chats: (chats) => chats,
     );
   }
 
@@ -299,65 +348,69 @@ class _PrivacyExceptionsPageState extends ConsumerState<PrivacyExceptionsPage> {
     ];
     return SettingsPage(
       children: [
-        SettingsGroup(
-          footer: _error == null
-              ? SettingsFooter(
-                  widget.always
-                      ? l10n.privacyAlwaysAbout
-                      : l10n.privacyNeverAbout,
-                )
-              : SettingsFooter(_error!, error: true),
-          children: [
-            SettingsRow(
-              key: const ValueKey('add'),
-              leading: Container(
-                width: 30,
-                height: 30,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: c.accent.withValues(alpha: 0.12),
-                ),
-                child: MgIcon(
-                  _plusIcon,
-                  size: 16,
-                  stroke: 2.2,
-                  color: c.accent,
-                ),
-              ),
-              title: l10n.privacyAddPeople,
-              onTap: () => unawaited(_add(choice)),
-            ),
-            for (final peer in peers)
+        AnimatedSize(
+          duration: settingsMotionOf(context),
+          curve: settingsCurve,
+          alignment: Alignment.topCenter,
+          child: SettingsGroup(
+            footer: _error == null
+                ? SettingsFooter(
+                    widget.always
+                        ? l10n.privacyAlwaysAbout
+                        : l10n.privacyNeverAbout,
+                  )
+                : SettingsFooter(_error!, error: true),
+            children: [
               SettingsRow(
-                key: ValueKey((peer.isChat, peer.id)),
-                leading: SenderAvatar(
-                  name: peer.name,
-                  size: 30,
-                  photo: peer.photo,
+                key: const ValueKey('add'),
+                leading: Container(
+                  width: 30,
+                  height: 30,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: c.accent.withValues(alpha: 0.12),
+                  ),
+                  child: MgIcon(
+                    _plusIcon,
+                    size: 16,
+                    stroke: 2.2,
+                    color: c.accent,
+                  ),
                 ),
-                title: peer.name,
-                subtitle: peer.isChat ? l10n.privacyGroupMembers : null,
-                trailing: MgIconButton(
-                  icon: MgIcons.close,
-                  tooltip: l10n.folderRemove,
-                  iconSize: 13,
-                  onPressed: () => unawaited(
-                    _change(
-                      choice,
-                      users: [
-                        for (final id in users)
-                          if (peer.isChat || id != peer.id) id,
-                      ],
-                      chats: [
-                        for (final id in chats)
-                          if (!peer.isChat || id != peer.id) id,
-                      ],
+                title: l10n.privacyAddPeople,
+                onTap: () => unawaited(_add(choice)),
+              ),
+              for (final peer in peers)
+                SettingsRow(
+                  key: ValueKey((peer.isChat, peer.id)),
+                  leading: SenderAvatar(
+                    name: peer.name,
+                    size: 30,
+                    photo: peer.photo,
+                  ),
+                  title: peer.name,
+                  subtitle: peer.isChat ? l10n.privacyGroupMembers : null,
+                  trailing: MgIconButton(
+                    icon: MgIcons.close,
+                    tooltip: l10n.folderRemove,
+                    iconSize: 13,
+                    onPressed: () => unawaited(
+                      _change(
+                        users: (users) => [
+                          for (final id in users)
+                            if (peer.isChat || id != peer.id) id,
+                        ],
+                        chats: (chats) => [
+                          for (final id in chats)
+                            if (!peer.isChat || id != peer.id) id,
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ],
     );

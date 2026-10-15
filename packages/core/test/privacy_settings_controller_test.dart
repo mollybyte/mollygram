@@ -107,6 +107,27 @@ void main() {
       expect(open.alwaysUsers, [5]);
     });
 
+    test('people named one by one come before groups', () {
+      const choice = PrivacyChoice(
+        audience: PrivacyAudience.contacts,
+        alwaysUsers: [5],
+        neverUsers: [6],
+        alwaysChats: [20],
+        neverChats: [21],
+      );
+      expect(
+        [for (final r in choice.toTd().rules) r.tdType],
+        [
+          'userPrivacySettingRuleAllowUsers',
+          'userPrivacySettingRuleRestrictUsers',
+          'userPrivacySettingRuleAllowChatMembers',
+          'userPrivacySettingRuleRestrictChatMembers',
+          'userPrivacySettingRuleAllowContacts',
+          'userPrivacySettingRuleRestrictAll',
+        ],
+      );
+    });
+
     test('someone moved to one list leaves the other', () {
       final choice = read([
         _users('userPrivacySettingRuleAllowUsers', [5, 6]),
@@ -128,6 +149,16 @@ void main() {
         PrivacyRule.birthday,
       );
     });
+  });
+
+  test('a setting that fails to load leaves the others', () async {
+    json.failingSetting = 'userPrivacySettingShowBirthdate';
+    final all = await privacy.choices();
+    expect(all, hasLength(PrivacyRule.values.length - 1));
+    expect(all.containsKey(PrivacyRule.birthday), isFalse);
+
+    json.failing.add('getUserPrivacySettingRules');
+    await expectLater(privacy.choices(), throwsA(isA<td.TdException>()));
   });
 
   test('asks for every setting', () async {
@@ -207,14 +238,19 @@ void main() {
     var changes = 0;
     privacy.blockedChanges.listen((_) => changes++);
 
-    final page = await privacy.blocked();
+    final page = await privacy.blocked(limit: 4);
+    // 99 is unknown to TDLib: left out, but the next page starts after it.
     expect([for (final p in page.peers) p.name], ['U5', 'U6', 'Flutter']);
     expect(page.peers[1].isBot, isTrue);
+    expect(page.nextOffset, 4);
     expect(page.hasMore, isTrue);
-    expect(sent('getBlockedMessageSenders')['limit'], 50);
+    expect(sent('getBlockedMessageSenders')['limit'], 4);
 
-    await privacy.blocked(offset: 3);
-    expect(sent('getBlockedMessageSenders')['offset'], 3);
+    final last = await privacy.blocked(offset: 4);
+    expect(sent('getBlockedMessageSenders')['offset'], 4);
+    expect([for (final p in last.peers) p.name], ['U7']);
+    expect(last.nextOffset, 5);
+    expect(last.hasMore, isFalse);
 
     await privacy.block(7);
     expect(
@@ -278,7 +314,18 @@ final class _FakeTdJson implements td.TdJson {
   final _queue = Queue<String>();
   final sent = <Map<String, Object?>>[];
   final failing = <String>{};
+
+  /// A setting whose rules fail to load.
+  String? failingSetting;
   var _nextClientId = 0;
+
+  static const _blocked = [
+    {'@type': 'messageSenderUser', 'user_id': 5},
+    {'@type': 'messageSenderUser', 'user_id': 6},
+    {'@type': 'messageSenderChat', 'chat_id': 20},
+    {'@type': 'messageSenderUser', 'user_id': 99},
+    {'@type': 'messageSenderUser', 'user_id': 7},
+  ];
 
   void push(Map<String, Object?> update) =>
       _queue.add(jsonEncode({...update, '@client_id': 1}));
@@ -309,7 +356,11 @@ final class _FakeTdJson implements td.TdJson {
     final decoded = jsonDecode(request) as Map<String, Object?>;
     final type = decoded['@type']! as String;
     if (type != 'close') sent.add(decoded);
-    final Map<String, Object?> response = failing.contains(type)
+    final failed =
+        failing.contains(type) ||
+        (type == 'getUserPrivacySettingRules' &&
+            (decoded['setting']! as Map)['@type'] == failingSetting);
+    final Map<String, Object?> response = failed
         ? {'@type': 'error', 'code': 400, 'message': 'Failed'}
         : switch (type) {
             'getUserPrivacySettingRules' => _rulesOf(decoded['setting']),
@@ -337,12 +388,11 @@ final class _FakeTdJson implements td.TdJson {
             },
             'getBlockedMessageSenders' => {
               '@type': 'messageSenders',
-              'total_count': 5,
-              'senders': [
-                {'@type': 'messageSenderUser', 'user_id': 5},
-                {'@type': 'messageSenderUser', 'user_id': 6},
-                {'@type': 'messageSenderChat', 'chat_id': 20},
-              ],
+              'total_count': _blocked.length,
+              'senders': _blocked
+                  .skip(decoded['offset']! as int)
+                  .take(decoded['limit']! as int)
+                  .toList(),
             },
             _ => {'@type': 'ok'},
           };

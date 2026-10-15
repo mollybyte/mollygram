@@ -3521,7 +3521,7 @@ abstract class AppLocalizations {
   /// No description provided for @privacyAlwaysAbout.
   ///
   /// In en, this message translates to:
-  /// **'These people are allowed whatever the choice above.'**
+  /// **'These people are allowed, whatever the choice above.'**
   String get privacyAlwaysAbout;
 
   /// No description provided for @privacyNeverAbout.
@@ -3563,7 +3563,7 @@ abstract class AppLocalizations {
   /// No description provided for @blockedUsersEmpty.
   ///
   /// In en, this message translates to:
-  /// **'No one is blocked'**
+  /// **'No one is blocked.'**
   String get blockedUsersEmpty;
 
   /// No description provided for @blockSomeone.
@@ -3571,6 +3571,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Block someone'**
   String get blockSomeone;
+
+  /// No description provided for @privacyNotLoaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Not loaded'**
+  String get privacyNotLoaded;
 
   /// No description provided for @unblock.
   ///

@@ -2126,17 +2126,20 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get blockedUsers => 'Заблокированные';
+  String get blockedUsers => 'Заблокированные пользователи';
 
   @override
   String get blockedUsersAbout =>
       'Заблокированные не могут писать и звонить вам или добавлять вас в группы, а также не видят ваши фотографии, статус в сети и время захода.';
 
   @override
-  String get blockedUsersEmpty => 'Никто не заблокирован';
+  String get blockedUsersEmpty => 'Никто не заблокирован.';
 
   @override
-  String get blockSomeone => 'Заблокировать';
+  String get blockSomeone => 'Заблокировать пользователя';
+
+  @override
+  String get privacyNotLoaded => 'Не загружено';
 
   @override
   String get unblock => 'Разблокировать';

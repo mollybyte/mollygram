@@ -136,7 +136,11 @@ class PrivacySecurityPage extends ConsumerWidget {
         ),
         SettingsGroup(
           title: l10n.privacyTitle,
-          footer: choices.hasError && !choices.hasValue
+          // A setting that failed to load says so on its row.
+          footer:
+              (choices.hasError && !choices.hasValue) ||
+                  (choices.value?.length ?? PrivacyRule.values.length) <
+                      PrivacyRule.values.length
               ? SettingsFooter(l10n.privacyLoadFailed, error: true)
               : null,
           children: [
@@ -147,7 +151,7 @@ class PrivacySecurityPage extends ConsumerWidget {
                 trailing: switch (choices.value?[rule]) {
                   final choice? => value(privacySummary(l10n, choice)),
                   null when choices.isLoading => const SettingsSpinner(),
-                  null => null,
+                  null => value(l10n.privacyNotLoaded),
                 },
                 chevron: true,
                 onTap: () => navigation.push(
