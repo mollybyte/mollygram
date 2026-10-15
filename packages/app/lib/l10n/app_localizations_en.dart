@@ -1438,6 +1438,62 @@ class AppLocalizationsEn extends AppLocalizations {
   String get backToPrevious => 'Back to where you were';
 
   @override
+  String get searchInChat => 'Search in chat';
+
+  @override
+  String searchCounter(int index, int count) {
+    return '$index of $count';
+  }
+
+  @override
+  String get searchNoResults => 'No results';
+
+  @override
+  String get searchOlder => 'Previous result';
+
+  @override
+  String get searchNewer => 'Next result';
+
+  @override
+  String get sharedMedia => 'Shared media';
+
+  @override
+  String get sharedMediaTab => 'Media';
+
+  @override
+  String get sharedFilesTab => 'Files';
+
+  @override
+  String get sharedLinksTab => 'Links';
+
+  @override
+  String get sharedVoiceTab => 'Voice';
+
+  @override
+  String get sharedMusicTab => 'Music';
+
+  @override
+  String get sharedMediaEmpty => 'No photos or videos yet';
+
+  @override
+  String get sharedFilesEmpty => 'No files yet';
+
+  @override
+  String get sharedLinksEmpty => 'No links yet';
+
+  @override
+  String get sharedVoiceEmpty => 'No voice messages yet';
+
+  @override
+  String get sharedMusicEmpty => 'No music yet';
+
+  @override
+  String get sharedLoadFailed => 'Couldn\'t load the list';
+
+  @override
+  String get showInChat => 'Show in chat';
+
+  @override
   String get joinChannel => 'Join channel';
 
   @override

@@ -7,6 +7,7 @@ import 'authorization_controller.dart';
 import 'authorization_stage.dart';
 import 'chat_list_controller.dart';
 import 'chat_search.dart';
+import 'chat_search_controller.dart';
 import 'connection_status.dart';
 import 'conversation_controller.dart';
 import 'file_controller.dart';
@@ -39,6 +40,7 @@ final class TelegramSession {
     required this.chatLists,
     required this.conversations,
     required this.search,
+    required this.chatSearch,
     required this.files,
     required this.notifications,
     required this.stickers,
@@ -56,6 +58,9 @@ final class TelegramSession {
   final ChatListController chatLists;
   final ConversationController conversations;
   final ChatSearch search;
+
+  /// Search inside one chat and its shared media.
+  final ChatSearchController chatSearch;
   final FileController files;
   final NotificationController notifications;
   final StickerLibrary stickers;
@@ -94,6 +99,7 @@ final class TelegramSession {
       chatLists: ChatListController(client),
       conversations: conversations,
       search: ChatSearch(client),
+      chatSearch: ChatSearchController(client),
       files: files,
       notifications: notifications,
       stickers: StickerLibrary(client),

@@ -12,6 +12,7 @@ import 'package:mollygram/src/chat/recent_emoji.dart';
 import 'package:mollygram/src/chat/timeline_view.dart';
 import 'package:mollygram/src/home/chat_view.dart';
 import 'package:mollygram/src/session/providers.dart';
+import 'package:mollygram/src/shared_media/message_jump.dart';
 import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
@@ -221,6 +222,30 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Answer', findRichText: true), findsOneWidget);
     expect(find.byTooltip('Back to where you were'), findsNothing);
+  });
+
+  testWidgets('scrolls to a message another panel asks for', (tester) async {
+    json.chat = [for (var id = 1; id <= 60; id++) id];
+    json.push(_chat(lastRead: 60, unread: 0, last: 60));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await pump(tester);
+    await tester.pumpAndSettle();
+    final first = find.textContaining(
+      RegExp(r'Message 1(?!\d)'),
+      findRichText: true,
+    );
+    expect(first, findsNothing);
+
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(ChatView)),
+    );
+    container.read(messageJumpProvider.notifier).request(7, 1);
+    await tester.pump();
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+
+    expect(tester.getRect(first).top, inInclusiveRange(0, 800));
+    expect(container.read(messageJumpProvider), isEmpty);
   });
 
   testWidgets('floats the date of the top row while scrolling', (tester) async {
