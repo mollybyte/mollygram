@@ -1646,4 +1646,35 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nextMonth => 'Next month';
+
+  @override
+  String get pinnedList => 'Pinned messages';
+
+  @override
+  String pinnedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count pinned messages',
+      one: '$count pinned message',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get backToChat => 'Back to the chat';
+
+  @override
+  String get unpinAll => 'Unpin all messages';
+
+  @override
+  String unpinAllTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Unpin all $count messages?',
+      one: 'Unpin $count message?',
+    );
+    return '$_temp0';
+  }
 }

@@ -448,5 +448,10 @@
   "clearSelection": "Снять выделение",
   "copy": "Копировать",
   "previousMonth": "Предыдущий месяц",
-  "nextMonth": "Следующий месяц"
+  "nextMonth": "Следующий месяц",
+  "pinnedList": "Закреплённые сообщения",
+  "pinnedCount": "{count, plural, one{{count} закреплённое сообщение} few{{count} закреплённых сообщения} other{{count} закреплённых сообщений}}",
+  "backToChat": "Назад в чат",
+  "unpinAll": "Открепить все",
+  "unpinAllTitle": "{count, plural, one{Открепить {count} сообщение?} few{Открепить все {count} сообщения?} other{Открепить все {count} сообщений?}}"
 }

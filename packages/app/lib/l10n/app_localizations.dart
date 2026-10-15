@@ -2791,6 +2791,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Next month'**
   String get nextMonth;
+
+  /// No description provided for @pinnedList.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinned messages'**
+  String get pinnedList;
+
+  /// No description provided for @pinnedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} pinned message} other{{count} pinned messages}}'**
+  String pinnedCount(int count);
+
+  /// No description provided for @backToChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to the chat'**
+  String get backToChat;
+
+  /// No description provided for @unpinAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpin all messages'**
+  String get unpinAll;
+
+  /// No description provided for @unpinAllTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{Unpin {count} message?} other{Unpin all {count} messages?}}'**
+  String unpinAllTitle(int count);
 }
 
 class _AppLocalizationsDelegate
