@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/gestures.dart';
@@ -11,6 +12,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../links/link_router.dart';
 import '../plugins/code_highlight.dart';
 import 'custom_emoji.dart';
+import 'hashtag_results.dart';
 import 'media_content.dart' show StickerContent;
 
 /// A stretch of a message's text the user has selected, as a quote to
@@ -165,7 +167,13 @@ class _FormattedTextViewState extends ConsumerState<FormattedTextView> {
       },
       onHashtag: (hashtag) {
         final r = TapGestureRecognizer()
-          ..onTap = () => searchHashtagFrom(context, hashtag);
+          ..onTap = () => unawaited(
+            showHashtagResults(
+              context,
+              tag: hashtag,
+              chatId: widget.chatId ?? 0,
+            ),
+          );
         _recognizers.add(r);
         return r;
       },

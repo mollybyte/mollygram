@@ -3404,6 +3404,36 @@ abstract class AppLocalizations {
   /// **'Next result'**
   String get searchNewer;
 
+  /// No description provided for @hashtagThisChat.
+  ///
+  /// In en, this message translates to:
+  /// **'This chat'**
+  String get hashtagThisChat;
+
+  /// No description provided for @hashtagMyMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'My messages'**
+  String get hashtagMyMessages;
+
+  /// No description provided for @hashtagPublicPosts.
+  ///
+  /// In en, this message translates to:
+  /// **'Public posts'**
+  String get hashtagPublicPosts;
+
+  /// No description provided for @hashtagEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No messages with {tag}'**
+  String hashtagEmpty(String tag);
+
+  /// No description provided for @hashtagFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not search'**
+  String get hashtagFailed;
+
   /// No description provided for @sharedMedia.
   ///
   /// In en, this message translates to:

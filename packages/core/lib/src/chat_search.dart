@@ -23,7 +23,22 @@ final class FoundMessage {
   final bool isFile;
 }
 
-/// Global search over chats and messages, for the command palette.
+/// Where a hashtag is looked for: the chat it was tapped in, all of the
+/// user's chats, or public channel posts.
+enum HashtagScope { thisChat, myMessages, publicPosts }
+
+/// One page of messages with a hashtag and how to ask for the next:
+/// [nextOffset] for the global scopes, [nextFromMessageId] in a chat. The
+/// page is the last when both are empty.
+typedef HashtagPage = ({
+  List<td.Message> messages,
+  String nextOffset,
+  int nextFromMessageId,
+  int totalCount,
+});
+
+/// Global search over chats and messages, for the command palette and the
+/// hashtag results.
 ///
 /// TDLib sends `updateNewChat` for every chat before it returns its id, so
 /// the chats found here are already in the chat list store.
@@ -64,6 +79,63 @@ final class ChatSearch {
         .take(limit)
         .toList();
   }
+
+  /// Messages with [tag] (its `#` or `$` included) in [scope], newest
+  /// first. [chatId] names the chat for [HashtagScope.thisChat]; the
+  /// previous page's [HashtagPage.nextOffset] or
+  /// [HashtagPage.nextFromMessageId] continues it.
+  Future<HashtagPage> hashtag(
+    String tag, {
+    required HashtagScope scope,
+    int chatId = 0,
+    String offset = '',
+    int fromMessageId = 0,
+    int limit = 30,
+  }) async {
+    switch (scope) {
+      case HashtagScope.thisChat:
+        final found = await _client.send(
+          td.SearchChatMessages(
+            chatId: chatId,
+            query: tag,
+            senderId: null,
+            fromMessageId: fromMessageId,
+            offset: 0,
+            limit: limit,
+            filter: null,
+          ),
+        );
+        return (
+          messages: found.messages,
+          nextOffset: '',
+          nextFromMessageId: found.nextFromMessageId,
+          totalCount: found.totalCount,
+        );
+      case HashtagScope.myMessages:
+        final found = await _client.send(
+          td.SearchMessages(
+            query: tag,
+            offset: offset,
+            limit: limit,
+            minDate: 0,
+            maxDate: 0,
+          ),
+        );
+        return _page(found);
+      case HashtagScope.publicPosts:
+        final found = await _client.send(
+          td.SearchPublicMessagesByTag(tag: tag, offset: offset, limit: limit),
+        );
+        return _page(found);
+    }
+  }
+
+  static HashtagPage _page(td.FoundMessages found) => (
+    messages: found.messages,
+    nextOffset: found.nextOffset,
+    nextFromMessageId: 0,
+    totalCount: found.totalCount,
+  );
 }
 
 FoundMessage? _foundFrom(td.Message message) {
