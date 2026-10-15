@@ -82,7 +82,12 @@ final class ForumTopicList {
   void handle(td.TdObject update) {
     switch (update) {
       case td.UpdateForumTopicInfo(:final info) when info.chatId == chatId:
-        _patch(info.forumTopicId, {'info': info.toJson()});
+        if (_topics.containsKey(info.forumTopicId)) {
+          _patch(info.forumTopicId, {'info': info.toJson()});
+        } else {
+          // A topic just made, here or elsewhere: fetch the rest of it.
+          unawaited(_fetch(info.forumTopicId));
+        }
       case td.UpdateForumTopic(
             :final chatId,
             :final forumTopicId,
@@ -138,6 +143,25 @@ final class ForumTopicList {
           return;
         }
     }
+  }
+
+  Future<void> _fetch(int topicId) async {
+    final td.ForumTopic topic;
+    try {
+      topic = await _client.send(
+        td.GetForumTopic(chatId: chatId, forumTopicId: topicId),
+      );
+    } on Object {
+      return;
+    }
+    if (_disposed) return;
+    _topics[topicId] = topic;
+    _notify();
+  }
+
+  /// Forgets topic [topicId], once it was deleted.
+  void remove(int topicId) {
+    if (_topics.remove(topicId) != null) _notify();
   }
 
   static int? _topicOf(td.Message message) => switch (message.topicId) {

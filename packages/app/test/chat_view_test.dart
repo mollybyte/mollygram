@@ -2284,6 +2284,60 @@ void main() {
     expect(find.text('Repro steps'), findsNothing);
   });
 
+  testWidgets('manages forum topics: closes one and starts a new one', (
+    tester,
+  ) async {
+    json.push(
+      _supergroup(98, {
+        '@type': 'chatMemberStatusCreator',
+        'is_anonymous': false,
+        'is_member': true,
+        'custom_title': '',
+      }, forum: true),
+    );
+    json.push(
+      _chat(
+        lastRead: 60,
+        unread: 0,
+        last: 60,
+        type: {
+          '@type': 'chatTypeSupergroup',
+          'supergroup_id': 98,
+          'is_channel': false,
+        },
+      ),
+    );
+    await pump(tester);
+    for (var i = 0; i < 3; i++) {
+      await tester.runAsync(() => Future<void>.delayed(_tick));
+      await tester.pump();
+    }
+    await tester.tap(find.text('Bugs'), buttons: kSecondaryButton);
+    await tester.pump();
+    expect(find.text('Pin'), findsOneWidget);
+    await tester.tap(find.text('Close topic'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    final closed = json.sent.lastWhere(
+      (r) => r['@type'] == 'toggleForumTopicIsClosed',
+    );
+    expect(closed['forum_topic_id'], 5);
+    expect(closed['is_closed'], isTrue);
+
+    await tester.tap(find.text('New topic'));
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.enterText(find.byType(TextField).last, 'Ideas');
+    await tester.pump();
+    await tester.tap(find.text('Create'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+    final created = json.sent.lastWhere(
+      (r) => r['@type'] == 'createForumTopic',
+    );
+    expect(created['name'], 'Ideas');
+    expect(find.text('Topic name'), findsNothing);
+  });
+
   testWidgets('sends a saved GIF from the panel', (tester) async {
     await pump(tester);
     await tester.tap(find.byTooltip('Emoji and stickers'));
@@ -2936,6 +2990,10 @@ final class _FakeTdJson implements td.TdJson {
         'next_offset_forum_topic_id': 0,
       },
       'getForumTopic' => _forumTopic(5, 'Bugs', lastId: 51, unread: 2),
+      'createForumTopic' => {
+        ...(_forumTopic(9, decoded['name']! as String)['info']!
+            as Map<String, Object?>),
+      },
       'getForumTopicHistory' => {
         '@type': 'messages',
         'total_count': 1,
