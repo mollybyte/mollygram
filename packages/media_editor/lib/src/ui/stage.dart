@@ -72,6 +72,7 @@ class StagePainter extends CustomPainter {
     required this.frameOpacity,
     required this.gridOpacity,
     this.liveStroke,
+    this.pixelated,
   });
 
   final ui.Image image;
@@ -90,6 +91,9 @@ class StagePainter extends CustomPainter {
 
   /// The stroke being drawn right now.
   final Stroke? liveStroke;
+
+  /// The picture reduced to pixelate cells, for the pixelate brush.
+  final ui.Image? pixelated;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -125,6 +129,7 @@ class StagePainter extends CustomPainter {
     dest: layout.dest,
     opacity: opacity,
     liveStroke: liveStroke,
+    pixelated: pixelated,
   );
 
   void _frame(Canvas canvas, Rect crop) {
@@ -239,7 +244,8 @@ class StagePainter extends CustomPainter {
       old.outsideOpacity != outsideOpacity ||
       old.frameOpacity != frameOpacity ||
       old.gridOpacity != gridOpacity ||
-      old.liveStroke != liveStroke;
+      old.liveStroke != liveStroke ||
+      old.pixelated != pixelated;
 }
 
 /// The crop handle under [point], with [crop] in stage coordinates. Corners

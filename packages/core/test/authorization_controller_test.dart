@@ -9,10 +9,16 @@ void main() {
   late _FakeTdJson json;
   late td.Td tdlib;
   late AuthorizationController controller;
+  var failLogOut = false;
 
   setUp(() {
+    failLogOut = false;
     json = _FakeTdJson((request) {
       switch (request['@type']) {
+        case 'logOut' when failLogOut:
+          return [
+            {'@type': 'error', 'code': 500, 'message': 'Request aborted'},
+          ];
         case 'getAuthorizationState':
           return [
             {'@type': 'authorizationStateWaitPhoneNumber'},
@@ -116,6 +122,21 @@ void main() {
     expect(json.sent.last['@type'], 'logOut');
     expect(stages.last.kind, AuthorizationStageKind.closing);
     await subscription.cancel();
+  });
+
+  test('marks the log out as its own only while it goes through', () async {
+    await controller.start();
+    failLogOut = true;
+
+    await expectLater(
+      controller.abandonQrCode(),
+      throwsA(isA<td.TdException>()),
+    );
+    expect(controller.logOutRequested, isFalse);
+
+    failLogOut = false;
+    await controller.abandonQrCode();
+    expect(controller.logOutRequested, isTrue);
   });
 
   test('keeps the English country name for search', () async {

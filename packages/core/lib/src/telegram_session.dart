@@ -12,8 +12,19 @@ import 'contacts_controller.dart';
 import 'conversation_controller.dart';
 import 'file_controller.dart';
 import 'notification_controller.dart';
+import 'peer_info.dart';
 import 'sticker_library.dart';
 import 'tdlib_initializer.dart';
+
+/// Thrown by [TelegramSession.attach] when TDLib closes the client while
+/// the session starts, without the app asking. Like
+/// [TelegramSession.closedElsewhere], it means: start a new session.
+final class SessionClosedElsewhere implements Exception {
+  const SessionClosedElsewhere();
+
+  @override
+  String toString() => 'SessionClosedElsewhere';
+}
 
 /// Owns one TDLib instance and coordinates its initial authorization flow.
 ///
@@ -30,6 +41,7 @@ final class TelegramSession {
     required this.files,
     required this.notifications,
     required this.stickers,
+    required this.peers,
     required this.account,
     required this.connection,
     required this.contacts,
@@ -45,6 +57,7 @@ final class TelegramSession {
   final FileController files;
   final NotificationController notifications;
   final StickerLibrary stickers;
+  final PeerInfoController peers;
   final AccountSettings account;
 
   /// The connection state, for the "Connecting…" status in the window.
@@ -53,6 +66,7 @@ final class TelegramSession {
   /// Contacts and the users TDLib has sent.
   final ContactsController contacts;
   final _errors = StreamController<Object>.broadcast(sync: true);
+  final _closedElsewhere = Completer<void>();
   StreamSubscription<AuthorizationStage>? _stageSubscription;
   Future<void>? _firstReconcile;
   var _disposed = false;
@@ -69,6 +83,7 @@ final class TelegramSession {
     final authorization = AuthorizationController(client);
     final conversations = ConversationController(client);
     final files = FileController(client);
+    final peers = PeerInfoController(client);
     final connection = ConnectionMonitor(client);
     final contacts = ContactsController(client);
     final notifications = NotificationController(client);
@@ -81,15 +96,23 @@ final class TelegramSession {
       files: files,
       notifications: notifications,
       stickers: StickerLibrary(client),
+      peers: peers,
       account: AccountSettings(client),
       connection: connection,
       contacts: contacts,
       initializer: TdlibInitializer(client, parameters: parameters),
     );
     session._stageSubscription = authorization.stages.listen(session._onStage);
+    unawaited(
+      authorization.closed.then((_) {
+        if (session._disposed || authorization.logOutRequested) return;
+        session._closedElsewhere.complete();
+      }),
+    );
     try {
       await conversations.start();
       await files.start();
+      await peers.start();
       await connection.start();
       await contacts.start();
       await notifications.start();
@@ -100,12 +123,25 @@ final class TelegramSession {
           AuthorizationStageKind.tdlibParameters) {
         await session._firstReconcile;
       }
-    } catch (_) {
+    } catch (error) {
+      // TDLib closed the client while the session was starting, such as
+      // when the session was terminated elsewhere just before launch.
+      final closed =
+          !authorization.logOutRequested &&
+          (error is td.TdClientClosed || session._closedElsewhere.isCompleted);
       await session.dispose();
+      if (closed) throw const SessionClosedElsewhere();
       rethrow;
     }
     return session;
   }
+
+  /// Completes when TDLib closes the client without this app asking, such
+  /// as when the session is terminated from another device: TDLib logs
+  /// out, deletes the local data and closes. The client can't be used
+  /// again; the app disposes the session and starts a new one, which
+  /// begins at sign-in.
+  Future<void> get closedElsewhere => _closedElsewhere.future;
 
   /// Initialization and synchronization errors suitable for user-facing UI.
   Stream<Object> get errors => _errors.stream;
@@ -145,6 +181,7 @@ final class TelegramSession {
     await chatLists.dispose();
     await conversations.dispose();
     await files.dispose();
+    await peers.dispose();
     await connection.dispose();
     await contacts.dispose();
     await notifications.dispose();

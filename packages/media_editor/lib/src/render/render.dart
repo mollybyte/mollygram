@@ -9,6 +9,7 @@ import 'package:image/image.dart' as img;
 
 import '../model/media_edit.dart';
 import '../model/stroke.dart';
+import 'overlays.dart';
 import 'strokes.dart';
 
 /// Paints the edited picture so that [viewport], a rectangle of the
@@ -26,9 +27,19 @@ void paintEdited(
   required Rect dest,
   double opacity = 1,
   Stroke? liveStroke,
+  ui.Image? pixelated,
 }) {
   if (viewport.isEmpty || dest.isEmpty) return;
   final oriented = edit.orientedSize(source);
+  final effects = [
+    for (final s in edit.strokes)
+      if (s.tool.isEffect) s,
+    if (liveStroke != null && liveStroke.tool.isEffect) liveStroke,
+  ];
+  final paint = [
+    for (final s in edit.strokes)
+      if (!s.tool.isEffect) s,
+  ];
   canvas
     ..save()
     ..translate(dest.left, dest.top)
@@ -40,23 +51,67 @@ void paintEdited(
       Paint()..color = Color.fromRGBO(0, 0, 0, opacity),
     );
   }
-  canvas
-    ..save()
-    ..translate(oriented.width / 2, oriented.height / 2);
-  if (edit.flipped) canvas.scale(-1, 1);
-  canvas
-    ..rotate(edit.quarterTurns * math.pi / 2)
-    ..translate(-source.width / 2, -source.height / 2)
-    ..drawImageRect(
-      image,
-      Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
-      Offset.zero & source,
-      Paint()
-        ..filterQuality = FilterQuality.high
-        ..isAntiAlias = true,
-    )
-    ..restore();
-  paintStrokes(canvas, edit.strokes, oriented, live: liveStroke);
+  void picture(ui.Image image, Paint paint) {
+    canvas
+      ..save()
+      ..translate(oriented.width / 2, oriented.height / 2);
+    if (edit.flipped) canvas.scale(-1, 1);
+    canvas
+      ..rotate(edit.quarterTurns * math.pi / 2)
+      ..translate(-source.width / 2, -source.height / 2)
+      ..drawImageRect(
+        image,
+        Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
+        Offset.zero & source,
+        paint,
+      )
+      ..restore();
+  }
+
+  picture(
+    image,
+    Paint()
+      ..filterQuality = FilterQuality.high
+      ..isAntiAlias = true,
+  );
+  final short = math.min(oriented.width, oriented.height);
+  for (final stroke in effects) {
+    if (stroke.tool == BrushTool.pixelate && pixelated == null) continue;
+    // The stroke goes into a layer first, then the treated picture is
+    // drawn over the whole layer with srcIn, so it survives only where
+    // the stroke was painted.
+    canvas.saveLayer(Offset.zero & oriented, Paint());
+    paintStrokeMask(canvas, stroke, oriented);
+    if (stroke.tool == BrushTool.blur) {
+      final sigma = math.max(2.0, short * 0.012);
+      picture(
+        image,
+        Paint()
+          ..filterQuality = FilterQuality.high
+          ..blendMode = BlendMode.srcIn
+          ..imageFilter = ui.ImageFilter.blur(
+            sigmaX: sigma,
+            sigmaY: sigma,
+            tileMode: TileMode.clamp,
+          ),
+      );
+    } else {
+      picture(
+        pixelated!,
+        Paint()
+          ..filterQuality = FilterQuality.none
+          ..blendMode = BlendMode.srcIn,
+      );
+    }
+    canvas.restore();
+  }
+  paintStrokes(
+    canvas,
+    paint,
+    oriented,
+    live: liveStroke != null && !liveStroke.tool.isEffect ? liveStroke : null,
+  );
+  paintOverlays(canvas, edit.overlays, oriented);
   if (opacity < 1) canvas.restore();
   canvas.restore();
 }
@@ -93,6 +148,30 @@ Future<(ui.Image, Size)> decodePicture(Uint8List bytes, {int? maxSide}) async {
   return (small, source);
 }
 
+/// Cells of the pixelate brush, as a fraction of the longer side.
+const pixelateCell = 1 / 40;
+
+/// A copy of [image] with one pixel per pixelate cell. Stretched back
+/// over the picture without smoothing, it is the pixelated look.
+Future<ui.Image> pixelatedCopy(ui.Image image) async {
+  final long = math.max(image.width, image.height);
+  final cells = (1 / pixelateCell).round();
+  final scale = math.min(1.0, cells / long);
+  final width = math.max(1, (image.width * scale).round());
+  final height = math.max(1, (image.height * scale).round());
+  final recorder = ui.PictureRecorder();
+  Canvas(recorder).drawImageRect(
+    image,
+    Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
+    Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble()),
+    Paint()..filterQuality = FilterQuality.medium,
+  );
+  final picture = recorder.endRecording();
+  final small = await picture.toImage(width, height);
+  picture.dispose();
+  return small;
+}
+
 /// An edited file written by [exportEdit].
 typedef ExportedPicture = ({String path, int width, int height});
 
@@ -116,6 +195,9 @@ Future<ExportedPicture> exportEdit(
   final width = math.max(1, (crop.width * scale).round());
   final height = math.max(1, (crop.height * scale).round());
 
+  final pixelated = edit.strokes.any((s) => s.tool == BrushTool.pixelate)
+      ? await pixelatedCopy(image)
+      : null;
   final recorder = ui.PictureRecorder();
   paintEdited(
     Canvas(recorder),
@@ -124,11 +206,13 @@ Future<ExportedPicture> exportEdit(
     edit: edit,
     viewport: crop,
     dest: Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble()),
+    pixelated: pixelated,
   );
   final picture = recorder.endRecording();
   final out = await picture.toImage(width, height);
   picture.dispose();
   image.dispose();
+  pixelated?.dispose();
 
   final name = _baseName(path);
   final png = name.ext == 'png';
