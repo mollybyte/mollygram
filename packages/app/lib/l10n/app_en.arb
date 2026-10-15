@@ -791,7 +791,6 @@
   "resetStoredData": "Reset",
   "resetStoredDataTitle": "Delete the stored data that can't be read and start again?",
   "edit": "Edit",
-  "save": "Save",
   "create": "Create",
   "remove": "Remove",
   "leave": "Leave",
