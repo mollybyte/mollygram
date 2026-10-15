@@ -7,6 +7,7 @@ export 'src/authorization_controller.dart';
 export 'src/authorization_stage.dart';
 export 'src/chat_list_controller.dart';
 export 'src/chat_list_store.dart';
+export 'src/chat_management.dart';
 export 'src/chat_search.dart';
 export 'src/chat_search_controller.dart';
 export 'src/connection_status.dart';

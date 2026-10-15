@@ -6,6 +6,7 @@ import 'account_settings.dart';
 import 'authorization_controller.dart';
 import 'authorization_stage.dart';
 import 'chat_list_controller.dart';
+import 'chat_management.dart';
 import 'chat_search.dart';
 import 'chat_search_controller.dart';
 import 'connection_status.dart';
@@ -50,6 +51,7 @@ final class TelegramSession {
     required this.storage,
     required this.connection,
     required this.contacts,
+    required this.management,
     required this.links,
     required this._initializer,
   });
@@ -75,6 +77,9 @@ final class TelegramSession {
 
   /// Contacts and the users TDLib has sent.
   final ContactsController contacts;
+
+  /// Group and channel administration.
+  final ChatManagement management;
   final LinkResolver links;
   final _errors = StreamController<Object>.broadcast(sync: true);
   final _closedElsewhere = Completer<void>();
@@ -97,6 +102,7 @@ final class TelegramSession {
     final peers = PeerInfoController(client);
     final connection = ConnectionMonitor(client);
     final contacts = ContactsController(client);
+    final management = ChatManagement(client);
     final notifications = NotificationController(client);
     final session = TelegramSession._(
       tdlib: tdlib,
@@ -113,6 +119,7 @@ final class TelegramSession {
       storage: StorageManager(client),
       connection: connection,
       contacts: contacts,
+      management: management,
       links: LinkResolver(client),
       initializer: TdlibInitializer(client, parameters: parameters),
     );
@@ -129,6 +136,7 @@ final class TelegramSession {
       await peers.start();
       await connection.start();
       await contacts.start();
+      await management.start();
       await notifications.start();
       await authorization.start();
       // Sending the parameters is part of starting: a wrong database key or
@@ -198,6 +206,7 @@ final class TelegramSession {
     await peers.dispose();
     await connection.dispose();
     await contacts.dispose();
+    await management.dispose();
     await notifications.dispose();
     await authorization.dispose();
     await _tdlib.close();
