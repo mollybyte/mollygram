@@ -23,16 +23,18 @@ class MollygramApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final preferences = ref.watch(preferencesProvider);
     final themes = appThemes(preferences);
+    final themeMode = ref.watch(effectiveThemeModeProvider);
     return MaterialApp(
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       debugShowCheckedModeBanner: false,
       theme: themes.light,
       darkTheme: themes.dark,
-      themeMode: preferences.theme,
+      themeMode: themeMode,
       // A theme or accent change cross-fades.
       themeAnimationDuration: themeAnimationDuration(preferences.reduceMotion),
       themeAnimationCurve: Curves.easeOut,
-      builder: (context, child) => ReduceMotionScope(child: child!),
+      builder: (context, child) =>
+          AppIconApplier(child: ReduceMotionScope(child: child!)),
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
