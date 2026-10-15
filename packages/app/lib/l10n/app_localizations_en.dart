@@ -1212,4 +1212,52 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatActionFailed => 'Couldn\'t do that, try again';
+
+  @override
+  String get privacyExtras => 'Privacy extras';
+
+  @override
+  String get privacyExtrasAbout =>
+      'These switches decide what others see while you use Mollygram on this Mac. Everything you read and send works as usual.';
+
+  @override
+  String get privacyExtrasOnlineNote =>
+      'Sending a message still shows you online for a moment; Telegram does that for every app.';
+
+  @override
+  String get ghostMode => 'Ghost mode';
+
+  @override
+  String get ghostModeHint => 'Turns on everything below at once';
+
+  @override
+  String get ghostModeIsOn => 'Ghost mode is on';
+
+  @override
+  String get hideReadReceipts => 'Don\'t send read receipts';
+
+  @override
+  String get hideReadReceiptsHint =>
+      'Senders won\'t see that you\'ve read their messages';
+
+  @override
+  String get hideTyping => 'Don\'t show typing';
+
+  @override
+  String get hideTypingHint => 'Also hides recording voice and video messages';
+
+  @override
+  String get stayOffline => 'Stay offline';
+
+  @override
+  String get stayOfflineHint =>
+      'You won\'t appear online while the app is open';
+
+  @override
+  String get hideContentOpened =>
+      'Don\'t mark voice and video messages as played';
+
+  @override
+  String get hideContentOpenedHint =>
+      'Senders won\'t see that you\'ve played them';
 }

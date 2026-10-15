@@ -156,4 +156,26 @@ void main() {
     final version = td.execute(const GetOption(name: 'version'));
     expect((version as OptionValueString).value, '1.8.68');
   });
+
+  test('a filter answers a request in place of TDLib', () async {
+    final client = td.createClient();
+    client.filter = (request) => request is TestCallEmpty ? const Ok() : null;
+
+    expect(await client.send(const TestCallEmpty()), isA<Ok>());
+    expect(json.sent, isEmpty);
+
+    final string = await client.send(const TestCallString(x: 'a'));
+    expect(string.value, 'a');
+    expect(json.sent.single.$2['@type'], 'testCallString');
+  });
+
+  test('a filter answer of the wrong type fails the request', () async {
+    final client = td.createClient();
+    client.filter = (request) => request is TestCallString ? const Ok() : null;
+
+    await expectLater(
+      client.send(const TestCallString(x: 'a')),
+      throwsA(isA<TdDecodeException>()),
+    );
+  });
 }

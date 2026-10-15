@@ -274,5 +274,6 @@ These are not parity items; they are tracked in their own docs.
 |---|---|---|
 | Tabs, split view, ⌘K palette, layout restore | done | [packages/shell](../packages/shell) |
 | JS plugin sandbox with manifest permissions (M5) | partial | [plugins.md](plugins.md) |
-| Ghost mode, saved deleted messages, edit history (M3) | missing | [forks-research.md](forks-research.md) |
+| Ghost mode: no read receipts, typing, online or played marks; per-chat silent read API (M3) | done | [privacy_guard.dart](../packages/core/lib/src/privacy_guard.dart) |
+| Saved deleted messages, edit history (M3) | missing | [forks-research.md](forks-research.md) |
 | 640×640 circles, uncompressed media by default (M4) | partial | [packages/media](../packages/media) |

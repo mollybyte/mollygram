@@ -5,6 +5,7 @@ import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' show TdClientClosed;
 
 import '../home/workspace_storage.dart';
+import '../privacy/privacy_settings.dart';
 import 'sign_in_actions.dart';
 import 'telegram_session_launcher.dart';
 
@@ -27,10 +28,15 @@ final telegramSessionProvider = FutureProvider<TelegramSession>((ref) async {
   final config = ref.watch(telegramApiConfigProvider);
   if (!config.isConfigured) throw const MissingApiKeys();
   final launcher = ref.watch(telegramSessionLauncherProvider);
+  // The saved privacy extras apply from the first request on.
+  await ref.read(privacySettingsProvider.notifier).loaded;
   TelegramSession session;
   for (var attempt = 1; ; attempt++) {
     try {
-      session = await launcher.start(config);
+      session = await launcher.start(
+        config,
+        privacy: ref.read(privacySettingsProvider),
+      );
       break;
     } on SessionClosedElsewhere {
       // Closed as it started; the next client starts signed out.

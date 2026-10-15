@@ -6,6 +6,7 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../notifications/notification_service.dart';
+import '../privacy/ghost_mode_capsule.dart';
 import '../profile/peer_info_host.dart';
 import '../session/connection_status_capsule.dart';
 import '../settings/settings_window.dart';
@@ -80,19 +81,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 controller: workspace,
                 directory: directory,
                 commands: _commands(l10n),
-                sidebar: const Padding(
-                  padding: EdgeInsets.all(8),
+                sidebar: Padding(
+                  padding: const EdgeInsets.all(8),
                   child: Stack(
                     children: [
-                      Positioned.fill(child: Sidebar()),
+                      const Positioned.fill(child: Sidebar()),
                       // In the island's title bar, right of the window
                       // buttons.
-                      Positioned(
+                      const Positioned(
                         top: 0,
                         left: 76,
                         right: 8,
                         height: SidebarIsland.titleBarHeight,
                         child: ConnectionStatusCapsule(),
+                      ),
+                      // At the title bar's right end, clear of the
+                      // centered connection status.
+                      Positioned(
+                        top: 0,
+                        right: 12,
+                        height: SidebarIsland.titleBarHeight,
+                        child: GhostModeCapsule(
+                          onTap: () => _openSettings(privacyExtrasSectionId),
+                        ),
                       ),
                     ],
                   ),

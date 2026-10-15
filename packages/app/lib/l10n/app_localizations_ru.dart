@@ -1222,4 +1222,52 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get chatActionFailed => 'Не получилось, попробуйте ещё раз';
+
+  @override
+  String get privacyExtras => 'Дополнительная приватность';
+
+  @override
+  String get privacyExtrasAbout =>
+      'Эти переключатели определяют, что видят другие, пока вы пользуетесь Mollygram на этом Mac. Читать и отправлять сообщения можно как обычно.';
+
+  @override
+  String get privacyExtrasOnlineNote =>
+      'При отправке сообщения вы всё равно ненадолго появитесь в сети: так Telegram работает в любом приложении.';
+
+  @override
+  String get ghostMode => 'Режим призрака';
+
+  @override
+  String get ghostModeHint => 'Включает всё, что ниже, разом';
+
+  @override
+  String get ghostModeIsOn => 'Режим призрака включён';
+
+  @override
+  String get hideReadReceipts => 'Не отправлять отметки о прочтении';
+
+  @override
+  String get hideReadReceiptsHint =>
+      'Отправители не увидят, что вы прочитали их сообщения';
+
+  @override
+  String get hideTyping => 'Не показывать набор текста';
+
+  @override
+  String get hideTypingHint => 'И запись голосовых и видеосообщений тоже';
+
+  @override
+  String get stayOffline => 'Оставаться не в сети';
+
+  @override
+  String get stayOfflineHint =>
+      'Пока приложение открыто, другие не увидят вас в сети';
+
+  @override
+  String get hideContentOpened =>
+      'Не отмечать голосовые и видеосообщения прослушанными';
+
+  @override
+  String get hideContentOpenedHint =>
+      'Отправители не увидят, что вы их прослушали';
 }

@@ -12,6 +12,7 @@ import 'conversation_controller.dart';
 import 'file_controller.dart';
 import 'notification_controller.dart';
 import 'peer_info.dart';
+import 'privacy_guard.dart';
 import 'sticker_library.dart';
 import 'tdlib_initializer.dart';
 
@@ -43,6 +44,7 @@ final class TelegramSession {
     required this.peers,
     required this.account,
     required this.connection,
+    required this.privacy,
     required this._initializer,
   });
 
@@ -60,6 +62,10 @@ final class TelegramSession {
 
   /// The connection state, for the "Connecting…" status in the window.
   final ConnectionMonitor connection;
+
+  /// Ghost mode and the other privacy extras: the one filter on what
+  /// this session sends to TDLib.
+  final PrivacyGuard privacy;
   final _errors = StreamController<Object>.broadcast(sync: true);
   final _closedElsewhere = Completer<void>();
   StreamSubscription<AuthorizationStage>? _stageSubscription;
@@ -73,8 +79,11 @@ final class TelegramSession {
   static Future<TelegramSession> attach(
     td.Td tdlib, {
     required TdlibParameters parameters,
+    PrivacySettings privacy = const PrivacySettings(),
   }) async {
     final client = tdlib.createClient();
+    // First, so that nothing reaches TDLib before the filter is in place.
+    final guard = PrivacyGuard(client, settings: privacy);
     final authorization = AuthorizationController(client);
     final conversations = ConversationController(client);
     final files = FileController(client);
@@ -93,6 +102,7 @@ final class TelegramSession {
       peers: peers,
       account: AccountSettings(client),
       connection: connection,
+      privacy: guard,
       initializer: TdlibInitializer(client, parameters: parameters),
     );
     session._stageSubscription = authorization.stages.listen(session._onStage);
@@ -175,6 +185,7 @@ final class TelegramSession {
     await files.dispose();
     await peers.dispose();
     await connection.dispose();
+    await privacy.dispose();
     await notifications.dispose();
     await authorization.dispose();
     await _tdlib.close();

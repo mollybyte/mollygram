@@ -2065,6 +2065,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t do that, try again'**
   String get chatActionFailed;
+
+  /// No description provided for @privacyExtras.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy extras'**
+  String get privacyExtras;
+
+  /// No description provided for @privacyExtrasAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'These switches decide what others see while you use Mollygram on this Mac. Everything you read and send works as usual.'**
+  String get privacyExtrasAbout;
+
+  /// No description provided for @privacyExtrasOnlineNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending a message still shows you online for a moment; Telegram does that for every app.'**
+  String get privacyExtrasOnlineNote;
+
+  /// No description provided for @ghostMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Ghost mode'**
+  String get ghostMode;
+
+  /// No description provided for @ghostModeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Turns on everything below at once'**
+  String get ghostModeHint;
+
+  /// No description provided for @ghostModeIsOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Ghost mode is on'**
+  String get ghostModeIsOn;
+
+  /// No description provided for @hideReadReceipts.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t send read receipts'**
+  String get hideReadReceipts;
+
+  /// No description provided for @hideReadReceiptsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Senders won\'t see that you\'ve read their messages'**
+  String get hideReadReceiptsHint;
+
+  /// No description provided for @hideTyping.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t show typing'**
+  String get hideTyping;
+
+  /// No description provided for @hideTypingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Also hides recording voice and video messages'**
+  String get hideTypingHint;
+
+  /// No description provided for @stayOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Stay offline'**
+  String get stayOffline;
+
+  /// No description provided for @stayOfflineHint.
+  ///
+  /// In en, this message translates to:
+  /// **'You won\'t appear online while the app is open'**
+  String get stayOfflineHint;
+
+  /// No description provided for @hideContentOpened.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t mark voice and video messages as played'**
+  String get hideContentOpened;
+
+  /// No description provided for @hideContentOpenedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Senders won\'t see that you\'ve played them'**
+  String get hideContentOpenedHint;
 }
 
 class _AppLocalizationsDelegate

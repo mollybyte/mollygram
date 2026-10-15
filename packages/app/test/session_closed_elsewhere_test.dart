@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mollygram/src/home/workspace_storage.dart';
+import 'package:mollygram/src/privacy/privacy_settings.dart';
 import 'package:mollygram/src/session/providers.dart';
 import 'package:mollygram/src/session/telegram_session_launcher.dart';
 import 'package:mollygram_core/mollygram_core.dart';
@@ -28,6 +29,9 @@ void main() {
           ),
         ),
         workspaceStorageProvider.overrideWithValue(storage),
+        privacySettingsStorageProvider.overrideWithValue(
+          MemoryPrivacySettingsStorage(),
+        ),
         telegramSessionLauncherProvider.overrideWithValue(
           TelegramSessionLauncher(
             startTdlib: (_) async {
