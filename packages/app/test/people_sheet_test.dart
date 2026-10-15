@@ -193,6 +193,87 @@ void main() {
       );
     });
 
+    testWidgets('finds people with a chat who are not contacts', (
+      tester,
+    ) async {
+      json.knownChats = [5];
+      await pump(tester);
+
+      await tester.enterText(find.byType(TextField), 'gle');
+      await settle(tester);
+
+      expect(find.text('Gleb'), findsOneWidget);
+    });
+
+    testWidgets('a stale search does not replace a newer one', (tester) async {
+      await pump(tester);
+      json.holdPublic = true;
+      await tester.enterText(find.byType(TextField), 'dur');
+      await settle(tester);
+      expect(find.text('Pavel'), findsNothing);
+
+      await tester.enterText(find.byType(TextField), 'ann');
+      await tester.pump();
+      json.releasePublic();
+      await settle(tester);
+
+      expect(find.text('Anna Petrova'), findsOneWidget);
+      expect(find.text('Pavel'), findsNothing);
+    });
+
+    testWidgets('results of the old query go as soon as it changes', (
+      tester,
+    ) async {
+      await pump(tester);
+      await tester.enterText(find.byType(TextField), 'dur');
+      await settle(tester);
+      expect(find.text('Pavel'), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField), 'durx');
+      await tester.pump();
+
+      expect(find.text('Pavel'), findsNothing);
+    });
+
+    testWidgets('a recent chat with a contact is listed once', (tester) async {
+      json.push({
+        '@type': 'updateNewChat',
+        'chat': {
+          ..._chat(1, 'Anna Petrova'),
+          'positions': [
+            {
+              '@type': 'chatPosition',
+              'list': {'@type': 'chatListMain'},
+              'order': '10',
+              'is_pinned': false,
+            },
+          ],
+        },
+      });
+      json.push({'@type': 'updateUser', 'user': json.users[1]});
+      await pump(tester);
+
+      expect(find.text('Recent'), findsOneWidget);
+      expect(find.text('Anna Petrova'), findsOneWidget);
+      expect(find.text('Boris'), findsOneWidget);
+    });
+
+    testWidgets('loads the contacts again after a failed load', (
+      tester,
+    ) async {
+      json.failContacts = true;
+      await pump(tester, mode: PeopleSheetMode.contacts);
+      expect(find.text('Anna Petrova'), findsNothing);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await settle(tester);
+      json.failContacts = false;
+      await tester.tap(find.text('open'));
+      await settle(tester);
+
+      expect(find.text('Anna Petrova'), findsOneWidget);
+    });
+
     testWidgets('Esc closes the sheet', (tester) async {
       await pump(tester);
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
@@ -306,12 +387,27 @@ final class _FakeTdJson implements td.TdJson {
   final _queue = Queue<String>();
   final sent = <Map<String, Object?>>[];
   var importedUserId = 0;
-  final _users = {
+  final users = {
     1: _user(1, 'Anna', last: 'Petrova', status: 'userStatusOnline'),
     2: _user(2, 'Boris'),
     3: _user(3, 'Vera'),
+    5: _user(5, 'Gleb', contact: false),
   };
   final _contacts = [1, 2];
+
+  /// Private chats searchChats finds.
+  var knownChats = <int>[];
+  var failContacts = false;
+
+  /// Keeps searchPublicChats answers until [releasePublic].
+  var holdPublic = false;
+  final _heldPublic = <String>[];
+
+  void releasePublic() {
+    holdPublic = false;
+    _queue.addAll(_heldPublic);
+    _heldPublic.clear();
+  }
 
   @override
   int createClientId() => 1;
@@ -330,12 +426,22 @@ final class _FakeTdJson implements td.TdJson {
     if (type != 'close') sent.add(decoded);
     final Map<String, Object?> response = switch (type) {
       'getAuthorizationState' => {'@type': 'authorizationStateReady'},
+      'getContacts' when failContacts => {
+        '@type': 'error',
+        'code': 500,
+        'message': 'INTERNAL',
+      },
       'getContacts' => {
         '@type': 'users',
         'total_count': _contacts.length,
         'user_ids': _contacts,
       },
-      'getUser' => _users[decoded['user_id']]!,
+      'getUser' => users[decoded['user_id']]!,
+      'searchChats' => {
+        '@type': 'chats',
+        'total_count': knownChats.length,
+        'chat_ids': knownChats,
+      },
       'searchContacts' => {
         '@type': 'users',
         'total_count': 0,
@@ -344,7 +450,9 @@ final class _FakeTdJson implements td.TdJson {
       'searchPublicChats' => {
         '@type': 'chats',
         'total_count': 1,
-        'chat_ids': [77],
+        'chat_ids': [
+          if ((decoded['query']! as String).startsWith('dur')) 77,
+        ],
       },
       'createPrivateChat' => _chat(decoded['user_id']! as int, 'Boris'),
       'importContacts' => {
@@ -358,13 +466,16 @@ final class _FakeTdJson implements td.TdJson {
       push({'@type': 'updateNewChat', 'chat': _chat(77, 'Pavel')});
     }
     if (type == 'removeContacts') _contacts.remove(1);
-    _queue.add(
-      jsonEncode({
-        ...response,
-        '@client_id': clientId,
-        '@extra': decoded['@extra'],
-      }),
-    );
+    final answer = jsonEncode({
+      ...response,
+      '@client_id': clientId,
+      '@extra': decoded['@extra'],
+    });
+    if (type == 'searchPublicChats' && holdPublic) {
+      _heldPublic.add(answer);
+    } else {
+      _queue.add(answer);
+    }
     if (type == 'close') {
       push({
         '@type': 'updateAuthorizationState',

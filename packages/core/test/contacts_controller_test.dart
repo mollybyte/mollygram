@@ -73,6 +73,20 @@ void main() {
     expect([for (final c in contacts.contacts) c.id], [3]);
   });
 
+  test('keeps contact changes that arrive while the list loads', () async {
+    json
+      ..contactIds = [1]
+      // Arrives after getContacts answered, while user 1 is fetched.
+      ..beforeUser = [
+        _updateUser(3, 'Vera', contact: true),
+        _updateUser(1, 'Anna', contact: false),
+      ];
+
+    await contacts.load();
+
+    expect([for (final c in contacts.contacts) c.id], [3]);
+  });
+
   test('adds a contact by phone number', () async {
     await contacts.load();
     json.importedUserId = 5;
@@ -121,6 +135,18 @@ void main() {
     json.failPublic = true;
     expect(await contacts.searchPublic('durov'), isEmpty);
     expect(await contacts.searchPublic('  '), isEmpty);
+  });
+
+  test('finds people with a private chat among known chats', () async {
+    final found = await contacts.search('ann', includeChats: true);
+
+    // Contact 1 first, then the private chat 7; the group -100 is skipped.
+    expect(found.map((c) => c.id), [1, 7]);
+    expect(
+      json.sent.map((r) => r['@type']),
+      containsAll(['searchContacts', 'searchChats']),
+    );
+    expect(json.sent.where((r) => r['user_id'] == -100), isEmpty);
   });
 
   test('opens the private chat of a user', () async {
@@ -183,6 +209,9 @@ final class _FakeTdJson implements td.TdJson {
   var contactIds = [1];
   var failPublic = false;
 
+  /// Updates delivered just before the next getUser answer.
+  var beforeUser = <Map<String, Object?>>[];
+
   @override
   int createClientId() => 1;
 
@@ -197,6 +226,10 @@ final class _FakeTdJson implements td.TdJson {
   void send(int clientId, String request) {
     final decoded = jsonDecode(request) as Map<String, Object?>;
     if (decoded['@type'] != 'close') sent.add(decoded);
+    if (decoded['@type'] == 'getUser') {
+      beforeUser.forEach(push);
+      beforeUser = [];
+    }
     final Map<String, Object?> response = switch (decoded['@type']) {
       'getContacts' => {
         '@type': 'users',
@@ -215,6 +248,11 @@ final class _FakeTdJson implements td.TdJson {
         username: 'anna',
         contact: true,
       ),
+      'searchChats' => {
+        '@type': 'chats',
+        'total_count': 2,
+        'chat_ids': [7, -100],
+      },
       'searchPublicChats' when failPublic => {
         '@type': 'error',
         'code': 400,

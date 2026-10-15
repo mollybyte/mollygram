@@ -134,6 +134,9 @@ final class ContactsController {
   bool get isLoaded => _loaded;
   var _loaded = false;
 
+  /// Whether [_contacts] holds a list from TDLib that updates apply to.
+  var _tracking = false;
+
   Future<void> start() async {
     _subscription ??= _client.updates.listen(_onUpdate);
   }
@@ -153,23 +156,44 @@ final class ContactsController {
 
   Future<void> _load() async {
     final users = await _client.send(const td.GetContacts());
-    await _ensureUsers(users.userIds);
+    // Installed before the users are fetched, so that contacts added or
+    // removed meanwhile (updateUser) apply to it and are not lost.
     _contacts
       ..clear()
       ..addAll(users.userIds);
+    _tracking = true;
+    await _ensureUsers(users.userIds);
     _loaded = true;
     _emit();
   }
 
   /// Contacts whose name or username matches [query], as TDLib ranks them.
-  Future<List<ContactUser>> search(String query, {int limit = 30}) async {
+  ///
+  /// With [includeChats], people the user already has a private chat with
+  /// follow, contacts or not; neither contact search nor public search
+  /// finds those.
+  Future<List<ContactUser>> search(
+    String query, {
+    int limit = 30,
+    bool includeChats = false,
+  }) async {
     final text = query.trim();
     if (text.isEmpty) return contacts;
-    final users = await _client.send(
-      td.SearchContacts(query: text, limit: limit),
-    );
-    await _ensureUsers(users.userIds);
-    return [for (final id in users.userIds) ?_users[id]];
+    final (users, chats) = await (
+      _client.send(td.SearchContacts(query: text, limit: limit)),
+      includeChats
+          ? _client.send(td.SearchChats(query: text, limit: limit))
+          : Future.value(const td.Chats(totalCount: 0, chatIds: [])),
+    ).wait;
+    // A private chat has the id of its user; groups and channels have
+    // negative ids.
+    final ids = <int>{
+      ...users.userIds,
+      for (final id in chats.chatIds)
+        if (id > 0) id,
+    }.toList();
+    await _ensureUsers(ids);
+    return [for (final id in ids) ?_users[id]];
   }
 
   /// Public chats, channels and users whose username matches [query].
@@ -242,7 +266,7 @@ final class ContactsController {
         final contact = ContactUser.from(user);
         _users[user.id] = contact;
         // Adding and removing contacts elsewhere arrives here too.
-        if (_loaded) {
+        if (_tracking) {
           contact.isContact
               ? _contacts.add(user.id)
               : _contacts.remove(user.id);

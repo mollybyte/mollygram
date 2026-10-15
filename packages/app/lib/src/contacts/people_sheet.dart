@@ -122,13 +122,14 @@ class _PeopleSheetState extends ConsumerState<PeopleSheet> {
 
   void _onQuery(String value) {
     _debounce?.cancel();
+    // Results for the previous query are dropped, and a request still
+    // running for it is ignored when it returns.
+    _searchId++;
     setState(() {
       _selected = 0;
       _error = null;
-      if (value.trim().isEmpty) {
-        _found = null;
-        _public = const [];
-      }
+      _found = null;
+      _public = const [];
     });
     if (value.trim().isEmpty) return;
     _debounce = Timer(const Duration(milliseconds: 200), () => _find(value));
@@ -139,7 +140,9 @@ class _PeopleSheetState extends ConsumerState<PeopleSheet> {
     final contacts = _contacts;
     final global = _mode == PeopleSheetMode.newMessage;
     final (found, public) = await (
-      contacts.search(query).catchError((Object _) => <ContactUser>[]),
+      contacts
+          .search(query, includeChats: global)
+          .catchError((Object _) => <ContactUser>[]),
       global ? contacts.searchPublic(query) : Future.value(const <int>[]),
     ).wait;
     if (!mounted || id != _searchId) return;
@@ -170,13 +173,16 @@ class _PeopleSheetState extends ConsumerState<PeopleSheet> {
             shown.add(user.id);
           }
         }
-        if (contacts != null && contacts.isNotEmpty) {
-          rows.add(_Section(l10n.contacts));
-        }
       }
-      for (final user in contacts ?? const <ContactUser>[]) {
-        rows.add(_Person(user));
+      // Contacts already listed under Recent are not repeated.
+      final rest = [
+        for (final user in contacts ?? const <ContactUser>[])
+          if (shown.add(user.id)) user,
+      ];
+      if (_mode == PeopleSheetMode.newMessage && rest.isNotEmpty) {
+        rows.add(_Section(l10n.contacts));
       }
+      rows.addAll(rest.map(_Person.new));
       return rows;
     }
     // Loaded contacts match at once; TDLib's search adds the rest.
