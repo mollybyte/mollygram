@@ -43,6 +43,8 @@ final class MediaEditorStrings {
     required this.filled,
     required this.delete,
     required this.size,
+    required this.blur,
+    required this.pixelate,
   });
 
   /// Opens the editor, on the attachment preview.
@@ -92,6 +94,8 @@ final class MediaEditorStrings {
   final String filled;
   final String delete;
   final String size;
+  final String blur;
+  final String pixelate;
 
   static const en = MediaEditorStrings._(
     edit: 'Edit',
@@ -130,6 +134,8 @@ final class MediaEditorStrings {
     filled: 'Filled',
     delete: 'Delete',
     size: 'Size',
+    blur: 'Blur',
+    pixelate: 'Pixelate',
   );
 
   static const ru = MediaEditorStrings._(
@@ -169,6 +175,8 @@ final class MediaEditorStrings {
     filled: 'Залитая',
     delete: 'Удалить',
     size: 'Размер',
+    blur: 'Размытие',
+    pixelate: 'Пикселизация',
   );
 
   /// The strings for the ambient locale: Russian for `ru`, English
