@@ -2029,6 +2029,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get gifsTab => 'GIF';
 
   @override
+  String get customEmojiTab => 'Свои';
+
+  @override
   String get emojiSearch => 'Поиск эмодзи';
 
   @override

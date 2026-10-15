@@ -17,28 +17,48 @@ enum TextFormat {
 
   /// A mention of a user without a username; [FormatRange.userId] is who.
   mention,
+
+  /// A custom emoji standing on its fallback emoji; [FormatRange.emojiId]
+  /// is which.
+  customEmoji,
 }
 
 /// [format] over the UTF-16 code units `[start, end)` of the draft.
 @immutable
 final class FormatRange {
-  const FormatRange(this.start, this.end, this.format, {this.url, this.userId})
-    : assert(start <= end);
+  const FormatRange(
+    this.start,
+    this.end,
+    this.format, {
+    this.url,
+    this.userId,
+    this.emojiId,
+  }) : assert(start <= end);
 
   final int start;
   final int end;
   final TextFormat format;
   final String? url;
   final int? userId;
+  final int? emojiId;
 
   int get length => end - start;
 
-  FormatRange withBounds(int start, int end) =>
-      FormatRange(start, end, format, url: url, userId: userId);
+  FormatRange withBounds(int start, int end) => FormatRange(
+    start,
+    end,
+    format,
+    url: url,
+    userId: userId,
+    emojiId: emojiId,
+  );
 
   /// Whether this and [other] can be one range when they touch.
   bool sameKind(FormatRange other) =>
-      format == other.format && url == other.url && userId == other.userId;
+      format == other.format &&
+      url == other.url &&
+      userId == other.userId &&
+      emojiId == other.emojiId;
 
   @override
   bool operator ==(Object other) =>
@@ -47,19 +67,21 @@ final class FormatRange {
       other.end == end &&
       other.format == format &&
       other.url == url &&
-      other.userId == userId;
+      other.userId == userId &&
+      other.emojiId == emojiId;
 
   @override
-  int get hashCode => Object.hash(start, end, format, url, userId);
+  int get hashCode => Object.hash(start, end, format, url, userId, emojiId);
 
   @override
   String toString() =>
       'FormatRange($start, $end, ${format.name}'
-      '${url == null ? '' : ', $url'}${userId == null ? '' : ', $userId'})';
+      '${url == null ? '' : ', $url'}${userId == null ? '' : ', $userId'}${emojiId == null ? '' : ', emoji $emojiId'})';
 }
 
 /// Sorts [ranges], drops empty ones and joins those of the same kind that
-/// overlap or touch. Mentions are never joined: each names one person.
+/// overlap or touch. Mentions and custom emoji are never joined: each
+/// names one person or one emoji.
 List<FormatRange> normalizeRanges(Iterable<FormatRange> ranges) {
   final sorted = [
     for (final range in ranges)
@@ -71,6 +93,7 @@ List<FormatRange> normalizeRanges(Iterable<FormatRange> ranges) {
       (r) =>
           r.sameKind(range) &&
           range.format != TextFormat.mention &&
+          range.format != TextFormat.customEmoji &&
           r.end >= range.start,
     );
     if (index < 0) {
@@ -246,7 +269,9 @@ List<FormatRange> _applyEdit(
   for (final range in ranges) {
     final touchesInside = range.start < q && range.end > p;
     final insideInsert = q == p && range.start < p && range.end > p;
-    if (range.format == TextFormat.mention && (touchesInside || insideInsert)) {
+    if ((range.format == TextFormat.mention ||
+            range.format == TextFormat.customEmoji) &&
+        (touchesInside || insideInsert)) {
       continue;
     }
     // An insertion right at the start of a range pushes it along.

@@ -3374,6 +3374,12 @@ abstract class AppLocalizations {
   /// **'GIFs'**
   String get gifsTab;
 
+  /// No description provided for @customEmojiTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get customEmojiTab;
+
   /// No description provided for @emojiSearch.
   ///
   /// In en, this message translates to:

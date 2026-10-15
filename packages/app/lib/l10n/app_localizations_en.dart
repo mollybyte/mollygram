@@ -2014,6 +2014,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gifsTab => 'GIFs';
 
   @override
+  String get customEmojiTab => 'Custom';
+
+  @override
   String get emojiSearch => 'Search emoji';
 
   @override

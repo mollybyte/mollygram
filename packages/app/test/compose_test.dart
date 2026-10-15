@@ -31,6 +31,23 @@ void main() {
       );
     });
 
+    test('sends custom emoji as entities and reads them back', () {
+      final text = formattedDraft('a😀😀b', const [
+        FormatRange(1, 3, TextFormat.customEmoji, emojiId: 7),
+        FormatRange(3, 5, TextFormat.customEmoji, emojiId: 7),
+      ]);
+      expect(text.entities.map((e) => (e.offset, e.length)), [(1, 2), (3, 2)]);
+      expect(
+        (text.entities.first.type as td.TextEntityTypeCustomEmoji)
+            .customEmojiId,
+        7,
+      );
+      expect(draftRanges(text), [
+        const FormatRange(1, 3, TextFormat.customEmoji, emojiId: 7),
+        const FormatRange(3, 5, TextFormat.customEmoji, emojiId: 7),
+      ]);
+    });
+
     test('sends no mention without a user', () {
       final text = formattedDraft('Vera', const [
         FormatRange(0, 4, TextFormat.mention),

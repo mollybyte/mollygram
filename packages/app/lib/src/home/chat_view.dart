@@ -2510,6 +2510,16 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _focus.requestFocus();
   }
 
+  /// Puts a custom emoji picked in the panel into the draft.
+  void _insertCustomEmoji(td.Sticker sticker) {
+    if (sticker.fullType case td.StickerFullTypeCustomEmoji(
+      :final customEmojiId,
+    )) {
+      _draft.insertCustomEmoji(sticker.emoji, customEmojiId);
+      _focus.requestFocus();
+    }
+  }
+
   /// Sends [sticker] at once and closes the panel, as the official apps do.
   Future<void> _sendSticker(td.Sticker sticker) async {
     final chatId = widget.chatId;
@@ -3902,6 +3912,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
                                     (MediaQuery.sizeOf(context).height - 220)
                                         .clamp(220, 400),
                                 onEmoji: _insertEmoji,
+                                onCustomEmoji: _insertCustomEmoji,
                                 onSticker: (sticker) =>
                                     unawaited(_sendSticker(sticker)),
                                 onGif: (gif) => unawaited(_sendAnimation(gif)),
