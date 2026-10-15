@@ -327,6 +327,18 @@ void main() {
     );
   });
 
+  test('lists every emoji reaction once for the full picker', () async {
+    await controller.start();
+
+    final all = await controller.allReactions(7, 10);
+    final request = json.sent.lastWhere(
+      (r) => r['@type'] == 'getMessageAvailableReactions',
+    );
+    expect(request['row_size'], 25);
+    expect(all, all.toSet().toList());
+    expect(all, containsAll(await controller.quickReactions(7, 10)));
+  });
+
   test('reports messages step by step as the server asks', () async {
     await controller.start();
 

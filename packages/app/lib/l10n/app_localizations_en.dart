@@ -443,6 +443,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get menuReport => 'Report';
 
   @override
+  String get moreReactions => 'More reactions';
+
+  @override
   String get reportDetailsTitle => 'Add details';
 
   @override

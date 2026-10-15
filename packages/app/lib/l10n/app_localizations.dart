@@ -896,6 +896,12 @@ abstract class AppLocalizations {
   /// **'Report'**
   String get menuReport;
 
+  /// No description provided for @moreReactions.
+  ///
+  /// In en, this message translates to:
+  /// **'More reactions'**
+  String get moreReactions;
+
   /// No description provided for @reportDetailsTitle.
   ///
   /// In en, this message translates to:

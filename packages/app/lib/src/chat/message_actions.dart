@@ -206,6 +206,16 @@ Future<void> showMessageMenu(
     ),
   );
   if (items.isEmpty && reactions.isEmpty && infoRows.isEmpty) return;
+  void pick(String emoji) => unawaited(
+    conversations
+        .toggleReaction(
+          chatId,
+          reacted.id,
+          td.ReactionTypeEmoji(emoji: emoji),
+          chosen: chosen.contains(emoji),
+        )
+        .catchError((Object _) {}),
+  );
 
   await showMgMenu(
     context,
@@ -221,20 +231,50 @@ Future<void> showMessageMenu(
                 ReactionBar(
                   reactions: reactions,
                   chosen: chosen,
-                  onPick: (emoji) => unawaited(
-                    conversations
-                        .toggleReaction(
-                          chatId,
-                          reacted.id,
-                          td.ReactionTypeEmoji(emoji: emoji),
-                          chosen: chosen.contains(emoji),
-                        )
-                        .catchError((Object _) {}),
+                  onPick: pick,
+                  moreTooltip: l10n.moreReactions,
+                  onMore: () => unawaited(
+                    _showAllReactions(
+                      context,
+                      conversations: conversations,
+                      chatId: chatId,
+                      messageId: reacted.id,
+                      position: position,
+                      chosen: chosen,
+                      onPick: pick,
+                      isShown: isShown,
+                    ),
                   ),
                 ),
               ...infoRows,
             ],
           ),
+  );
+}
+
+/// The full reaction picker in place of the menu: every emoji the user may
+/// react with, in a glass grid at the same spot.
+Future<void> _showAllReactions(
+  BuildContext context, {
+  required ConversationController conversations,
+  required int chatId,
+  required int messageId,
+  required Offset position,
+  required Set<String> chosen,
+  required ValueChanged<String> onPick,
+  required bool Function() isShown,
+}) async {
+  final List<String> all;
+  try {
+    all = await conversations.allReactions(chatId, messageId);
+  } on Object {
+    return;
+  }
+  if (all.isEmpty || !context.mounted || !isShown()) return;
+  await showMgPopover(
+    context,
+    position: position,
+    child: ReactionGrid(reactions: all, chosen: chosen, onPick: onPick),
   );
 }
 
