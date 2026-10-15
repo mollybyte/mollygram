@@ -259,8 +259,11 @@ final class _MessageInfo {
       readDate
           ? conversations
                 .readDate(chatId, message.id)
-                .catchError((Object _) => null)
-          : Future.value(null),
+                .then<td.MessageReadDate?>(
+                  (date) => date,
+                  onError: (Object _) => null,
+                )
+          : Future<td.MessageReadDate?>.value(null),
     ]);
     return _MessageInfo(
       viewers: results[0]! as List<td.MessageViewer>,
