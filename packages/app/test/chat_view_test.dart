@@ -333,6 +333,43 @@ void main() {
     expect(find.byType(PinnedBar), findsNothing);
   });
 
+  testWidgets('lists the pinned messages and unpins them all', (tester) async {
+    json.chat = [for (var id = 1; id <= 60; id++) id];
+    json.pinned = [50, 20];
+    json.push(_chat(lastRead: 60, unread: 0, last: 60));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await pump(tester);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Pinned messages'));
+    await tester.pumpAndSettle();
+    expect(find.text('2 pinned messages'), findsOneWidget);
+    expect(find.byType(PinnedBar), findsNothing);
+    expect(find.byType(Composer), findsNothing);
+    // Only the pinned messages are in the list.
+    expect(find.text('Message 20'), findsOneWidget);
+    expect(find.text('Message 50'), findsOneWidget);
+    expect(find.text('Message 49'), findsNothing);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.byType(Composer), findsOneWidget);
+    expect(find.byType(PinnedBar), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Pinned messages'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Unpin all messages'));
+    await tester.pumpAndSettle();
+    expect(find.text('Unpin all 2 messages?'), findsOneWidget);
+    await tester.tap(find.text('Unpin all messages').last);
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+
+    expect(requests(), contains('unpinAllChatMessages'));
+    expect(find.byType(Composer), findsOneWidget);
+    expect(find.byType(PinnedBar), findsNothing);
+  });
+
   testWidgets('pins and unpins a message from its menu', (tester) async {
     await pump(tester);
 
@@ -521,6 +558,27 @@ void main() {
     final forward = json.sent.lastWhere((r) => r['@type'] == 'forwardMessages');
     expect(forward['chat_id'], 9);
     expect(forward['message_ids'], [12]);
+    expect(forward['send_copy'], isFalse);
+  });
+
+  testWidgets('forwards without the sender name when asked', (tester) async {
+    await pump(tester);
+
+    await rightClick(tester, 'From Vera');
+    await tester.tap(find.text('Forward'));
+    await tester.pump();
+    await tester.pump();
+    // A text message has no caption to hide.
+    expect(find.text('Hide captions'), findsNothing);
+    await tester.tap(find.text('Hide sender names'));
+    await tester.pump();
+    await tester.tap(find.text('Saved'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+
+    final forward = json.sent.lastWhere((r) => r['@type'] == 'forwardMessages');
+    expect(forward['send_copy'], isTrue);
+    expect(forward['remove_caption'], isFalse);
   });
 
   Future<void> selectTwo(WidgetTester tester) async {

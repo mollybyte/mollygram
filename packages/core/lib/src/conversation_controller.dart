@@ -229,6 +229,13 @@ final class ConversationController {
     _notify();
   }
 
+  /// Unpins every message of [chatId].
+  Future<void> unpinAll(int chatId) async {
+    await _client.send(td.UnpinAllChatMessages(chatId: chatId));
+    store.setPinned(chatId, const []);
+    _notify();
+  }
+
   /// Pins [messageId] for everyone in the chat, or [onlyForSelf] in a
   /// private chat, and unpins it when [pinned] is false.
   Future<void> setPinned(
@@ -686,16 +693,19 @@ final class ConversationController {
   Future<void> forwardMessages(
     int toChatId,
     int fromChatId,
-    List<int> messageIds,
-  ) async {
+    List<int> messageIds, {
+    bool hideSender = false,
+    bool hideCaptions = false,
+  }) async {
     if (messageIds.isEmpty) return;
     await _client.send(
       td.ForwardMessages(
         chatId: toChatId,
         fromChatId: fromChatId,
         messageIds: messageIds,
-        sendCopy: false,
-        removeCaption: false,
+        // Sent as copies, the messages carry no "forwarded from".
+        sendCopy: hideSender,
+        removeCaption: hideSender && hideCaptions,
       ),
     );
   }

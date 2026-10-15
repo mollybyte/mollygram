@@ -16,6 +16,7 @@ import 'link_resolver.dart';
 import 'mention_search.dart';
 import 'notification_controller.dart';
 import 'peer_info.dart';
+import 'privacy_guard.dart';
 import 'sticker_library.dart';
 import 'storage_usage.dart';
 import 'tdlib_initializer.dart';
@@ -51,6 +52,7 @@ final class TelegramSession {
     required this.mentions,
     required this.storage,
     required this.connection,
+    required this.privacy,
     required this.contacts,
     required this.links,
     required this._initializer,
@@ -78,6 +80,10 @@ final class TelegramSession {
   /// The connection state, for the "Connecting…" status in the window.
   final ConnectionMonitor connection;
 
+  /// Ghost mode and the other privacy extras: the one filter on what
+  /// this session sends to TDLib.
+  final PrivacyGuard privacy;
+
   /// Contacts and the users TDLib has sent.
   final ContactsController contacts;
   final LinkResolver links;
@@ -94,16 +100,22 @@ final class TelegramSession {
   static Future<TelegramSession> attach(
     td.Td tdlib, {
     required TdlibParameters parameters,
+    PrivacySettings privacy = const PrivacySettings(),
   }) async {
     final client = tdlib.createClient();
+    // First, so that nothing reaches TDLib before the filter is in place.
+    final guard = PrivacyGuard(client, settings: privacy);
     final authorization = AuthorizationController(client);
     final conversations = ConversationController(client);
     final files = FileController(client);
     final mentions = MentionSearch(client);
     final peers = PeerInfoController(client);
     final connection = ConnectionMonitor(client);
+    final notifications = NotificationController(
+      client,
+      deliberately: guard.deliberately,
+    );
     final contacts = ContactsController(client);
-    final notifications = NotificationController(client);
     final session = TelegramSession._(
       tdlib: tdlib,
       authorization: authorization,
@@ -119,6 +131,7 @@ final class TelegramSession {
       mentions: mentions,
       storage: StorageManager(client),
       connection: connection,
+      privacy: guard,
       contacts: contacts,
       links: LinkResolver(client),
       initializer: TdlibInitializer(client, parameters: parameters),
@@ -210,6 +223,8 @@ final class TelegramSession {
     await notifications.dispose();
     await authorization.dispose();
     await _tdlib.close();
+    // After close: requests sent while the client closes stay filtered.
+    await privacy.dispose();
     await _errors.close();
   }
 }

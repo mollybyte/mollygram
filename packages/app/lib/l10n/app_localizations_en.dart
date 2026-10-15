@@ -522,6 +522,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get forwardSearch => 'Search chats';
 
   @override
+  String get forwardHideSender => 'Hide sender names';
+
+  @override
+  String get forwardHideCaptions => 'Hide captions';
+
+  @override
   String get noChatsFound => 'No chats found';
 
   @override
@@ -1658,6 +1664,57 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatActionFailed => 'Couldn\'t do that, try again';
 
   @override
+  String get privacyExtras => 'Privacy extras';
+
+  @override
+  String get privacyExtrasAbout =>
+      'These switches decide what others see while you use Mollygram on this Mac. Everything you read and send works as usual.';
+
+  @override
+  String get privacyExtrasOnlineNote =>
+      'Some things still show: sending a message puts you online for a moment and marks the chat read, files you send show as uploading, and a reaction shows you saw the message.';
+
+  @override
+  String get ghostMode => 'Ghost mode';
+
+  @override
+  String get ghostModeHint => 'Turns on everything below at once';
+
+  @override
+  String get ghostModeIsOn => 'Ghost mode is on';
+
+  @override
+  String get privacyExtrasAreOn => 'Some privacy extras are on';
+
+  @override
+  String get hideReadReceipts => 'Don\'t send read receipts';
+
+  @override
+  String get hideReadReceiptsHint =>
+      'Senders won\'t see that you\'ve read their messages';
+
+  @override
+  String get hideTyping => 'Don\'t show typing';
+
+  @override
+  String get hideTypingHint => 'Also hides recording voice and video messages';
+
+  @override
+  String get stayOffline => 'Stay offline';
+
+  @override
+  String get stayOfflineHint =>
+      'You won\'t appear online while the app is open';
+
+  @override
+  String get hideContentOpened =>
+      'Don\'t mark voice and video messages as played';
+
+  @override
+  String get hideContentOpenedHint =>
+      'Senders won\'t see that you\'ve played them';
+
+  @override
   String get menuSelect => 'Select';
 
   @override
@@ -1682,4 +1739,35 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nextMonth => 'Next month';
+
+  @override
+  String get pinnedList => 'Pinned messages';
+
+  @override
+  String pinnedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count pinned messages',
+      one: '$count pinned message',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get backToChat => 'Back to the chat';
+
+  @override
+  String get unpinAll => 'Unpin all messages';
+
+  @override
+  String unpinAllTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Unpin all $count messages?',
+      one: 'Unpin $count message?',
+    );
+    return '$_temp0';
+  }
 }

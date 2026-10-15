@@ -59,7 +59,7 @@ M8 calls and macOS release, M9 after release.
 | "New messages" separator and opening at the first unread | done | Unread PR: `TimelineView` grows both ways from the first unread | | |
 | Scroll-to-bottom button with unread counter | done | Unread PR | | |
 | Jump to next mention and reaction | done | Unread PR: `SearchChatMessages` with the unread filters | | |
-| Pinned message bar with cycling and the pinned list | partial | Pinned PR: bar with cycling, pin and unpin from the menu; no pinned list view | S | M2 |
+| Pinned message bar with cycling and the pinned list | done | Bar with cycling, pin and unpin from the menu, the list behind the bar's button with Unpin all | S | M2 |
 | Jump to a replied message and back | done | Jump with a highlight; the down button returns to where the user was | | |
 | Date headers and sticky date | done | Date pills, and the top row's date floats while scrolling | | |
 | Jump to date (calendar) | done | Click a date pill: calendar, `getChatMessageByDate`; no media calendar | M | M2 |
@@ -92,7 +92,7 @@ M8 calls and macOS release, M9 after release.
 | Full reaction picker (all emoji, custom reactions) | missing | | M | M1 |
 | Reply with quote (part of the text) | missing | `InputTextQuote` | S | M2 |
 | Pin and unpin | done (#49) | | S | M1 |
-| Forward without author or caption | missing | `sendCopy`, `removeCaption` | S | M2 |
+| Forward without author or caption | done | Checkboxes in the forward picker | S | M2 |
 | Save media to Downloads, show in Finder | missing | | S | M1 |
 | Report message | missing | `ReportChat` | S | M2 |
 | Who read and who reacted | missing | `GetMessageViewers`, `GetMessageAddedReactions` | S | M2 |
@@ -129,7 +129,7 @@ M8 calls and macOS release, M9 after release.
 | Media editor: text, stickers and emoji placed on the image | partial | Text and emoji done; stickers need the app’s sticker picker | M | M4 |
 | Media editor: arrows and shapes, blur and pixelate brush | done | `packages/media_editor` | | |
 | Media editor: filters and adjustments (brightness, contrast, saturation, warmth, vignette) | done | `packages/media_editor`: seven looks, six sliders | | |
-| Video editor: trim, mute, cover frame, quality | missing | `VideoEditorModalController` | M | M4 |
+| Video editor: trim, mute, cover frame, quality | partial | `packages/media_editor`: trim, mute and cover done (macOS, AVFoundation); quality presets pending | S | M4 |
 | Slowmode and restriction notices | missing | | S | M2 |
 | Link preview control (remove, above/below) | missing | | S | M2 |
 
@@ -149,7 +149,7 @@ M8 calls and macOS release, M9 after release.
 | Viewer: save, copy, forward, delete, show in chat, keyboard shortcuts | partial | Viewer PR: save, copy, forward, Esc, arrows, Space, ⌘S, ⌘C; no delete or show in chat | S | M2 |
 | Global audio player with playlist and header bar | missing | `InlineAudioPlayerView` | M | M2 |
 | Picture-in-picture for video and circles | missing | `PIPVideoWindow` | M | M4 |
-| Voice playback speed and continuous play | missing | | S | M1 |
+| Voice playback speed and continuous play | partial | Speed 1×, 1.5×, 2× and waveform scrubbing done; continuous play missing | S | M1 |
 | Downloads manager (list, pause, show in Finder) | missing | `DownloadsController` | M | M7 |
 | Autodownload rules | missing | Data and storage | M | M7 |
 | Quick Look for documents | missing | | S | M2 |
@@ -274,5 +274,6 @@ These are not parity items; they are tracked in their own docs.
 |---|---|---|
 | Tabs, split view, ⌘K palette, layout restore | done | [packages/shell](../packages/shell) |
 | JS plugin sandbox with manifest permissions (M5) | partial | [plugins.md](plugins.md) |
-| Ghost mode, saved deleted messages, edit history (M3) | missing | [forks-research.md](forks-research.md) |
+| Ghost mode: no read receipts, typing, online or played marks; per-chat silent read API (M3) | done | [privacy_guard.dart](../packages/core/lib/src/privacy_guard.dart) |
+| Saved deleted messages, edit history (M3) | missing | [forks-research.md](forks-research.md) |
 | 640×640 circles, uncompressed media by default (M4) | partial | [packages/media](../packages/media) |

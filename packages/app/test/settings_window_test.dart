@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mollygram/l10n/app_localizations.dart';
+import 'package:mollygram/src/privacy/privacy_settings.dart';
 import 'package:mollygram/src/session/providers.dart';
 import 'package:mollygram/src/settings/account_page.dart';
 import 'package:mollygram/src/settings/plugins_page.dart';
@@ -66,6 +67,9 @@ void main() {
       ProviderScope(
         overrides: [
           telegramSessionProvider.overrideWith((ref) async => session),
+          privacySettingsStorageProvider.overrideWithValue(
+            MemoryPrivacySettingsStorage(),
+          ),
           pluginsControllerProvider.overrideWith(
             (ref) => PluginsController(mockPlugins()),
           ),
@@ -385,6 +389,25 @@ void main() {
       ),
     );
     expect(find.text('Shop bot'), findsNothing);
+  });
+
+  testWidgets('finds ghost mode under privacy extras', (tester) async {
+    await pump(tester);
+    await tester.enterText(
+      find.descendant(
+        of: find.byType(MgSearchField),
+        matching: find.byType(TextField),
+      ),
+      'призрак',
+    );
+    await tester.pump();
+    expect(find.text('Privacy extras'), findsOneWidget);
+    expect(find.text('Privacy and security'), findsNothing);
+
+    await tester.tap(find.text('Privacy extras'));
+    await settle(tester);
+    expect(find.text('Ghost mode'), findsOneWidget);
+    expect(find.text('Stay offline'), findsOneWidget);
   });
 
   testWidgets('says when the connected bot cannot be loaded', (tester) async {

@@ -1,10 +1,12 @@
 import 'dart:async';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' show TdClientClosed;
 
 import '../home/workspace_storage.dart';
+import '../privacy/privacy_settings.dart';
 import 'sign_in_actions.dart';
 import 'telegram_session_launcher.dart';
 
@@ -27,10 +29,15 @@ final telegramSessionProvider = FutureProvider<TelegramSession>((ref) async {
   final config = ref.watch(telegramApiConfigProvider);
   if (!config.isConfigured) throw const MissingApiKeys();
   final launcher = ref.watch(telegramSessionLauncherProvider);
+  // The saved privacy extras apply from the first request on.
+  await ref.read(privacySettingsProvider.notifier).loaded;
   TelegramSession session;
   for (var attempt = 1; ; attempt++) {
     try {
-      session = await launcher.start(config);
+      session = await launcher.start(
+        config,
+        privacy: ref.read(privacySettingsProvider),
+      );
       break;
     } on SessionClosedElsewhere {
       // Closed as it started; the next client starts signed out.
@@ -38,9 +45,20 @@ final telegramSessionProvider = FutureProvider<TelegramSession>((ref) async {
       await _forgetAccount(ref);
     }
   }
+  // A switch flipped while the session was starting.
+  session.privacy.settings = ref.read(privacySettingsProvider);
+  // Online while the window is active, as the official client is.
+  final privacy = session.privacy;
+  final lifecycle = AppLifecycleListener(
+    onStateChange: (state) =>
+        privacy.foreground = state == AppLifecycleState.resumed,
+  );
+  final state = WidgetsBinding.instance.lifecycleState;
+  privacy.foreground = state == null || state == AppLifecycleState.resumed;
   var disposed = false;
   ref.onDispose(() {
     disposed = true;
+    lifecycle.dispose();
     unawaited(session.dispose());
   });
   // Terminated from another device: TDLib has logged out and closed the

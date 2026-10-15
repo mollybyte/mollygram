@@ -105,4 +105,10 @@ abstract final class EditorIcons {
     '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/>'
         '<circle cx="16" cy="7" r="2.2"/><circle cx="10" cy="17" r="2.2"/>',
   );
+  static const cover = MgIconData(
+    'cover',
+    '<rect x="3.5" y="5" width="17" height="14" rx="2"/>'
+        '<path d="m3.5 16 4.5-4.5 3.5 3.5 2.5-2.5 6.5 6.5"/>'
+        '<circle cx="15.5" cy="9.5" r="1.5"/>',
+  );
 }

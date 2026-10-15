@@ -78,6 +78,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
   var _searching = false;
 
   final _scroll = TimelineScrollController();
+  final _pinnedScroll = TimelineScrollController();
   final _timelineKey = GlobalKey();
 
   /// Where the user was before a jump, so the down button takes them
@@ -109,6 +110,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
   var _pinnedIndex = 0;
   static final _pinnedHidden = <int>{};
   var _pinnedShown = false;
+
+  /// The timeline shows only the pinned messages, from the bar's button.
+  var _pinnedListOpen = false;
 
   /// A join or mute request on its way.
   var _actionPending = false;
@@ -169,6 +173,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _flashId = null;
     _returnTo = null;
     _pinnedIndex = 0;
+    _pinnedListOpen = false;
     _selected = null;
     _selectedProperties = null;
     _flashTimer?.cancel();
@@ -184,6 +189,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _draft.dispose();
     _focus.dispose();
     _scroll.dispose();
+    _pinnedScroll.dispose();
     _away.dispose();
     _flashTimer?.cancel();
     super.dispose();
@@ -231,7 +237,63 @@ class _ChatViewState extends ConsumerState<ChatView> {
       closeTooltip: l10n.hidePinned,
       onTap: () => unawaited(_openPinned(ids)),
       onClose: () => setState(() => _pinnedHidden.add(chatId)),
+      listTooltip: l10n.pinnedList,
+      onList: () => setState(() {
+        _pinnedListOpen = true;
+        _selected = null;
+      }),
     );
+  }
+
+  void _closePinnedList() {
+    if (!_pinnedListOpen) return;
+    setState(() => _pinnedListOpen = false);
+    _focus.requestFocus();
+  }
+
+  /// The pinned messages, newest first, as the timeline wants them.
+  List<ConversationMessage> _pinnedMessages(ConversationStore store) {
+    final chatId = widget.chatId;
+    return [
+      for (final id in store.pinnedIds(chatId)) ?store.message(chatId, id),
+    ];
+  }
+
+  /// The bar under the pinned list: unpins every message after asking.
+  /// Esc goes back to the chat.
+  Widget _unpinAllBar(AppLocalizations l10n, ConversationStore store) {
+    final count = store.pinnedIds(widget.chatId).length;
+    return Focus(
+      autofocus: true,
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.escape) {
+          _closePinnedList();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: ComposerActionBar(
+        label: l10n.unpinAll,
+        loading: _actionPending,
+        onPressed: () => unawaited(_unpinAll(count)),
+      ),
+    );
+  }
+
+  Future<void> _unpinAll(int count) async {
+    final l10n = AppLocalizations.of(context);
+    final chatId = widget.chatId;
+    final confirmed = await showMgConfirm(
+      context,
+      title: l10n.unpinAllTitle(count),
+      confirmLabel: l10n.unpinAll,
+      cancelLabel: l10n.cancel,
+      destructive: true,
+    );
+    if (confirmed == null || !mounted || widget.chatId != chatId) return;
+    await _chatAction(() => _conversations.unpinAll(chatId));
+    if (mounted && widget.chatId == chatId) _closePinnedList();
   }
 
   void _close(int chatId) =>
@@ -300,7 +362,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
 
   /// Where the timeline starts under the header and the pinned bar.
   double get _topInset =>
-      TimelineView.headerInset + (_pinnedShown ? PinnedBar.height + 8 : 0);
+      TimelineView.headerInset +
+      (_pinnedShown && !_pinnedListOpen ? PinnedBar.height + 8 : 0);
 
   /// Keeps [_scroll.pinned] and the down button in step with where the
   /// user leaves the view.
@@ -811,12 +874,20 @@ class _ChatViewState extends ConsumerState<ChatView> {
   }
 
   Future<void> _forward(List<ConversationMessage> messages) async {
-    final target = await pickForwardTarget(context);
-    if (target == null || messages.isEmpty) return;
+    final hasCaptions = messages.any(
+      (message) =>
+          message.content is! td.MessageText && message.text.isNotEmpty,
+    );
+    final choice = await pickForwardTarget(context, hasCaptions: hasCaptions);
+    if (choice == null || messages.isEmpty) return;
     try {
-      await _conversations.forwardMessages(target, messages.first.chatId, [
-        for (final message in messages) message.id,
-      ]);
+      await _conversations.forwardMessages(
+        choice.chatId,
+        messages.first.chatId,
+        [for (final message in messages) message.id],
+        hideSender: choice.hideSender,
+        hideCaptions: choice.hideCaptions,
+      );
     } catch (_) {
       // Such as a channel the user can't post in.
       if (mounted) setState(() => _failure = _Failure.forward);
@@ -1092,11 +1163,11 @@ class _ChatViewState extends ConsumerState<ChatView> {
           height: size.$2,
         );
       case OutgoingKind.video || OutgoingKind.animation || OutgoingKind.audio:
+        // An edited video arrives measured by the editor.
+        if (file.duration > 0) return file;
         final info = await probeMedia(file.path);
         if (info == null) return file;
-        return OutgoingFile(
-          path: file.path,
-          kind: file.kind,
+        return file.copyWith(
           width: info.width,
           height: info.height,
           duration: info.duration.inSeconds,
@@ -1343,6 +1414,19 @@ class _ChatViewState extends ConsumerState<ChatView> {
               AsyncData(value: final list)
                   when list.isEmpty && store.reachedStart(widget.chatId) =>
                 Center(child: DatePill(l10n.noMessages)),
+              AsyncData() when _pinnedListOpen => TimelineView(
+                key: const ValueKey('pinnedList'),
+                messages: _pinnedMessages(store),
+                store: store,
+                chatId: widget.chatId,
+                isGroup: chat?.isGroup ?? false,
+                controller: _pinnedScroll,
+                topInset: _topInset,
+                onShown: _shown,
+                onNearTop: () {},
+                onNearBottom: () {},
+                actions: _actions,
+              ),
               AsyncData(value: final list) => () {
                 _placeUnread(list);
                 return TimelineView(
@@ -1369,13 +1453,14 @@ class _ChatViewState extends ConsumerState<ChatView> {
               _ => const SizedBox.shrink(),
             },
           ),
-          if (_pinnedBar(l10n, store) case final bar?)
-            Positioned(
-              top: 10 + ChatHeaderBar.height + 8,
-              left: 14,
-              right: 14,
-              child: bar,
-            ),
+          if (!_pinnedListOpen)
+            if (_pinnedBar(l10n, store) case final bar?)
+              Positioned(
+                top: 10 + ChatHeaderBar.height + 8,
+                left: 14,
+                right: 14,
+                child: bar,
+              ),
           Positioned(
             top: 10,
             left: 14,
@@ -1392,6 +1477,18 @@ class _ChatViewState extends ConsumerState<ChatView> {
                         onClose: _closeSearch,
                       ),
                     )
+                  : _pinnedListOpen
+                  ? ChatTitleCapsule(
+                      title: l10n.pinnedCount(
+                        store.pinnedIds(widget.chatId).length,
+                      ),
+                      avatar: MgIconButton(
+                        icon: MgIcons.back,
+                        tooltip: l10n.backToChat,
+                        onPressed: _closePinnedList,
+                      ),
+                      onTap: _closePinnedList,
+                    )
                   : ChatTitleCapsule(
                       title: chat?.title ?? '',
                       onTap: () => togglePeerInfo(ref, widget.chatId),
@@ -1407,7 +1504,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (!_panelOpen) _jumpButtons(l10n, store),
+                if (!_panelOpen && !_pinnedListOpen) _jumpButtons(l10n, store),
                 if (_failure case final failure?)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 6),
@@ -1446,7 +1543,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
                       ),
                     ),
                   ),
-                if (_selected != null)
+                if (_pinnedListOpen)
+                  _unpinAllBar(l10n, store)
+                else if (_selected != null)
                   _selectionBar(l10n)
                 else if (_actionBar(l10n, store) case final bar?)
                   bar
