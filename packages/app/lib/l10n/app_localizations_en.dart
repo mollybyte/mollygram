@@ -2717,4 +2717,112 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pluginFilteredMessage => 'Filtered by a plugin';
+
+  @override
+  String passcodeWaitSeconds(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Too many tries. Try again in $count seconds.',
+      one: 'Too many tries. Try again in $count second.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String passcodeWaitMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Too many tries. Try again in $count minutes.',
+      one: 'Too many tries. Try again in $count minute.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get passcodeForgotNoSession =>
+      'Telegram couldn\'t start, so there is nothing to log out of yet. Try again when it is connected.';
+
+  @override
+  String get passcodeLogOutFailed =>
+      'Couldn\'t log out. The passcode stays until you can.';
+
+  @override
+  String get passcodeUnreadable =>
+      'The passcode couldn\'t be read from the keychain. The window stays locked until it can be.';
+
+  @override
+  String get passcodeReadAgain => 'Read again';
+
+  @override
+  String get twoStepPendingAbout =>
+      'Two-step verification turns on once you enter the code sent to the recovery email.';
+
+  @override
+  String get twoStepConfirmToFinish =>
+      'Enter the code from the email to turn on two-step verification.';
+
+  @override
+  String get twoStepPasswordTooFresh =>
+      'The password was changed recently. Try again later.';
+
+  @override
+  String get twoStepSessionTooFresh =>
+      'This device signed in recently. Try again later.';
+
+  @override
+  String get twoStepForgotPassword => 'Forgot password?';
+
+  @override
+  String get twoStepRecoverTitle => 'Reset the password';
+
+  @override
+  String twoStepRecoverAbout(String pattern) {
+    return 'Enter the code sent to $pattern and a new password.';
+  }
+
+  @override
+  String get twoStepResetTitle => 'Reset the password?';
+
+  @override
+  String get twoStepResetMessage =>
+      'Without a recovery email, Telegram removes the password after a 7-day wait. Signing in with the password cancels the reset.';
+
+  @override
+  String get twoStepResetAction => 'Reset';
+
+  @override
+  String twoStepResetPending(DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMMd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return 'The password will be removed on $dateString.';
+  }
+
+  @override
+  String twoStepResetDeclined(DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMMd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return 'Telegram can\'t reset the password now. Try again after $dateString.';
+  }
+
+  @override
+  String get twoStepCancelReset => 'Cancel reset';
+
+  @override
+  String ttlYears(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count years',
+      one: '$count year',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get accountTtlFooter =>
+      'Your account is deleted if you don\'t come online in this period.';
 }

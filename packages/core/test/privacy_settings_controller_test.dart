@@ -288,7 +288,7 @@ void main() {
       expect(request['new_hint'], 'cat');
       expect(request['set_recovery_email_address'], isTrue);
       expect(request['new_recovery_email_address'], 'a@mail.com');
-      expect(state.hasPassword, isTrue);
+      expect(state.hasPassword, isFalse);
       expect(state.pendingEmailPattern, 'a***@mail.com');
       expect(state.codeLength, 6);
 
@@ -309,6 +309,32 @@ void main() {
       final state = await privacy.removePassword('secret');
       expect(sent('setPassword')['new_password'], '');
       expect(state.hasPassword, isFalse);
+    });
+
+    test('recovers a forgotten password through the email', () async {
+      expect(await privacy.requestPasswordRecovery(), 'a***@mail.com');
+      final state = await privacy.recoverPassword(
+        code: ' 111111 ',
+        newPassword: 'fresh',
+        hint: ' dog ',
+      );
+      final request = sent('recoverPassword');
+      expect(request['recovery_code'], '111111');
+      expect(request['new_password'], 'fresh');
+      expect(request['new_hint'], 'dog');
+      expect(state.hasPassword, isTrue);
+    });
+
+    test('a reset without the email waits', () async {
+      final reset = await privacy.resetPassword();
+      expect(
+        reset,
+        isA<PasswordResetPending>().having(
+          (r) => r.date,
+          'date',
+          DateTime.fromMillisecondsSinceEpoch(1800000000 * 1000),
+        ),
+      );
     });
 
     test('a wrong password is an error', () async {
@@ -474,10 +500,27 @@ final class _FakeTdJson implements td.TdJson {
                   .toList(),
             },
             'getPasswordState' => _password(has: false),
+            // With a new email, TDLib keeps the password until the code
+            // is confirmed.
             'setPassword' => _password(
-              has: decoded['new_password'] != '',
+              has:
+                  decoded['new_password'] != '' &&
+                  decoded['set_recovery_email_address'] != true,
               pending: decoded['set_recovery_email_address'] == true,
             ),
+            'requestPasswordRecovery' => {
+              '@type': 'emailAddressAuthenticationCodeInfo',
+              'email_address_pattern': 'a***@mail.com',
+              'length': 6,
+            },
+            'recoverPassword' => _password(
+              has: decoded['new_password'] != '',
+              email: true,
+            ),
+            'resetPassword' => {
+              '@type': 'resetPasswordResultPending',
+              'pending_reset_date': 1800000000,
+            },
             'checkRecoveryEmailAddressCode' => _password(
               has: true,
               email: true,

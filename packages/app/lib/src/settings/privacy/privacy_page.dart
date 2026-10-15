@@ -199,7 +199,7 @@ class PrivacySecurityPage extends ConsumerWidget {
         ),
         SettingsGroup(
           title: l10n.accountTtlTitle,
-          footer: SettingsFooter(l10n.accountTtlAbout),
+          footer: SettingsFooter(l10n.accountTtlFooter),
           children: [
             SettingsRow(
               key: const ValueKey('accountTtl'),

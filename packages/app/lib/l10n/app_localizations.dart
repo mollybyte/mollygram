@@ -4621,6 +4621,132 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Filtered by a plugin'**
   String get pluginFilteredMessage;
+
+  /// No description provided for @passcodeWaitSeconds.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{Too many tries. Try again in {count} second.} other{Too many tries. Try again in {count} seconds.}}'**
+  String passcodeWaitSeconds(int count);
+
+  /// No description provided for @passcodeWaitMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{Too many tries. Try again in {count} minute.} other{Too many tries. Try again in {count} minutes.}}'**
+  String passcodeWaitMinutes(int count);
+
+  /// No description provided for @passcodeForgotNoSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Telegram couldn\'t start, so there is nothing to log out of yet. Try again when it is connected.'**
+  String get passcodeForgotNoSession;
+
+  /// No description provided for @passcodeLogOutFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t log out. The passcode stays until you can.'**
+  String get passcodeLogOutFailed;
+
+  /// No description provided for @passcodeUnreadable.
+  ///
+  /// In en, this message translates to:
+  /// **'The passcode couldn\'t be read from the keychain. The window stays locked until it can be.'**
+  String get passcodeUnreadable;
+
+  /// No description provided for @passcodeReadAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Read again'**
+  String get passcodeReadAgain;
+
+  /// No description provided for @twoStepPendingAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'Two-step verification turns on once you enter the code sent to the recovery email.'**
+  String get twoStepPendingAbout;
+
+  /// No description provided for @twoStepConfirmToFinish.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the code from the email to turn on two-step verification.'**
+  String get twoStepConfirmToFinish;
+
+  /// No description provided for @twoStepPasswordTooFresh.
+  ///
+  /// In en, this message translates to:
+  /// **'The password was changed recently. Try again later.'**
+  String get twoStepPasswordTooFresh;
+
+  /// No description provided for @twoStepSessionTooFresh.
+  ///
+  /// In en, this message translates to:
+  /// **'This device signed in recently. Try again later.'**
+  String get twoStepSessionTooFresh;
+
+  /// No description provided for @twoStepForgotPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot password?'**
+  String get twoStepForgotPassword;
+
+  /// No description provided for @twoStepRecoverTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset the password'**
+  String get twoStepRecoverTitle;
+
+  /// No description provided for @twoStepRecoverAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the code sent to {pattern} and a new password.'**
+  String twoStepRecoverAbout(String pattern);
+
+  /// No description provided for @twoStepResetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset the password?'**
+  String get twoStepResetTitle;
+
+  /// No description provided for @twoStepResetMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Without a recovery email, Telegram removes the password after a 7-day wait. Signing in with the password cancels the reset.'**
+  String get twoStepResetMessage;
+
+  /// No description provided for @twoStepResetAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get twoStepResetAction;
+
+  /// No description provided for @twoStepResetPending.
+  ///
+  /// In en, this message translates to:
+  /// **'The password will be removed on {date}.'**
+  String twoStepResetPending(DateTime date);
+
+  /// No description provided for @twoStepResetDeclined.
+  ///
+  /// In en, this message translates to:
+  /// **'Telegram can\'t reset the password now. Try again after {date}.'**
+  String twoStepResetDeclined(DateTime date);
+
+  /// No description provided for @twoStepCancelReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel reset'**
+  String get twoStepCancelReset;
+
+  /// No description provided for @ttlYears.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} year} other{{count} years}}'**
+  String ttlYears(int count);
+
+  /// No description provided for @accountTtlFooter.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account is deleted if you don\'t come online in this period.'**
+  String get accountTtlFooter;
 }
 
 class _AppLocalizationsDelegate

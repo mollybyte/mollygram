@@ -2752,4 +2752,118 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get pluginFilteredMessage => 'Скрыто плагином';
+
+  @override
+  String passcodeWaitSeconds(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Слишком много попыток. Попробуйте через $count секунды.',
+      many: 'Слишком много попыток. Попробуйте через $count секунд.',
+      few: 'Слишком много попыток. Попробуйте через $count секунды.',
+      one: 'Слишком много попыток. Попробуйте через $count секунду.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String passcodeWaitMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Слишком много попыток. Попробуйте через $count минуты.',
+      many: 'Слишком много попыток. Попробуйте через $count минут.',
+      few: 'Слишком много попыток. Попробуйте через $count минуты.',
+      one: 'Слишком много попыток. Попробуйте через $count минуту.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get passcodeForgotNoSession =>
+      'Telegram не запустился, поэтому выйти пока не из чего. Попробуйте, когда он подключится.';
+
+  @override
+  String get passcodeLogOutFailed =>
+      'Не удалось выйти. Код-пароль останется, пока выход не получится.';
+
+  @override
+  String get passcodeUnreadable =>
+      'Не удалось прочитать код-пароль из связки ключей. Окно останется заблокированным, пока это не получится.';
+
+  @override
+  String get passcodeReadAgain => 'Прочитать снова';
+
+  @override
+  String get twoStepPendingAbout =>
+      'Двухэтапная проверка включится, когда вы введёте код из письма на резервную почту.';
+
+  @override
+  String get twoStepConfirmToFinish =>
+      'Введите код из письма, чтобы включить двухэтапную проверку.';
+
+  @override
+  String get twoStepPasswordTooFresh =>
+      'Пароль недавно меняли. Попробуйте позже.';
+
+  @override
+  String get twoStepSessionTooFresh =>
+      'Это устройство вошло недавно. Попробуйте позже.';
+
+  @override
+  String get twoStepForgotPassword => 'Забыли пароль?';
+
+  @override
+  String get twoStepRecoverTitle => 'Сброс пароля';
+
+  @override
+  String twoStepRecoverAbout(String pattern) {
+    return 'Введите код, отправленный на $pattern, и новый пароль.';
+  }
+
+  @override
+  String get twoStepResetTitle => 'Сбросить пароль?';
+
+  @override
+  String get twoStepResetMessage =>
+      'Без резервной почты Telegram удалит пароль через 7 дней. Вход с паролем отменит сброс.';
+
+  @override
+  String get twoStepResetAction => 'Сбросить';
+
+  @override
+  String twoStepResetPending(DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMMd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return 'Пароль будет удалён $dateString.';
+  }
+
+  @override
+  String twoStepResetDeclined(DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMMd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return 'Telegram пока не может сбросить пароль. Попробуйте после $dateString.';
+  }
+
+  @override
+  String get twoStepCancelReset => 'Отменить сброс';
+
+  @override
+  String ttlYears(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count года',
+      many: '$count лет',
+      few: '$count года',
+      one: '$count год',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get accountTtlFooter =>
+      'Аккаунт удалится, если вы не зайдёте за это время.';
 }

@@ -16,6 +16,7 @@ final class FormSheetField {
     this.obscure = false,
     this.optional = false,
     this.keyboardType,
+    this.submitAtLength = 0,
   });
 
   final String hint;
@@ -24,11 +25,16 @@ final class FormSheetField {
   /// May stay empty; the action waits for the other fields only.
   final bool optional;
   final TextInputType? keyboardType;
+
+  /// A code of this many characters submits the sheet once typed; 0 never.
+  final int submitAtLength;
 }
 
 /// Shows a small sheet of [fields] with [action]. [onSubmit] gets the
 /// values in order and returns an error to show under the fields, or null
-/// to close. Completes with whether the sheet was submitted.
+/// to close. [aside], such as "Forgot password?", sits left of the
+/// buttons: it closes the sheet, then runs. Completes with whether the
+/// sheet was submitted.
 Future<bool> showFormSheet(
   BuildContext context, {
   required String title,
@@ -37,19 +43,26 @@ Future<bool> showFormSheet(
   required String action,
   bool destructive = false,
   required Future<String?> Function(List<String> values) onSubmit,
-}) async =>
-    await showFolderSheet<bool>(
-      context,
-      FormSheet(
-        title: title,
-        subtitle: subtitle,
-        fields: fields,
-        action: action,
-        destructive: destructive,
-        onSubmit: onSubmit,
-      ),
-    ) ??
-    false;
+  FormSheetAside? aside,
+}) async {
+  final result = await showFolderSheet<Object>(
+    context,
+    FormSheet(
+      title: title,
+      subtitle: subtitle,
+      fields: fields,
+      action: action,
+      destructive: destructive,
+      onSubmit: onSubmit,
+      aside: aside,
+    ),
+  );
+  if (result == FormSheet.asideChosen) await aside?.onTap();
+  return result == true;
+}
+
+/// A link under a [FormSheet]'s fields that leads away from it.
+typedef FormSheetAside = ({String label, Future<void> Function() onTap});
 
 class FormSheet extends StatefulWidget {
   const FormSheet({
@@ -60,7 +73,11 @@ class FormSheet extends StatefulWidget {
     required this.onSubmit,
     this.subtitle,
     this.destructive = false,
+    this.aside,
   });
+
+  /// What the sheet closes with when [aside] is clicked.
+  static const asideChosen = #aside;
 
   final String title;
   final String? subtitle;
@@ -68,6 +85,7 @@ class FormSheet extends StatefulWidget {
   final String action;
   final bool destructive;
   final Future<String?> Function(List<String> values) onSubmit;
+  final FormSheetAside? aside;
 
   @override
   State<FormSheet> createState() => _FormSheetState();
@@ -158,7 +176,13 @@ class _FormSheetState extends State<FormSheet> {
                   autofocus: i == 0,
                   fontSize: 14,
                   enabled: !_busy,
-                  onChanged: (_) => setState(() => _error = null),
+                  onChanged: (text) {
+                    setState(() => _error = null);
+                    final length = widget.fields[i].submitAtLength;
+                    if (length > 0 && text.trim().length == length) {
+                      unawaited(_submit());
+                    }
+                  },
                   onSubmitted: (_) => unawaited(_submit()),
                 ),
               ],
@@ -184,6 +208,18 @@ class _FormSheetState extends State<FormSheet> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
+                  if (widget.aside case final aside?) ...[
+                    MgTextButton(
+                      key: const ValueKey('formSheetAside'),
+                      label: aside.label,
+                      onPressed: _busy
+                          ? null
+                          : () =>
+                                Navigator.of(context)
+                                    .pop(FormSheet.asideChosen),
+                    ),
+                    const Spacer(),
+                  ],
                   SettingsButton(
                     label: l10n.cancel,
                     onPressed: () => Navigator.of(context).pop(false),

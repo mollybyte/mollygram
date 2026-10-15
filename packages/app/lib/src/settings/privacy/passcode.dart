@@ -89,19 +89,27 @@ final class PasscodeHash {
 final class PasscodeSettings {
   const PasscodeSettings({this.hash, this.autoLockMinutes = 60});
 
+  /// Reads what [toJson] wrote; null is no entry. Anything else that
+  /// can't be read throws a [FormatException], so a damaged entry is never
+  /// taken for "no passcode".
   factory PasscodeSettings.fromJson(Object? json) {
-    if (json is! Map<String, Object?>) return const PasscodeSettings();
+    if (json == null) return const PasscodeSettings();
+    if (json is! Map<String, Object?>) {
+      throw const FormatException('Passcode settings are not a map');
+    }
     try {
       final hash = json['hash'];
       final minutes = json['autoLockMinutes'];
       return PasscodeSettings(
-        hash: hash is Map<String, Object?> ? PasscodeHash.fromJson(hash) : null,
+        hash: hash == null
+            ? null
+            : PasscodeHash.fromJson(hash as Map<String, Object?>),
         autoLockMinutes: autoLockChoices.contains(minutes)
             ? minutes! as int
             : 60,
       );
-    } on Object {
-      return const PasscodeSettings();
+    } on Object catch (error) {
+      throw FormatException('Damaged passcode settings: $error');
     }
   }
 
@@ -140,12 +148,8 @@ final class KeychainPasscodeStorage implements PasscodeStorage {
   @override
   Future<Object?> read() async {
     final text = await _storage.read(key: _key);
-    if (text == null) return null;
-    try {
-      return jsonDecode(text);
-    } on FormatException {
-      return null;
-    }
+    // A damaged entry throws, so it isn't taken for "no passcode".
+    return text == null ? null : jsonDecode(text);
   }
 
   @override
@@ -183,6 +187,9 @@ final class PasscodeState {
     this.settings = const PasscodeSettings(),
     this.loaded = false,
     this.locked = false,
+    this.unreadable = false,
+    this.failedAttempts = 0,
+    this.retryAt,
   });
 
   final PasscodeSettings settings;
@@ -191,14 +198,30 @@ final class PasscodeState {
   final bool loaded;
   final bool locked;
 
+  /// The keychain entry couldn't be read: the window stays locked and
+  /// nothing is written over the entry.
+  final bool unreadable;
+
+  /// Wrong passcodes in a row.
+  final int failedAttempts;
+
+  /// After too many wrong passcodes, when the next try is taken.
+  final DateTime? retryAt;
+
   PasscodeState copyWith({
     PasscodeSettings? settings,
     bool? loaded,
     bool? locked,
+    bool? unreadable,
+    int? failedAttempts,
+    DateTime? Function()? retryAt,
   }) => PasscodeState(
     settings: settings ?? this.settings,
     loaded: loaded ?? this.loaded,
     locked: locked ?? this.locked,
+    unreadable: unreadable ?? this.unreadable,
+    failedAttempts: failedAttempts ?? this.failedAttempts,
+    retryAt: retryAt == null ? this.retryAt : retryAt(),
   );
 }
 
@@ -224,19 +247,26 @@ final class PasscodeLock extends Notifier<PasscodeState> {
   }
 
   Future<void> _load() async {
-    Object? saved;
+    final PasscodeSettings settings;
     try {
-      saved = await _storage.read();
+      settings = PasscodeSettings.fromJson(await _storage.read());
     } on Object {
-      // An unreadable keychain entry reads as no passcode.
+      // Fail closed: an entry that can't be read may hold a passcode.
+      state = const PasscodeState(loaded: true, locked: true, unreadable: true);
+      return;
     }
-    final settings = PasscodeSettings.fromJson(saved);
     state = PasscodeState(
       settings: settings,
       loaded: true,
       locked: settings.enabled,
     );
     _watch();
+  }
+
+  /// Reads the keychain again, after it couldn't be read.
+  Future<void> retryRead() async {
+    if (!state.unreadable) return;
+    await _load();
   }
 
   /// The away time is checked only while there is a passcode.
@@ -264,14 +294,42 @@ final class PasscodeLock extends Notifier<PasscodeState> {
     if (state.settings.enabled) state = state.copyWith(locked: true);
   }
 
-  /// Unlocks with the right [passcode]; returns whether it was.
-  Future<bool> unlock(String passcode) async {
+  /// Wrong passcodes taken before tries are spaced out.
+  static const freeAttempts = 5;
+
+  /// How long to wait after [failures] wrong passcodes in a row: nothing
+  /// for the first [freeAttempts], then 30 seconds, doubling each time up
+  /// to an hour.
+  static Duration delayAfter(int failures) {
+    if (failures < freeAttempts) return Duration.zero;
+    final seconds = 30 * pow(2, failures - freeAttempts);
+    return Duration(seconds: min(seconds.toInt(), 3600));
+  }
+
+  /// Tries [passcode]. While a wait after wrong passcodes runs, nothing
+  /// is checked.
+  Future<UnlockResult> unlock(String passcode) async {
     final hash = state.settings.hash;
-    if (hash == null) return true;
-    if (!await hash.verify(passcode)) return false;
+    if (state.unreadable) return UnlockResult.wrong;
+    if (hash == null) return UnlockResult.unlocked;
+    final retryAt = state.retryAt;
+    if (retryAt != null && _now().isBefore(retryAt)) return UnlockResult.wait;
+    if (!await hash.verify(passcode)) {
+      final failures = state.failedAttempts + 1;
+      final delay = delayAfter(failures);
+      state = state.copyWith(
+        failedAttempts: failures,
+        retryAt: () => delay == Duration.zero ? null : _now().add(delay),
+      );
+      return UnlockResult.wrong;
+    }
     activity();
-    state = state.copyWith(locked: false);
-    return true;
+    state = state.copyWith(
+      locked: false,
+      failedAttempts: 0,
+      retryAt: () => null,
+    );
+    return UnlockResult.unlocked;
   }
 
   /// Whether [passcode] is the current one, without unlocking.
@@ -290,6 +348,7 @@ final class PasscodeLock extends Notifier<PasscodeState> {
     activity();
   }
 
+  /// Removes the passcode; the auto-lock choice stays for next time.
   Future<void> turnOff() =>
       _save(PasscodeSettings(autoLockMinutes: state.settings.autoLockMinutes));
 
@@ -297,8 +356,24 @@ final class PasscodeLock extends Notifier<PasscodeState> {
     PasscodeSettings(hash: state.settings.hash, autoLockMinutes: minutes),
   );
 
+  /// After logging out because the passcode was forgotten: removes it,
+  /// even when the entry couldn't be read, and unlocks.
+  Future<void> forget() async {
+    final settings = PasscodeSettings(
+      autoLockMinutes: state.settings.autoLockMinutes,
+    );
+    await _storage.write(settings.toJson());
+    state = PasscodeState(settings: settings, loaded: true);
+    _watch();
+  }
+
+  /// Writes [settings], then shows them; a failed write throws and
+  /// changes nothing. An entry that couldn't be read is never written.
   Future<void> _save(PasscodeSettings settings) async {
-    await _storage.write(settings.enabled ? settings.toJson() : null);
+    if (state.unreadable) {
+      throw StateError('The passcode entry could not be read');
+    }
+    await _storage.write(settings.toJson());
     state = state.copyWith(
       settings: settings,
       locked: state.locked && settings.enabled,
@@ -306,6 +381,8 @@ final class PasscodeLock extends Notifier<PasscodeState> {
     _watch();
   }
 }
+
+enum UnlockResult { unlocked, wrong, wait }
 
 final passcodeLockProvider = NotifierProvider<PasscodeLock, PasscodeState>(
   PasscodeLock.new,

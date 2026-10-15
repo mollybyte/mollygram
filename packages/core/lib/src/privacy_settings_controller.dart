@@ -242,6 +242,7 @@ final class TwoStepState {
     this.hasRecoveryEmail = false,
     this.pendingEmailPattern,
     this.codeLength = 0,
+    this.pendingResetDate,
   });
 
   factory TwoStepState.fromTd(td.PasswordState state) => TwoStepState(
@@ -251,6 +252,9 @@ final class TwoStepState {
     pendingEmailPattern:
         state.recoveryEmailAddressCodeInfo?.emailAddressPattern,
     codeLength: state.recoveryEmailAddressCodeInfo?.length ?? 0,
+    pendingResetDate: state.pendingResetDate > 0
+        ? DateTime.fromMillisecondsSinceEpoch(state.pendingResetDate * 1000)
+        : null,
   );
 
   final bool hasPassword;
@@ -264,7 +268,33 @@ final class TwoStepState {
   /// How many digits the emailed code has; 0 when unknown.
   final int codeLength;
 
+  /// When a reset asked for without the recovery email takes effect;
+  /// null when none was asked for.
+  final DateTime? pendingResetDate;
+
   bool get awaitsEmailCode => pendingEmailPattern != null;
+}
+
+/// What asking to reset the password without its email led to.
+sealed class PasswordReset {
+  const PasswordReset();
+}
+
+/// The password is gone.
+final class PasswordResetDone extends PasswordReset {
+  const PasswordResetDone();
+}
+
+/// The password goes at [date], unless the reset is cancelled.
+final class PasswordResetPending extends PasswordReset {
+  const PasswordResetPending(this.date);
+  final DateTime date;
+}
+
+/// Telegram turned the reset down until [retryDate].
+final class PasswordResetDeclined extends PasswordReset {
+  const PasswordResetDeclined(this.retryDate);
+  final DateTime retryDate;
 }
 
 /// How long the account may go unused before Telegram deletes it, in
@@ -491,6 +521,47 @@ final class PrivacySettingsController {
   Future<TwoStepState> cancelEmailCode() async => TwoStepState.fromTd(
     await _client.send(const td.CancelRecoveryEmailAddressVerification()),
   );
+
+  /// Sends a code to the recovery email for a forgotten password;
+  /// returns the masked address.
+  Future<String> requestPasswordRecovery() async =>
+      (await _client.send(const td.RequestPasswordRecovery()))
+          .emailAddressPattern;
+
+  /// Sets [newPassword] with the code [requestPasswordRecovery] sent.
+  Future<TwoStepState> recoverPassword({
+    required String code,
+    required String newPassword,
+    String hint = '',
+  }) async => TwoStepState.fromTd(
+    await _client.send(
+      td.RecoverPassword(
+        recoveryCode: code.trim(),
+        newPassword: newPassword,
+        newHint: hint.trim(),
+      ),
+    ),
+  );
+
+  /// Removes a forgotten password without its email, which Telegram does
+  /// only after a wait.
+  Future<PasswordReset> resetPassword() async {
+    DateTime at(int seconds) =>
+        DateTime.fromMillisecondsSinceEpoch(seconds * 1000);
+    return switch (await _client.send(const td.ResetPassword())) {
+      td.ResetPasswordResultOk() => const PasswordResetDone(),
+      td.ResetPasswordResultPending(:final pendingResetDate) =>
+        PasswordResetPending(at(pendingResetDate)),
+      td.ResetPasswordResultDeclined(:final retryDate) => PasswordResetDeclined(
+        at(retryDate),
+      ),
+    };
+  }
+
+  Future<TwoStepState> cancelPasswordReset() async {
+    await _client.send(const td.CancelPasswordReset());
+    return twoStep();
+  }
 
   /// Days the account may go unused before it is deleted.
   Future<int> accountTtl() async =>

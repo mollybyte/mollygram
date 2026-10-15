@@ -10,6 +10,7 @@ import 'package:mollygram/src/privacy/privacy_settings.dart';
 import 'package:mollygram/src/session/providers.dart';
 import 'package:mollygram/src/settings/privacy/passcode.dart';
 import 'package:mollygram/src/settings/privacy/privacy_page.dart';
+import 'package:mollygram/src/settings/privacy/two_step_page.dart';
 import 'package:mollygram/src/settings/settings_window.dart';
 import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
@@ -358,21 +359,81 @@ void main() {
       final request = json.sent.lastWhere((r) => r['@type'] == 'setPassword');
       expect(request['new_hint'], 'cat');
       expect(request['new_recovery_email_address'], 'a@mail.com');
-      expect(find.text('Telegram sent a code to a***@mail.com.'), findsWidgets);
 
-      await tester.tap(find.text('Enter the code'));
-      await settle(tester);
+      // Until the code is in, TDLib holds the password back: the page
+      // says so rather than "on", and asks for the code right away.
+      expect(find.text('Telegram sent a code to a***@mail.com.'), findsWidgets);
+      expect(
+        find.text(
+          'Enter the code from the email to turn on two-step verification.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          'Two-step verification turns on once you enter the code sent to '
+          'the recovery email.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Change password'), findsNothing);
+
+      // A code of the length TDLib gave goes in without a click.
       await fill(tester, ['11111']);
-      await tester.tap(find.text('Confirm'));
       await settle(tester);
       expect(find.text('Invalid code'), findsOneWidget);
 
       await fill(tester, ['12345']);
-      await tester.tap(find.text('Confirm'));
       await settle(tester);
       expect(find.text('The recovery email is confirmed.'), findsOneWidget);
       expect(find.text('Change password'), findsOneWidget);
       expect(find.text('Change recovery email'), findsOneWidget);
+    });
+
+    testWidgets('a forgotten password is reset through the email', (
+      tester,
+    ) async {
+      json
+        ..password = 'old'
+        ..hasEmail = true;
+      await pump(tester);
+      await tester.tap(find.text('Two-step verification'));
+      await settle(tester);
+      await tester.tap(find.byKey(const ValueKey('turnOff')));
+      await settle(tester);
+      await tester.tap(find.byKey(const ValueKey('formSheetAside')));
+      await settle(tester);
+      expect(
+        find.text('Enter the code sent to a***@mail.com and a new password.'),
+        findsOneWidget,
+      );
+
+      await fill(tester, ['000000', 'fresh', 'fresh', '']);
+      await tester.tap(find.text('Save'));
+      await settle(tester);
+      expect(find.text('Invalid code'), findsOneWidget);
+
+      await fill(tester, ['777777', 'fresh', 'fresh', '']);
+      await tester.tap(find.text('Save'));
+      await settle(tester);
+      expect(json.password, 'fresh');
+      expect(find.text('The password is changed.'), findsOneWidget);
+    });
+
+    test('says what Telegram turned a password down for', () {
+      String says(String message) =>
+          twoStepError(l10n, td.TdException(400, message));
+      expect(
+        says('PASSWORD_TOO_FRESH_86400'),
+        'The password was changed recently. Try again later.',
+      );
+      expect(
+        says('SESSION_TOO_FRESH_86400'),
+        'This device signed in recently. Try again later.',
+      );
+      expect(says('NEW_PASSWORD_BAD'), l10n.twoStepPasswordRejected);
+      expect(says('NEW_SALT_INVALID'), l10n.twoStepPasswordRejected);
+      expect(says('PASSWORD_MISSING'), l10n.saveFailed);
     });
 
     testWidgets('changes how long an unused account lives', (tester) async {
@@ -380,7 +441,7 @@ void main() {
       expect(find.text('6 months'), findsOneWidget);
       await tester.tap(find.text('If away for'));
       await settle(tester);
-      await tester.tap(find.text('12 months'));
+      await tester.tap(find.text('1 year'));
       await settle(tester);
       expect(json.sent.lastWhere((r) => r['@type'] == 'setAccountTtl')['ttl'], {
         '@type': 'accountTtl',
@@ -420,7 +481,10 @@ void main() {
       await fill(tester, ['2580']);
       await tester.tap(find.text('Turn off'));
       await settle(tester);
-      expect(passcodes.saved, isNull);
+      final off = PasscodeSettings.fromJson(passcodes.saved);
+      expect(off.enabled, isFalse);
+      // The away time stays for the next passcode.
+      expect(off.autoLockMinutes, 15);
       expect(find.text('Turn passcode on'), findsOneWidget);
     });
 
@@ -517,7 +581,8 @@ final class _FakeTdJson implements td.TdJson {
 
   Map<String, Object?> _password() => {
     '@type': 'passwordState',
-    'has_password': password.isNotEmpty,
+    // TDLib keeps a password with a new email until its code is in.
+    'has_password': password.isNotEmpty && !pendingEmail,
     'password_hint': '',
     'has_recovery_email_address': hasEmail,
     'has_passport_data': false,
@@ -616,6 +681,20 @@ final class _FakeTdJson implements td.TdJson {
         hasEmail = true;
         return _password();
       }(),
+      'requestPasswordRecovery' => {
+        '@type': 'emailAddressAuthenticationCodeInfo',
+        'email_address_pattern': 'a***@mail.com',
+        'length': 6,
+      },
+      'recoverPassword' when decoded['recovery_code'] == '777777' => () {
+        password = decoded['new_password']! as String;
+        return _password();
+      }(),
+      'recoverPassword' => {
+        '@type': 'error',
+        'code': 400,
+        'message': 'PASSWORD_RECOVERY_CODE_INVALID',
+      },
       'checkRecoveryEmailAddressCode' => {
         '@type': 'error',
         'code': 400,

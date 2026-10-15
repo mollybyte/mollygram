@@ -22,7 +22,13 @@ String twoStepError(AppLocalizations l10n, Object error) {
   if (message == 'PASSWORD_HASH_INVALID') return l10n.errorInvalidPassword;
   if (message.startsWith('EMAIL_INVALID')) return l10n.twoStepEmailInvalid;
   if (message.contains('CODE_INVALID')) return l10n.errorInvalidCode;
-  if (message.startsWith('PASSWORD_') || message == 'NEW_PASSWORD_BAD') {
+  if (message.startsWith('PASSWORD_TOO_FRESH_')) {
+    return l10n.twoStepPasswordTooFresh;
+  }
+  if (message.startsWith('SESSION_TOO_FRESH_')) {
+    return l10n.twoStepSessionTooFresh;
+  }
+  if (message == 'NEW_PASSWORD_BAD' || message == 'NEW_SALT_INVALID') {
     return l10n.twoStepPasswordRejected;
   }
   if (error is TdException && error.code == 429) {
@@ -33,7 +39,8 @@ String twoStepError(AppLocalizations l10n, Object error) {
 
 /// Two-step verification, after TelegramSwift's TwoStepVerification:
 /// set a password with a hint and a recovery email, confirm the email
-/// with its code, then change or remove them.
+/// with its code, then change or remove them, or recover a forgotten
+/// password through the email.
 class TwoStepPage extends ConsumerStatefulWidget {
   const TwoStepPage({super.key});
 
@@ -47,35 +54,120 @@ class _TwoStepPageState extends ConsumerState<TwoStepPage> {
 
   PrivacySettingsController get _privacy => ref.read(privacyControllerProvider);
 
-  /// Runs a request of a sheet: on success the page shows the new state.
+  /// The state the last request left, to go on to its email code.
+  TwoStepState? _latest;
+
+  /// Runs a request of a sheet: on success the page shows the new state
+  /// and the notice [done] picks for it.
   Future<String?> Function(List<String>) _run(
     Future<TwoStepState> Function(List<String> values) request, {
     String? Function(List<String> values)? check,
-    String? done,
+    String? Function(TwoStepState state)? done,
   }) => (values) async {
     final l10n = AppLocalizations.of(context);
     if (check?.call(values) case final problem?) return problem;
+    final TwoStepState state;
     try {
-      await request(values);
+      state = await request(values);
     } on Object catch (error) {
       return twoStepError(l10n, error);
     }
+    _latest = state;
     ref.invalidate(twoStepProvider);
-    if (mounted) {
-      setState(() {
-        _notice = done;
-        _noticeIsError = false;
-      });
-    }
+    _show(done?.call(state));
     return null;
   };
+
+  void _show(String? notice, {bool error = false}) {
+    if (!mounted) return;
+    setState(() {
+      _notice = notice;
+      _noticeIsError = error;
+    });
+  }
+
+  /// After a new recovery email, the code it was sent goes in next.
+  Future<void> _codeIfPending() async {
+    if (_latest case final state? when state.awaitsEmailCode && mounted) {
+      await _enterCode(state);
+    }
+  }
+
+  /// "Forgot password?" under the sheets that ask for the password.
+  FormSheetAside _forgotAside(TwoStepState state) => (
+    label: AppLocalizations.of(context).twoStepForgotPassword,
+    onTap: () => _forgot(state),
+  );
+
+  /// After TelegramSwift: with a recovery email, a code sent there sets a
+  /// new password; without one, Telegram removes it after a wait.
+  Future<void> _forgot(TwoStepState state) async {
+    final l10n = AppLocalizations.of(context);
+    if (!state.hasRecoveryEmail) {
+      final confirmed = await showMgConfirm(
+        context,
+        title: l10n.twoStepResetTitle,
+        message: l10n.twoStepResetMessage,
+        confirmLabel: l10n.twoStepResetAction,
+        cancelLabel: l10n.cancel,
+        destructive: true,
+      );
+      if (confirmed == null || !mounted) return;
+      try {
+        final reset = await _privacy.resetPassword();
+        ref.invalidate(twoStepProvider);
+        switch (reset) {
+          case PasswordResetDone():
+            _show(l10n.twoStepTurnedOff);
+          case PasswordResetPending(:final date):
+            _show(l10n.twoStepResetPending(date));
+          case PasswordResetDeclined(:final retryDate):
+            _show(l10n.twoStepResetDeclined(retryDate), error: true);
+        }
+      } on Object catch (error) {
+        _show(twoStepError(l10n, error), error: true);
+      }
+      return;
+    }
+    final String pattern;
+    try {
+      pattern = await _privacy.requestPasswordRecovery();
+    } on Object catch (error) {
+      _show(twoStepError(l10n, error), error: true);
+      return;
+    }
+    if (!mounted) return;
+    await showFormSheet(
+      context,
+      title: l10n.twoStepRecoverTitle,
+      subtitle: l10n.twoStepRecoverAbout(pattern),
+      fields: [
+        FormSheetField(l10n.twoStepCode, keyboardType: TextInputType.number),
+        FormSheetField(l10n.twoStepNewPassword, obscure: true),
+        FormSheetField(l10n.twoStepRepeatPassword, obscure: true),
+        FormSheetField(l10n.twoStepHint, optional: true),
+      ],
+      action: l10n.save,
+      onSubmit: _run(
+        check: (v) {
+          if (v[3].trim() == v[1] && v[1].isNotEmpty) {
+            return l10n.twoStepHintIsPassword;
+          }
+          return _matches(v[1], v[2]);
+        },
+        (v) =>
+            _privacy.recoverPassword(code: v[0], newPassword: v[1], hint: v[3]),
+        done: (_) => l10n.twoStepPasswordChanged,
+      ),
+    );
+  }
 
   String? _matches(String a, String b) =>
       a == b ? null : AppLocalizations.of(context).passwordsDontMatch;
 
-  Future<void> _setPassword({required bool change}) async {
+  Future<void> _setPassword(TwoStepState state, {required bool change}) async {
     final l10n = AppLocalizations.of(context);
-    await showFormSheet(
+    final saved = await showFormSheet(
       context,
       title: change ? l10n.twoStepChangePassword : l10n.twoStepSetPassword,
       subtitle: change ? null : l10n.twoStepSetPasswordAbout,
@@ -92,6 +184,7 @@ class _TwoStepPageState extends ConsumerState<TwoStepPage> {
           ),
       ],
       action: l10n.save,
+      aside: change && state.hasPassword ? _forgotAside(state) : null,
       onSubmit: _run(
         check: (v) {
           final at = change ? 1 : 0;
@@ -110,14 +203,21 @@ class _TwoStepPageState extends ConsumerState<TwoStepPage> {
             email: email.isEmpty ? null : email,
           );
         },
-        done: change ? l10n.twoStepPasswordChanged : l10n.twoStepPasswordSet,
+        // With a new email TDLib keeps the password until its code is in.
+        done: (state) => state.awaitsEmailCode && !state.hasPassword
+            ? l10n.twoStepConfirmToFinish
+            : change
+            ? l10n.twoStepPasswordChanged
+            : l10n.twoStepPasswordSet,
       ),
     );
+    if (saved) await _codeIfPending();
   }
 
-  Future<void> _setEmail(bool hasEmail) async {
+  Future<void> _setEmail(TwoStepState state) async {
     final l10n = AppLocalizations.of(context);
-    await showFormSheet(
+    final hasEmail = state.hasRecoveryEmail;
+    final saved = await showFormSheet(
       context,
       title: hasEmail ? l10n.twoStepChangeEmail : l10n.twoStepSetEmail,
       subtitle: l10n.twoStepRecoveryEmailAbout,
@@ -129,8 +229,10 @@ class _TwoStepPageState extends ConsumerState<TwoStepPage> {
         ),
       ],
       action: l10n.save,
+      aside: _forgotAside(state),
       onSubmit: _run((v) => _privacy.setRecoveryEmail(v[0], v[1])),
     );
+    if (saved) await _codeIfPending();
   }
 
   Future<void> _enterCode(TwoStepState state) async {
@@ -140,17 +242,21 @@ class _TwoStepPageState extends ConsumerState<TwoStepPage> {
       title: l10n.twoStepConfirmEmail,
       subtitle: l10n.twoStepCodeSent(state.pendingEmailPattern ?? ''),
       fields: [
-        FormSheetField(l10n.twoStepCode, keyboardType: TextInputType.number),
+        FormSheetField(
+          l10n.twoStepCode,
+          keyboardType: TextInputType.number,
+          submitAtLength: state.codeLength,
+        ),
       ],
       action: l10n.twoStepCheckCode,
       onSubmit: _run(
         (v) => _privacy.checkEmailCode(v[0]),
-        done: l10n.twoStepEmailConfirmed,
+        done: (_) => l10n.twoStepEmailConfirmed,
       ),
     );
   }
 
-  Future<void> _turnOff() async {
+  Future<void> _turnOff(TwoStepState state) async {
     final l10n = AppLocalizations.of(context);
     await showFormSheet(
       context,
@@ -159,21 +265,17 @@ class _TwoStepPageState extends ConsumerState<TwoStepPage> {
       fields: [FormSheetField(l10n.twoStepCurrentPassword, obscure: true)],
       action: l10n.twoStepTurnOffAction,
       destructive: true,
+      aside: _forgotAside(state),
       onSubmit: _run(
         (v) => _privacy.removePassword(v[0]),
-        done: l10n.twoStepTurnedOff,
+        done: (_) => l10n.twoStepTurnedOff,
       ),
     );
   }
 
   Future<void> _simple(Future<TwoStepState> Function() request) async {
     final error = await _run((_) => request())(const []);
-    if (error != null && mounted) {
-      setState(() {
-        _notice = error;
-        _noticeIsError = true;
-      });
-    }
+    if (error != null) _show(error, error: true);
   }
 
   @override
@@ -200,7 +302,11 @@ class _TwoStepPageState extends ConsumerState<TwoStepPage> {
       children: [
         SettingsGroup(
           footer: SettingsFooter(
-            state.hasPassword ? l10n.twoStepOnAbout : l10n.twoStepOffAbout,
+            state.hasPassword
+                ? l10n.twoStepOnAbout
+                : state.awaitsEmailCode
+                ? l10n.twoStepPendingAbout
+                : l10n.twoStepOffAbout,
           ),
           children: [
             SettingsRow(
@@ -215,6 +321,17 @@ class _TwoStepPageState extends ConsumerState<TwoStepPage> {
             ),
           ],
         ),
+        if (state.pendingResetDate case final date?)
+          SettingsGroup(
+            footer: SettingsFooter(l10n.twoStepResetPending(date)),
+            children: [
+              SettingsRow(
+                key: const ValueKey('cancelReset'),
+                title: l10n.twoStepCancelReset,
+                onTap: () => unawaited(_simple(_privacy.cancelPasswordReset)),
+              ),
+            ],
+          ),
         if (state.awaitsEmailCode)
           SettingsGroup(
             title: l10n.twoStepConfirmEmail,
@@ -250,7 +367,7 @@ class _TwoStepPageState extends ConsumerState<TwoStepPage> {
                         ? null
                         : l10n.twoStepHintIs(state.hint),
                     chevron: true,
-                    onTap: () => unawaited(_setPassword(change: true)),
+                    onTap: () => unawaited(_setPassword(state, change: true)),
                   ),
                   SettingsRow(
                     key: const ValueKey('email'),
@@ -258,13 +375,13 @@ class _TwoStepPageState extends ConsumerState<TwoStepPage> {
                         ? l10n.twoStepChangeEmail
                         : l10n.twoStepSetEmail,
                     chevron: true,
-                    onTap: () => unawaited(_setEmail(state.hasRecoveryEmail)),
+                    onTap: () => unawaited(_setEmail(state)),
                   ),
                   SettingsRow(
                     key: const ValueKey('turnOff'),
                     title: l10n.twoStepTurnOff,
                     destructive: true,
-                    onTap: () => unawaited(_turnOff()),
+                    onTap: () => unawaited(_turnOff(state)),
                   ),
                 ]
               : [
@@ -272,7 +389,7 @@ class _TwoStepPageState extends ConsumerState<TwoStepPage> {
                     key: const ValueKey('setPassword'),
                     title: l10n.twoStepSetPassword,
                     chevron: true,
-                    onTap: () => unawaited(_setPassword(change: false)),
+                    onTap: () => unawaited(_setPassword(state, change: false)),
                   ),
                 ],
         ),

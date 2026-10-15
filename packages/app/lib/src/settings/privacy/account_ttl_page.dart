@@ -15,11 +15,13 @@ final accountTtlProvider = FutureProvider.autoDispose<int>(
   (ref) => ref.watch(privacyControllerProvider).accountTtl(),
 );
 
-/// "6 months" for 180 days; a period Telegram set that isn't one of the
-/// choices reads in days.
+/// "6 months" for 180 days, as TelegramSwift names them; another period
+/// Telegram set reads in days.
 String accountTtlLabel(AppLocalizations l10n, int days) => switch (days) {
   30 || 90 || 180 => l10n.ttlMonths(days ~/ 30),
-  365 => l10n.ttlMonths(12),
+  365 => l10n.ttlYears(1),
+  548 => l10n.ttlMonths(18),
+  730 => l10n.ttlMonths(24),
   _ => l10n.ttlDays(days),
 };
 

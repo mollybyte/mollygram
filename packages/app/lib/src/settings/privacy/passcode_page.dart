@@ -13,11 +13,29 @@ import 'user_picker.dart' show checkIcon;
 /// The passcode lock, after TelegramSwift's PasscodeSettings: turn it on
 /// or off, change it, and how long the user may be away before the window
 /// locks.
-class PasscodePage extends ConsumerWidget {
+class PasscodePage extends ConsumerStatefulWidget {
   const PasscodePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PasscodePage> createState() => _PasscodePageState();
+}
+
+class _PasscodePageState extends ConsumerState<PasscodePage> {
+  /// A failed auto-lock change.
+  String? _error;
+
+  Future<void> _setAutoLock(int minutes) async {
+    final l10n = AppLocalizations.of(context);
+    setState(() => _error = null);
+    try {
+      await ref.read(passcodeLockProvider.notifier).setAutoLock(minutes);
+    } on Object {
+      if (mounted) setState(() => _error = l10n.saveFailed);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final c = MgColors.of(context);
     final l10n = AppLocalizations.of(context);
     final lock = ref.watch(passcodeLockProvider);
@@ -29,6 +47,16 @@ class PasscodePage extends ConsumerWidget {
       if (v[at] != v[at + 1]) return l10n.passcodesDontMatch;
       return null;
     };
+
+    /// Runs a keychain change, saying when it couldn't be written.
+    Future<String?> saving(Future<void> Function() change) async {
+      try {
+        await change();
+        return null;
+      } on Object {
+        return l10n.saveFailed;
+      }
+    }
 
     Future<String?> Function(List<String>) checked(
       Future<String?> Function(List<String>) then,
@@ -48,8 +76,7 @@ class PasscodePage extends ConsumerWidget {
       action: l10n.save,
       onSubmit: (v) async {
         if (newPasscode(0)(v) case final problem?) return problem;
-        await notifier.setPasscode(v[0]);
-        return null;
+        return saving(() => notifier.setPasscode(v[0]));
       },
     );
 
@@ -64,8 +91,7 @@ class PasscodePage extends ConsumerWidget {
       action: l10n.save,
       onSubmit: checked((v) async {
         if (newPasscode(1)(v) case final problem?) return problem;
-        await notifier.setPasscode(v[1]);
-        return null;
+        return saving(() => notifier.setPasscode(v[1]));
       }),
     );
 
@@ -75,10 +101,7 @@ class PasscodePage extends ConsumerWidget {
       fields: [FormSheetField(l10n.passcodeCurrent, obscure: true)],
       action: l10n.passcodeTurnOffAction,
       destructive: true,
-      onSubmit: checked((_) async {
-        await notifier.turnOff();
-        return null;
-      }),
+      onSubmit: checked((_) => saving(notifier.turnOff)),
     );
 
     return SettingsPage(
@@ -116,7 +139,10 @@ class PasscodePage extends ConsumerWidget {
           child: settings.enabled
               ? SettingsGroup(
                   title: l10n.passcodeAutoLock,
-                  footer: SettingsFooter(l10n.passcodeLockNowHint),
+                  footer: SettingsFooter(
+                    _error ?? l10n.passcodeLockNowHint,
+                    error: _error != null,
+                  ),
                   children: [
                     for (final minutes in PasscodeSettings.autoLockChoices)
                       Semantics(
@@ -138,7 +164,7 @@ class PasscodePage extends ConsumerWidget {
                               color: c.accent,
                             ),
                           ),
-                          onTap: () => unawaited(notifier.setAutoLock(minutes)),
+                          onTap: () => unawaited(_setAutoLock(minutes)),
                         ),
                       ),
                   ],
