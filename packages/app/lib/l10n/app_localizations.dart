@@ -3866,6 +3866,36 @@ abstract class AppLocalizations {
   /// **'Back to topics'**
   String get backToTopics;
 
+  /// No description provided for @savedShowAsChats.
+  ///
+  /// In en, this message translates to:
+  /// **'Show as chats'**
+  String get savedShowAsChats;
+
+  /// No description provided for @savedShowAsMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Show as messages'**
+  String get savedShowAsMessages;
+
+  /// No description provided for @savedMyNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'My notes'**
+  String get savedMyNotes;
+
+  /// No description provided for @savedHiddenAuthor.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden author'**
+  String get savedHiddenAuthor;
+
+  /// No description provided for @deleteSavedTopicConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete everything saved from {name}?'**
+  String deleteSavedTopicConfirm(String name);
+
   /// No description provided for @noTopics.
   ///
   /// In en, this message translates to:

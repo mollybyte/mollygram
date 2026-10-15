@@ -900,6 +900,16 @@
   },
   "backToChat": "Back to the chat",
   "backToTopics": "Back to topics",
+  "savedShowAsChats": "Show as chats",
+  "savedShowAsMessages": "Show as messages",
+  "savedMyNotes": "My notes",
+  "savedHiddenAuthor": "Hidden author",
+  "deleteSavedTopicConfirm": "Delete everything saved from {name}?",
+  "@deleteSavedTopicConfirm": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
   "noTopics": "No topics yet",
   "topicClosed": "Topic closed",
   "topicUnavailable": "Couldn't open this topic",

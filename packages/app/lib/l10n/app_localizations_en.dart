@@ -2273,6 +2273,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get backToTopics => 'Back to topics';
 
   @override
+  String get savedShowAsChats => 'Show as chats';
+
+  @override
+  String get savedShowAsMessages => 'Show as messages';
+
+  @override
+  String get savedMyNotes => 'My notes';
+
+  @override
+  String get savedHiddenAuthor => 'Hidden author';
+
+  @override
+  String deleteSavedTopicConfirm(String name) {
+    return 'Delete everything saved from $name?';
+  }
+
+  @override
   String get noTopics => 'No topics yet';
 
   @override
