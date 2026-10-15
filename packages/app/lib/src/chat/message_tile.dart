@@ -377,8 +377,9 @@ class MessageTile extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: mgTextStyle(
                         c,
-                        weight: FontWeight.w600,
+                        weight: MgWeight.medium,
                         color: peerNameColor(c, store.colorOf(message.sender)),
+                        height: 1.35,
                       ),
                     ),
                   ),

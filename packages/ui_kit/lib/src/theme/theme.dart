@@ -11,6 +11,8 @@ ThemeData buildMgTheme(
 }) {
   final base = ThemeData(
     brightness: colors.brightness,
+    fontFamily: mgFontFamily,
+    fontFamilyFallback: mgFontFamilyFallback,
     colorScheme: ColorScheme.fromSeed(
       seedColor: colors.accent,
       brightness: colors.brightness,
@@ -32,6 +34,34 @@ ThemeData buildMgTheme(
       displayColor: colors.fg,
     ),
   );
+}
+
+/// The system font. `CupertinoSystemText` is the family the engine maps
+/// to the native UI font with all of its weights and the text optical size
+/// (SF Pro Text on macOS); asking for `.AppleSystemUIFont` or leaving the
+/// family empty gets only regular and bold there, so semibold and medium
+/// come out as heavy bold.
+const String mgFontFamily = 'CupertinoSystemText';
+
+/// Other platforms: Segoe UI on Windows, then common Linux UI fonts.
+const List<String> mgFontFamilyFallback = [
+  '.AppleSystemUIFont',
+  'Segoe UI Variable Text',
+  'Segoe UI',
+  'Inter',
+  'Cantarell',
+  'Ubuntu',
+  'Noto Sans',
+  'Roboto',
+  'sans-serif',
+];
+
+/// The weights the UI uses. Nothing in the app is bold: titles and names
+/// are [medium], only the header title and badges are [semibold].
+abstract final class MgWeight {
+  static const FontWeight regular = FontWeight.w400;
+  static const FontWeight medium = FontWeight.w500;
+  static const FontWeight semibold = FontWeight.w600;
 }
 
 /// Type scale from the mockup. Everything uses the system font; sizes are
@@ -56,7 +86,19 @@ abstract final class MgType {
   static const double meta = 11;
 }
 
-/// The base text style: system font, 13 px, line height 1.4.
+/// SF Pro's tracking for [size], as the system applies it to its own
+/// text: a touch wider below 12 px, tighter from 13 px up.
+double mgTracking(double size) {
+  if (size <= 11) return 0.06;
+  if (size < 13) return 0;
+  if (size < 14) return -0.08;
+  if (size < 16) return -0.15;
+  if (size < 20) return -0.24;
+  return -0.3;
+}
+
+/// The base text style: system font, 13 px, line height 1.4, system
+/// tracking.
 TextStyle mgTextStyle(
   MgColors colors, {
   double size = MgType.body,
@@ -64,9 +106,11 @@ TextStyle mgTextStyle(
   Color? color,
   double height = 1.4,
 }) => TextStyle(
+  fontFamily: mgFontFamily,
+  fontFamilyFallback: mgFontFamilyFallback,
   fontSize: size,
   height: height,
   fontWeight: weight,
   color: color ?? colors.fg,
-  letterSpacing: 0,
+  letterSpacing: mgTracking(size),
 );
