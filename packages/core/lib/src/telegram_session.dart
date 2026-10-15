@@ -11,6 +11,7 @@ import 'connection_status.dart';
 import 'contacts_controller.dart';
 import 'conversation_controller.dart';
 import 'file_controller.dart';
+import 'link_resolver.dart';
 import 'notification_controller.dart';
 import 'peer_info.dart';
 import 'sticker_library.dart';
@@ -45,6 +46,7 @@ final class TelegramSession {
     required this.account,
     required this.connection,
     required this.contacts,
+    required this.links,
     required this._initializer,
   });
 
@@ -65,6 +67,7 @@ final class TelegramSession {
 
   /// Contacts and the users TDLib has sent.
   final ContactsController contacts;
+  final LinkResolver links;
   final _errors = StreamController<Object>.broadcast(sync: true);
   final _closedElsewhere = Completer<void>();
   StreamSubscription<AuthorizationStage>? _stageSubscription;
@@ -100,6 +103,7 @@ final class TelegramSession {
       account: AccountSettings(client),
       connection: connection,
       contacts: contacts,
+      links: LinkResolver(client),
       initializer: TdlibInitializer(client, parameters: parameters),
     );
     session._stageSubscription = authorization.stages.listen(session._onStage);

@@ -2168,6 +2168,96 @@ abstract class AppLocalizations {
   /// **'Next reaction'**
   String get nextReaction;
 
+  /// No description provided for @linkJoinChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Join channel'**
+  String get linkJoinChannel;
+
+  /// No description provided for @linkJoinGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Join group'**
+  String get linkJoinGroup;
+
+  /// No description provided for @linkRequestToJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'Request to join'**
+  String get linkRequestToJoin;
+
+  /// No description provided for @linkViewChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'View channel'**
+  String get linkViewChannel;
+
+  /// No description provided for @linkViewGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'View group'**
+  String get linkViewGroup;
+
+  /// No description provided for @linkSubscribers.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No subscribers} one{{count} subscriber} other{{count} subscribers}}'**
+  String linkSubscribers(int count);
+
+  /// No description provided for @linkMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No members} one{{count} member} other{{count} members}}'**
+  String linkMembers(int count);
+
+  /// No description provided for @linkApprovalHint.
+  ///
+  /// In en, this message translates to:
+  /// **'An admin has to approve your request.'**
+  String get linkApprovalHint;
+
+  /// No description provided for @linkRequestSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Request sent'**
+  String get linkRequestSent;
+
+  /// No description provided for @linkRequestSentHint.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ll join once an admin approves it.'**
+  String get linkRequestSentHint;
+
+  /// No description provided for @linkJoinFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t join. Try again later.'**
+  String get linkJoinFailed;
+
+  /// No description provided for @linkMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'This link is invalid or has expired.'**
+  String get linkMissing;
+
+  /// No description provided for @linkUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Mollygram can\'t open this kind of link yet.'**
+  String get linkUnsupported;
+
+  /// No description provided for @done.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get done;
+
+  /// No description provided for @linkForbidden.
+  ///
+  /// In en, this message translates to:
+  /// **'You can\'t view this chat.'**
+  String get linkForbidden;
+
   /// No description provided for @menuPin.
   ///
   /// In en, this message translates to:
