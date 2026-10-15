@@ -11,6 +11,9 @@ class MainFlutterWindow: NSWindow {
   private static let buttonsLeft: CGFloat = 23
   private static let buttonsSpacing: CGFloat = 20
 
+  /// The user defaults key under which AppKit keeps the window frame.
+  private static let frameName = "MainWindow"
+
   private var notifications: NotificationsChannel?
   private var voiceCapture: VoiceCaptureChannel?
   private var videoNoteCapture: VideoNoteCaptureChannel?
@@ -26,8 +29,13 @@ class MainFlutterWindow: NSWindow {
     self.titleVisibility = .hidden
     self.styleMask.insert(.fullSizeContentView)
     self.minSize = NSSize(width: 880, height: 560)
-    self.setContentSize(NSSize(width: 1200, height: 780))
-    self.center()
+    // The size and position come back on the next launch; the defaults are
+    // for the first one only.
+    if !self.setFrameUsingName(Self.frameName) {
+      self.setContentSize(NSSize(width: 1200, height: 780))
+      self.center()
+    }
+    self.setFrameAutosaveName(Self.frameName)
 
     // Flutter takes all mouse events, so Dart asks the window to start a
     // drag when an empty header area is pressed.
