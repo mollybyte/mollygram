@@ -521,6 +521,29 @@ class AppLocalizationsRu extends AppLocalizations {
   String get menuShowInFolder => 'Показать в папке';
 
   @override
+  String get sendWithoutSound => 'Отправить без звука';
+
+  @override
+  String get scheduleMessage => 'Запланировать сообщение…';
+
+  @override
+  String get scheduleTitle => 'Запланировать сообщение';
+
+  @override
+  String get scheduleHint => 'Выберите день и время отправки.';
+
+  @override
+  String get scheduleTimeHint => 'ЧЧ:ММ';
+
+  @override
+  String get scheduleAction => 'Запланировать';
+
+  @override
+  String scheduledFor(String date) {
+    return 'Запланировано на $date';
+  }
+
+  @override
   String get menuDelete => 'Удалить';
 
   @override

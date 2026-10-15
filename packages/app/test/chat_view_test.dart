@@ -750,6 +750,52 @@ void main() {
     );
   });
 
+  testWidgets('sends without sound or schedules from the send menu', (
+    tester,
+  ) async {
+    await pump(tester);
+
+    await tester.enterText(find.byType(TextField), 'Quiet one');
+    await tester.pump();
+    await tester.tap(find.byType(MgSendButton), buttons: kSecondaryButton);
+    await tester.pump();
+    await tester.tap(find.text('Send without sound'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    var sent = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    expect((sent['options']! as Map)['disable_notification'], isTrue);
+    expect(find.text('Sent'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), 'Later one');
+    await tester.pump();
+    await tester.tap(find.byType(MgSendButton), buttons: kSecondaryButton);
+    await tester.pump();
+    await tester.tap(find.text('Schedule message…'));
+    await tester.pump();
+    expect(find.text('Schedule message'), findsOneWidget);
+    await tester.enterText(find.byType(TextField).last, '23:59');
+    await tester.pump();
+    await tester.tap(find.text('Schedule'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    sent = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    final state = (sent['options']! as Map)['scheduling_state']! as Map;
+    final when = DateTime.fromMillisecondsSinceEpoch(
+      (state['send_date']! as int) * 1000,
+    );
+    expect(when.hour, 23);
+    expect(when.minute, 59);
+    expect(when.isAfter(DateTime.now()), isTrue);
+    // It goes to the scheduled list, so the timeline shows a toast, not it.
+    expect(find.text('Later one'), findsNothing);
+    expect(find.textContaining('Scheduled for'), findsOneWidget);
+    expect(
+      tester.widget<TextField>(find.byType(TextField)).controller!.text,
+      isEmpty,
+    );
+    await tester.pump(const Duration(seconds: 3));
+  });
+
   testWidgets('reports a message with a reason and details', (tester) async {
     await pump(tester);
 
@@ -1427,12 +1473,10 @@ final class _FakeTdJson implements td.TdJson {
         'code': 403,
         'message': 'CHAT_WRITE_FORBIDDEN',
       },
-      'sendMessage' => _message(
-        id: 20,
-        senderId: 1,
-        text: 'Sent',
-        outgoing: true,
-      ).toJson(),
+      'sendMessage' => {
+        ..._message(id: 20, senderId: 1, text: 'Sent', outgoing: true).toJson(),
+        'scheduling_state': ?(decoded['options'] as Map?)?['scheduling_state'],
+      },
       'editMessageText' => _message(
         id: decoded['message_id']! as int,
         senderId: 1,

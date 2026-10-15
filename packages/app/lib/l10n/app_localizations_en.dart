@@ -518,6 +518,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get menuShowInFolder => 'Show in folder';
 
   @override
+  String get sendWithoutSound => 'Send without sound';
+
+  @override
+  String get scheduleMessage => 'Schedule message…';
+
+  @override
+  String get scheduleTitle => 'Schedule message';
+
+  @override
+  String get scheduleHint => 'Pick the day and the time it goes out.';
+
+  @override
+  String get scheduleTimeHint => 'HH:MM';
+
+  @override
+  String get scheduleAction => 'Schedule';
+
+  @override
+  String scheduledFor(String date) {
+    return 'Scheduled for $date';
+  }
+
+  @override
   String get menuDelete => 'Delete';
 
   @override
