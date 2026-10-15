@@ -2654,7 +2654,16 @@ class AppLocalizationsRu extends AppLocalizations {
   String get shortcutChange => 'Изменить сочетание';
 
   @override
-  String get shortcutNeedsModifier => 'Добавьте к клавише ⌘, ⌃ или ⌥';
+  String get shortcutNeedsModifier => 'Добавьте к клавише Ctrl или Alt';
+
+  @override
+  String get shortcutNeedsModifierMac => 'Добавьте к клавише ⌘, ⌃ или ⌥';
+
+  @override
+  String get shortcutReserved => 'Используется системой';
+
+  @override
+  String get shortcutReservedMac => 'Используется macOS';
 
   @override
   String shortcutUsedBy(String title) {
@@ -2668,7 +2677,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get shortcutRestore => 'Вернуть по умолчанию';
 
   @override
-  String get shortcutsRestoreAll => 'Вернуть по умолчанию';
+  String get shortcutsRestoreAll => 'Сбросить все';
 
   @override
   String get shortcutsRestoreAllTitle => 'Вернуть все сочетания по умолчанию?';

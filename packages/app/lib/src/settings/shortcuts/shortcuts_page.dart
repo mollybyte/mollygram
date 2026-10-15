@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mollygram_shell/mollygram_shell.dart' show usesCommandKey;
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../../l10n/app_localizations.dart';
@@ -78,8 +79,9 @@ class _ShortcutsPageState extends ConsumerState<ShortcutsPage> {
   /// The action listening for its new key.
   String? _recording;
 
-  /// The recorder heard a letter without a modifier.
-  var _needsModifier = false;
+  /// Why the recorder didn't take the last key: a letter without a
+  /// modifier, or a key the system keeps.
+  String? _recordHint;
   _Conflict? _conflict;
 
   @override
@@ -111,7 +113,7 @@ class _ShortcutsPageState extends ConsumerState<ShortcutsPage> {
 
   void _record(BindableAction action) => setState(() {
     _recording = action.id;
-    _needsModifier = false;
+    _recordHint = null;
     _conflict = null;
   });
 
@@ -119,7 +121,7 @@ class _ShortcutsPageState extends ConsumerState<ShortcutsPage> {
     if (_recording == null) return;
     setState(() {
       _recording = null;
-      _needsModifier = false;
+      _recordHint = null;
     });
   }
 
@@ -128,7 +130,20 @@ class _ShortcutsPageState extends ConsumerState<ShortcutsPage> {
       case RecordingContinues():
         return;
       case RecordingNeedsModifier():
-        setState(() => _needsModifier = true);
+        final l10n = AppLocalizations.of(context);
+        setState(
+          () => _recordHint = usesCommandKey
+              ? l10n.shortcutNeedsModifierMac
+              : l10n.shortcutNeedsModifier,
+        );
+        return;
+      case RecordingDone(:final key) when isReservedShortcut(key):
+        final l10n = AppLocalizations.of(context);
+        setState(
+          () => _recordHint = usesCommandKey
+              ? l10n.shortcutReservedMac
+              : l10n.shortcutReserved,
+        );
         return;
       case RecordingCancelled():
         _stopRecording();
@@ -147,11 +162,31 @@ class _ShortcutsPageState extends ConsumerState<ShortcutsPage> {
   }
 
   void _replace(_Conflict conflict, List<BindableAction> actions) {
-    BindableAction byId(String id) => actions.firstWhere((a) => a.id == id);
-    final other = byId(conflict.otherId);
-    final freed = withShortcut(_registry.overrides, other, null);
-    _save(withShortcut(freed, byId(conflict.id), conflict.key));
     setState(() => _conflict = null);
+    final action = actions.where((a) => a.id == conflict.id).firstOrNull;
+    if (action == null) return;
+    // The other action may be gone (a plugin turned off): its key is
+    // taken back all the same.
+    final other =
+        actions.where((a) => a.id == conflict.otherId).firstOrNull ??
+        BindableAction(id: conflict.otherId, owner: '', title: '');
+    final freed = withShortcut(_registry.overrides, other, null);
+    _save(withShortcut(freed, action, conflict.key));
+  }
+
+  /// Back to the default key, unless another action has it: then the
+  /// same question as for a recorded key.
+  void _restore(BindableAction action) {
+    final key = action.defaultKey;
+    final other = key == null
+        ? null
+        : _registry.whoUses(key, except: action.id);
+    if (key != null && other != null) {
+      setState(() => _conflict = (id: action.id, key: key, otherId: other));
+      return;
+    }
+    setState(() => _conflict = null);
+    _save({..._registry.overrides}..remove(action.id));
   }
 
   Future<void> _restoreAll() async {
@@ -226,7 +261,7 @@ class _ShortcutsPageState extends ConsumerState<ShortcutsPage> {
                         overrides.containsKey(action.id) &&
                         overrides[action.id] != action.defaultKey,
                     recording: _recording == action.id,
-                    needsModifier: _recording == action.id && _needsModifier,
+                    hint: _recording == action.id ? _recordHint : null,
                     conflict: _conflict?.id == action.id ? _conflict : null,
                     conflictTitle: _conflict?.id == action.id
                         ? titleOf(_conflict!.otherId)
@@ -234,10 +269,7 @@ class _ShortcutsPageState extends ConsumerState<ShortcutsPage> {
                     onRecord: () => _record(action),
                     onKey: (recorded) => _onKey(action, recorded),
                     onCancel: _stopRecording,
-                    onRestore: () {
-                      setState(() => _conflict = null);
-                      _save({...overrides}..remove(action.id));
-                    },
+                    onRestore: () => _restore(action),
                     onReplace: () => _replace(_conflict!, actions),
                     onDismissConflict: () => setState(() => _conflict = null),
                   ),
@@ -274,7 +306,7 @@ class _ShortcutRow extends StatelessWidget {
     required this.shortcut,
     required this.changed,
     required this.recording,
-    required this.needsModifier,
+    required this.hint,
     required this.conflict,
     required this.conflictTitle,
     required this.onRecord,
@@ -291,7 +323,9 @@ class _ShortcutRow extends StatelessWidget {
   /// The user's key differs from the default.
   final bool changed;
   final bool recording;
-  final bool needsModifier;
+
+  /// Why the recorder didn't take the last key.
+  final String? hint;
   final _Conflict? conflict;
   final String? conflictTitle;
   final VoidCallback onRecord;
@@ -333,15 +367,16 @@ class _ShortcutRow extends StatelessWidget {
       value = Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (changed)
+          if (changed) ...[
             MgIconButton(
               key: ValueKey(('restoreShortcut', action.id)),
-              icon: _restore,
+              icon: _restoreIcon,
               tooltip: l10n.shortcutRestore,
               iconSize: 14,
               onPressed: onRestore,
             ),
-          const SizedBox(width: 4),
+            const SizedBox(width: 4),
+          ],
           Tooltip(
             message: l10n.shortcutChange,
             waitDuration: const Duration(milliseconds: 600),
@@ -351,8 +386,9 @@ class _ShortcutRow extends StatelessWidget {
                 key: ValueKey(('recordShortcut', action.id)),
                 behavior: HitTestBehavior.opaque,
                 onTap: onRecord,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Container(
+                  height: KeyCaps.rowHeight,
+                  alignment: Alignment.center,
                   child: shortcut == null
                       ? Text(
                           l10n.shortcutNone,
@@ -370,14 +406,17 @@ class _ShortcutRow extends StatelessWidget {
       title: action.title,
       subtitle: conflict != null
           ? l10n.shortcutUsedBy(conflictTitle ?? '')
-          : needsModifier
-          ? l10n.shortcutNeedsModifier
-          : null,
-      trailing: AnimatedSwitcher(
+          : hint,
+      trailing: AnimatedSize(
         duration: settingsMotionOf(context),
-        child: KeyedSubtree(
-          key: ValueKey((recording, conflict?.key, shortcut, changed)),
-          child: value,
+        curve: settingsCurve,
+        alignment: Alignment.centerRight,
+        child: AnimatedSwitcher(
+          duration: settingsMotionOf(context),
+          child: KeyedSubtree(
+            key: ValueKey((recording, conflict?.key, shortcut, changed)),
+            child: value,
+          ),
         ),
       ),
     );
@@ -389,7 +428,7 @@ const _keyboard = MgIconData(
   '<rect x="3" y="6" width="18" height="12" rx="2.5"/>'
       '<path d="M7 10h.01M10.5 10h.01M14 10h.01M17 10h.01M8 14h8"/>',
 );
-const _restore = MgIconData(
+const _restoreIcon = MgIconData(
   'restore',
   '<path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4v3.5H8"/>',
 );

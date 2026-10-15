@@ -3,13 +3,15 @@ import 'package:flutter/services.dart';
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../commands/shortcut_key.dart';
-import '../settings_style.dart';
 
 /// A shortcut as raised key caps: ⌘ ⇧ K, each on its own cap.
 class KeyCaps extends StatelessWidget {
   const KeyCaps(this.shortcut, {super.key});
 
   final ShortcutKey shortcut;
+
+  /// The height of a row of caps with the room around it in a list.
+  static const rowHeight = 28.0;
 
   @override
   Widget build(BuildContext context) {
@@ -89,6 +91,11 @@ class _ShortcutRecorderState extends State<ShortcutRecorder> {
   void initState() {
     super.initState();
     _focus.addListener(_focusChanged);
+    // Autofocus gives way to a field that has focus, such as the search:
+    // the keys must come here.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _focus.requestFocus();
+    });
   }
 
   void _focusChanged() {
@@ -106,27 +113,32 @@ class _ShortcutRecorderState extends State<ShortcutRecorder> {
   @override
   Widget build(BuildContext context) {
     final c = MgColors.of(context);
-    return Focus(
-      focusNode: _focus,
-      autofocus: true,
-      // Every key is the shortcut being typed, not a command to run.
-      onKeyEvent: (_, event) {
-        if (event is KeyDownEvent) widget.onKey(recordKeyEvent(event));
-        return KeyEventResult.handled;
-      },
-      child: AnimatedContainer(
-        duration: settingsMotionOf(context),
-        height: 22,
-        padding: const EdgeInsets.symmetric(horizontal: 9),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: c.accent.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: c.accent, width: 1),
-        ),
-        child: Text(
-          widget.hint,
-          style: mgTextStyle(c, size: MgType.small, color: c.accent),
+    // A click anywhere else gives up, as in System Settings.
+    return TapRegion(
+      onTapOutside: (_) => widget.onCancel(),
+      child: Focus(
+        focusNode: _focus,
+        autofocus: true,
+        // Every key is the shortcut being typed, not a command to run.
+        onKeyEvent: (_, event) {
+          if (event is KeyDownEvent) widget.onKey(recordKeyEvent(event));
+          return KeyEventResult.handled;
+        },
+        // As tall as a row of key caps with its padding, so the row keeps
+        // its height when recording starts.
+        child: Container(
+          height: KeyCaps.rowHeight,
+          padding: const EdgeInsets.symmetric(horizontal: 9),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: c.accent.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(7),
+            border: Border.all(color: c.accent, width: 1),
+          ),
+          child: Text(
+            widget.hint,
+            style: mgTextStyle(c, size: MgType.small, color: c.accent),
+          ),
         ),
       ),
     );

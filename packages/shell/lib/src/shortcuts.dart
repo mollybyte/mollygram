@@ -99,5 +99,9 @@ String shortcutKeyLabel(LogicalKeyboardKey key) {
   if (key == LogicalKeyboardKey.pageDown) return mac ? '⇟' : 'PgDn';
   if (key == LogicalKeyboardKey.home) return mac ? '↖' : 'Home';
   if (key == LogicalKeyboardKey.end) return mac ? '↘' : 'End';
-  return key.keyLabel.toUpperCase();
+  // A key unknown to this Flutter version, say from a newer one's saved
+  // settings, has no label.
+  final label = key.keyLabel;
+  if (label.isEmpty) return key.debugName ?? '?';
+  return label.toUpperCase();
 }

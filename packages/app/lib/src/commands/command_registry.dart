@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -45,11 +47,34 @@ class BindableAction {
 /// It also keeps the keys: each command's own shortcut is its default,
 /// [overrides] are the user's changes, and a default that another action
 /// already uses is dropped, so a key never runs two things. It notifies
-/// when the keys change.
+/// when the keys or the registered sources change.
 class CommandRegistry extends ChangeNotifier {
   final _sources = <String, CommandSource>{};
   final _shortcutSources = <String, ShortcutSource>{};
   var _overrides = const <String, ShortcutKey?>{};
+
+  /// [effectiveKeys] until the keys or the sources change.
+  Map<String, ShortcutKey?>? _keys;
+  var _notifyPending = false;
+  var _disposed = false;
+
+  /// A source came or went: listeners hear of it after the current build,
+  /// since sources are often registered while widgets build.
+  void _sourcesChanged() {
+    _keys = null;
+    if (_notifyPending) return;
+    _notifyPending = true;
+    scheduleMicrotask(() {
+      _notifyPending = false;
+      if (!_disposed) notifyListeners();
+    });
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
 
   /// Defaults for commands that come without one, by id, so they are
   /// bound as soon as their owner registers them.
@@ -74,6 +99,7 @@ class CommandRegistry extends ChangeNotifier {
     _sources
       ..remove(owner)
       ..[owner] = source;
+    _sourcesChanged();
   }
 
   /// Removes the commands of [owner]. With [source], only when that is
@@ -81,16 +107,18 @@ class CommandRegistry extends ChangeNotifier {
   /// its successor's commands away.
   void unregister(String owner, [CommandSource? source]) {
     if (source != null && !identical(_sources[owner], source)) return;
-    _sources.remove(owner);
+    if (_sources.remove(owner) != null) _sourcesChanged();
   }
 
   /// Adds actions of [owner] that take a key but are not commands.
-  void registerShortcuts(String owner, ShortcutSource source) =>
-      _shortcutSources[owner] = source;
+  void registerShortcuts(String owner, ShortcutSource source) {
+    _shortcutSources[owner] = source;
+    _sourcesChanged();
+  }
 
   void unregisterShortcuts(String owner, [ShortcutSource? source]) {
     if (source != null && !identical(_shortcutSources[owner], source)) return;
-    _shortcutSources.remove(owner);
+    if (_shortcutSources.remove(owner) != null) _sourcesChanged();
   }
 
   /// The user's keys by action id; null removes an action's key.
@@ -99,6 +127,7 @@ class CommandRegistry extends ChangeNotifier {
   set overrides(Map<String, ShortcutKey?> value) {
     if (mapEquals(value, _overrides)) return;
     _overrides = Map.unmodifiable(value);
+    _keys = null;
     notifyListeners();
   }
 
@@ -162,14 +191,13 @@ class CommandRegistry extends ChangeNotifier {
   };
 
   /// The key of every action: the user's, or the default when no action
-  /// before it took that key.
-  Map<String, ShortcutKey?> effectiveKeys() {
+  /// before it took that key. A key the user gave an action that is not
+  /// registered now (a plugin that is off) stays taken too.
+  Map<String, ShortcutKey?> effectiveKeys() => _keys ??= _resolveKeys();
+
+  Map<String, ShortcutKey?> _resolveKeys() {
     final actions = this.actions;
-    final ids = {for (final a in actions) a.id};
-    final taken = <ShortcutKey>{
-      for (final MapEntry(:key, :value) in _overrides.entries)
-        if (ids.contains(key)) ?value,
-    };
+    final taken = <ShortcutKey>{for (final value in _overrides.values) ?value};
     return {
       for (final action in actions)
         action.id: _overrides.containsKey(action.id)
@@ -181,10 +209,13 @@ class CommandRegistry extends ChangeNotifier {
     };
   }
 
-  /// The action other than [except] that [key] runs now, if any.
+  /// The action other than [except] that has [key], if any, including
+  /// one the user gave it that is not registered right now.
   String? whoUses(ShortcutKey key, {String? except}) {
-    for (final MapEntry(key: id, value: bound) in effectiveKeys().entries) {
-      if (id != except && bound == key) return id;
+    for (final keys in [effectiveKeys(), _overrides]) {
+      for (final MapEntry(key: id, value: bound) in keys.entries) {
+        if (id != except && bound == key) return id;
+      }
     }
     return null;
   }

@@ -4499,8 +4499,26 @@ abstract class AppLocalizations {
   /// No description provided for @shortcutNeedsModifier.
   ///
   /// In en, this message translates to:
-  /// **'Add ⌘, ⌃ or ⌥ to the key'**
+  /// **'Add Ctrl or Alt to the key'**
   String get shortcutNeedsModifier;
+
+  /// No description provided for @shortcutNeedsModifierMac.
+  ///
+  /// In en, this message translates to:
+  /// **'Add ⌘, ⌃ or ⌥ to the key'**
+  String get shortcutNeedsModifierMac;
+
+  /// No description provided for @shortcutReserved.
+  ///
+  /// In en, this message translates to:
+  /// **'Used by the system'**
+  String get shortcutReserved;
+
+  /// No description provided for @shortcutReservedMac.
+  ///
+  /// In en, this message translates to:
+  /// **'Used by macOS'**
+  String get shortcutReservedMac;
 
   /// No description provided for @shortcutUsedBy.
   ///

@@ -1006,7 +1006,10 @@
   "shortcutNone": "None",
   "shortcutRecording": "Type a shortcut",
   "shortcutChange": "Change shortcut",
-  "shortcutNeedsModifier": "Add ⌘, ⌃ or ⌥ to the key",
+  "shortcutNeedsModifier": "Add Ctrl or Alt to the key",
+  "shortcutNeedsModifierMac": "Add ⌘, ⌃ or ⌥ to the key",
+  "shortcutReserved": "Used by the system",
+  "shortcutReservedMac": "Used by macOS",
   "shortcutUsedBy": "Already used by “{title}”",
   "@shortcutUsedBy": {
     "placeholders": { "title": { "type": "String" } }

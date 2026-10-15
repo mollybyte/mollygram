@@ -144,7 +144,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final keys = _registry.effectiveKeys();
     final home = CallbackShortcuts(
       // The shell binds its own shortcuts.
-      bindings: _registry.shortcutsOf('app'),
+      bindings: {
+        ..._registry.shortcutsOf('app'),
+        ..._registry.shortcutsOf('plugins'),
+      },
       child: GlassScope(
         child: Stack(
           children: [

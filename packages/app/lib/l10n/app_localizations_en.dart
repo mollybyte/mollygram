@@ -2626,7 +2626,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shortcutChange => 'Change shortcut';
 
   @override
-  String get shortcutNeedsModifier => 'Add ⌘, ⌃ or ⌥ to the key';
+  String get shortcutNeedsModifier => 'Add Ctrl or Alt to the key';
+
+  @override
+  String get shortcutNeedsModifierMac => 'Add ⌘, ⌃ or ⌥ to the key';
+
+  @override
+  String get shortcutReserved => 'Used by the system';
+
+  @override
+  String get shortcutReservedMac => 'Used by macOS';
 
   @override
   String shortcutUsedBy(String title) {

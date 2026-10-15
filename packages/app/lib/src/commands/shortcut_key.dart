@@ -60,8 +60,10 @@ final class ShortcutKey {
     shift: shift,
   );
 
-  /// `meta+shift+107` for ⌘⇧K: the modifiers by name and the key's id,
-  /// which stays the same across keyboard layouts and versions.
+  /// `meta+shift+107` for ⌘⇧K: the modifiers by name and the key's id.
+  /// Ids are stable across versions; for keys whose character depends on
+  /// the layout (signs, accented letters) the same key may read
+  /// differently on another layout.
   String encode() => [
     if (meta) 'meta',
     if (control) 'control',
@@ -90,6 +92,87 @@ final class ShortcutKey {
   /// As menus write it: `⌘⇧K`, or `Ctrl+Shift+K` off macOS.
   String get label => shortcutLabel(activator);
 
+  /// Reads a key as plugin manifests write it: `Mod+Shift+S` (Mod is ⌘
+  /// on macOS, Ctrl elsewhere), `Cmd+K`, `Ctrl+Alt+P`, `⌥⌘K`. Null for
+  /// anything it can't read.
+  static ShortcutKey? parse(String text) {
+    var rest = text.trim();
+    var meta = false, control = false, alt = false, shift = false;
+    // Glyphs come first and without separators.
+    while (rest.length > 1 && '⌘⌃⌥⇧'.contains(rest[0])) {
+      switch (rest[0]) {
+        case '⌘':
+          meta = true;
+        case '⌃':
+          control = true;
+        case '⌥':
+          alt = true;
+        default:
+          shift = true;
+      }
+      rest = rest.substring(1);
+    }
+    final parts = rest.split('+').map((p) => p.trim()).toList();
+    if (parts.any((p) => p.isEmpty)) return null;
+    for (final part in parts.sublist(0, parts.length - 1)) {
+      switch (part.toLowerCase()) {
+        case 'mod' || 'primary':
+          if (usesCommandKey) {
+            meta = true;
+          } else {
+            control = true;
+          }
+        case 'cmd' || 'command' || 'meta':
+          meta = true;
+        case 'ctrl' || 'control':
+          control = true;
+        case 'alt' || 'option' || 'opt':
+          alt = true;
+        case 'shift':
+          shift = true;
+        default:
+          return null;
+      }
+    }
+    final key = _keyNamed(parts.last);
+    if (key == null) return null;
+    return ShortcutKey(
+      key,
+      meta: meta,
+      control: control,
+      alt: alt,
+      shift: shift,
+    );
+  }
+
+  static LogicalKeyboardKey? _keyNamed(String name) {
+    final lower = name.toLowerCase();
+    final named = switch (lower) {
+      'enter' || 'return' => LogicalKeyboardKey.enter,
+      'tab' => LogicalKeyboardKey.tab,
+      'space' => LogicalKeyboardKey.space,
+      'esc' || 'escape' => LogicalKeyboardKey.escape,
+      'backspace' => LogicalKeyboardKey.backspace,
+      'delete' => LogicalKeyboardKey.delete,
+      'up' => LogicalKeyboardKey.arrowUp,
+      'down' => LogicalKeyboardKey.arrowDown,
+      'left' => LogicalKeyboardKey.arrowLeft,
+      'right' => LogicalKeyboardKey.arrowRight,
+      _ => null,
+    };
+    if (named != null) return named;
+    final function = RegExp(r'^f([1-9]|1[0-2])$').firstMatch(lower);
+    if (function != null) {
+      // F1…F12 have consecutive ids.
+      return LogicalKeyboardKey.findKeyByKeyId(
+        LogicalKeyboardKey.f1.keyId + int.parse(function[1]!) - 1,
+      );
+    }
+    // Letters, digits and signs: the logical key is the character.
+    if (lower.runes.length != 1 || lower.codeUnitAt(0) > 0x7e) return null;
+    return LogicalKeyboardKey.findKeyByKeyId(lower.codeUnitAt(0));
+  }
+
   @override
   bool operator ==(Object other) =>
       other is ShortcutKey &&
@@ -104,6 +187,28 @@ final class ShortcutKey {
 
   @override
   String toString() => 'ShortcutKey($label)';
+}
+
+/// Keys the system keeps for itself: quitting, hiding, switching apps,
+/// Spotlight. Binding them would never reach the app.
+bool isReservedShortcut(ShortcutKey key) {
+  bool only(LogicalKeyboardKey k, {bool meta = false, bool alt = false}) =>
+      key.key == k &&
+      key.meta == meta &&
+      key.alt == alt &&
+      !key.control &&
+      !key.shift;
+  if (usesCommandKey) {
+    return only(LogicalKeyboardKey.keyQ, meta: true) ||
+        only(LogicalKeyboardKey.keyH, meta: true) ||
+        only(LogicalKeyboardKey.keyH, meta: true, alt: true) ||
+        only(LogicalKeyboardKey.keyM, meta: true) ||
+        only(LogicalKeyboardKey.tab, meta: true) ||
+        only(LogicalKeyboardKey.space, meta: true) ||
+        only(LogicalKeyboardKey.backquote, meta: true);
+  }
+  return only(LogicalKeyboardKey.f4, alt: true) ||
+      only(LogicalKeyboardKey.tab, alt: true);
 }
 
 /// What a key press means to the shortcut recorder.

@@ -247,8 +247,12 @@ void main() {
     await primary(tester, LogicalKeyboardKey.keyJ);
     expect(controller.value.tabs, hasLength(2));
     expect(controller.value.active, 1);
+    // Go to tab 1 has no key now; go to tab 2 keeps ⌘2.
     await primary(tester, LogicalKeyboardKey.digit1);
     expect(controller.value.active, 1);
+    controller.selectTabByNumber(1);
+    await tester.pump();
+    expect(controller.value.active, 0);
     await primary(tester, LogicalKeyboardKey.digit2);
     expect(controller.value.active, 1);
   });
@@ -262,6 +266,11 @@ void main() {
     expect(actions.first.keywords, [ShellStrings.en.palette]);
     expect(ShellStrings.ru.cmdTab(3), 'Перейти на вкладку 3');
     expect(shortcutKeyLabel(LogicalKeyboardKey.escape), isNotEmpty);
+    // A key this version doesn't know still shows something.
+    expect(
+      shortcutKeyLabel(const LogicalKeyboardKey(0x1f0000ffff)),
+      isNotEmpty,
+    );
   });
 
   testWidgets('the tab strip selects and closes tabs', (tester) async {

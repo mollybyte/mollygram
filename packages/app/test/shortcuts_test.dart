@@ -76,6 +76,53 @@ void main() {
     });
   });
 
+  group('manifest and system keys', () {
+    onMac();
+
+    test('reads keys as plugin manifests write them', () {
+      expect(
+        ShortcutKey.parse('Mod+Shift+S'),
+        const ShortcutKey(LogicalKeyboardKey.keyS, meta: true, shift: true),
+      );
+      expect(
+        ShortcutKey.parse('Ctrl+Alt+P'),
+        const ShortcutKey(LogicalKeyboardKey.keyP, control: true, alt: true),
+      );
+      expect(
+        ShortcutKey.parse('⌥⌘K'),
+        const ShortcutKey(_k, meta: true, alt: true),
+      );
+      expect(ShortcutKey.parse('Cmd+,')?.label, '⌘,');
+      expect(ShortcutKey.parse('Cmd+F5')?.key, LogicalKeyboardKey.f5);
+      expect(ShortcutKey.parse('Cmd+Enter')?.key, LogicalKeyboardKey.enter);
+      expect(ShortcutKey.parse('Hyper+K'), isNull);
+      expect(ShortcutKey.parse('Cmd+'), isNull);
+      expect(ShortcutKey.parse('Cmd+Ж'), isNull);
+    });
+
+    test('knows the keys macOS keeps', () {
+      expect(
+        isReservedShortcut(
+          const ShortcutKey(LogicalKeyboardKey.keyQ, meta: true),
+        ),
+        isTrue,
+      );
+      expect(
+        isReservedShortcut(
+          const ShortcutKey(LogicalKeyboardKey.space, meta: true),
+        ),
+        isTrue,
+      );
+      expect(
+        isReservedShortcut(
+          const ShortcutKey(LogicalKeyboardKey.keyQ, meta: true, shift: true),
+        ),
+        isFalse,
+      );
+      expect(isReservedShortcut(_cmdK), isFalse);
+    });
+  });
+
   group('registry keys', () {
     onMac();
     late CommandRegistry registry;
@@ -169,6 +216,33 @@ void main() {
       expect([
         for (final a in registry.actions) a.id,
       ], isNot(contains('shell.closeSplit')));
+    });
+
+    test('a key given to an action that is not loaded stays taken', () {
+      registry
+        ..overrides = {'plugin.x.y': _cmdK}
+        ..register('app', () => [command('app.a', _cmdK)]);
+      expect(registry.effectiveKeys()['app.a'], isNull);
+      expect(registry.whoUses(_cmdK), 'plugin.x.y');
+      registry.register('plugins', () => [command('plugin.x.y')]);
+      expect(registry.effectiveKeys()['plugin.x.y'], _cmdK);
+      expect(registry.effectiveKeys()['app.a'], isNull);
+    });
+
+    test('a source added later is announced after the build', () async {
+      var notified = 0;
+      registry
+        ..addListener(() => notified++)
+        ..register('app', () => [command('app.a', _cmdK)])
+        ..register('plugins', () => [command('plugin.x.y')]);
+      expect(notified, 0);
+      await Future<void>.delayed(Duration.zero);
+      expect(notified, 1, reason: 'one notice for both');
+      expect(registry.effectiveKeys()['app.a'], _cmdK);
+      registry.unregister('plugins');
+      await Future<void>.delayed(Duration.zero);
+      expect(notified, 2);
+      expect(registry.effectiveKeys().keys, ['app.a']);
     });
 
     test('overrides go to the preferences and back', () {
@@ -378,6 +452,64 @@ void main() {
       // The preferences are written a moment later.
       await tester.pump(PreferencesNotifier.saveDelay);
     });
+
+    testWidgets('records while the search field has focus', variant: mac, (
+      tester,
+    ) async {
+      await pump(tester);
+      await tester.tap(find.byType(TextField));
+      await tester.pump();
+      await record(tester, 'app.contacts');
+      await press(tester, LogicalKeyboardKey.keyY, meta: true);
+      expect(saved(), ['app.contacts=⌘Y']);
+      expect(find.byType(ShortcutRecorder), findsNothing);
+      expect(
+        tester.widget<TextField>(find.byType(TextField)).controller?.text,
+        isEmpty,
+      );
+      await tester.pump(PreferencesNotifier.saveDelay);
+    });
+
+    testWidgets(
+      'refuses keys the system keeps and stops on a click outside',
+      variant: mac,
+      (tester) async {
+        await pump(tester);
+        await record(tester, 'app.contacts');
+        await press(tester, LogicalKeyboardKey.keyQ, meta: true);
+        expect(find.text('Used by macOS'), findsOneWidget);
+        expect(find.byType(ShortcutRecorder), findsOneWidget);
+        await tester.tapAt(const Offset(5, 5));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(find.byType(ShortcutRecorder), findsNothing);
+        expect(saved(), isEmpty);
+      },
+    );
+
+    testWidgets(
+      'restoring a default someone else took asks first',
+      variant: mac,
+      (tester) async {
+        await pump(tester);
+        final comma = ShortcutKey.primary(LogicalKeyboardKey.comma);
+        registry.overrides = {'app.settings': _cmdJ, 'app.contacts': comma};
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 400));
+        await tester.tap(
+          find.byKey(const ValueKey(('restoreShortcut', 'app.settings'))),
+        );
+        await tester.pump();
+        expect(find.text('Already used by “app.contacts”'), findsOneWidget);
+        await tester.pump(const Duration(milliseconds: 400));
+        await tester.tap(find.byKey(const ValueKey('replaceShortcut')));
+        await tester.pump();
+        expect(saved(), isEmpty);
+        expect(registry.effectiveKeys()['app.settings'], comma);
+        expect(registry.effectiveKeys()['app.contacts'], isNull);
+        await tester.pump(PreferencesNotifier.saveDelay);
+      },
+    );
 
     testWidgets('searches titles and keys', variant: mac, (tester) async {
       await pump(tester);
