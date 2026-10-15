@@ -308,6 +308,26 @@ void main() {
       // The pane's own chat: the panel stays to go on browsing.
       expect(find.text('Example'), findsOneWidget);
 
+      await tester.tap(find.text('GIFs'));
+      await load(tester);
+      expect(find.text('No GIFs yet'), findsOneWidget);
+      expect(
+        (json.sent.lastWhere(
+              (r) => r['@type'] == 'searchChatMessages',
+            )['filter']!
+            as Map)['@type'],
+        'searchMessagesFilterAnimation',
+      );
+
+      // A user's info also lists the groups in common.
+      await tester.tap(find.text('Groups'));
+      await load(tester);
+      expect(
+        json.sent.lastWhere((r) => r['@type'] == 'getGroupsInCommon'),
+        containsPair('user_id', 5),
+      );
+      expect(find.text('Flutter'), findsOneWidget);
+
       await tester.tap(find.byTooltip('Back'));
       await settle(tester);
       expect(find.text('Alina Petrova'), findsOneWidget);
@@ -587,6 +607,11 @@ final class _FakeTdJson implements td.TdJson {
             _linkMessage(decoded['chat_id']! as int, 40),
         ],
         'next_from_message_id': 0,
+      },
+      'getGroupsInCommon' => {
+        '@type': 'chats',
+        'total_count': 1,
+        'chat_ids': [20],
       },
       'getUserProfilePhotos' => {
         '@type': 'chatPhotos',

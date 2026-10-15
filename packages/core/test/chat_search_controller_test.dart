@@ -52,6 +52,7 @@ void main() {
         'searchMessagesFilterUrl',
         'searchMessagesFilterVoiceNote',
         'searchMessagesFilterAudio',
+        'searchMessagesFilterAnimation',
       ],
     );
   });

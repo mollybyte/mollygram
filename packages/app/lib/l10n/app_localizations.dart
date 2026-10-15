@@ -3410,6 +3410,18 @@ abstract class AppLocalizations {
   /// **'Music'**
   String get sharedMusicTab;
 
+  /// No description provided for @sharedGifsTab.
+  ///
+  /// In en, this message translates to:
+  /// **'GIFs'**
+  String get sharedGifsTab;
+
+  /// No description provided for @sharedGroupsTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Groups'**
+  String get sharedGroupsTab;
+
   /// No description provided for @sharedMediaEmpty.
   ///
   /// In en, this message translates to:
@@ -3439,6 +3451,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No music yet'**
   String get sharedMusicEmpty;
+
+  /// No description provided for @sharedGifsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No GIFs yet'**
+  String get sharedGifsEmpty;
+
+  /// No description provided for @sharedGroupsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No groups in common'**
+  String get sharedGroupsEmpty;
 
   /// No description provided for @sharedLoadFailed.
   ///

@@ -2007,6 +2007,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sharedMusicTab => 'Music';
 
   @override
+  String get sharedGifsTab => 'GIFs';
+
+  @override
+  String get sharedGroupsTab => 'Groups';
+
+  @override
   String get sharedMediaEmpty => 'No photos or videos yet';
 
   @override
@@ -2020,6 +2026,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sharedMusicEmpty => 'No music yet';
+
+  @override
+  String get sharedGifsEmpty => 'No GIFs yet';
+
+  @override
+  String get sharedGroupsEmpty => 'No groups in common';
 
   @override
   String get sharedLoadFailed => 'Couldn\'t load the list';
