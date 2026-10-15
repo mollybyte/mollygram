@@ -2044,6 +2044,23 @@ class AppLocalizationsRu extends AppLocalizations {
   String get searchNewer => 'Следующий результат';
 
   @override
+  String get hashtagThisChat => 'Этот чат';
+
+  @override
+  String get hashtagMyMessages => 'Мои сообщения';
+
+  @override
+  String get hashtagPublicPosts => 'Публичные посты';
+
+  @override
+  String hashtagEmpty(String tag) {
+    return 'Нет сообщений с $tag';
+  }
+
+  @override
+  String get hashtagFailed => 'Не удалось выполнить поиск';
+
+  @override
   String get sharedMedia => 'Общие материалы';
 
   @override

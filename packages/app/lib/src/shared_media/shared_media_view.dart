@@ -9,9 +9,11 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 import '../../l10n/app_localizations.dart';
 import '../chat/file_content.dart';
 import '../chat/formatted_text.dart' show openLink;
+import '../chat/load_spinner.dart';
 import '../chat/media_content.dart';
 import '../chat/media_viewer.dart';
 import '../chat/message_tile.dart' show SenderAvatar;
+import '../chat/segmented_tabs.dart';
 import '../home/format.dart';
 import '../session/providers.dart';
 import 'shared_link.dart';
@@ -59,7 +61,7 @@ class _SharedMediaViewState extends ConsumerState<SharedMediaView> {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
-          child: _Tabs<Object>(
+          child: SegmentedTabs<Object>(
             selected: tab,
             labels: {
               SharedMediaKind.media: l10n.sharedMediaTab,
@@ -128,7 +130,7 @@ class _GroupsListState extends ConsumerState<_GroupsList> {
                     l10n.sharedLoadFailed,
                     style: mgTextStyle(c, color: c.fg2),
                   )
-                : const _Spinner(),
+                : const LoadSpinner(),
           );
         }
         if (groups.isEmpty) {
@@ -228,85 +230,6 @@ class _GroupRowState extends State<_GroupRow> {
 }
 
 /// A macOS-style segmented control.
-class _Tabs<T extends Object> extends StatelessWidget {
-  const _Tabs({
-    required this.selected,
-    required this.labels,
-    required this.onSelect,
-  });
-
-  final T selected;
-  final Map<T, String> labels;
-  final ValueChanged<T> onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = MgColors.of(context);
-    return Container(
-      height: 28,
-      padding: const EdgeInsets.all(2),
-      decoration: BoxDecoration(
-        color: c.field,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          for (final MapEntry(key: kind, value: label) in labels.entries)
-            Expanded(
-              child: Semantics(
-                button: true,
-                selected: kind == selected,
-                label: label,
-                excludeSemantics: true,
-                child: MouseRegion(
-                  cursor: SystemMouseCursors.click,
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => onSelect(kind),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 140),
-                      curve: Curves.easeOut,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: kind == selected
-                            ? (c.isDark
-                                  ? const Color(0x2EFFFFFF)
-                                  : const Color(0xFFFFFFFF))
-                            : const Color(0x00FFFFFF),
-                        borderRadius: BorderRadius.circular(6),
-                        boxShadow: kind == selected && !c.isDark
-                            ? const [
-                                BoxShadow(
-                                  color: Color(0x1F000000),
-                                  blurRadius: 2,
-                                  offset: Offset(0, 0.5),
-                                ),
-                              ]
-                            : null,
-                      ),
-                      child: Text(
-                        label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: mgTextStyle(
-                          c,
-                          size: MgType.small,
-                          weight: kind == selected ? FontWeight.w500 : null,
-                          color: kind == selected ? c.fg : c.fg2,
-                          height: 1.2,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
 class _SharedList extends ConsumerStatefulWidget {
   const _SharedList({
     super.key,
@@ -388,7 +311,7 @@ class _SharedListState extends ConsumerState<_SharedList> {
     if (messages.isEmpty) {
       return Center(
         child: switch (_load) {
-          _Load.loading => const _Spinner(),
+          _Load.loading => const LoadSpinner(),
           _Load.failed => Text(
             l10n.sharedLoadFailed,
             style: mgTextStyle(c, color: c.fg2),
@@ -475,6 +398,8 @@ class _SharedListState extends ConsumerState<_SharedList> {
     );
     final Widget body = switch (message.content) {
       td.MessageDocument(:final document) => DocumentContent(
+        chatId: message.chatId,
+        messageId: message.id,
         document: document,
         meta: date,
       ),
@@ -615,46 +540,6 @@ class _LinkRowState extends State<_LinkRow> {
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// Shown only when loading takes long enough to notice.
-class _Spinner extends StatefulWidget {
-  const _Spinner();
-
-  @override
-  State<_Spinner> createState() => _SpinnerState();
-}
-
-class _SpinnerState extends State<_Spinner> {
-  var _visible = false;
-  Timer? _timer;
-
-  @override
-  void initState() {
-    super.initState();
-    _timer = Timer(const Duration(milliseconds: 300), () {
-      if (mounted) setState(() => _visible = true);
-    });
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final c = MgColors.of(context);
-    return AnimatedOpacity(
-      opacity: _visible ? 1 : 0,
-      duration: const Duration(milliseconds: 160),
-      child: SizedBox.square(
-        dimension: 16,
-        child: CircularProgressIndicator(strokeWidth: 1.6, color: c.fg2),
       ),
     );
   }

@@ -7,24 +7,30 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
+import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../session/providers.dart';
 
 /// Rebuilds with the newest state of a TDLib file as it downloads.
 ///
 /// With [download] set, the download starts as soon as the widget is
 /// built, which in a lazy list means when the message scrolls into view.
+/// With a [kind] as well, it starts only when the auto-download switch for
+/// that kind is on; otherwise the file waits for a click.
 class TdFileBuilder extends ConsumerStatefulWidget {
   const TdFileBuilder({
     super.key,
     required this.file,
     required this.builder,
     this.download = false,
+    this.kind,
     this.priority = DownloadPriority.media,
   });
 
   final td.File file;
   final bool download;
+  final MediaDownloadKind? kind;
   final int priority;
   final Widget Function(BuildContext context, td.File file) builder;
 
@@ -72,11 +78,11 @@ class _TdFileBuilderState extends ConsumerState<TdFileBuilder> {
         !local.canBeDownloaded) {
       return;
     }
-    unawaited(
-      _files
-          .download(_file.id, priority: widget.priority)
-          .then<void>((_) {}, onError: (Object _) {}),
-    );
+    final kind = widget.kind;
+    final started = kind == null
+        ? _files.download(_file.id, priority: widget.priority)
+        : _files.autoDownload(_file.id, kind: kind, priority: widget.priority);
+    unawaited(started.then<void>((_) {}, onError: (Object _) {}));
   }
 
   @override
@@ -100,6 +106,7 @@ class TdImage extends StatelessWidget {
     this.fit = BoxFit.cover,
     this.cacheWidth,
     this.download = true,
+    this.kind,
     this.background = const Color(0x22000000),
   });
 
@@ -107,6 +114,10 @@ class TdImage extends StatelessWidget {
   final td.File? thumbnail;
   final td.Minithumbnail? minithumbnail;
   final BoxFit fit;
+
+  /// What [file] is for the auto-download switches; the previews always
+  /// load. With a kind that is off, a download button sits on the preview.
+  final MediaDownloadKind? kind;
 
   /// The width to decode at, in physical pixels; keeps big photos from
   /// being decoded at full size for a small bubble.
@@ -138,12 +149,17 @@ class TdImage extends StatelessWidget {
     final file = this.file;
     if (file != null) {
       final below = layer;
+      final kind = this.kind;
       layer = TdFileBuilder(
         file: file,
         download: download,
+        kind: kind,
         builder: (context, f) {
           final path = downloadedPath(f);
-          if (path == null) return below;
+          if (path == null) {
+            if (kind == null || !download) return below;
+            return TapToDownload(file: f, kind: kind, child: below);
+          }
           return _FileImage(
             path: path,
             fit: fit,
@@ -154,6 +170,51 @@ class TdImage extends StatelessWidget {
       );
     }
     return layer;
+  }
+}
+
+/// [child], the preview of a file whose kind does not download on its own,
+/// with a download button in the middle until the download runs. Nothing
+/// is added while the switch for [kind] is on or the file is on its way.
+class TapToDownload extends ConsumerWidget {
+  const TapToDownload({
+    super.key,
+    required this.file,
+    required this.kind,
+    required this.child,
+  });
+
+  final td.File file;
+  final MediaDownloadKind kind;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final files = ref.read(telegramSessionProvider).requireValue.files;
+    final local = file.local;
+    if (files.autoDownloadKinds.contains(kind) ||
+        local.isDownloadingActive ||
+        !local.canBeDownloaded) {
+      return child;
+    }
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        child,
+        Center(
+          child: MediaActionButton(
+            icon: MgIcons.download,
+            size: 40,
+            semanticLabel: AppLocalizations.of(context).download,
+            onTap: () => unawaited(
+              files
+                  .download(file.id, priority: DownloadPriority.requested)
+                  .then<void>((_) {}, onError: (Object _) {}),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
 

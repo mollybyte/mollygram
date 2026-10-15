@@ -343,8 +343,13 @@ class MessageTile extends StatelessWidget {
     }
     final name = nameOfSender(l10n, store, message.sender);
     final onMenu = actions.onMenu;
+    final metrics = MgMetrics.of(buildContext);
     final tile = Padding(
-      padding: EdgeInsets.only(top: context.startsRun ? 10 : 4),
+      padding: EdgeInsets.only(
+        top: context.startsRun
+            ? (metrics.compact ? 6 : 10)
+            : metrics.messageGap,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -708,7 +713,13 @@ class _MessageBody extends StatelessWidget {
           ],
         );
       case td.MessageDocument(:final document):
-        return _withCaption(DocumentContent(document: document));
+        return _withCaption(
+          DocumentContent(
+            chatId: message.chatId,
+            messageId: message.id,
+            document: document,
+          ),
+        );
       case td.MessageVoiceNote(:final voiceNote):
         return _withCaption(
           VoiceNoteContent(
@@ -733,7 +744,9 @@ class _MessageBody extends StatelessWidget {
       final media = Padding(
         padding: const EdgeInsets.only(top: 2),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(
+            MgMetrics.of(context).mediaRadius,
+          ),
           child: visual.widget,
         ),
       );
@@ -1132,6 +1145,7 @@ class _LinkPreview extends StatelessWidget {
               child: TdImage(
                 file: photoSizeFor(photo, side * 2)?.photo,
                 minithumbnail: photo.minithumbnail,
+                kind: MediaDownloadKind.photos,
               ),
             )
           : TdImage(
