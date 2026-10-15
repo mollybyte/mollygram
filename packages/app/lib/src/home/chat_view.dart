@@ -30,6 +30,7 @@ import '../chat/forum_topics.dart';
 import '../chat/forward_picker.dart';
 import '../chat/inline_results.dart';
 import '../chat/link_preview_bar.dart';
+import '../chat/load_spinner.dart';
 import '../chat/location_picker.dart';
 import '../chat/measured.dart';
 import '../chat/media_viewer.dart';
@@ -192,6 +193,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
   ForumTopicList? _topics;
   StreamSubscription<void>? _topicsSub;
   var _topicsOpening = false;
+
+  /// Set after a failed load of the topics, to try again shortly.
+  Timer? _topicsRetry;
 
   /// Saved Messages shown as the chats they came from, while the list
   /// button in the capsule is on.
@@ -890,7 +894,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
         _topicsOpening = true;
         scheduleMicrotask(() => unawaited(_openTopics()));
       }
-      return const SizedBox.shrink();
+      return const Center(child: LoadSpinner());
     }
     return ForumTopicListView(
       key: const ValueKey('forumTopics'),
@@ -919,9 +923,17 @@ class _ChatViewState extends ConsumerState<ChatView> {
     final list = _conversations.openTopics(chatId);
     try {
       await list.load();
-    } on td.TdException {
+    } on Object {
       list.dispose();
-      if (mounted && widget.chatId == chatId) _topicsOpening = false;
+      // A chat restored at launch can ask before the session is ready;
+      // the list is asked for again after a moment rather than left blank.
+      if (mounted && widget.chatId == chatId) {
+        _topicsRetry?.cancel();
+        _topicsRetry = Timer(const Duration(seconds: 2), () {
+          if (!mounted || widget.chatId != chatId) return;
+          setState(() => _topicsOpening = false);
+        });
+      }
       return;
     }
     if (!mounted || widget.chatId != chatId) {
@@ -996,6 +1008,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
   }
 
   void _dropTopics() {
+    _topicsRetry?.cancel();
+    _topicsRetry = null;
     _topicsSub?.cancel();
     _topicsSub = null;
     _topics?.dispose();
