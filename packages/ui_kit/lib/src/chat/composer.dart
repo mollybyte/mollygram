@@ -50,6 +50,7 @@ class Composer extends StatefulWidget {
     this.controller,
     this.focusNode,
     this.onSend,
+    this.onSendMenu,
     this.onAttach,
     this.onEmoji,
     this.onRecord,
@@ -73,6 +74,10 @@ class Composer extends StatefulWidget {
   /// Called with the draft when the send button is pressed or Enter is
   /// typed without Shift. The composer does not clear the draft itself.
   final ValueChanged<String>? onSend;
+
+  /// A right click or long press on the send button, with the draft and
+  /// where it happened, for other ways to send.
+  final void Function(String text, Offset position)? onSendMenu;
   final VoidCallback? onAttach;
   final VoidCallback? onEmoji;
   final VoidCallback? onRecord;
@@ -500,6 +505,10 @@ class _ComposerState extends State<Composer> {
                       key: const ValueKey('send'),
                       tooltip: l.send,
                       onPressed: widget.onSend == null ? null : _send,
+                      onMenu: widget.onSendMenu == null
+                          ? null
+                          : (position) =>
+                                widget.onSendMenu!(_text.text, position),
                     )
                   : KeyedSubtree(
                       key: const ValueKey('record'),

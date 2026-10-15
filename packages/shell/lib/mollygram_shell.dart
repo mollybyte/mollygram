@@ -10,7 +10,12 @@ export 'src/l10n/shell_strings.dart';
 export 'src/model/workspace.dart';
 export 'src/palette/palette_search.dart';
 export 'src/shortcuts.dart'
-    show ShellShortcuts, primaryShortcut, shortcutLabel, usesCommandKey;
+    show
+        ShellShortcuts,
+        primaryShortcut,
+        shortcutKeyLabel,
+        shortcutLabel,
+        usesCommandKey;
 export 'src/widgets/command_palette.dart' show CommandPalette;
 export 'src/widgets/tab_strip.dart' show TabStrip, tabTitle;
 export 'src/widgets/workspace_shell.dart';

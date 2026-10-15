@@ -547,7 +547,9 @@ final class ConversationController {
   /// Sends [text] with its formatting [entities], as a reply to [replyTo]
   /// when it is set, quoting [quote] of its text at [quotePosition] when
   /// that is given. [linkPreviewOptions] shape the preview of a link in
-  /// the text, or drop it; null leaves it to Telegram's defaults.
+  /// the text, or drop it; null leaves it to Telegram's defaults. [silent]
+  /// sends without a sound on the other side; [schedule] sends later, and
+  /// the message then lives in the chat's scheduled list, not its history.
   Future<void> sendText(
     int chatId,
     String text, {
@@ -556,6 +558,8 @@ final class ConversationController {
     String? quote,
     int quotePosition = 0,
     td.LinkPreviewOptions? linkPreviewOptions,
+    bool silent = false,
+    td.MessageSchedulingState? schedule,
   }) async {
     if (text.trim().isEmpty) {
       throw ArgumentError.value(
@@ -580,6 +584,7 @@ final class ConversationController {
                 checklistTaskId: 0,
                 pollOptionId: '',
               ),
+        options: sendOptions(silent: silent, schedule: schedule),
         inputMessageContent: td.InputMessageText(
           text: td.FormattedText(text: text, entities: entities),
           linkPreviewOptions: linkPreviewOptions,
@@ -588,6 +593,27 @@ final class ConversationController {
       ),
     );
     _add(message);
+  }
+
+  /// The send options for a silent or scheduled message; null for the
+  /// defaults, so a plain message carries none.
+  static td.MessageSendOptions? sendOptions({
+    bool silent = false,
+    td.MessageSchedulingState? schedule,
+  }) {
+    if (!silent && schedule == null) return null;
+    return td.MessageSendOptions(
+      disableNotification: silent,
+      fromBackground: false,
+      protectContent: false,
+      allowPaidBroadcast: false,
+      paidMessageStarCount: 0,
+      updateOrderOfInstalledStickerSets: false,
+      schedulingState: schedule,
+      effectId: 0,
+      sendingId: 0,
+      onlyPreview: false,
+    );
   }
 
   /// Photos and videos of a chat around [fromMessageId], for the media
@@ -1169,6 +1195,8 @@ final class ConversationController {
   }
 
   void _add(td.Message message) {
+    // A scheduled message waits in the chat's scheduled list, not here.
+    if (message.schedulingState != null) return;
     final chatId = message.chatId;
     _arrivedDuringLoad[chatId]?.add(message.id);
     // A window around an older message has a gap after it; what arrives

@@ -117,7 +117,7 @@ M8 calls and macOS release, M9 after release.
 | Inline bots (@gif, @vid) | missing | `GetInlineQueryResults` | M | M9 |
 | Voice message recording | done | Hold, lock, cancel; Opus in Ogg via AudioToolbox on macOS | M | M1 |
 | Video message (circle) recording | partial | Hold, lock, cancel, 60 s limit; 640×640 H.264 via AVFoundation on macOS. Front camera only, no flip or preview before sending | L | M4 |
-| Silent send and scheduled messages, scheduled list | missing | `MessageSchedulingStateSendAtDate` | M | M2 |
+| Silent send and scheduled messages, scheduled list | partial | Right click or long press on Send: without sound, or at a day and time picked in a calendar; the scheduled list and sending media later are still missing | S | M2 |
 | Send as (channel identity) | missing | `ChatInputSendAsView` | S | M6 |
 | Polls and quizzes creation | missing | `NewPollController` | M | M2 |
 | Location and venue sending | missing | | M | M2 |
@@ -223,7 +223,7 @@ M8 calls and macOS release, M9 after release.
 | Quick reaction choice | missing | | S | M7 |
 | Proxy: SOCKS5, MTProto, list, share | partial | SOCKS5, HTTP and MTProto in Settings, Proxy: "Use proxy", ping per proxy, add, edit, remove, `tg://proxy` and `t.me/proxy` links, a Proxy button on the sign-in screens; no share link or QR. TDLib keeps proxies per account database, so a new account slot starts without them (mirroring them is for the accounts work) | S | M7 |
 | Connection status in the window ("Connecting…") | done | `ConnectionMonitor`, capsule in the sidebar title bar | | |
-| Keyboard shortcuts list | partial | Shell shortcuts exist; no list | S | M7 |
+| Keyboard shortcuts list | done | Settings, Keyboard shortcuts: every command by group with key caps, rebinding with a conflict check, restore one or all; kept in preferences.json and applied live to the window, the palette and the shell | | |
 | Auto-delete messages default | missing | | S | M7 |
 | Settings search | partial | Filters the source list in both languages; no search inside pages | S | M7 |
 | Ask a question, FAQ, about | missing | | S | M7 |

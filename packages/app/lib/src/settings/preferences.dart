@@ -65,6 +65,7 @@ final class Preferences {
     this.reduceMotion = false,
     this.autoDownload = defaultAutoDownload,
     this.downloadFolder,
+    this.shortcuts = const {},
     this.language = AppLanguage.system,
     this.largeEmoji = true,
     this.loopStickers = true,
@@ -97,6 +98,9 @@ final class Preferences {
   /// Where saved files go; null for the system Downloads folder.
   final String? downloadFolder;
 
+  /// Keyboard shortcuts the user changed, by action id: an encoded
+  /// `ShortcutKey`, or null for an action they took the key from.
+  final Map<String, String?> shortcuts;
   final AppLanguage language;
 
   /// A message of one to three emoji is shown large, without text around.
@@ -116,6 +120,7 @@ final class Preferences {
     bool? reduceMotion,
     Map<AutoDownloadKind, AutoDownload>? autoDownload,
     String? downloadFolder,
+    Map<String, String?>? shortcuts,
     AppLanguage? language,
     bool? largeEmoji,
     bool? loopStickers,
@@ -127,6 +132,7 @@ final class Preferences {
     reduceMotion: reduceMotion ?? this.reduceMotion,
     autoDownload: autoDownload ?? this.autoDownload,
     downloadFolder: downloadFolder ?? this.downloadFolder,
+    shortcuts: shortcuts ?? this.shortcuts,
     language: language ?? this.language,
     largeEmoji: largeEmoji ?? this.largeEmoji,
     loopStickers: loopStickers ?? this.loopStickers,
@@ -147,6 +153,7 @@ final class Preferences {
         kind.name: autoDownloadOf(kind).toJson(),
     },
     'downloadFolder': ?downloadFolder,
+    if (shortcuts.isNotEmpty) 'shortcuts': shortcuts,
     'language': language.name,
     'largeEmoji': largeEmoji,
     'loopStickers': loopStickers,
@@ -160,6 +167,7 @@ final class Preferences {
     final downloads = json['autoDownload'];
     final size = json['textSize'];
     final folder = json['downloadFolder'];
+    final shortcuts = json['shortcuts'];
     return Preferences(
       theme: _byName(ThemeMode.values, json['theme']) ?? defaults.theme,
       accent: _byName(AccentChoice.values, json['accent']) ?? defaults.accent,
@@ -176,6 +184,12 @@ final class Preferences {
           ),
       },
       downloadFolder: folder is String && folder.isNotEmpty ? folder : null,
+      shortcuts: {
+        if (shortcuts is Map)
+          for (final MapEntry(:key, :value) in shortcuts.entries)
+            if (key is String && (value == null || value is String))
+              key: value as String?,
+      },
       language:
           _byName(AppLanguage.values, json['language']) ?? defaults.language,
       largeEmoji: _bool(json['largeEmoji']) ?? defaults.largeEmoji,

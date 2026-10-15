@@ -15,6 +15,7 @@ import 'privacy/privacy_page.dart';
 import 'privacy_extras_page.dart';
 import 'proxy_page.dart';
 import 'settings_style.dart';
+import 'shortcuts/shortcuts_page.dart';
 import 'stickers/stickers_page.dart';
 import 'storage_page.dart';
 
@@ -132,6 +133,7 @@ final settingsSections = <SettingsSection>[
   foldersSection,
   languageSection,
   stickersSection,
+  shortcutsSection,
   SettingsSection(
     id: 'plugins',
     icon: MgIcons.plugin,
