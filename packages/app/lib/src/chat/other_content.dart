@@ -3,6 +3,7 @@ import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../links/link_router.dart';
 import 'formatted_text.dart';
 import 'poll_content.dart';
 
@@ -34,14 +35,7 @@ Widget? otherContent(
       subtitle: venue.address,
       onTap: () => openLink(_mapUrl(venue.location)),
     ),
-    td.MessageContact(:final contact) => _Labeled(
-      icon: '👤',
-      title: [
-        contact.firstName,
-        contact.lastName,
-      ].where((s) => s.isNotEmpty).join(' '),
-      subtitle: contact.phoneNumber,
-    ),
+    td.MessageContact(:final contact) => _ContactCard(contact),
     td.MessagePoll(:final poll, :final description) => PollContent(
       poll: poll,
       description: description,
@@ -152,6 +146,59 @@ class _Labeled extends StatelessWidget {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: GestureDetector(onTap: onTap, child: body),
+    );
+  }
+}
+
+/// A shared contact: the monogram, the name and the phone number. A tap
+/// opens the person when they are on Telegram.
+class _ContactCard extends StatelessWidget {
+  const _ContactCard(this.contact);
+
+  final td.Contact contact;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    final name = [
+      contact.firstName,
+      contact.lastName,
+    ].where((s) => s.isNotEmpty).join(' ');
+    final body = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        MonogramAvatar(name: name, size: 36),
+        const SizedBox(width: 10),
+        Flexible(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: mgTextStyle(c, weight: FontWeight.w500),
+              ),
+              if (contact.phoneNumber.isNotEmpty)
+                Text(
+                  '+${contact.phoneNumber}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: mgTextStyle(c, color: c.accent),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+    if (contact.userId == 0) return body;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: () => openLinkFrom(context, 'tg://user?id=${contact.userId}'),
+        child: body,
+      ),
     );
   }
 }

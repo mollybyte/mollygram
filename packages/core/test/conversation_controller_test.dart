@@ -1031,6 +1031,26 @@ void main() {
     expect(start['bot_user_id'], 77);
   });
 
+  test('sends a contact', () async {
+    await controller.start();
+    await controller.sendContact(
+      7,
+      const td.Contact(
+        phoneNumber: '79990001122',
+        firstName: 'Vera',
+        lastName: '',
+        vcard: '',
+        userId: 3,
+      ),
+      replyTo: 10,
+    );
+    final send = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    final content = send['input_message_content']! as Map;
+    expect(content['@type'], 'inputMessageContact');
+    expect((content['contact']! as Map)['user_id'], 3);
+    expect((send['reply_to']! as Map)['message_id'], 10);
+  });
+
   test('follows a poll and votes in it', () async {
     json.history = (_) => [
       td.Message.fromJson({

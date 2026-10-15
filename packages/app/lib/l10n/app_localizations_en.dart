@@ -941,6 +941,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get attachPoll => 'Poll…';
 
   @override
+  String get attachContact => 'Contact…';
+
+  @override
+  String get sendContactTitle => 'Send contact';
+
+  @override
   String get newPollTitle => 'New poll';
 
   @override

@@ -122,7 +122,7 @@ M8 calls and macOS release, M9 after release.
 | Send as (channel identity) | missing | `ChatInputSendAsView` | S | M6 |
 | Polls and quizzes creation | done | Attach menu > Poll… in groups and channels: question, up to ten options, anonymous voting, multiple answers, quiz mode with the right answer and an explanation | M | M2 |
 | Location and venue sending | missing | | M | M2 |
-| Contact sending | missing | | S | M2 |
+| Contact sending | done | Contact… under the attach button opens a searchable list of contacts; the message shows the monogram, name and number and opens the person | S | M2 |
 | Send preview: caption, send as files, albums | done | #31 | | |
 | Send preview: spoiler, self-destruct timer, compression choice | missing | `hasSpoiler`, `selfDestructType`; uncompressed default planned | S | M2 |
 | Media editor: crop, rotate, flip, aspect presets | done | `packages/media_editor` | | |

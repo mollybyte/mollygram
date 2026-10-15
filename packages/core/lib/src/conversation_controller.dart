@@ -837,6 +837,29 @@ final class ConversationController {
     );
   }
 
+  /// Sends [contact] as a message, as a reply to [replyTo] when given.
+  Future<void> sendContact(
+    int chatId,
+    td.Contact contact, {
+    int? replyTo,
+  }) async {
+    _add(
+      await _client.send(
+        td.SendMessage(
+          chatId: chatId,
+          replyTo: replyTo == null
+              ? null
+              : td.InputMessageReplyToMessage(
+                  messageId: replyTo,
+                  checklistTaskId: 0,
+                  pollOptionId: '',
+                ),
+          inputMessageContent: td.InputMessageContact(contact: contact),
+        ),
+      ),
+    );
+  }
+
   /// Sends a recorded voice message: an Ogg Opus file at [path] with its
   /// length and Telegram's packed 5-bit [waveform].
   Future<void> sendVoiceNote(

@@ -953,6 +953,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get attachPoll => 'Опрос…';
 
   @override
+  String get attachContact => 'Контакт…';
+
+  @override
+  String get sendContactTitle => 'Отправить контакт';
+
+  @override
   String get newPollTitle => 'Новый опрос';
 
   @override

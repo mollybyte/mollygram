@@ -1005,6 +1005,40 @@ void main() {
     expect(find.text('New quiz'), findsNothing);
   });
 
+  testWidgets('sends a contact from the attach menu', (tester) async {
+    await pump(tester, group: false);
+    await tester.tap(find.byTooltip('Attach'));
+    await tester.pump();
+    await tester.tap(find.text('Contact…'));
+    await tester.pump();
+    expect(find.text('Send contact'), findsOneWidget);
+    // The contacts and their users arrive over a few round trips.
+    for (var i = 0; i < 10 && !session.contacts.isLoaded; i++) {
+      await tester.runAsync(() => Future<void>.delayed(_tick));
+    }
+    await tester.pump(const Duration(milliseconds: 50));
+    // The senders' names are in the chat; the rows add one of each.
+    expect(find.text('Vera'), findsNWidgets(2));
+    expect(find.text('Boris'), findsNWidgets(2));
+
+    await tester.enterText(find.byType(TextField).last, 'ver');
+    await tester.pump();
+    expect(find.text('Boris'), findsOneWidget);
+    await tester.tap(find.text('Vera').last);
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump(const Duration(milliseconds: 200));
+
+    final send = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    final content = send['input_message_content']! as Map;
+    expect(content['@type'], 'inputMessageContact');
+    final contact = content['contact']! as Map;
+    expect(contact['user_id'], 3);
+    expect(contact['first_name'], 'Vera');
+    expect(contact['phone_number'], '79990001122');
+    await tester.pumpAndSettle();
+    expect(find.text('Send contact'), findsNothing);
+  });
+
   testWidgets('starts a bot and offers its commands after a slash', (
     tester,
   ) async {
@@ -1978,6 +2012,13 @@ final class _FakeTdJson implements td.TdJson {
         'show_alert': false,
         'url': '',
       },
+      'getContacts' => {
+        '@type': 'users',
+        'total_count': 2,
+        'user_ids': [2, 3],
+      },
+      'getUser' when decoded['user_id'] == 2 => _user(2, 'Boris'),
+      'getUser' when decoded['user_id'] == 3 => _user(3, 'Vera', '79990001122'),
       _ => {'@type': 'ok'},
     };
     _queue.add(
@@ -2168,4 +2209,15 @@ Map<String, Object?> _stickerFile(int id) => {
     'is_downloading_completed': false,
   },
   'remote': {'@type': 'remoteFile', 'id': 'r$id', 'unique_id': 'u$id'},
+};
+
+Map<String, Object?> _user(int id, String first, [String phone = '']) => {
+  '@type': 'user',
+  'id': id,
+  'first_name': first,
+  'last_name': '',
+  'phone_number': phone,
+  'status': {'@type': 'userStatusRecently'},
+  'type': {'@type': 'userTypeRegular'},
+  'is_contact': true,
 };

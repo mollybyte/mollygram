@@ -343,6 +343,8 @@
   "botNoAnswer": "The bot did not answer",
   "attachFile": "File…",
   "attachPoll": "Poll…",
+  "attachContact": "Contact…",
+  "sendContactTitle": "Send contact",
   "newPollTitle": "New poll",
   "newQuizTitle": "New quiz",
   "pollQuestionHint": "Ask a question",
