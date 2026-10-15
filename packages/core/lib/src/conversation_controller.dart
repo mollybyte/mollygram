@@ -1309,6 +1309,85 @@ final class ConversationController {
     );
   }
 
+  /// Sends a place as a message, as a reply to [replyTo] when given.
+  Future<void> sendLocation(int chatId, td.Location location, {int? replyTo}) =>
+      _sendPlace(
+        chatId,
+        td.InputMessageLocation(location: location),
+        replyTo: replyTo,
+      );
+
+  /// Sends a venue, a place with a name and an address, as a message.
+  Future<void> sendVenue(int chatId, td.Venue venue, {int? replyTo}) =>
+      _sendPlace(chatId, td.InputMessageVenue(venue: venue), replyTo: replyTo);
+
+  Future<void> _sendPlace(
+    int chatId,
+    td.InputMessageContent content, {
+    int? replyTo,
+  }) async {
+    _add(
+      await _client.send(
+        td.SendMessage(
+          chatId: chatId,
+          replyTo: replyTo == null
+              ? null
+              : td.InputMessageReplyToMessage(
+                  messageId: replyTo,
+                  checklistTaskId: 0,
+                  pollOptionId: '',
+                ),
+          inputMessageContent: content,
+        ),
+      ),
+    );
+  }
+
+  td.User? _venueBot;
+
+  /// The inline bot Telegram names for venue search (the
+  /// `venue_search_bot_username` option, Foursquare unless told
+  /// otherwise); null when it can't be reached.
+  Future<td.User?> venueBot() async {
+    if (_venueBot case final bot?) return bot;
+    var username = 'foursquare';
+    try {
+      final option = await _client.send(
+        const td.GetOption(name: 'venue_search_bot_username'),
+      );
+      if (option is td.OptionValueString && option.value.isNotEmpty) {
+        username = option.value;
+      }
+    } on Object {
+      // Keep the default bot.
+    }
+    return _venueBot = await inlineBot(username);
+  }
+
+  /// Venues matching [query] around [near], from the venue bot, for the
+  /// location sheet; empty when there is no bot or nothing matches.
+  Future<List<td.Venue>> searchVenues(
+    int chatId,
+    String query,
+    td.Location near,
+  ) async {
+    final bot = await venueBot();
+    if (bot == null) return const [];
+    final results = await _client.send(
+      td.GetInlineQueryResults(
+        botUserId: bot.id,
+        chatId: chatId,
+        userLocation: near,
+        query: query,
+        offset: '',
+      ),
+    );
+    return [
+      for (final result in results.results)
+        if (result is td.InlineQueryResultVenue) result.venue,
+    ];
+  }
+
   /// Sends a recorded voice message: an Ogg Opus file at [path] with its
   /// length and Telegram's packed 5-bit [waveform].
   Future<void> sendVoiceNote(

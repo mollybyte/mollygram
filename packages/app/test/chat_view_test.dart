@@ -1533,6 +1533,76 @@ void main() {
     expect(find.text('New quiz'), findsNothing);
   });
 
+  testWidgets('sends a place or a venue from the attach menu', (tester) async {
+    await pump(tester, group: false);
+    await tester.tap(find.byTooltip('Attach'));
+    await tester.pump();
+    await tester.tap(find.text('Location…'));
+    await tester.pump();
+    expect(find.text('Send location'), findsOneWidget);
+    // Nothing to send until the map has a point.
+    expect(find.text('Send this location'), findsNothing);
+
+    await tester.enterText(find.byType(TextField).last, '48.8566, 2.3522');
+    await tester.pump();
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    final map = json.sent.lastWhere((r) => r['@type'] == 'getMapThumbnailFile');
+    final shown = map['location']! as Map;
+    expect(shown['latitude'], closeTo(48.8566, 1e-6));
+    expect(map['zoom'], 15);
+    expect(find.text('48.85660, 2.35220'), findsOneWidget);
+
+    // A place name searches venues around the pin.
+    await tester.enterText(find.byType(TextField).last, 'tower');
+    await tester.pump(const Duration(milliseconds: 400));
+    for (var i = 0; i < 6; i++) {
+      await tester.runAsync(() => Future<void>.delayed(_tick));
+      await tester.pump();
+    }
+    final search = json.sent.lastWhere(
+      (r) => r['@type'] == 'getInlineQueryResults',
+    );
+    expect(search['query'], 'tower');
+    expect(
+      (search['user_location']! as Map)['latitude'],
+      closeTo(48.8566, 1e-6),
+    );
+    expect(find.text('Eiffel Tower'), findsOneWidget);
+    expect(find.text('Champ de Mars, Paris'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('send-this-location')));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump(const Duration(milliseconds: 200));
+    var send = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    var content = send['input_message_content']! as Map;
+    expect(content['@type'], 'inputMessageLocation');
+    expect((content['location']! as Map)['longitude'], closeTo(2.3522, 1e-6));
+    await tester.pumpAndSettle();
+    expect(find.text('Send location'), findsNothing);
+
+    // The sheet opens where it was left; a venue row sends the venue.
+    await tester.tap(find.byTooltip('Attach'));
+    await tester.pump();
+    await tester.tap(find.text('Location…'));
+    await tester.pump();
+    expect(find.text('48.85660, 2.35220'), findsOneWidget);
+    await tester.enterText(find.byType(TextField).last, 'tower');
+    await tester.pump(const Duration(milliseconds: 400));
+    for (var i = 0; i < 6; i++) {
+      await tester.runAsync(() => Future<void>.delayed(_tick));
+      await tester.pump();
+    }
+    await tester.tap(find.text('Eiffel Tower'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump(const Duration(milliseconds: 200));
+    send = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    content = send['input_message_content']! as Map;
+    expect(content['@type'], 'inputMessageVenue');
+    expect((content['venue']! as Map)['title'], 'Eiffel Tower');
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('sends a contact from the attach menu', (tester) async {
     await pump(tester, group: false);
     await tester.tap(find.byTooltip('Attach'));
@@ -3313,6 +3383,51 @@ final class _FakeTdJson implements td.TdJson {
           'is_inline': true,
           'inline_query_placeholder': 'Search GIFs',
         },
+      },
+      'getUser' when decoded['user_id'] == 60 => {
+        ..._user(60, 'Foursquare'),
+        'type': {
+          '@type': 'userTypeBot',
+          'is_inline': true,
+          'inline_query_placeholder': 'Search places',
+        },
+      },
+      'searchPublicChat' when decoded['username'] == 'foursquare' => {
+        ...(_chat(
+              lastRead: 0,
+              unread: 0,
+              last: 1,
+              type: {'@type': 'chatTypePrivate', 'user_id': 60},
+              empty: true,
+            )['chat']!
+            as Map<String, Object?>),
+        'id': 60,
+        'title': 'Foursquare',
+      },
+      'getInlineQueryResults' when decoded['user_location'] != null => {
+        '@type': 'inlineQueryResults',
+        'inline_query_id': 778,
+        'next_offset': '',
+        'results': [
+          {
+            '@type': 'inlineQueryResultVenue',
+            'id': 'v1',
+            'venue': {
+              '@type': 'venue',
+              'location': {
+                '@type': 'location',
+                'latitude': 48.8584,
+                'longitude': 2.2945,
+                'horizontal_accuracy': 0,
+              },
+              'title': 'Eiffel Tower',
+              'address': 'Champ de Mars, Paris',
+              'provider': 'foursquare',
+              'id': 'ft',
+              'type': 'landmark',
+            },
+          },
+        ],
       },
       'searchPublicChat' when decoded['username'] == 'gif' => {
         ...(_chat(

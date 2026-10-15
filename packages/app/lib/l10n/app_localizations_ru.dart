@@ -1029,6 +1029,28 @@ class AppLocalizationsRu extends AppLocalizations {
   String get sendContactTitle => 'Отправить контакт';
 
   @override
+  String get attachLocation => 'Геопозиция…';
+
+  @override
+  String get sendLocationTitle => 'Отправить геопозицию';
+
+  @override
+  String get locationSearchHint => 'Место, адрес или координаты';
+
+  @override
+  String get locationStartHint =>
+      'Введите координаты или вставьте ссылку на карту, чтобы выбрать точку, затем ищите места рядом';
+
+  @override
+  String get sendThisLocation => 'Отправить эту точку';
+
+  @override
+  String get mapZoomIn => 'Приблизить';
+
+  @override
+  String get mapZoomOut => 'Отдалить';
+
+  @override
   String get newPollTitle => 'Новый опрос';
 
   @override

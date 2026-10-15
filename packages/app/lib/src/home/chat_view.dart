@@ -28,6 +28,7 @@ import '../chat/forum_topics.dart';
 import '../chat/forward_picker.dart';
 import '../chat/inline_results.dart';
 import '../chat/link_preview_bar.dart';
+import '../chat/location_picker.dart';
 import '../chat/media_viewer.dart';
 import '../chat/message_actions.dart';
 import '../chat/message_tile.dart';
@@ -2436,7 +2437,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
   }
 
   /// The attach button's menu: files, a poll where the chat allows one
-  /// (groups and channels), and a contact.
+  /// (groups and channels), a place and a contact.
   Future<void> _attachMenu(Offset position) async {
     final l10n = AppLocalizations.of(context);
     final store = _conversations.store;
@@ -2457,11 +2458,41 @@ class _ChatViewState extends ConsumerState<ChatView> {
             onSelected: () => unawaited(_createPoll()),
           ),
         MgMenuItem(
+          label: l10n.attachLocation,
+          onSelected: () => unawaited(_sendLocation()),
+        ),
+        MgMenuItem(
           label: l10n.attachContact,
           onSelected: () => unawaited(_sendContact()),
         ),
       ],
     );
+  }
+
+  Future<void> _sendLocation() async {
+    final chatId = widget.chatId;
+    final choice = await pickLocation(context, chatId: chatId);
+    if (choice == null || !mounted || widget.chatId != chatId) return;
+    final replyTo = _replyTo;
+    setState(() {
+      _replyTo = null;
+      _replyQuote = null;
+      _failure = null;
+    });
+    try {
+      switch (choice) {
+        case PointChoice(:final location):
+          await _conversations.sendLocation(
+            chatId,
+            location,
+            replyTo: replyTo?.id,
+          );
+        case VenueChoice(:final venue):
+          await _conversations.sendVenue(chatId, venue, replyTo: replyTo?.id);
+      }
+    } on td.TdException {
+      if (mounted) setState(() => _failure = _Failure.send);
+    }
   }
 
   Future<void> _sendContact() async {
