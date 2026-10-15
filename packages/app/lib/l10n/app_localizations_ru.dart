@@ -1736,6 +1736,19 @@ class AppLocalizationsRu extends AppLocalizations {
   String get chatUnavailable => 'Вы не можете участвовать в этом чате';
 
   @override
+  String get textNotAllowed => 'Текстовые сообщения в этой группе запрещены';
+
+  @override
+  String restrictedUntil(String date) {
+    return 'Вы не можете писать здесь до $date';
+  }
+
+  @override
+  String slowModeWait(String time) {
+    return 'Медленный режим, следующее сообщение через $time';
+  }
+
+  @override
   String get chatActionFailed => 'Не получилось, попробуйте ещё раз';
 
   @override
@@ -2146,6 +2159,45 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get blockedShowMore => 'Показать ещё';
+
+  @override
+  String get keepDeletedMessages => 'Сохранять удалённые сообщения';
+
+  @override
+  String get keepDeletedMessagesHint =>
+      'Сохранять сообщения, которые другие удалили для всех';
+
+  @override
+  String get keepEditHistory => 'Сохранять историю правок';
+
+  @override
+  String get keepEditHistoryHint =>
+      'Сохранять прежние версии изменённых сообщений';
+
+  @override
+  String get storedMessagesAbout =>
+      'Хранится в зашифрованном виде только на этом компьютере, для сообщений, которые Mollygram видел, пока был открыт. Никуда не отправляется. Показ в чатах появится позже.';
+
+  @override
+  String get clearStoredData => 'Сохранённые данные';
+
+  @override
+  String get clearStoredDataTitle =>
+      'Удалить удалённые сообщения и историю правок, сохранённые на этом компьютере?';
+
+  @override
+  String get storedDataUnreadable => 'Сохранённые данные не читаются';
+
+  @override
+  String get storedDataUnreadableHint =>
+      'Ключа нет в связке ключей. Сбросьте, чтобы начать заново.';
+
+  @override
+  String get resetStoredData => 'Сбросить';
+
+  @override
+  String get resetStoredDataTitle =>
+      'Удалить нечитаемые сохранённые данные и начать заново?';
 
   @override
   String get edit => 'Изменить';

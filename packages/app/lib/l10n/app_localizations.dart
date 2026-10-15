@@ -2906,6 +2906,24 @@ abstract class AppLocalizations {
   /// **'You can\'t take part in this chat'**
   String get chatUnavailable;
 
+  /// No description provided for @textNotAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'Text messages aren\'t allowed in this group'**
+  String get textNotAllowed;
+
+  /// No description provided for @restrictedUntil.
+  ///
+  /// In en, this message translates to:
+  /// **'You can\'t write here until {date}'**
+  String restrictedUntil(String date);
+
+  /// No description provided for @slowModeWait.
+  ///
+  /// In en, this message translates to:
+  /// **'Slowmode is on, next message in {time}'**
+  String slowModeWait(String time);
+
   /// No description provided for @chatActionFailed.
   ///
   /// In en, this message translates to:
@@ -3589,6 +3607,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Show more'**
   String get blockedShowMore;
+
+  /// No description provided for @keepDeletedMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep deleted messages'**
+  String get keepDeletedMessages;
+
+  /// No description provided for @keepDeletedMessagesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Save messages others delete for everyone'**
+  String get keepDeletedMessagesHint;
+
+  /// No description provided for @keepEditHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep edit history'**
+  String get keepEditHistory;
+
+  /// No description provided for @keepEditHistoryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Save earlier versions of edited messages'**
+  String get keepEditHistoryHint;
+
+  /// No description provided for @storedMessagesAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved encrypted on this computer only, for messages Mollygram saw while it was open. Nothing is sent anywhere. Showing them in chats comes later.'**
+  String get storedMessagesAbout;
+
+  /// No description provided for @clearStoredData.
+  ///
+  /// In en, this message translates to:
+  /// **'Stored data'**
+  String get clearStoredData;
+
+  /// No description provided for @clearStoredDataTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear the deleted messages and edit history saved on this computer?'**
+  String get clearStoredDataTitle;
+
+  /// No description provided for @storedDataUnreadable.
+  ///
+  /// In en, this message translates to:
+  /// **'Stored data can\'t be read'**
+  String get storedDataUnreadable;
+
+  /// No description provided for @storedDataUnreadableHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Its key is missing from the keychain. Reset to start again.'**
+  String get storedDataUnreadableHint;
+
+  /// No description provided for @resetStoredData.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get resetStoredData;
+
+  /// No description provided for @resetStoredDataTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete the stored data that can\'t be read and start again?'**
+  String get resetStoredDataTitle;
 
   /// No description provided for @edit.
   ///

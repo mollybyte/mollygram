@@ -92,6 +92,8 @@ final settingsSections = <SettingsSection>[
       l10n.hideTyping,
       l10n.stayOffline,
       l10n.hideContentOpened,
+      l10n.keepDeletedMessages,
+      l10n.keepEditHistory,
     ],
     builder: (context) => const PrivacyExtrasPage(),
   ),

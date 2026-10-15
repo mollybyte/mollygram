@@ -191,4 +191,20 @@ void main() {
     );
     expect(sent, throwsA(isA<StateError>()));
   });
+
+  test('requests and responses can be watched', () async {
+    final client = td.createClient();
+    client.filter = (request) => request is TestCallEmpty ? const Ok() : null;
+    final requests = <String>[];
+    final responses = <String>[];
+    client.requests.listen((r) => requests.add(r.tdType));
+    client.responses.listen((r) => responses.add(r.tdType));
+
+    await client.send(const TestCallEmpty());
+    await client.send(const TestCallString(x: 'a'));
+
+    // The filtered request never went to TDLib.
+    expect(requests, ['testCallString']);
+    expect(responses, ['testString']);
+  });
 }

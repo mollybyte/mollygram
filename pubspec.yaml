@@ -18,3 +18,10 @@ workspace:
   - packages/plugin_host
   - packages/shell
   - packages/plugins_ui
+
+# The Mollygram store (packages/core/lib/src/store) is encrypted with
+# SQLCipher: package:sqlite3 bundles a prebuilt SQLCipher instead of SQLite.
+hooks:
+  user_defines:
+    sqlite3:
+      source: sqlcipher
