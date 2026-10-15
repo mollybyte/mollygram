@@ -477,6 +477,41 @@ void main() {
       );
     });
 
+    testWidgets('calendar $theme', skip: _skip, (tester) async {
+      tester.view.physicalSize = const Size(320, 300);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        themed(
+          Stack(
+            children: [
+              const Positioned.fill(child: Wallpaper()),
+              Positioned(
+                left: 24,
+                top: 20,
+                child: MgCalendar(
+                  month: DateTime(2026, 10),
+                  today: DateTime(2026, 10, 15),
+                  first: DateTime(2026, 10, 3),
+                  onPick: (_) {},
+                  monthTitle: (_) => 'October 2026',
+                  weekdays: const ['M', 'T', 'W', 'T', 'F', 'S', 'S'],
+                  previousTooltip: 'Previous month',
+                  nextTooltip: 'Next month',
+                ),
+              ),
+            ],
+          ),
+          colors: colors,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await expectLater(
+        find.byType(Stack).first,
+        matchesGoldenFile('goldens/calendar_$theme.png'),
+      );
+    });
+
     testWidgets('selection bar $theme', skip: _skip, (tester) async {
       tester.view.physicalSize = const Size(640, 140);
       tester.view.devicePixelRatio = 1;
