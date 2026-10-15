@@ -1514,6 +1514,30 @@ abstract class AppLocalizations {
   /// **'Unmute'**
   String get infoUnmute;
 
+  /// No description provided for @muteForHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{For 1 hour} other{For {count} hours}}'**
+  String muteForHours(int count);
+
+  /// No description provided for @muteForDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{For 1 day} other{For {count} days}}'**
+  String muteForDays(int count);
+
+  /// No description provided for @muteUntilEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Until I turn it back on'**
+  String get muteUntilEnabled;
+
+  /// No description provided for @autoDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-delete messages'**
+  String get autoDeleteTitle;
+
   /// No description provided for @blockUser.
   ///
   /// In en, this message translates to:

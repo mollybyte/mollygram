@@ -175,7 +175,7 @@ M8 calls and macOS release, M9 after release.
 | Shared media tabs: media, files, links, voice, music, GIFs, groups in common | partial | `SharedMediaView` in the info panel: media, files, links, voice, music and GIFs (`searchChatMessages` by filter, GIFs in the grid and the viewer), and for a user the groups in common (`getGroupsInCommon`), each a row that opens the group | M | M2 |
 | Members list with search | done | Info panel (`profile/`): owner and admins first, then online; search and Show more pages through `getSupergroupMembers` | | |
 | Profile photo gallery | done | The big photo in the info panel opens the viewer with the profile's photos newest first (`getUserProfilePhotos`; for a group or channel its photo-change messages), the name and when each was set on top, arrows and thumbnails to page | S | M2 |
-| Per-chat notifications and auto-delete timer | partial | Mute and unmute in the info panel; no mute-for durations, no auto-delete | S | M1 |
+| Per-chat notifications and auto-delete timer | done | The info panel's Mute tile offers an hour, eight hours, two days or until turned back on (`setChatNotificationSettings`), Unmute when muted; an Auto-delete messages row shows the chat's timer and sets off, a day, a week or a month (`setChatMessageAutoDeleteTime`) for private chats and groups the user may edit | S | M1 |
 | Block, report, share contact | partial | Block and unblock in the info panel | S | M6 |
 
 ### Groups, channels and admin tools

@@ -211,14 +211,42 @@ void main() {
       await settle(tester);
 
       await tester.tap(find.text('Mute'));
+      await tester.pumpAndSettle();
+      expect(find.text('Until I turn it back on'), findsOneWidget);
+      await tester.tap(find.text('For 8 hours'));
       await settle(tester);
       final request = json.sent.lastWhere(
         (r) => r['@type'] == 'setChatNotificationSettings',
       );
-      expect(
-        (request['notification_settings']! as Map)['mute_for'],
-        isPositive,
+      expect((request['notification_settings']! as Map)['mute_for'], 8 * 3600);
+    });
+
+    testWidgets('sets the auto-delete timer', (tester) async {
+      await pump(tester);
+      open(10);
+      await settle(tester);
+
+      expect(find.text('Auto-delete messages'), findsOneWidget);
+      expect(find.text('Off'), findsOneWidget);
+      await tester.tap(find.text('Auto-delete messages'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('1 week'));
+      await settle(tester);
+      final request = json.sent.lastWhere(
+        (r) => r['@type'] == 'setChatMessageAutoDeleteTime',
       );
+      expect(request['chat_id'], 10);
+      expect(request['message_auto_delete_time'], 7 * 86400);
+
+      // TDLib confirms with an update, and the row shows the new timer.
+      json.push({
+        '@type': 'updateChatMessageAutoDeleteTime',
+        'chat_id': 10,
+        'message_auto_delete_time': 7 * 86400,
+      });
+      await settle(tester);
+      expect(find.text('1 week'), findsOneWidget);
+      expect(find.text('Off'), findsNothing);
     });
 
     testWidgets('blocks only after confirmation', (tester) async {

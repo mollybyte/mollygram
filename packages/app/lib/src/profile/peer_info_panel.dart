@@ -396,11 +396,18 @@ class _Content extends ConsumerWidget {
                   _ActionTile(
                     icon: MgIcons.notifications,
                     label: info.isMuted ? l10n.infoUnmute : l10n.infoMute,
-                    onTap: () => unawaited(
-                      peers
-                          .setMuted(info.chatId, muted: !info.isMuted)
-                          .catchError((Object _) {}),
-                    ),
+                    onTap: info.isMuted
+                        ? () => unawaited(
+                            peers
+                                .setMuted(info.chatId, muted: false)
+                                .catchError((Object _) {}),
+                          )
+                        : null,
+                    onMenu: info.isMuted
+                        ? null
+                        : (position) => unawaited(
+                            _muteMenu(context, position, peers, info.chatId),
+                          ),
                   ),
                 if (rights.canChangeInfo) ...[
                   const SizedBox(width: 8),
@@ -424,6 +431,20 @@ class _Content extends ConsumerWidget {
             _Group(
               children: [
                 _NavRow(label: l10n.sharedMedia, onTap: onSharedMedia),
+              ],
+            ),
+          ],
+          if (canAct &&
+              !info.isSelf &&
+              (info.kind == PeerKind.user || rights.canChangeInfo)) ...[
+            const SizedBox(height: 12),
+            _Group(
+              children: [
+                _NavRow(
+                  label: l10n.autoDeleteTitle,
+                  value: _autoDeleteLabel(l10n, info.autoDeleteTime),
+                  onTap: () => unawaited(_autoDeleteMenu(context, peers, info)),
+                ),
               ],
             ),
           ],
@@ -686,9 +707,12 @@ class _ActionRow extends StatelessWidget {
 
 /// A row that leads to another page of the panel.
 class _NavRow extends StatelessWidget {
-  const _NavRow({required this.label, required this.onTap});
+  const _NavRow({required this.label, required this.onTap, this.value});
 
   final String label;
+
+  /// The current setting, muted, before the chevron.
+  final String? value;
   final VoidCallback onTap;
 
   @override
@@ -703,6 +727,10 @@ class _NavRow extends StatelessWidget {
           child: Row(
             children: [
               Expanded(child: Text(label, style: mgTextStyle(c))),
+              if (value case final value?) ...[
+                Text(value, style: mgTextStyle(c, color: c.fg2)),
+                const SizedBox(width: 4),
+              ],
               MgIcon(MgIcons.chevron, size: 14, color: c.fg2),
             ],
           ),
@@ -712,17 +740,81 @@ class _NavRow extends StatelessWidget {
   }
 }
 
+/// The mute tile's menu: for an hour, eight hours, two days, or until
+/// the user turns notifications back on.
+Future<void> _muteMenu(
+  BuildContext context,
+  Offset position,
+  PeerInfoController peers,
+  int chatId,
+) {
+  final l10n = AppLocalizations.of(context);
+  MgMenuItem item(String label, int seconds) => MgMenuItem(
+    label: label,
+    onSelected: () =>
+        unawaited(peers.setMuteFor(chatId, seconds).catchError((Object _) {})),
+  );
+  return showMgMenu(
+    context,
+    position: position,
+    items: [
+      item(l10n.muteForHours(1), 3600),
+      item(l10n.muteForHours(8), 8 * 3600),
+      item(l10n.muteForDays(2), 2 * 86400),
+      item(l10n.muteUntilEnabled, PeerInfoController.muteForever),
+    ],
+  );
+}
+
+/// The auto-delete row's menu: off, a day, a week or a month, as the
+/// official app offers.
+Future<void> _autoDeleteMenu(
+  BuildContext context,
+  PeerInfoController peers,
+  PeerInfo info,
+) {
+  final l10n = AppLocalizations.of(context);
+  final box = context.findRenderObject()! as RenderBox;
+  MgMenuItem item(int seconds) => MgMenuItem(
+    label: _autoDeleteLabel(l10n, seconds),
+    onSelected: () => unawaited(
+      peers.setAutoDeleteTime(info.chatId, seconds).catchError((Object _) {}),
+    ),
+  );
+  return showMgMenu(
+    context,
+    position: box.localToGlobal(Offset(box.size.width - 220, 0)),
+    items: [item(0), item(86400), item(7 * 86400), item(31 * 86400)],
+  );
+}
+
+String _autoDeleteLabel(AppLocalizations l10n, int seconds) =>
+    switch (seconds) {
+      0 => l10n.selfDestructOff,
+      86400 => l10n.oneDay,
+      604800 => l10n.oneWeek,
+      2678400 => l10n.oneMonth,
+      _ when seconds >= 604800 => l10n.ttlDays(seconds ~/ 86400),
+      _ when seconds >= 86400 => l10n.selfDestructDays(seconds ~/ 86400),
+      _ when seconds >= 3600 => l10n.selfDestructHours(seconds ~/ 3600),
+      _ => l10n.selfDestructMinutes(seconds ~/ 60),
+    };
+
 /// A quick action under the name: an icon over a short label.
 class _ActionTile extends StatefulWidget {
   const _ActionTile({
     required this.icon,
     required this.label,
-    required this.onTap,
-  });
+    this.onTap,
+    this.onMenu,
+  }) : assert(onTap != null || onMenu != null, 'a tile does something');
 
   final MgIconData icon;
   final String label;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
+
+  /// Opens a menu under the tile, at the position given.
+  final void Function(Offset position)? onMenu;
 
   @override
   State<_ActionTile> createState() => _ActionTileState();
@@ -743,7 +835,12 @@ class _ActionTileState extends State<_ActionTile> {
         onEnter: (_) => setState(() => _hover = true),
         onExit: (_) => setState(() => _hover = false),
         child: GestureDetector(
-          onTap: widget.onTap,
+          onTap: () {
+            final menu = widget.onMenu;
+            if (menu == null) return widget.onTap?.call();
+            final box = context.findRenderObject()! as RenderBox;
+            menu(box.localToGlobal(Offset(0, box.size.height + 4)));
+          },
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 120),
             width: 88,

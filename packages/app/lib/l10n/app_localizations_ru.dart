@@ -852,6 +852,36 @@ class AppLocalizationsRu extends AppLocalizations {
   String get infoUnmute => 'Со звуком';
 
   @override
+  String muteForHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'На $count часов',
+      few: 'На $count часа',
+      one: 'На $count час',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String muteForDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'На $count дней',
+      few: 'На $count дня',
+      one: 'На $count день',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get muteUntilEnabled => 'Пока не включу обратно';
+
+  @override
+  String get autoDeleteTitle => 'Автоудаление сообщений';
+
+  @override
   String get blockUser => 'Заблокировать';
 
   @override
