@@ -424,6 +424,26 @@ class AppLocalizationsRu extends AppLocalizations {
   String get deletedMessage => 'Удалённое сообщение';
 
   @override
+  String get deletedMark => 'удалено';
+
+  @override
+  String deletedAt(String time) {
+    return 'Удалено $time';
+  }
+
+  @override
+  String get menuEditHistory => 'История изменений';
+
+  @override
+  String get editHistoryTitle => 'История изменений';
+
+  @override
+  String get editHistoryCurrent => 'Текущая версия';
+
+  @override
+  String get editHistoryEmpty => 'Прежние версии не сохранены';
+
+  @override
   String get loadingMessage => 'Загрузка…';
 
   @override

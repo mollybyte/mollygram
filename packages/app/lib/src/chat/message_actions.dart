@@ -24,6 +24,7 @@ final class MessageMenuHandlers {
     required this.onForward,
     this.onSelect,
     required this.onQuote,
+    this.onEditHistory,
   });
 
   final void Function(ConversationMessage message) onReply;
@@ -37,6 +38,10 @@ final class MessageMenuHandlers {
   /// Starts selecting messages with this row, or adds it to the selection;
   /// a list without selection, such as a comments thread, leaves it out.
   final void Function(MessageRow row)? onSelect;
+
+  /// Shows the earlier versions of an edited message, kept in the privacy
+  /// store; absent when the edit history is not kept.
+  final void Function(ConversationMessage message)? onEditHistory;
 }
 
 /// The message a command like Reply or Edit acts on in [row]: the one with
@@ -138,6 +143,12 @@ Future<void> showMessageMenu(
         label: l10n.menuEdit,
         onSelected: () => handlers.onEdit(target),
       ),
+    if (target.editDate > 0 && !target.isDeleted)
+      if (handlers.onEditHistory case final onEditHistory?)
+        MgMenuItem(
+          label: l10n.menuEditHistory,
+          onSelected: () => onEditHistory(target),
+        ),
     if ((properties?.canBeEdited ?? false) && _isOpenPoll(target))
       MgMenuItem(
         label: l10n.menuStopPoll,

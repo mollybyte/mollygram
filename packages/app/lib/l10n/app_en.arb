@@ -138,6 +138,15 @@
     "placeholders": { "name": { "type": "String" } }
   },
   "deletedMessage": "Deleted message",
+  "deletedMark": "deleted",
+  "deletedAt": "Deleted {time}",
+  "@deletedAt": {
+    "placeholders": { "time": { "type": "String" } }
+  },
+  "menuEditHistory": "Edit history",
+  "editHistoryTitle": "Edit history",
+  "editHistoryCurrent": "Current version",
+  "editHistoryEmpty": "No earlier versions were kept",
   "loadingMessage": "Loading…",
   "unknownSender": "Unknown",
   "hiddenAccount": "Hidden account",
