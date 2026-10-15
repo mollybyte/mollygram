@@ -110,7 +110,7 @@ M8 calls and macOS release, M9 after release.
 | Drafts saved to the server and synced | done | Composer loads the chat's draft and saves its own (text, formatting, reply) after a pause and on leaving | | |
 | Emoji picker | done | #34: groups, recent, keyword search | | |
 | Sticker panel, recent and favourite stickers, sticker search | done | Recent, favourites, installed sets, and a search field over them that finds stickers by emoji or word in the user's language and English (`SearchStickers`); sets are managed in Settings > Stickers and emoji | S | M1 |
-| GIF panel and GIF search | missing | `GifKeyboardController` | M | M2 |
+| GIF panel and GIF search | partial | A GIFs tab in the emoji panel lists the saved GIFs (`GetSavedAnimations`), each playing under the pointer, and sends one with a click; GIF search goes through the @gif inline bot and waits for inline bots | M | M2 |
 | Emoji and sticker suggestions while typing | done | `:word` offers Telegram's emoji keywords in the composer popup; a draft that is one emoji shows a strip of matching stickers above the composer | M | M2 |
 | Rich text formatting: bold, italic, code, link, spoiler, quote; Markdown shortcuts | done | `RichTextEditingController` in ui_kit: ⌘B, ⌘I, ⌘U, ⌘⇧X, ⌘⇧M, ⌘⇧P, ⌘⇧., ⌘K, context menu; Markdown converted on send. Captions of files are still plain | | |
 | Mentions autocomplete (@) | done | `MentionSearch` with `ChatMembersFilterMention`; no `:` emoji shortcodes yet | | |

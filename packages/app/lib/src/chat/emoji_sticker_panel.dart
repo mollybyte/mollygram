@@ -10,6 +10,7 @@ import '../../l10n/app_localizations.dart';
 import '../session/providers.dart';
 import 'media_content.dart';
 import 'recent_emoji.dart';
+import 'td_file.dart';
 
 /// The emoji and sticker panel over the composer. An emoji goes into the
 /// text with [onEmoji] and the panel stays; a sticker is sent at once
@@ -19,12 +20,17 @@ class EmojiStickerPanel extends ConsumerWidget {
     super.key,
     required this.onEmoji,
     required this.onSticker,
+    this.onGif,
     required this.onClose,
     this.height = 400,
   });
 
   final ValueChanged<String> onEmoji;
   final ValueChanged<td.Sticker> onSticker;
+
+  /// A saved GIF picked in the GIF tab; sent at once, like a sticker. Without
+  /// it the panel has no GIF tab, as when it picks a sticker for the editor.
+  final ValueChanged<td.Animation>? onGif;
   final VoidCallback onClose;
   final double height;
 
@@ -36,7 +42,7 @@ class EmojiStickerPanel extends ConsumerWidget {
     return EmojiPanel(
       height: height,
       onClose: onClose,
-      tabs: [l10n.emojiTab, l10n.stickersTab],
+      tabs: [l10n.emojiTab, l10n.stickersTab, if (onGif != null) l10n.gifsTab],
       children: [
         EmojiTab(
           labels: EmojiTabLabels(
@@ -70,6 +76,8 @@ class EmojiStickerPanel extends ConsumerWidget {
           languages: {language, 'en'}.toList(),
           onPick: onSticker,
         ),
+        if (onGif case final onGif?)
+          _GifTab(library: session.stickers, onPick: onGif),
       ],
     );
   }
@@ -321,6 +329,110 @@ class _StickerTabState extends State<_StickerTab> {
             onSelect: _grid.jumpTo,
           ),
       ],
+    );
+  }
+}
+
+/// The user's saved GIFs in a grid; each plays while the pointer is over
+/// it and goes out with a click.
+class _GifTab extends StatefulWidget {
+  const _GifTab({required this.library, required this.onPick});
+
+  final StickerLibrary library;
+  final ValueChanged<td.Animation> onPick;
+
+  @override
+  State<_GifTab> createState() => _GifTabState();
+}
+
+class _GifTabState extends State<_GifTab> {
+  List<td.Animation>? _gifs;
+  var _failed = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_gifs == null && !_failed) unawaited(_load());
+  }
+
+  Future<void> _load() async {
+    try {
+      final gifs = await widget.library.savedAnimations();
+      if (mounted) setState(() => _gifs = gifs);
+    } on Object {
+      if (mounted) setState(() => _failed = true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    final l10n = AppLocalizations.of(context);
+    final gifs = _gifs;
+    if (gifs == null) {
+      return _failed
+          ? Center(
+              child: Text(l10n.gifsFailed, style: mgTextStyle(c, color: c.fg2)),
+            )
+          : const SizedBox.shrink();
+    }
+    if (gifs.isEmpty) {
+      return Center(
+        child: Text(l10n.noGifs, style: mgTextStyle(c, color: c.fg2)),
+      );
+    }
+    return GridView.builder(
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 124,
+        mainAxisSpacing: 6,
+        crossAxisSpacing: 6,
+      ),
+      itemCount: gifs.length,
+      itemBuilder: (context, i) => _GifCell(
+        key: ValueKey(gifs[i].animation.id),
+        animation: gifs[i],
+        onTap: () => widget.onPick(gifs[i]),
+      ),
+    );
+  }
+}
+
+/// A saved GIF in the panel: its cover at rest, playing under the pointer.
+class _GifCell extends StatefulWidget {
+  const _GifCell({super.key, required this.animation, required this.onTap});
+
+  final td.Animation animation;
+  final VoidCallback onTap;
+
+  @override
+  State<_GifCell> createState() => _GifCellState();
+}
+
+class _GifCellState extends State<_GifCell> {
+  var _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final animation = widget.animation;
+    return PanelCell(
+      label: animation.fileName,
+      onTap: widget.onTap,
+      onHover: (hover) => setState(() => _hover = hover),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: LayoutBuilder(
+          builder: (context, constraints) => _hover
+              ? AnimationContent(
+                  animation: animation,
+                  size: constraints.biggest,
+                )
+              : TdImage(
+                  thumbnail: animation.thumbnail?.file,
+                  minithumbnail: animation.minithumbnail,
+                ),
+        ),
+      ),
     );
   }
 }

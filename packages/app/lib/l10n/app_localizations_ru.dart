@@ -1646,6 +1646,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get stickersTab => 'Стикеры';
 
   @override
+  String get gifsTab => 'GIF';
+
+  @override
   String get emojiSearch => 'Поиск эмодзи';
 
   @override
@@ -1698,6 +1701,12 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get noStickerSets => 'Наборов пока нет';
+
+  @override
+  String get noGifs => 'Сохранённых GIF пока нет';
+
+  @override
+  String get gifsFailed => 'Не удалось загрузить GIF';
 
   @override
   String get forwardedMessages => 'Пересланные сообщения';

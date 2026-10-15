@@ -2138,6 +2138,31 @@ void main() {
     expect(find.textContaining('🔥', findRichText: true), findsNothing);
   });
 
+  testWidgets('sends a saved GIF from the panel', (tester) async {
+    await pump(tester);
+    await tester.tap(find.byTooltip('Emoji and stickers'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.tap(find.text('GIFs'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+
+    await tester.tap(find.bySemanticsLabel('gif2.mp4'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+
+    final send = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    final content = send['input_message_content']! as Map;
+    expect(content['@type'], 'inputMessageAnimation');
+    expect((content['animation']! as Map)['animation'], {
+      '@type': 'inputFileId',
+      'id': 402,
+    });
+    expect(find.byType(EmojiPanel), findsNothing);
+  });
+
   testWidgets('sends a sticker from the panel and closes it', (tester) async {
     await pump(tester);
     await tester.tap(find.byTooltip('Emoji and stickers'));
@@ -2469,6 +2494,10 @@ final class _FakeTdJson implements td.TdJson {
         'stickers': [_sticker(1, '🐱')],
       },
       'getFavoriteStickers' => {'@type': 'stickers', 'stickers': <Object?>[]},
+      'getSavedAnimations' => {
+        '@type': 'animations',
+        'animations': [_animation(1), _animation(2)],
+      },
       'searchStickers' => {
         '@type': 'stickers',
         'stickers': [_sticker(4, '😻')],
@@ -3023,6 +3052,17 @@ Map<String, Object?> _voiceMessage(int id, int senderId) => {
     'caption': {'@type': 'formattedText', 'text': '', 'entities': <Object?>[]},
     'is_listened': false,
   },
+};
+
+Map<String, Object?> _animation(int id) => {
+  '@type': 'animation',
+  'duration': 3,
+  'width': 320,
+  'height': 240,
+  'file_name': 'gif$id.mp4',
+  'mime_type': 'video/mp4',
+  'has_stickers': false,
+  'animation': _stickerFile(400 + id),
 };
 
 Map<String, Object?> _sticker(int id, String emoji) => {

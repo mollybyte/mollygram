@@ -851,6 +851,40 @@ final class ConversationController {
 
   /// Sends [sticker] on its own, as a reply to [replyTo] when given.
   /// TDLib moves it to the front of the recent stickers.
+  /// Sends a GIF the user has saved, by its file, as the panel's GIF tab
+  /// picks it.
+  Future<void> sendAnimation(
+    int chatId,
+    td.Animation animation, {
+    int? replyTo,
+  }) async {
+    _add(
+      await _client.send(
+        td.SendMessage(
+          chatId: chatId,
+          replyTo: replyTo == null
+              ? null
+              : td.InputMessageReplyToMessage(
+                  messageId: replyTo,
+                  checklistTaskId: 0,
+                  pollOptionId: '',
+                ),
+          inputMessageContent: td.InputMessageAnimation(
+            animation: td.InputAnimation(
+              animation: td.InputFileId(id: animation.animation.id),
+              addedStickerFileIds: const [],
+              duration: animation.duration,
+              width: animation.width,
+              height: animation.height,
+            ),
+            showCaptionAboveMedia: false,
+            hasSpoiler: false,
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> sendSticker(
     int chatId,
     td.Sticker sticker, {
