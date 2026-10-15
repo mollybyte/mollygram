@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 
+import 'account_settings.dart';
 import 'authorization_controller.dart';
 import 'authorization_stage.dart';
 import 'chat_list_controller.dart';
@@ -30,6 +31,7 @@ final class TelegramSession {
     required this.notifications,
     required this.stickers,
     required this.peers,
+    required this.account,
     required this.connection,
     required this._initializer,
   });
@@ -44,6 +46,7 @@ final class TelegramSession {
   final NotificationController notifications;
   final StickerLibrary stickers;
   final PeerInfoController peers;
+  final AccountSettings account;
 
   /// The connection state, for the "Connecting…" status in the window.
   final ConnectionMonitor connection;
@@ -77,6 +80,7 @@ final class TelegramSession {
       notifications: notifications,
       stickers: StickerLibrary(client),
       peers: peers,
+      account: AccountSettings(client),
       connection: connection,
       initializer: TdlibInitializer(client, parameters: parameters),
     );

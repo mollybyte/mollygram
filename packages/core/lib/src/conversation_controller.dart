@@ -173,6 +173,51 @@ final class ConversationController {
     }
   }
 
+  /// Loads the pinned messages of [chatId] for the bar under the header.
+  Future<void> loadPinned(int chatId) async {
+    final found = await _client.send(
+      td.SearchChatMessages(
+        chatId: chatId,
+        query: '',
+        fromMessageId: 0,
+        offset: 0,
+        limit: 100,
+        filter: const td.SearchMessagesFilterPinned(),
+      ),
+    );
+    for (final message in found.messages) {
+      if (!store.contains(chatId, message.id)) {
+        store.addReferenced(ConversationMessage(message));
+      }
+    }
+    store.setPinned(chatId, [for (final m in found.messages) m.id]);
+    _notify();
+  }
+
+  /// Pins [messageId] for everyone in the chat, or [onlyForSelf] in a
+  /// private chat, and unpins it when [pinned] is false.
+  Future<void> setPinned(
+    int chatId,
+    int messageId, {
+    required bool pinned,
+    bool onlyForSelf = false,
+  }) async {
+    if (pinned) {
+      await _client.send(
+        td.PinChatMessage(
+          chatId: chatId,
+          messageId: messageId,
+          disableNotification: false,
+          onlyForSelf: onlyForSelf,
+        ),
+      );
+    } else {
+      await _client.send(
+        td.UnpinChatMessage(chatId: chatId, messageId: messageId),
+      );
+    }
+  }
+
   /// The oldest unread message of [chatId] that mentions the user, or with
   /// [reactions] the oldest of theirs with a reaction they haven't seen.
   /// Viewing it marks it read.
@@ -708,6 +753,14 @@ final class ConversationController {
         :final isPinned,
       ):
         _patch(chatId, messageId, {'is_pinned': isPinned});
+        if (!store.hasPinned(chatId)) return;
+        if (isPinned && store.message(chatId, messageId) == null) {
+          // Pinned from another device, outside the loaded timeline: the
+          // bar needs its text, so the list is fetched again.
+          unawaited(loadPinned(chatId).catchError((Object _) {}));
+          return;
+        }
+        if (store.markPinned(chatId, messageId, pinned: isPinned)) _notify();
       case td.UpdateMessageContentOpened(:final chatId, :final messageId):
         final content = store.message(chatId, messageId)?.content;
         final opened = switch (content) {

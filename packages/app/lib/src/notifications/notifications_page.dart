@@ -18,12 +18,14 @@ final notificationPermissionProvider =
       (ref) => ref.watch(systemNotificationsProvider).permission(),
     );
 
-/// Notifications settings over the whole window, laid out like a pane of
-/// macOS System Settings. Esc or the back button closes it.
+/// Notifications settings, laid out like a pane of macOS System Settings.
+/// On its own over the whole window, Esc or the back button calls
+/// [onClose]; inside the settings window ([onClose] null) the window owns
+/// both.
 class NotificationsPage extends ConsumerWidget {
-  const NotificationsPage({super.key, required this.onClose});
+  const NotificationsPage({super.key, this.onClose});
 
-  final VoidCallback onClose;
+  final VoidCallback? onClose;
 
   static final _systemSettings = Uri.parse(
     'x-apple.systempreferences:com.apple.Notifications-Settings.extension',
@@ -40,10 +42,11 @@ class NotificationsPage extends ConsumerWidget {
     void update(NotificationSettings Function(NotificationSettings) change) =>
         ref.read(notificationSettingsProvider.notifier).update(change);
 
+    final onClose = this.onClose;
     return CallbackShortcuts(
-      bindings: {const SingleActivator(LogicalKeyboardKey.escape): onClose},
+      bindings: {const SingleActivator(LogicalKeyboardKey.escape): ?onClose},
       child: Focus(
-        autofocus: true,
+        autofocus: onClose != null,
         child: ColoredBox(
           color: palette.pane,
           child: Stack(
@@ -136,24 +139,26 @@ class NotificationsPage extends ConsumerWidget {
                   ],
                 ),
               ),
-              // The title bar is hidden: this strip drags the window.
-              const Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                height: 38,
-                child: WindowDragArea(),
-              ),
-              // Level with the window buttons (centred 30 pt down).
-              Positioned(
-                top: 14,
-                left: 84,
-                child: MgIconButton(
-                  icon: MgIcons.back,
-                  tooltip: l10n.back,
-                  onPressed: onClose,
+              if (onClose != null) ...[
+                // The title bar is hidden: this strip drags the window.
+                const Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: 38,
+                  child: WindowDragArea(),
                 ),
-              ),
+                // Level with the window buttons (centred 30 pt down).
+                Positioned(
+                  top: 14,
+                  left: 84,
+                  child: MgIconButton(
+                    icon: MgIcons.back,
+                    tooltip: l10n.back,
+                    onPressed: onClose,
+                  ),
+                ),
+              ],
             ],
           ),
         ),

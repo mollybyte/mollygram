@@ -886,6 +886,160 @@ class AppLocalizationsRu extends AppLocalizations {
   String get settings => 'Настройки';
 
   @override
+  String get settingsSearch => 'Поиск';
+
+  @override
+  String get myProfile => 'Мой профиль';
+
+  @override
+  String get firstName => 'Имя';
+
+  @override
+  String get lastName => 'Фамилия';
+
+  @override
+  String get username => 'Имя пользователя';
+
+  @override
+  String get bio => 'О себе';
+
+  @override
+  String get phoneNumber => 'Номер телефона';
+
+  @override
+  String get bioHint =>
+      'Любые подробности, например: возраст, род занятий или город.';
+
+  @override
+  String get usernameHint =>
+      'По этому имени вас смогут найти и написать вам, не зная номера телефона. Можно использовать a–z, 0–9 и подчёркивания, не меньше 5 символов.';
+
+  @override
+  String get usernameTooShort =>
+      'Имя пользователя должно содержать не меньше 5 символов.';
+
+  @override
+  String get usernameTooLong =>
+      'Имя пользователя не может быть длиннее 32 символов.';
+
+  @override
+  String get usernameInvalidCharacter =>
+      'Допустимы только a–z, 0–9 и подчёркивания.';
+
+  @override
+  String get usernameStartsWithLetter =>
+      'Имя пользователя должно начинаться с буквы.';
+
+  @override
+  String get usernameEndsWithUnderscore =>
+      'Имя пользователя не может заканчиваться подчёркиванием.';
+
+  @override
+  String get usernameChecking => 'Проверка…';
+
+  @override
+  String usernameAvailable(String name) {
+    return '@$name свободно.';
+  }
+
+  @override
+  String get usernameOccupied => 'Это имя пользователя уже занято.';
+
+  @override
+  String get usernamePurchasable =>
+      'Это имя пользователя продаётся на Fragment.';
+
+  @override
+  String get usernameUnavailable => 'Это имя пользователя нельзя использовать.';
+
+  @override
+  String get firstNameRequired => 'Имя не может быть пустым.';
+
+  @override
+  String get saveFailed => 'Не удалось сохранить изменение.';
+
+  @override
+  String get profileFailed => 'Не удалось загрузить профиль.';
+
+  @override
+  String get tryAgain => 'Повторить';
+
+  @override
+  String get logOut => 'Выйти';
+
+  @override
+  String get logOutButton => 'Выйти…';
+
+  @override
+  String get logOutTitle => 'Выйти из Telegram?';
+
+  @override
+  String get logOutMessage =>
+      'Чаты и медиа будут удалены с этого компьютера. В облаке Telegram они сохранятся.';
+
+  @override
+  String get privacyAndSecurity => 'Конфиденциальность и безопасность';
+
+  @override
+  String get activeSessions => 'Активные сеансы';
+
+  @override
+  String get activeSessionsHint =>
+      'Устройства и приложения, в которых выполнен вход в ваш аккаунт.';
+
+  @override
+  String get thisDevice => 'Это устройство';
+
+  @override
+  String get otherSessions => 'Другие сеансы';
+
+  @override
+  String get noOtherSessions => 'Вход выполнен только на этом устройстве.';
+
+  @override
+  String get sessionsFailed => 'Не удалось загрузить сеансы.';
+
+  @override
+  String get sessionOnline => 'в сети';
+
+  @override
+  String get sessionUnconfirmed => 'Новый вход';
+
+  @override
+  String get terminate => 'Завершить';
+
+  @override
+  String get terminateSessionTitle => 'Завершить этот сеанс?';
+
+  @override
+  String get terminateOthers => 'Завершить все другие сеансы';
+
+  @override
+  String get terminateOthersHint => 'Выход на всех устройствах, кроме этого.';
+
+  @override
+  String get terminateOthersTitle => 'Завершить все другие сеансы?';
+
+  @override
+  String get logOutFailed =>
+      'Не удалось выйти. Проверьте подключение и повторите попытку.';
+
+  @override
+  String get connectedBot => 'Подключённый бизнес-бот';
+
+  @override
+  String get connectedBotHint =>
+      'Этот бот может читать ваши бизнес-чаты и отвечать в них.';
+
+  @override
+  String get disconnect => 'Отключить';
+
+  @override
+  String disconnectBotTitle(String name) {
+    return 'Отключить $name?';
+  }
+
+  @override
   String get emojiTab => 'Эмодзи';
 
   @override
@@ -1009,4 +1163,21 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get nextReaction => 'Следующая реакция';
+
+  @override
+  String get menuPin => 'Закрепить';
+
+  @override
+  String get menuUnpin => 'Открепить';
+
+  @override
+  String get pinnedMessage => 'Закреплённое сообщение';
+
+  @override
+  String pinnedMessageNumber(int number) {
+    return 'Закреплённое сообщение #$number';
+  }
+
+  @override
+  String get hidePinned => 'Скрыть закреплённые';
 }

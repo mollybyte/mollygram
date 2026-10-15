@@ -1448,6 +1448,282 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get settings;
 
+  /// No description provided for @settingsSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get settingsSearch;
+
+  /// No description provided for @myProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'My profile'**
+  String get myProfile;
+
+  /// No description provided for @firstName.
+  ///
+  /// In en, this message translates to:
+  /// **'First name'**
+  String get firstName;
+
+  /// No description provided for @lastName.
+  ///
+  /// In en, this message translates to:
+  /// **'Last name'**
+  String get lastName;
+
+  /// No description provided for @username.
+  ///
+  /// In en, this message translates to:
+  /// **'Username'**
+  String get username;
+
+  /// No description provided for @bio.
+  ///
+  /// In en, this message translates to:
+  /// **'Bio'**
+  String get bio;
+
+  /// No description provided for @phoneNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone number'**
+  String get phoneNumber;
+
+  /// No description provided for @bioHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Any details such as age, occupation or city.'**
+  String get bioHint;
+
+  /// No description provided for @usernameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'People can find you by this username and contact you without knowing your phone number. You can use a–z, 0–9 and underscores, at least 5 characters.'**
+  String get usernameHint;
+
+  /// No description provided for @usernameTooShort.
+  ///
+  /// In en, this message translates to:
+  /// **'A username must have at least 5 characters.'**
+  String get usernameTooShort;
+
+  /// No description provided for @usernameTooLong.
+  ///
+  /// In en, this message translates to:
+  /// **'A username can\'t be longer than 32 characters.'**
+  String get usernameTooLong;
+
+  /// No description provided for @usernameInvalidCharacter.
+  ///
+  /// In en, this message translates to:
+  /// **'Only a–z, 0–9 and underscores are allowed.'**
+  String get usernameInvalidCharacter;
+
+  /// No description provided for @usernameStartsWithLetter.
+  ///
+  /// In en, this message translates to:
+  /// **'A username must start with a letter.'**
+  String get usernameStartsWithLetter;
+
+  /// No description provided for @usernameEndsWithUnderscore.
+  ///
+  /// In en, this message translates to:
+  /// **'A username can\'t end with an underscore.'**
+  String get usernameEndsWithUnderscore;
+
+  /// No description provided for @usernameChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking…'**
+  String get usernameChecking;
+
+  /// No description provided for @usernameAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'@{name} is available.'**
+  String usernameAvailable(String name);
+
+  /// No description provided for @usernameOccupied.
+  ///
+  /// In en, this message translates to:
+  /// **'This username is already taken.'**
+  String get usernameOccupied;
+
+  /// No description provided for @usernamePurchasable.
+  ///
+  /// In en, this message translates to:
+  /// **'This username is for sale on Fragment.'**
+  String get usernamePurchasable;
+
+  /// No description provided for @usernameUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This username can\'t be used.'**
+  String get usernameUnavailable;
+
+  /// No description provided for @firstNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'A first name is required.'**
+  String get firstNameRequired;
+
+  /// No description provided for @saveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save the change.'**
+  String get saveFailed;
+
+  /// No description provided for @profileFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load your profile.'**
+  String get profileFailed;
+
+  /// No description provided for @tryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get tryAgain;
+
+  /// No description provided for @logOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Log out'**
+  String get logOut;
+
+  /// No description provided for @logOutButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Log out…'**
+  String get logOutButton;
+
+  /// No description provided for @logOutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Log out of Telegram?'**
+  String get logOutTitle;
+
+  /// No description provided for @logOutMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your chats and media will be removed from this computer. They stay in the Telegram cloud.'**
+  String get logOutMessage;
+
+  /// No description provided for @privacyAndSecurity.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy and security'**
+  String get privacyAndSecurity;
+
+  /// No description provided for @activeSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Active sessions'**
+  String get activeSessions;
+
+  /// No description provided for @activeSessionsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Devices and apps signed in to your account.'**
+  String get activeSessionsHint;
+
+  /// No description provided for @thisDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'This device'**
+  String get thisDevice;
+
+  /// No description provided for @otherSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Other sessions'**
+  String get otherSessions;
+
+  /// No description provided for @noOtherSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re signed in on this device only.'**
+  String get noOtherSessions;
+
+  /// No description provided for @sessionsFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the sessions.'**
+  String get sessionsFailed;
+
+  /// No description provided for @sessionOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'online'**
+  String get sessionOnline;
+
+  /// No description provided for @sessionUnconfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'New sign-in'**
+  String get sessionUnconfirmed;
+
+  /// No description provided for @terminate.
+  ///
+  /// In en, this message translates to:
+  /// **'Terminate'**
+  String get terminate;
+
+  /// No description provided for @terminateSessionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Terminate this session?'**
+  String get terminateSessionTitle;
+
+  /// No description provided for @terminateOthers.
+  ///
+  /// In en, this message translates to:
+  /// **'Terminate all other sessions'**
+  String get terminateOthers;
+
+  /// No description provided for @terminateOthersHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Logs out every device except this one.'**
+  String get terminateOthersHint;
+
+  /// No description provided for @terminateOthersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Terminate all other sessions?'**
+  String get terminateOthersTitle;
+
+  /// No description provided for @logOutFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t log out. Check the connection and try again.'**
+  String get logOutFailed;
+
+  /// No description provided for @connectedBot.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected business bot'**
+  String get connectedBot;
+
+  /// No description provided for @connectedBotHint.
+  ///
+  /// In en, this message translates to:
+  /// **'This bot can read and answer your business chats.'**
+  String get connectedBotHint;
+
+  /// No description provided for @disconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect'**
+  String get disconnect;
+
+  /// No description provided for @disconnectBotTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect {name}?'**
+  String disconnectBotTitle(String name);
+
   /// No description provided for @emojiTab.
   ///
   /// In en, this message translates to:
@@ -1675,6 +1951,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Next reaction'**
   String get nextReaction;
+
+  /// No description provided for @menuPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Pin'**
+  String get menuPin;
+
+  /// No description provided for @menuUnpin.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpin'**
+  String get menuUnpin;
+
+  /// No description provided for @pinnedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinned message'**
+  String get pinnedMessage;
+
+  /// No description provided for @pinnedMessageNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinned message #{number}'**
+  String pinnedMessageNumber(int number);
+
+  /// No description provided for @hidePinned.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide pinned messages'**
+  String get hidePinned;
 }
 
 class _AppLocalizationsDelegate
