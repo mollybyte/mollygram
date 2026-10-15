@@ -1838,6 +1838,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get searchByDate => 'Jump to date';
 
   @override
+  String get searchBySender => 'Search by sender';
+
+  @override
   String searchCounter(int index, int count) {
     return '$index of $count';
   }

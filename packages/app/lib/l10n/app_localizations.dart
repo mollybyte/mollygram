@@ -3110,6 +3110,12 @@ abstract class AppLocalizations {
   /// **'Jump to date'**
   String get searchByDate;
 
+  /// No description provided for @searchBySender.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by sender'**
+  String get searchBySender;
+
   /// No description provided for @searchCounter.
   ///
   /// In en, this message translates to:

@@ -1858,6 +1858,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get searchByDate => 'Перейти к дате';
 
   @override
+  String get searchBySender => 'Поиск по отправителю';
+
+  @override
   String searchCounter(int index, int count) {
     return '$index из $count';
   }

@@ -37,6 +37,7 @@ import '../chat/timeline.dart';
 import '../chat/timeline_scroll.dart';
 import '../chat/timeline_view.dart';
 import '../chat_search/chat_search_bar.dart';
+import '../chat_search/sender_picker.dart';
 import '../compose/command_suggester.dart';
 import '../compose/emoji_suggester.dart';
 import '../compose/mention_suggester.dart';
@@ -2587,12 +2588,25 @@ class _ChatViewState extends ConsumerState<ChatView> {
                       width: double.infinity,
                       child: ChatSearchBar(
                         key: ValueKey(widget.chatId),
-                        find: (query) =>
-                            session.chatSearch.find(widget.chatId, query),
+                        find: (query, senderUserId) => session.chatSearch.find(
+                          widget.chatId,
+                          query,
+                          senderUserId: senderUserId,
+                        ),
                         onResult: (id) => unawaited(_jumpTo(id)),
                         onClose: _closeSearch,
                         onCalendar: (position) =>
                             unawaited(_openCalendar(DateTime.now(), position)),
+                        onPickSender: chat?.isGroup ?? false
+                            ? (position) => pickSearchSender(
+                                context,
+                                position: position,
+                                search: (query) => session.mentions.search(
+                                  widget.chatId,
+                                  query,
+                                ),
+                              )
+                            : null,
                       ),
                     )
                   : _thread != null
