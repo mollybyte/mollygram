@@ -18,6 +18,8 @@ final class VideoNoteCaptureChannel: NSObject, FlutterTexture,
   private let queue = DispatchQueue(label: "dev.mollygram.video-note", qos: .userInitiated)
 
   private var session: AVCaptureSession?
+  /// The camera in use; touched on the main thread.
+  private var cameraInput: AVCaptureDeviceInput?
   private var textureId: Int64 = -1
 
   /// The newest camera frame, read by Flutter from its raster thread.
@@ -63,7 +65,11 @@ final class VideoNoteCaptureChannel: NSObject, FlutterTexture,
         }
       }
     case "start":
-      start(side: args["side"] as? Int ?? 640, path: args["path"] as? String ?? "", result)
+      start(
+        side: args["side"] as? Int ?? 640, path: args["path"] as? String ?? "",
+        camera: args["camera"] as? String, result)
+    case "switchCamera":
+      switchCamera(result)
     case "stop":
       stop(result)
     case "cancel":
@@ -75,12 +81,43 @@ final class VideoNoteCaptureChannel: NSObject, FlutterTexture,
 
   // MARK: - Session
 
-  private func start(side: Int, path: String, _ result: @escaping FlutterResult) {
+  /// The cameras a video message can use: built in, external and, on
+  /// macOS 14, an iPhone through Continuity Camera.
+  private static func cameras() -> [AVCaptureDevice] {
+    var types: [AVCaptureDevice.DeviceType] = [.builtInWideAngleCamera]
+    if #available(macOS 14.0, *) {
+      types += [.external, .continuityCamera]
+    } else {
+      types.append(.externalUnknown)
+    }
+    return AVCaptureDevice.DiscoverySession(
+      deviceTypes: types, mediaType: .video, position: .unspecified
+    ).devices
+  }
+
+  /// What Dart needs to show [device] in the round preview.
+  private func previewInfo(_ device: AVCaptureDevice) -> [String: Any] {
+    let dimensions = CMVideoFormatDescriptionGetDimensions(device.activeFormat.formatDescription)
+    return [
+      "textureId": textureId,
+      "width": Int(dimensions.width),
+      "height": Int(dimensions.height),
+      "camera": device.uniqueID,
+      "cameras": Self.cameras().count,
+      // A camera that looks away from the user is shown as it is.
+      "mirrored": device.position != .back,
+    ]
+  }
+
+  private func start(
+    side: Int, path: String, camera preferred: String?, _ result: @escaping FlutterResult
+  ) {
     if session != nil {
       result(FlutterError(code: "busy", message: "Already recording.", details: nil))
       return
     }
-    guard let camera = AVCaptureDevice.default(for: .video),
+    let chosen = Self.cameras().first { $0.uniqueID == preferred }
+    guard let camera = chosen ?? AVCaptureDevice.default(for: .video),
       let cameraInput = try? AVCaptureDeviceInput(device: camera)
     else {
       result(FlutterError(code: "unavailable", message: "No camera.", details: nil))
@@ -94,6 +131,7 @@ final class VideoNoteCaptureChannel: NSObject, FlutterTexture,
       return
     }
     session.addInput(cameraInput)
+    self.cameraInput = cameraInput
     let videoOutput = AVCaptureVideoDataOutput()
     videoOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA]
     videoOutput.alwaysDiscardsLateVideoFrames = true
@@ -157,14 +195,41 @@ final class VideoNoteCaptureChannel: NSObject, FlutterTexture,
       self.lastTime = .zero
       self.path = path
       session.startRunning()
-      let dimensions = CMVideoFormatDescriptionGetDimensions(camera.activeFormat.formatDescription)
-      let textureId = self.textureId
       DispatchQueue.main.async {
-        result([
-          "textureId": textureId,
-          "width": Int(dimensions.width),
-          "height": Int(dimensions.height),
-        ])
+        result(self.previewInfo(camera))
+      }
+    }
+  }
+
+  /// Goes on recording with the next camera. The file keeps going: the
+  /// writer scales every camera to the same square.
+  private func switchCamera(_ result: @escaping FlutterResult) {
+    guard let session = session, let current = cameraInput else {
+      result(FlutterError(code: "idle", message: "Not recording.", details: nil))
+      return
+    }
+    let all = Self.cameras()
+    let index = all.firstIndex { $0.uniqueID == current.device.uniqueID } ?? -1
+    guard all.count > 1, let input = try? AVCaptureDeviceInput(device: all[(index + 1) % all.count])
+    else {
+      result(previewInfo(current.device))
+      return
+    }
+    queue.async { [weak self] in
+      session.beginConfiguration()
+      session.removeInput(current)
+      let switched = session.canAddInput(input)
+      session.addInput(switched ? input : current)
+      session.sessionPreset = session.canSetSessionPreset(.hd1280x720) ? .hd1280x720 : .high
+      session.commitConfiguration()
+      DispatchQueue.main.async {
+        guard let self = self, self.session === session else {
+          result(nil)
+          return
+        }
+        let now = switched ? input : current
+        self.cameraInput = now
+        result(self.previewInfo(now.device))
       }
     }
   }
@@ -225,6 +290,7 @@ final class VideoNoteCaptureChannel: NSObject, FlutterTexture,
       queue.async { session.stopRunning() }
     }
     session = nil
+    cameraInput = nil
     if textureId >= 0 { textures.unregisterTexture(textureId) }
     textureId = -1
     frameLock.lock()

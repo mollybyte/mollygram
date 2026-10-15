@@ -83,6 +83,12 @@ abstract final class MgIcons {
     'camera',
     '<path d="M3 8h4l2-3h6l2 3h4v11H3z"/><circle cx="12" cy="13" r="3.5"/>',
   );
+  static const switchCamera = MgIconData(
+    'switchCamera',
+    '<path d="M3 8h4l2-3h6l2 3h4v11H3z"/>'
+        '<path d="M9 12.5a3 3 0 0 1 5.4-1.8M15 13.5a3 3 0 0 1-5.4 1.8"/>'
+        '<path d="M14.6 8.8v2h-2M9.4 17.2v-2h2"/>',
+  );
   static const lockOpen = MgIconData(
     'lockOpen',
     '<path d="M7 11V8a5 5 0 0 1 9.6-2M5 11h14v9H5z"/>',
@@ -323,6 +329,7 @@ abstract final class MgIcons {
     emoji,
     mic,
     camera,
+    switchCamera,
     lockOpen,
     chevronUp,
     trash,

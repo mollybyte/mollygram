@@ -620,6 +620,12 @@ abstract class AppLocalizations {
   /// **'Mollygram has no access to the camera.'**
   String get videoCameraDenied;
 
+  /// No description provided for @videoSwitchCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch camera'**
+  String get videoSwitchCamera;
+
   /// No description provided for @previewYou.
   ///
   /// In en, this message translates to:
