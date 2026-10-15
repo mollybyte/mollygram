@@ -6,6 +6,7 @@ import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../avatar/peer_avatar.dart';
 import '../home/format.dart';
 import '../session/providers.dart';
 
@@ -177,6 +178,11 @@ class _ForwardPickerState extends ConsumerState<_ForwardPicker> {
                         return ChatListTile(
                           key: ValueKey(chat.id),
                           title: chat.title,
+                          avatar: PeerAvatar.chat(
+                            name: chat.title,
+                            size: ChatListTile.avatarSize,
+                            photo: chat.photo,
+                          ),
                           subtitle: formatPreview(l10n, chat.lastMessage),
                           onTap: () => _pick(chat.id),
                         );
