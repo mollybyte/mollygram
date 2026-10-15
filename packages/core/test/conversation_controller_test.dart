@@ -78,6 +78,17 @@ void main() {
     await Future<void>.delayed(const Duration(milliseconds: 5));
 
     expect(controller.store.messagesFor(7).map((message) => message.id), [40]);
+    // The timeline keeps the row under the temporary id, so it is not
+    // redrawn when the server one arrives, nor when the message changes.
+    expect(controller.store.messagesFor(7).single.keyId, 12);
+    json.push({
+      '@type': 'updateMessageInteractionInfo',
+      'chat_id': 7,
+      'message_id': 40,
+      'interaction_info': null,
+    });
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    expect(controller.store.messagesFor(7).single.keyId, 12);
   });
 
   test('applies edits and permanent deletions', () async {
