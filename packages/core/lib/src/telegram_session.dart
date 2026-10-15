@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 
+import 'account_settings.dart';
 import 'authorization_controller.dart';
 import 'authorization_stage.dart';
 import 'chat_list_controller.dart';
@@ -25,6 +26,7 @@ final class TelegramSession {
     required this.search,
     required this.files,
     required this.stickers,
+    required this.account,
     required this._initializer,
   });
 
@@ -36,6 +38,7 @@ final class TelegramSession {
   final ChatSearch search;
   final FileController files;
   final StickerLibrary stickers;
+  final AccountSettings account;
   final _errors = StreamController<Object>.broadcast(sync: true);
   StreamSubscription<AuthorizationStage>? _stageSubscription;
   Future<void>? _firstReconcile;
@@ -61,6 +64,7 @@ final class TelegramSession {
       search: ChatSearch(client),
       files: files,
       stickers: StickerLibrary(client),
+      account: AccountSettings(client),
       initializer: TdlibInitializer(client, parameters: parameters),
     );
     session._stageSubscription = authorization.stages.listen(session._onStage);

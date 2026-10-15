@@ -50,7 +50,13 @@ final class AuthorizationController {
   /// Completes once TDLib reports the client closed, or after [timeout].
   Future<void> abandonQrCode({
     Duration timeout = const Duration(seconds: 10),
-  }) async {
+  }) => logOut(timeout: timeout);
+
+  /// Signs out of the account. TDLib then closes this client and deletes
+  /// the local data; the caller starts a new session for the next sign-in.
+  ///
+  /// Completes once TDLib reports the client closed, or after [timeout].
+  Future<void> logOut({Duration timeout = const Duration(seconds: 10)}) async {
     try {
       await _client.send(const td.LogOut());
     } on td.TdClientClosed {

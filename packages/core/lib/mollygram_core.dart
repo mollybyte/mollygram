@@ -1,6 +1,7 @@
 /// Mollygram models and state on top of TDLib, without Flutter.
 library;
 
+export 'src/account_settings.dart';
 export 'src/authorization_controller.dart';
 export 'src/authorization_stage.dart';
 export 'src/chat_list_controller.dart';
