@@ -102,11 +102,15 @@ final class MessageThread {
     }
   }
 
-  /// Sends [text] into the thread, as a reply to its root.
+  /// Sends [text] into the thread: as a reply to its root, or to the
+  /// comment [replyTo], quoting [quote] of its text at [quotePosition]
+  /// when one is given.
   Future<void> send(
     String text, {
     List<td.TextEntity> entities = const [],
     int? replyTo,
+    String? quote,
+    int quotePosition = 0,
   }) async {
     final message = await _client.send(
       td.SendMessage(
@@ -114,6 +118,12 @@ final class MessageThread {
         topicId: td.MessageTopicThread(messageThreadId: threadId),
         replyTo: td.InputMessageReplyToMessage(
           messageId: replyTo ?? threadId,
+          quote: quote == null || quote.isEmpty
+              ? null
+              : td.InputTextQuote(
+                  text: td.FormattedText(text: quote, entities: const []),
+                  position: quotePosition,
+                ),
           checklistTaskId: 0,
           pollOptionId: '',
         ),
