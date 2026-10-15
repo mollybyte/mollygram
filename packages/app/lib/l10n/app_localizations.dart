@@ -980,6 +980,72 @@ abstract class AppLocalizations {
   /// **'Forward'**
   String get menuForward;
 
+  /// No description provided for @menuSaveAs.
+  ///
+  /// In en, this message translates to:
+  /// **'Save as…'**
+  String get menuSaveAs;
+
+  /// No description provided for @menuSaveToDownloads.
+  ///
+  /// In en, this message translates to:
+  /// **'Save to Downloads'**
+  String get menuSaveToDownloads;
+
+  /// No description provided for @menuShowInFinder.
+  ///
+  /// In en, this message translates to:
+  /// **'Show in Finder'**
+  String get menuShowInFinder;
+
+  /// No description provided for @menuShowInFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Show in folder'**
+  String get menuShowInFolder;
+
+  /// No description provided for @sendWithoutSound.
+  ///
+  /// In en, this message translates to:
+  /// **'Send without sound'**
+  String get sendWithoutSound;
+
+  /// No description provided for @scheduleMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule message…'**
+  String get scheduleMessage;
+
+  /// No description provided for @scheduleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule message'**
+  String get scheduleTitle;
+
+  /// No description provided for @scheduleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick the day and the time it goes out.'**
+  String get scheduleHint;
+
+  /// No description provided for @scheduleTimeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'HH:MM'**
+  String get scheduleTimeHint;
+
+  /// No description provided for @scheduleAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule'**
+  String get scheduleAction;
+
+  /// No description provided for @scheduledFor.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled for {date}'**
+  String scheduledFor(String date);
+
   /// No description provided for @menuDelete.
   ///
   /// In en, this message translates to:
@@ -4244,6 +4310,90 @@ abstract class AppLocalizations {
   /// **'Deleted chat'**
   String get folderDeletedChat;
 
+  /// No description provided for @accounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Accounts'**
+  String get accounts;
+
+  /// No description provided for @accountsAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to {count} accounts, each with its own chats and tabs.'**
+  String accountsAbout(int count);
+
+  /// No description provided for @addAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Add account'**
+  String get addAccount;
+
+  /// No description provided for @accountNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Account {number}'**
+  String accountNumber(int number);
+
+  /// No description provided for @switchToAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to {name}'**
+  String switchToAccount(String name);
+
+  /// No description provided for @notSignedIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Not signed in'**
+  String get notSignedIn;
+
+  /// No description provided for @logOutAccountTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Log out of {name}?'**
+  String logOutAccountTitle(String name);
+
+  /// No description provided for @backToAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to {name}'**
+  String backToAccount(String name);
+
+  /// No description provided for @loggingOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Logging out…'**
+  String get loggingOut;
+
+  /// No description provided for @accountsFull.
+  ///
+  /// In en, this message translates to:
+  /// **'That\'s the limit of {count} accounts. Log out of one to add another.'**
+  String accountsFull(int count);
+
+  /// No description provided for @accountsLegacy.
+  ///
+  /// In en, this message translates to:
+  /// **'The data folder from an earlier version couldn\'t be moved, so only this account can be used. Restart Mollygram to try again.'**
+  String get accountsLegacy;
+
+  /// No description provided for @duplicateAccountTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is already signed in here'**
+  String duplicateAccountTitle(String name);
+
+  /// No description provided for @duplicateAccountMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to it and log out of this copy?'**
+  String get duplicateAccountMessage;
+
+  /// No description provided for @switchAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch'**
+  String get switchAccount;
+
   /// No description provided for @proxy.
   ///
   /// In en, this message translates to:
@@ -4573,6 +4723,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t change the self-destruct timer. The secret chat isn\'t ready yet, or the connection was lost.'**
   String get selfDestructFailed;
+
+  /// No description provided for @keyboardShortcuts.
+  ///
+  /// In en, this message translates to:
+  /// **'Keyboard shortcuts'**
+  String get keyboardShortcuts;
+
+  /// No description provided for @shortcutsSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search shortcuts'**
+  String get shortcutsSearch;
+
+  /// No description provided for @shortcutsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Click a shortcut, then press the new keys. Esc cancels, Delete removes the shortcut.'**
+  String get shortcutsHint;
+
+  /// No description provided for @shortcutsGroupApp.
+  ///
+  /// In en, this message translates to:
+  /// **'App'**
+  String get shortcutsGroupApp;
+
+  /// No description provided for @shortcutsGroupChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat'**
+  String get shortcutsGroupChat;
+
+  /// No description provided for @shortcutsGroupNavigation.
+  ///
+  /// In en, this message translates to:
+  /// **'Navigation'**
+  String get shortcutsGroupNavigation;
+
+  /// No description provided for @shortcutsGroupAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Accounts'**
+  String get shortcutsGroupAccounts;
+
+  /// No description provided for @shortcutsGroupPlugins.
+  ///
+  /// In en, this message translates to:
+  /// **'Plugins'**
+  String get shortcutsGroupPlugins;
+
+  /// No description provided for @shortcutNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get shortcutNone;
+
+  /// No description provided for @shortcutRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Type a shortcut'**
+  String get shortcutRecording;
+
+  /// No description provided for @shortcutChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Change shortcut'**
+  String get shortcutChange;
+
+  /// No description provided for @shortcutNeedsModifier.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Ctrl or Alt to the key'**
+  String get shortcutNeedsModifier;
+
+  /// No description provided for @shortcutNeedsModifierMac.
+  ///
+  /// In en, this message translates to:
+  /// **'Add ⌘, ⌃ or ⌥ to the key'**
+  String get shortcutNeedsModifierMac;
+
+  /// No description provided for @shortcutReserved.
+  ///
+  /// In en, this message translates to:
+  /// **'Used by the system'**
+  String get shortcutReserved;
+
+  /// No description provided for @shortcutReservedMac.
+  ///
+  /// In en, this message translates to:
+  /// **'Used by macOS'**
+  String get shortcutReservedMac;
+
+  /// No description provided for @shortcutUsedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Already used by “{title}”'**
+  String shortcutUsedBy(String title);
+
+  /// No description provided for @shortcutReplace.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace'**
+  String get shortcutReplace;
+
+  /// No description provided for @shortcutRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore default'**
+  String get shortcutRestore;
+
+  /// No description provided for @shortcutsRestoreAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore defaults'**
+  String get shortcutsRestoreAll;
+
+  /// No description provided for @shortcutsRestoreAllTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore all shortcuts?'**
+  String get shortcutsRestoreAllTitle;
+
+  /// No description provided for @shortcutsRestoreAllMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Every shortcut you changed goes back to its default.'**
+  String get shortcutsRestoreAllMessage;
+
+  /// No description provided for @shortcutsRestoreConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get shortcutsRestoreConfirm;
 }
 
 class _AppLocalizationsDelegate

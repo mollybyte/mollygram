@@ -171,6 +171,20 @@
   "menuCopyText": "Copy text",
   "menuCopyLink": "Copy link",
   "menuForward": "Forward",
+  "menuSaveAs": "Save as…",
+  "menuSaveToDownloads": "Save to Downloads",
+  "menuShowInFinder": "Show in Finder",
+  "menuShowInFolder": "Show in folder",
+  "sendWithoutSound": "Send without sound",
+  "scheduleMessage": "Schedule message…",
+  "scheduleTitle": "Schedule message",
+  "scheduleHint": "Pick the day and the time it goes out.",
+  "scheduleTimeHint": "HH:MM",
+  "scheduleAction": "Schedule",
+  "scheduledFor": "Scheduled for {date}",
+  "@scheduledFor": {
+    "placeholders": { "date": { "type": "String" } }
+  },
   "menuDelete": "Delete",
   "cancel": "Cancel",
   "formatBold": "Bold",
@@ -958,6 +972,41 @@
   "leaveFailed": "Couldn't leave. Try again.",
   "deleteFailed": "Couldn't delete it. Try again.",
   "folderDeletedChat": "Deleted chat",
+  "accounts": "Accounts",
+  "accountsAbout": "Up to {count} accounts, each with its own chats and tabs.",
+  "@accountsAbout": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "addAccount": "Add account",
+  "accountNumber": "Account {number}",
+  "@accountNumber": {
+    "placeholders": { "number": { "type": "int" } }
+  },
+  "switchToAccount": "Switch to {name}",
+  "@switchToAccount": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "notSignedIn": "Not signed in",
+  "logOutAccountTitle": "Log out of {name}?",
+  "@logOutAccountTitle": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "backToAccount": "Back to {name}",
+  "@backToAccount": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "loggingOut": "Logging out…",
+  "accountsFull": "That's the limit of {count} accounts. Log out of one to add another.",
+  "@accountsFull": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "accountsLegacy": "The data folder from an earlier version couldn't be moved, so only this account can be used. Restart Mollygram to try again.",
+  "duplicateAccountTitle": "{name} is already signed in here",
+  "@duplicateAccountTitle": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "duplicateAccountMessage": "Switch to it and log out of this copy?",
+  "switchAccount": "Switch",
   "proxy": "Proxy",
   "useProxy": "Use proxy",
   "proxyHint": "Telegram connects through the selected proxy. Ping shows the round trip in milliseconds.",
@@ -1039,5 +1088,30 @@
   "allowSecretScreenshots": "Allow screenshots in secret chats",
   "allowSecretScreenshotsHint": "Risky: the other person expects secret chats to stay off screenshots and screen recordings",
   "secretScreenshotsOff": "Secret chats are kept out of screenshots by default; on macOS 15 and later this is best effort",
-  "selfDestructFailed": "Couldn't change the self-destruct timer. The secret chat isn't ready yet, or the connection was lost."
+  "selfDestructFailed": "Couldn't change the self-destruct timer. The secret chat isn't ready yet, or the connection was lost.",
+  "keyboardShortcuts": "Keyboard shortcuts",
+  "shortcutsSearch": "Search shortcuts",
+  "shortcutsHint": "Click a shortcut, then press the new keys. Esc cancels, Delete removes the shortcut.",
+  "shortcutsGroupApp": "App",
+  "shortcutsGroupChat": "Chat",
+  "shortcutsGroupNavigation": "Navigation",
+  "shortcutsGroupAccounts": "Accounts",
+  "shortcutsGroupPlugins": "Plugins",
+  "shortcutNone": "None",
+  "shortcutRecording": "Type a shortcut",
+  "shortcutChange": "Change shortcut",
+  "shortcutNeedsModifier": "Add Ctrl or Alt to the key",
+  "shortcutNeedsModifierMac": "Add ⌘, ⌃ or ⌥ to the key",
+  "shortcutReserved": "Used by the system",
+  "shortcutReservedMac": "Used by macOS",
+  "shortcutUsedBy": "Already used by “{title}”",
+  "@shortcutUsedBy": {
+    "placeholders": { "title": { "type": "String" } }
+  },
+  "shortcutReplace": "Replace",
+  "shortcutRestore": "Restore default",
+  "shortcutsRestoreAll": "Restore defaults",
+  "shortcutsRestoreAllTitle": "Restore all shortcuts?",
+  "shortcutsRestoreAllMessage": "Every shortcut you changed goes back to its default.",
+  "shortcutsRestoreConfirm": "Restore"
 }

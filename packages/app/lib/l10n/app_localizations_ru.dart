@@ -509,6 +509,41 @@ class AppLocalizationsRu extends AppLocalizations {
   String get menuForward => 'Переслать';
 
   @override
+  String get menuSaveAs => 'Сохранить как…';
+
+  @override
+  String get menuSaveToDownloads => 'Сохранить в загрузки';
+
+  @override
+  String get menuShowInFinder => 'Показать в Finder';
+
+  @override
+  String get menuShowInFolder => 'Показать в папке';
+
+  @override
+  String get sendWithoutSound => 'Отправить без звука';
+
+  @override
+  String get scheduleMessage => 'Запланировать сообщение…';
+
+  @override
+  String get scheduleTitle => 'Запланировать сообщение';
+
+  @override
+  String get scheduleHint => 'Выберите день и время отправки.';
+
+  @override
+  String get scheduleTimeHint => 'ЧЧ:ММ';
+
+  @override
+  String get scheduleAction => 'Запланировать';
+
+  @override
+  String scheduledFor(String date) {
+    return 'Запланировано на $date';
+  }
+
+  @override
   String get menuDelete => 'Удалить';
 
   @override
@@ -2521,6 +2556,64 @@ class AppLocalizationsRu extends AppLocalizations {
   String get folderDeletedChat => 'Удалённый чат';
 
   @override
+  String get accounts => 'Аккаунты';
+
+  @override
+  String accountsAbout(int count) {
+    return 'До $count аккаунтов, у каждого свои чаты и вкладки.';
+  }
+
+  @override
+  String get addAccount => 'Добавить аккаунт';
+
+  @override
+  String accountNumber(int number) {
+    return 'Аккаунт $number';
+  }
+
+  @override
+  String switchToAccount(String name) {
+    return 'Переключиться на $name';
+  }
+
+  @override
+  String get notSignedIn => 'Вход не выполнен';
+
+  @override
+  String logOutAccountTitle(String name) {
+    return 'Выйти из аккаунта $name?';
+  }
+
+  @override
+  String backToAccount(String name) {
+    return 'Вернуться к $name';
+  }
+
+  @override
+  String get loggingOut => 'Выход…';
+
+  @override
+  String accountsFull(int count) {
+    return 'Это предел: $count аккаунта. Выйдите из одного, чтобы добавить другой.';
+  }
+
+  @override
+  String get accountsLegacy =>
+      'Не удалось перенести папку данных прежней версии, поэтому доступен только этот аккаунт. Перезапустите Mollygram, чтобы попробовать снова.';
+
+  @override
+  String duplicateAccountTitle(String name) {
+    return 'В $name уже выполнен вход';
+  }
+
+  @override
+  String get duplicateAccountMessage =>
+      'Переключиться на него и выйти из этой копии?';
+
+  @override
+  String get switchAccount => 'Переключиться';
+
+  @override
   String get proxy => 'Прокси';
 
   @override
@@ -2751,4 +2844,74 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get selfDestructFailed =>
       'Не удалось изменить таймер самоуничтожения. Секретный чат ещё не готов или нет соединения.';
+
+  @override
+  String get keyboardShortcuts => 'Сочетания клавиш';
+
+  @override
+  String get shortcutsSearch => 'Поиск сочетаний';
+
+  @override
+  String get shortcutsHint =>
+      'Нажмите на сочетание, затем новые клавиши. Esc отменяет, Delete убирает сочетание.';
+
+  @override
+  String get shortcutsGroupApp => 'Приложение';
+
+  @override
+  String get shortcutsGroupChat => 'Чат';
+
+  @override
+  String get shortcutsGroupNavigation => 'Навигация';
+
+  @override
+  String get shortcutsGroupAccounts => 'Аккаунты';
+
+  @override
+  String get shortcutsGroupPlugins => 'Плагины';
+
+  @override
+  String get shortcutNone => 'Нет';
+
+  @override
+  String get shortcutRecording => 'Нажмите сочетание';
+
+  @override
+  String get shortcutChange => 'Изменить сочетание';
+
+  @override
+  String get shortcutNeedsModifier => 'Добавьте к клавише Ctrl или Alt';
+
+  @override
+  String get shortcutNeedsModifierMac => 'Добавьте к клавише ⌘, ⌃ или ⌥';
+
+  @override
+  String get shortcutReserved => 'Используется системой';
+
+  @override
+  String get shortcutReservedMac => 'Используется macOS';
+
+  @override
+  String shortcutUsedBy(String title) {
+    return 'Уже используется: «$title»';
+  }
+
+  @override
+  String get shortcutReplace => 'Заменить';
+
+  @override
+  String get shortcutRestore => 'Вернуть по умолчанию';
+
+  @override
+  String get shortcutsRestoreAll => 'Сбросить все';
+
+  @override
+  String get shortcutsRestoreAllTitle => 'Вернуть все сочетания по умолчанию?';
+
+  @override
+  String get shortcutsRestoreAllMessage =>
+      'Все изменённые сочетания вернутся к исходным.';
+
+  @override
+  String get shortcutsRestoreConfirm => 'Вернуть';
 }

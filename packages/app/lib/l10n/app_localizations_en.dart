@@ -506,6 +506,41 @@ class AppLocalizationsEn extends AppLocalizations {
   String get menuForward => 'Forward';
 
   @override
+  String get menuSaveAs => 'Save as…';
+
+  @override
+  String get menuSaveToDownloads => 'Save to Downloads';
+
+  @override
+  String get menuShowInFinder => 'Show in Finder';
+
+  @override
+  String get menuShowInFolder => 'Show in folder';
+
+  @override
+  String get sendWithoutSound => 'Send without sound';
+
+  @override
+  String get scheduleMessage => 'Schedule message…';
+
+  @override
+  String get scheduleTitle => 'Schedule message';
+
+  @override
+  String get scheduleHint => 'Pick the day and the time it goes out.';
+
+  @override
+  String get scheduleTimeHint => 'HH:MM';
+
+  @override
+  String get scheduleAction => 'Schedule';
+
+  @override
+  String scheduledFor(String date) {
+    return 'Scheduled for $date';
+  }
+
+  @override
   String get menuDelete => 'Delete';
 
   @override
@@ -2493,6 +2528,64 @@ class AppLocalizationsEn extends AppLocalizations {
   String get folderDeletedChat => 'Deleted chat';
 
   @override
+  String get accounts => 'Accounts';
+
+  @override
+  String accountsAbout(int count) {
+    return 'Up to $count accounts, each with its own chats and tabs.';
+  }
+
+  @override
+  String get addAccount => 'Add account';
+
+  @override
+  String accountNumber(int number) {
+    return 'Account $number';
+  }
+
+  @override
+  String switchToAccount(String name) {
+    return 'Switch to $name';
+  }
+
+  @override
+  String get notSignedIn => 'Not signed in';
+
+  @override
+  String logOutAccountTitle(String name) {
+    return 'Log out of $name?';
+  }
+
+  @override
+  String backToAccount(String name) {
+    return 'Back to $name';
+  }
+
+  @override
+  String get loggingOut => 'Logging out…';
+
+  @override
+  String accountsFull(int count) {
+    return 'That\'s the limit of $count accounts. Log out of one to add another.';
+  }
+
+  @override
+  String get accountsLegacy =>
+      'The data folder from an earlier version couldn\'t be moved, so only this account can be used. Restart Mollygram to try again.';
+
+  @override
+  String duplicateAccountTitle(String name) {
+    return '$name is already signed in here';
+  }
+
+  @override
+  String get duplicateAccountMessage =>
+      'Switch to it and log out of this copy?';
+
+  @override
+  String get switchAccount => 'Switch';
+
+  @override
   String get proxy => 'Proxy';
 
   @override
@@ -2711,4 +2804,74 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get selfDestructFailed =>
       'Couldn\'t change the self-destruct timer. The secret chat isn\'t ready yet, or the connection was lost.';
+
+  @override
+  String get keyboardShortcuts => 'Keyboard shortcuts';
+
+  @override
+  String get shortcutsSearch => 'Search shortcuts';
+
+  @override
+  String get shortcutsHint =>
+      'Click a shortcut, then press the new keys. Esc cancels, Delete removes the shortcut.';
+
+  @override
+  String get shortcutsGroupApp => 'App';
+
+  @override
+  String get shortcutsGroupChat => 'Chat';
+
+  @override
+  String get shortcutsGroupNavigation => 'Navigation';
+
+  @override
+  String get shortcutsGroupAccounts => 'Accounts';
+
+  @override
+  String get shortcutsGroupPlugins => 'Plugins';
+
+  @override
+  String get shortcutNone => 'None';
+
+  @override
+  String get shortcutRecording => 'Type a shortcut';
+
+  @override
+  String get shortcutChange => 'Change shortcut';
+
+  @override
+  String get shortcutNeedsModifier => 'Add Ctrl or Alt to the key';
+
+  @override
+  String get shortcutNeedsModifierMac => 'Add ⌘, ⌃ or ⌥ to the key';
+
+  @override
+  String get shortcutReserved => 'Used by the system';
+
+  @override
+  String get shortcutReservedMac => 'Used by macOS';
+
+  @override
+  String shortcutUsedBy(String title) {
+    return 'Already used by “$title”';
+  }
+
+  @override
+  String get shortcutReplace => 'Replace';
+
+  @override
+  String get shortcutRestore => 'Restore default';
+
+  @override
+  String get shortcutsRestoreAll => 'Restore defaults';
+
+  @override
+  String get shortcutsRestoreAllTitle => 'Restore all shortcuts?';
+
+  @override
+  String get shortcutsRestoreAllMessage =>
+      'Every shortcut you changed goes back to its default.';
+
+  @override
+  String get shortcutsRestoreConfirm => 'Restore';
 }

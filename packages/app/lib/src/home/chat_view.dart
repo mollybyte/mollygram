@@ -26,6 +26,7 @@ import '../chat/link_preview_bar.dart';
 import '../chat/media_viewer.dart';
 import '../chat/message_actions.dart';
 import '../chat/message_tile.dart';
+import '../chat/schedule_picker.dart';
 import '../chat/slow_mode.dart';
 import '../chat/timeline.dart';
 import '../chat/timeline_scroll.dart';
@@ -1103,7 +1104,50 @@ class _ChatViewState extends ConsumerState<ChatView> {
     );
   }
 
-  Future<void> _send(String text) async {
+  /// The menu under a right click on Send: without sound, or at a chosen
+  /// time, as in Telegram for macOS. Not while editing, which only saves.
+  Future<void> _sendMenu(String text, Offset position) async {
+    if (_editing != null || text.trim().isEmpty) return;
+    final l10n = AppLocalizations.of(context);
+    await showMgMenu(
+      context,
+      position: position,
+      items: [
+        MgMenuItem(
+          label: l10n.sendWithoutSound,
+          onSelected: () => unawaited(_send(text, silent: true)),
+        ),
+        MgMenuItem(
+          label: l10n.scheduleMessage,
+          onSelected: () => unawaited(_schedule(text)),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _schedule(String text) async {
+    final chatId = widget.chatId;
+    final when = await pickScheduleTime(context);
+    if (when == null || !mounted || widget.chatId != chatId) return;
+    final l10n = AppLocalizations.of(context);
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final seconds = when.millisecondsSinceEpoch ~/ 1000;
+    await _send(
+      text,
+      schedule: td.MessageSchedulingStateSendAtDate(
+        sendDate: seconds,
+        repeatPeriod: 0,
+      ),
+    );
+    if (!mounted || widget.chatId != chatId || _failure != null) return;
+    showMgToast(context, l10n.scheduledFor(formatFullDate(seconds, locale)));
+  }
+
+  Future<void> _send(
+    String text, {
+    bool silent = false,
+    td.MessageSchedulingState? schedule,
+  }) async {
     final editing = _editing;
     // A caption may be removed; a text message can't be emptied.
     if (editing != null && (text.trim().isNotEmpty || _isCaption(editing))) {
@@ -1134,6 +1178,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
         quote: quote?.text,
         quotePosition: quote?.position ?? 0,
         linkPreviewOptions: previewOptions,
+        silent: silent,
+        schedule: schedule,
       );
     } catch (error) {
       // TDLib names the wait under slowmode: SLOWMODE_WAIT_27.
@@ -1828,6 +1874,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
                               format: formatLabelsOf(l10n),
                             ),
                             onSend: (text) => unawaited(_send(text)),
+                            onSendMenu: (text, position) =>
+                                unawaited(_sendMenu(text, position)),
                             recordButton: recordButton,
                             replacement: recordingBar,
                           ),

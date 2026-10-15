@@ -17,6 +17,7 @@ import '../privacy/ghost_mode_capsule.dart';
 import '../profile/new_chat_sheet.dart';
 import '../profile/peer_info_host.dart';
 import '../secret/secret_chat.dart';
+import '../session/accounts.dart';
 import '../session/connection_status_capsule.dart';
 import '../settings/appearance.dart';
 import '../settings/settings_window.dart';
@@ -65,9 +66,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     super.initState();
     _registry
       ..register('app', _commands)
+      ..register('accounts', _accountCommands)
       ..register('secret', _secretCommands)
-      ..register('shell', _shellCommands);
+      ..register('shell', _shellCommands)
+      ..registerShortcuts('shell', _shellShortcuts)
+      ..addListener(_keysChanged);
   }
+
+  /// The user changed a key: the bindings are built again.
+  void _keysChanged() => setState(() {});
 
   @override
   void didChangeDependencies() {
@@ -81,11 +88,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void dispose() {
     _registry
+      ..removeListener(_keysChanged)
       ..unregister('app', _commands)
+      ..unregister('accounts', _accountCommands)
       ..unregister('secret', _secretCommands)
-      ..unregister('shell', _shellCommands);
+      ..unregister('shell', _shellCommands)
+      ..unregisterShortcuts('shell', _shellShortcuts);
     super.dispose();
   }
+
+  List<PaletteCommand> _accountCommands() => accountCommands(
+    ref.read(accountsProvider).value,
+    _l10n,
+    (slot) => unawaited(ref.read(accountsProvider.notifier).switchTo(slot)),
+  );
 
   List<PaletteCommand> _commands() {
     final l10n = _l10n;
@@ -130,6 +146,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ];
   }
 
+  List<ShortcutAction> _shellShortcuts() => shellShortcutActions(_shellStrings);
+
   List<PaletteCommand> _shellCommands() =>
       shellCommands(ref.read(workspaceControllerProvider), _shellStrings);
 
@@ -138,9 +156,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final workspace = ref.watch(workspaceControllerProvider);
     final directory = ref.watch(chatDirectoryProvider);
     ref.watch(pluginCommandsProvider);
+    final keys = _registry.effectiveKeys();
     final home = CallbackShortcuts(
       // The shell binds its own shortcuts.
-      bindings: _registry.shortcutsOf('app'),
+      bindings: {
+        ..._registry.shortcutsOf('app'),
+        ..._registry.shortcutsOf('plugins'),
+      },
       child: GlassScope(
         child: Stack(
           children: [
@@ -151,6 +173,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 controller: workspace,
                 directory: directory,
                 commandSource: () => _registry.commands,
+                shortcuts: (id) => keys[id]?.activator,
                 sidebar: Padding(
                   padding: const EdgeInsets.all(8),
                   child: Stack(

@@ -94,7 +94,7 @@ M8 calls and macOS release, M9 after release.
 | Reply with quote (part of the text) | done | Select text, Quote in the menu | S | M2 |
 | Pin and unpin | done (#49) | | S | M1 |
 | Forward without author or caption | done | Checkboxes in the forward picker | S | M2 |
-| Save media to Downloads, show in Finder | missing | | S | M1 |
+| Save media to Downloads, show in Finder | done | Message menu: Save as, Save to Downloads (the chosen folder, numbered when taken), Show in Finder for a downloaded file; photos, videos, GIFs, files, music, voice and video messages, stickers | | |
 | Report message | done | `ReportChat` step by step: reason, sub-reason, details, toast (`chat/report.dart`) | | |
 | Who read and who reacted | done | Rows at the top of the message menu, read time in private chats | S | M2 |
 | Message info: view count, forwards, edit date | done | Views and forwards on channel posts, full date and edit time on hover | S | M2 |
@@ -118,7 +118,7 @@ M8 calls and macOS release, M9 after release.
 | Inline bots (@gif, @vid) | missing | `GetInlineQueryResults` | M | M9 |
 | Voice message recording | done | Hold, lock, cancel; Opus in Ogg via AudioToolbox on macOS | M | M1 |
 | Video message (circle) recording | partial | Hold, lock, cancel, 60 s limit; 640×640 H.264 via AVFoundation on macOS. Front camera only, no flip or preview before sending | L | M4 |
-| Silent send and scheduled messages, scheduled list | missing | `MessageSchedulingStateSendAtDate` | M | M2 |
+| Silent send and scheduled messages, scheduled list | partial | Right click or long press on Send: without sound, or at a day and time picked in a calendar; the scheduled list and sending media later are still missing | S | M2 |
 | Send as (channel identity) | missing | `ChatInputSendAsView` | S | M6 |
 | Polls and quizzes creation | missing | `NewPollController` | M | M2 |
 | Location and venue sending | missing | | M | M2 |
@@ -204,7 +204,7 @@ M8 calls and macOS release, M9 after release.
 | Contacts list, add and edit contact | partial | Contacts sheet: list with status, add by phone, delete; editing a contact's name is not there yet | S | M6 |
 | New message / compose (pick a user) | done | ⌘N sheet: recent chats, contacts, username search | | |
 | Edit own profile: name, bio, username, photo, birthday | partial | Name, username and bio in Settings; photo and birthday missing | M | M6 |
-| Multiple accounts and switching | missing | Several TDLib clients | L | M6 |
+| Multiple accounts and switching | done | Up to 3 accounts in Settings, Account: switch, add, log out per account. Only the open account runs (one TDLib client; the others get no updates or notifications until opened); a switch restarts the session on the chosen slot. Layout is per account, preferences shared. Palette commands `app.account.<n>` | L | M6 |
 | Log out | done | Settings, My profile, Log out | | |
 
 ### Settings
@@ -224,7 +224,7 @@ M8 calls and macOS release, M9 after release.
 | Quick reaction choice | missing | | S | M7 |
 | Proxy: SOCKS5, MTProto, list, share | partial | SOCKS5, HTTP and MTProto in Settings, Proxy: "Use proxy", ping per proxy, add, edit, remove, `tg://proxy` and `t.me/proxy` links, a Proxy button on the sign-in screens; no share link or QR. TDLib keeps proxies per account database, so a new account slot starts without them (mirroring them is for the accounts work) | S | M7 |
 | Connection status in the window ("Connecting…") | done | `ConnectionMonitor`, capsule in the sidebar title bar | | |
-| Keyboard shortcuts list | partial | Shell shortcuts exist; no list | S | M7 |
+| Keyboard shortcuts list | done | Settings, Keyboard shortcuts: every command by group with key caps, rebinding with a conflict check, restore one or all; kept in preferences.json and applied live to the window, the palette and the shell | | |
 | Auto-delete messages default | missing | | S | M7 |
 | Settings search | partial | Filters the source list in both languages; no search inside pages | S | M7 |
 | Ask a question, FAQ, about | missing | | S | M7 |

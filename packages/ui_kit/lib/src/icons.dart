@@ -292,6 +292,13 @@ abstract final class MgIcons {
         'c0 5.4-7.5 10-7.5 10z"/>',
   );
 
+  // Settings lists.
+  static const check = MgIconData(
+    'check',
+    '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+  );
+  static const plus = MgIconData('plus', '<path d="M12 5v14M5 12h14"/>');
+
   static const List<MgIconData> all = [
     compose,
     search,
@@ -352,6 +359,8 @@ abstract final class MgIcons {
     arrowDown,
     mention,
     heart,
+    check,
+    plus,
   ];
 }
 

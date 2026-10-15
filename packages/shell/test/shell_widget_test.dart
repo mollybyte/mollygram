@@ -11,7 +11,10 @@ void main() {
   setUp(() => controller = WorkspaceController());
   tearDown(() => controller.dispose());
 
-  Widget app({List<PaletteCommand> commands = const []}) {
+  Widget app({
+    List<PaletteCommand> commands = const [],
+    ShortcutResolver? shortcuts,
+  }) {
     return WidgetsApp(
       color: const Color(0xFF0071E3),
       debugShowCheckedModeBanner: false,
@@ -22,6 +25,7 @@ void main() {
           directory: directory,
           strings: ShellStrings.en,
           commands: commands,
+          shortcuts: shortcuts,
           sidebarWidth: 320,
           sidebar: const SizedBox.expand(key: Key('sidebar')),
           paneBuilder: (context, chat, focused) => chat == null
@@ -222,6 +226,51 @@ void main() {
     expect(controller.value.activeTab.panes, [2, null]);
     await primary(tester, LogicalKeyboardKey.keyW);
     expect(controller.value.activeTab.panes, [2]);
+  });
+
+  testWidgets('takes its keys from a resolver', (tester) async {
+    tester.view.physicalSize = const Size(1440, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final keys = {
+      for (final action in shellShortcutActions(ShellStrings.en))
+        action.id: action.shortcut,
+      // New tab moves to J; go to tab 1 has no key.
+      'shell.newTab': primaryShortcut(LogicalKeyboardKey.keyJ),
+      'shell.tab.1': null,
+    };
+    await tester.pumpWidget(app(shortcuts: (id) => keys[id]));
+    await tester.pump();
+
+    await primary(tester, LogicalKeyboardKey.keyT);
+    expect(controller.value.tabs, hasLength(1));
+    await primary(tester, LogicalKeyboardKey.keyJ);
+    expect(controller.value.tabs, hasLength(2));
+    expect(controller.value.active, 1);
+    // Go to tab 1 has no key now; go to tab 2 keeps ⌘2.
+    await primary(tester, LogicalKeyboardKey.digit1);
+    expect(controller.value.active, 1);
+    controller.selectTabByNumber(1);
+    await tester.pump();
+    expect(controller.value.active, 0);
+    await primary(tester, LogicalKeyboardKey.digit2);
+    expect(controller.value.active, 1);
+  });
+
+  test('lists every action that takes a key', () {
+    final actions = shellShortcutActions(ShellStrings.ru);
+    expect(
+      actions.map((a) => a.id),
+      containsAll(['shell.palette', 'shell.tab.9']),
+    );
+    expect(actions.first.keywords, [ShellStrings.en.palette]);
+    expect(ShellStrings.ru.cmdTab(3), 'Перейти на вкладку 3');
+    expect(shortcutKeyLabel(LogicalKeyboardKey.escape), isNotEmpty);
+    // A key this version doesn't know still shows something.
+    expect(
+      shortcutKeyLabel(const LogicalKeyboardKey(0x1f0000ffff)),
+      isNotEmpty,
+    );
   });
 
   testWidgets('the tab strip selects and closes tabs', (tester) async {
