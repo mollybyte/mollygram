@@ -21,6 +21,7 @@ import 'peer_info.dart';
 import 'privacy_guard.dart';
 import 'privacy_settings_controller.dart';
 import 'proxy_controller.dart';
+import 'secret_chats.dart';
 import 'sticker_library.dart';
 import 'sticker_sets_controller.dart';
 import 'storage_usage.dart';
@@ -66,6 +67,7 @@ final class TelegramSession {
     required this.contacts,
     required this.management,
     required this.links,
+    required this.secretChats,
     required this.proxies,
     required this._initializer,
   });
@@ -123,6 +125,9 @@ final class TelegramSession {
   final ChatManagement management;
   final LinkResolver links;
 
+  /// Secret chats: starting, closing, state and self-destruct timer.
+  final SecretChatsController secretChats;
+
   /// The proxies TDLib can connect through.
   final ProxyController proxies;
   final _errors = StreamController<Object>.broadcast(sync: true);
@@ -165,6 +170,7 @@ final class TelegramSession {
     final management = ChatManagement(client);
     final folders = ChatFoldersController(client);
     final security = PrivacySettingsController(client);
+    final secretChats = SecretChatsController(client);
     final stickerSets = StickerSetsController(client);
     final session = TelegramSession._(
       tdlib: tdlib,
@@ -189,6 +195,7 @@ final class TelegramSession {
       contacts: contacts,
       management: management,
       links: LinkResolver(client),
+      secretChats: secretChats,
       proxies: ProxyController(client),
       initializer: TdlibInitializer(client, parameters: parameters),
     );
@@ -210,6 +217,7 @@ final class TelegramSession {
       await notifications.start();
       await folders.start();
       await security.start();
+      await secretChats.start();
       await stickerSets.start();
       await authorization.start();
       // Sending the parameters is part of starting: a wrong database key or
@@ -284,6 +292,7 @@ final class TelegramSession {
     await notifications.dispose();
     await folders.dispose();
     await security.dispose();
+    await secretChats.dispose();
     await stickerSets.dispose();
     await authorization.dispose();
     await _tdlib.close();

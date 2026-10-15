@@ -1147,6 +1147,51 @@
   "ttlYears": "{count, plural, one{{count} year} other{{count} years}}",
   "@ttlYears": {"placeholders": {"count": {"type": "int"}}},
   "accountTtlFooter": "Your account is deleted if you don't come online in this period.",
+  "secretChat": "Secret chat",
+  "newSecretChat": "New secret chat",
+  "startSecretChat": "Start secret chat",
+  "secretChatFailed": "Couldn't start a secret chat. Try again.",
+  "secretChatWaiting": "Waiting for {name} to come online",
+  "@secretChatWaiting": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "secretChatExchangingKeys": "Exchanging encryption keys",
+  "secretChatClosed": "Secret chat closed",
+  "closeSecretChat": "Close secret chat",
+  "deleteChat": "Delete chat",
+  "deleteSecretChatTitle": "Delete this secret chat? It closes for both of you and its messages are removed here.",
+  "encryptionKey": "Encryption key",
+  "encryptionKeyHint": "If this picture and these numbers look the same on {name}'s device, your chat is end-to-end encrypted.",
+  "@encryptionKeyHint": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "encryptionKeyPending": "The key appears once the other person's app accepts the chat.",
+  "selfDestructTitle": "Self-destruct timer",
+  "selfDestructOff": "Off",
+  "selfDestructSeconds": "{count, plural, one{1 second} other{{count} seconds}}",
+  "@selfDestructSeconds": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "selfDestructMinutes": "{count, plural, one{1 minute} other{{count} minutes}}",
+  "@selfDestructMinutes": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "selfDestructHours": "{count, plural, one{1 hour} other{{count} hours}}",
+  "@selfDestructHours": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "selfDestructDays": "{count, plural, one{1 day} other{{count} days}}",
+  "@selfDestructDays": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "selfDestructWeeks": "{count, plural, one{1 week} other{{count} weeks}}",
+  "@selfDestructWeeks": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "allowSecretScreenshots": "Allow screenshots in secret chats",
+  "allowSecretScreenshotsHint": "Risky: the other person expects secret chats to stay off screenshots and screen recordings",
+  "secretScreenshotsOff": "Secret chats are kept out of screenshots by default; on macOS 15 and later this is best effort",
+  "selfDestructFailed": "Couldn't change the self-destruct timer. The secret chat isn't ready yet, or the connection was lost.",
   "stickersAndEmoji": "Stickers and emoji",
   "largeEmoji": "Large emoji",
   "largeEmojiHint": "A message of up to three emoji is shown large.",

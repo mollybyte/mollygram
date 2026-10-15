@@ -72,7 +72,8 @@ M8 calls and macOS release, M9 after release.
 | Forum topics: topic list, topic chat, create and close topics | missing | Service messages render only | L | M2 |
 | Channel comments (discussion thread) | missing | `GetMessageThread` | M | M2 |
 | Reply threads in groups | missing | | M | M2 |
-| Secret chats | missing | TDLib supports them; key view, TTL | L | M6 |
+| Secret chats | partial | Start from New message (Secret chat) or a person's info panel; state pending, ready or closed (`SecretChatsController`); encryption key sheet with the 12×12 key picture and hex, as the official apps draw them; self-destruct timer (off, 1 s to 1 week) and Close in the palette for the focused secret chat; closed bar with Delete chat. The chat header capsule, chat list row and header menu consume `secretChatProvider`, `SecretChatLock` and the sheets from `secret/secret_chat.dart`, wired by the chat and sidebar work | L | M6 |
+| Secret chat screenshot blocking | done | The window is kept out of screenshots and screen recordings while any pane of the active tab shows a secret chat (macOS `sharingType = .none`, best effort on macOS 15 and later, where some capture APIs ignore it; Windows and Linux not yet). Privacy extras, "Allow screenshots in secret chats" (off, risky) skips it | S | M3 |
 | Spoilers, custom emoji in text | partial | `concealed.dart` covers spoilers; custom emoji need sticker rendering | M | M2 |
 | Polls and quizzes: vote, results | partial | Rendered; voting unverified | M | M2 |
 | Checklists (todo messages) | missing | `ChatTodoItem` | S | M9 |

@@ -86,10 +86,14 @@ class ChatTitleCapsule extends StatelessWidget {
     required this.title,
     this.subtitle = '',
     this.avatar,
+    this.titleIcon,
     this.onTap,
   });
 
   final String title;
+
+  /// Drawn just before the title, such as a secret chat's lock.
+  final Widget? titleIcon;
 
   /// Online status, members count, "typing…" and so on.
   final String subtitle;
@@ -116,16 +120,27 @@ class ChatTitleCapsule extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: mgTextStyle(
-                      c,
-                      size: MgType.title,
-                      weight: FontWeight.w600,
-                      height: 1.2,
-                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (titleIcon case final icon?) ...[
+                        icon,
+                        const SizedBox(width: 4),
+                      ],
+                      Flexible(
+                        child: Text(
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: mgTextStyle(
+                            c,
+                            size: MgType.title,
+                            weight: FontWeight.w600,
+                            height: 1.2,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   if (subtitle.isNotEmpty)
                     Text(

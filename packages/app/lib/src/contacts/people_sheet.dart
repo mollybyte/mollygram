@@ -21,6 +21,9 @@ enum PeopleSheetMode {
 
   /// The contacts, with adding and deleting.
   contacts,
+
+  /// Pick a person to start a secret chat with.
+  newSecretChat,
 }
 
 /// Opens the sheet over the window. Choosing a person or chat opens it in
@@ -138,12 +141,13 @@ class _PeopleSheetState extends ConsumerState<PeopleSheet> {
   Future<void> _find(String query) async {
     final id = ++_searchId;
     final contacts = _contacts;
-    final global = _mode == PeopleSheetMode.newMessage;
+    final global = _mode != PeopleSheetMode.contacts;
+    final chats = _mode == PeopleSheetMode.newMessage;
     final (found, public) = await (
       contacts
           .search(query, includeChats: global)
           .catchError((Object _) => <ContactUser>[]),
-      global ? contacts.searchPublic(query) : Future.value(const <int>[]),
+      chats ? contacts.searchPublic(query) : Future.value(const <int>[]),
     ).wait;
     if (!mounted || id != _searchId) return;
     setState(() {
@@ -154,18 +158,30 @@ class _PeopleSheetState extends ConsumerState<PeopleSheet> {
 
   List<_Row> _rows(AppLocalizations l10n, List<ContactUser>? contacts) {
     final query = _search.text.trim().toLowerCase();
-    final chatLists = ref.read(telegramSessionProvider).requireValue.chatLists;
+    final session = ref.read(telegramSessionProvider).requireValue;
+    final chatLists = session.chatLists;
     final rows = <_Row>[];
-    final shown = <int>{};
+    // A secret chat needs another person: bots and the user themselves
+    // cannot take part, so they are left out (counted as already shown).
+    final shown = <int>{
+      if (_mode == PeopleSheetMode.newSecretChat) ...[
+        ?session.peers.myId,
+        for (final user in [...?contacts, ...?_found])
+          if (user.isBot) user.id,
+      ],
+    };
     if (query.isEmpty) {
-      if (_mode == PeopleSheetMode.newMessage) {
+      if (_mode != PeopleSheetMode.contacts) {
         // In TDLib a private chat has the id of its user.
-        final recent = [
-          for (final chat in chatLists.store.chatsFor(
-            const ChatListLocation.main(),
-          ))
-            ?_contacts.user(chat.id),
-        ].where((user) => !user.isBot).take(PeopleSheet.recentCount);
+        final recent =
+            [
+                  for (final chat in chatLists.store.chatsFor(
+                    const ChatListLocation.main(),
+                  ))
+                    ?_contacts.user(chat.id),
+                ]
+                .where((user) => !user.isBot && !shown.contains(user.id))
+                .take(PeopleSheet.recentCount);
         if (recent.isNotEmpty) {
           rows.add(_Section(l10n.recentChats));
           for (final user in recent) {
@@ -179,7 +195,7 @@ class _PeopleSheetState extends ConsumerState<PeopleSheet> {
         for (final user in contacts ?? const <ContactUser>[])
           if (shown.add(user.id)) user,
       ];
-      if (_mode == PeopleSheetMode.newMessage && rest.isNotEmpty) {
+      if (_mode != PeopleSheetMode.contacts && rest.isNotEmpty) {
         rows.add(_Section(l10n.contacts));
       }
       rows.addAll(rest.map(_Person.new));
@@ -212,6 +228,20 @@ class _PeopleSheetState extends ConsumerState<PeopleSheet> {
     final navigator = Navigator.of(context);
     final int chatId;
     switch (row) {
+      case _Person(:final user) when _mode == PeopleSheetMode.newSecretChat:
+        final secretChats = ref
+            .read(telegramSessionProvider)
+            .requireValue
+            .secretChats;
+        try {
+          chatId = await secretChats.create(user.id);
+        } on Object {
+          if (mounted) {
+            final l10n = AppLocalizations.of(context);
+            setState(() => _error = l10n.secretChatFailed);
+          }
+          return;
+        }
       case _Person(:final user):
         try {
           chatId = await _contacts.privateChat(user.id);
@@ -315,9 +345,11 @@ class _PeopleSheetState extends ConsumerState<PeopleSheet> {
         : selectable[_selected.clamp(0, selectable.length - 1)];
     final title = _adding
         ? l10n.addContact
-        : _mode == PeopleSheetMode.newMessage
-        ? l10n.newMessage
-        : l10n.contacts;
+        : switch (_mode) {
+            PeopleSheetMode.newMessage => l10n.newMessage,
+            PeopleSheetMode.contacts => l10n.contacts,
+            PeopleSheetMode.newSecretChat => l10n.newSecretChat,
+          };
 
     final Widget body;
     if (_adding) {
@@ -417,6 +449,12 @@ class _PeopleSheetState extends ConsumerState<PeopleSheet> {
                       style: mgTextStyle(c, weight: FontWeight.w600),
                     ),
                   ),
+                  if (!_adding && _mode == PeopleSheetMode.newMessage)
+                    MgTextButton(
+                      key: const ValueKey('newSecretChat'),
+                      label: l10n.secretChat,
+                      onPressed: () => _setMode(PeopleSheetMode.newSecretChat),
+                    ),
                   if (!_adding && _mode == PeopleSheetMode.newMessage)
                     MgTextButton(
                       label: l10n.contacts,

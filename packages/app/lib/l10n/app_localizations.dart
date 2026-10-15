@@ -5114,6 +5114,150 @@ abstract class AppLocalizations {
   /// **'Your account is deleted if you don\'t come online in this period.'**
   String get accountTtlFooter;
 
+  /// No description provided for @secretChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Secret chat'**
+  String get secretChat;
+
+  /// No description provided for @newSecretChat.
+  ///
+  /// In en, this message translates to:
+  /// **'New secret chat'**
+  String get newSecretChat;
+
+  /// No description provided for @startSecretChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Start secret chat'**
+  String get startSecretChat;
+
+  /// No description provided for @secretChatFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t start a secret chat. Try again.'**
+  String get secretChatFailed;
+
+  /// No description provided for @secretChatWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for {name} to come online'**
+  String secretChatWaiting(String name);
+
+  /// No description provided for @secretChatExchangingKeys.
+  ///
+  /// In en, this message translates to:
+  /// **'Exchanging encryption keys'**
+  String get secretChatExchangingKeys;
+
+  /// No description provided for @secretChatClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'Secret chat closed'**
+  String get secretChatClosed;
+
+  /// No description provided for @closeSecretChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Close secret chat'**
+  String get closeSecretChat;
+
+  /// No description provided for @deleteChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete chat'**
+  String get deleteChat;
+
+  /// No description provided for @deleteSecretChatTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this secret chat? It closes for both of you and its messages are removed here.'**
+  String get deleteSecretChatTitle;
+
+  /// No description provided for @encryptionKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Encryption key'**
+  String get encryptionKey;
+
+  /// No description provided for @encryptionKeyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'If this picture and these numbers look the same on {name}\'s device, your chat is end-to-end encrypted.'**
+  String encryptionKeyHint(String name);
+
+  /// No description provided for @encryptionKeyPending.
+  ///
+  /// In en, this message translates to:
+  /// **'The key appears once the other person\'s app accepts the chat.'**
+  String get encryptionKeyPending;
+
+  /// No description provided for @selfDestructTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Self-destruct timer'**
+  String get selfDestructTitle;
+
+  /// No description provided for @selfDestructOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get selfDestructOff;
+
+  /// No description provided for @selfDestructSeconds.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 second} other{{count} seconds}}'**
+  String selfDestructSeconds(int count);
+
+  /// No description provided for @selfDestructMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 minute} other{{count} minutes}}'**
+  String selfDestructMinutes(int count);
+
+  /// No description provided for @selfDestructHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 hour} other{{count} hours}}'**
+  String selfDestructHours(int count);
+
+  /// No description provided for @selfDestructDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 day} other{{count} days}}'**
+  String selfDestructDays(int count);
+
+  /// No description provided for @selfDestructWeeks.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 week} other{{count} weeks}}'**
+  String selfDestructWeeks(int count);
+
+  /// No description provided for @allowSecretScreenshots.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow screenshots in secret chats'**
+  String get allowSecretScreenshots;
+
+  /// No description provided for @allowSecretScreenshotsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Risky: the other person expects secret chats to stay off screenshots and screen recordings'**
+  String get allowSecretScreenshotsHint;
+
+  /// No description provided for @secretScreenshotsOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Secret chats are kept out of screenshots by default; on macOS 15 and later this is best effort'**
+  String get secretScreenshotsOff;
+
+  /// No description provided for @selfDestructFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t change the self-destruct timer. The secret chat isn\'t ready yet, or the connection was lost.'**
+  String get selfDestructFailed;
+
   /// No description provided for @stickersAndEmoji.
   ///
   /// In en, this message translates to:
