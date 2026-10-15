@@ -171,6 +171,10 @@
   "menuCopyText": "Copy text",
   "menuCopyLink": "Copy link",
   "menuForward": "Forward",
+  "menuSaveAs": "Save as…",
+  "menuSaveToDownloads": "Save to Downloads",
+  "menuShowInFinder": "Show in Finder",
+  "menuShowInFolder": "Show in folder",
   "menuDelete": "Delete",
   "cancel": "Cancel",
   "formatBold": "Bold",
@@ -196,6 +200,9 @@
     "placeholders": { "name": { "type": "String" } }
   },
   "editingMessage": "Editing",
+  "linkPreviewAboveText": "Show the preview above the text",
+  "linkPreviewBelowText": "Show the preview below the text",
+  "removeLinkPreview": "Remove the link preview",
   "forwardTitle": "Forward to chat",
   "forwardSearch": "Search chats",
   "forwardHideSender": "Hide sender names",
@@ -1024,6 +1031,76 @@
   "@ttlMonths": {"placeholders": {"count": {"type": "int"}}},
   "ttlDays": "{count, plural, one{{count} day} other{{count} days}}",
   "@ttlDays": {"placeholders": {"count": {"type": "int"}}},
+  "accounts": "Accounts",
+  "accountsAbout": "Up to {count} accounts, each with its own chats and tabs.",
+  "@accountsAbout": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "addAccount": "Add account",
+  "accountNumber": "Account {number}",
+  "@accountNumber": {
+    "placeholders": { "number": { "type": "int" } }
+  },
+  "switchToAccount": "Switch to {name}",
+  "@switchToAccount": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "notSignedIn": "Not signed in",
+  "logOutAccountTitle": "Log out of {name}?",
+  "@logOutAccountTitle": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "backToAccount": "Back to {name}",
+  "@backToAccount": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "loggingOut": "Logging out…",
+  "accountsFull": "That's the limit of {count} accounts. Log out of one to add another.",
+  "@accountsFull": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "accountsLegacy": "The data folder from an earlier version couldn't be moved, so only this account can be used. Restart Mollygram to try again.",
+  "duplicateAccountTitle": "{name} is already signed in here",
+  "@duplicateAccountTitle": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "duplicateAccountMessage": "Switch to it and log out of this copy?",
+  "switchAccount": "Switch",
+  "proxy": "Proxy",
+  "useProxy": "Use proxy",
+  "proxyHint": "Telegram connects through the selected proxy. Ping shows the round trip in milliseconds.",
+  "savedProxies": "Saved proxies",
+  "addProxy": "Add proxy",
+  "editProxy": "Edit proxy",
+  "proxyServer": "Server",
+  "proxyPort": "Port",
+  "proxyUsername": "Username",
+  "proxyPassword": "Password",
+  "proxySecret": "Secret",
+  "proxyCheck": "Check",
+  "proxyChecking": "Checking…",
+  "proxyPing": "{ms} ms",
+  "@proxyPing": {
+    "placeholders": { "ms": { "type": "int" } }
+  },
+  "proxyUnavailable": "Unavailable",
+  "proxyRemove": "Remove proxy",
+  "proxyRemoveTitle": "Remove {address}?",
+  "@proxyRemoveTitle": {
+    "placeholders": { "address": { "type": "String" } }
+  },
+  "proxyConnect": "Connect",
+  "proxyFromLink": "Add this proxy and connect through it?",
+  "proxyNone": "No proxies yet",
+  "language": "Language",
+  "languageSystem": "System",
+  "languageHint": "Changes the language of the app. Chats and messages stay as they are.",
+  "proxyEditButton": "Edit",
+  "proxyInvalidSecret": "Invalid secret",
+  "proxyRemoveAction": "Remove",
+  "proxyLoadFailed": "Couldn't load the proxies.",
+  "proxyShowSecret": "Show secret",
+  "proxyHideSecret": "Hide secret",
   "pluginShowMessage": "Show",
   "pluginFilteredMessage": "Filtered by a plugin",
   "passcodeWaitSeconds": "{count, plural, one{Too many tries. Try again in {count} second.} other{Too many tries. Try again in {count} seconds.}}",

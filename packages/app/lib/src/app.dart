@@ -9,6 +9,7 @@ import '../l10n/app_localizations.dart';
 import 'auth/sign_in_screen.dart';
 import 'home/home_screen.dart';
 import 'home/workspace_storage.dart';
+import 'session/account_overlays.dart';
 import 'session/close_before_exit.dart';
 import 'session/providers.dart';
 import 'settings/appearance.dart';
@@ -39,10 +40,12 @@ class MollygramApp extends ConsumerWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
+      // Null follows the system; a choice in Language applies at once.
+      locale: preferences.language.locale,
       home: const _CloseSessionBeforeExit(
         child: Material(
           type: MaterialType.transparency,
-          child: PasscodeGate(child: _Root()),
+          child: PasscodeGate(child: AccountsLayer(child: _Root())),
         ),
       ),
     );
@@ -81,9 +84,11 @@ class _Root extends ConsumerWidget {
         title: l10n.missingKeysTitle,
         description: l10n.missingKeysHint,
       ),
-      AsyncError(:final error) => SignInScreen.message(
-        title: l10n.startFailedTitle,
-        description: '$error',
+      AsyncError(:final error) => AccountBackButton(
+        child: SignInScreen.message(
+          title: l10n.startFailedTitle,
+          description: '$error',
+        ),
       ),
       AsyncData() => const _Authorized(),
       _ => const SignInScreen.starting(),
@@ -108,6 +113,8 @@ class _Authorized extends ConsumerWidget {
     final stage = ref.watch(authorizationStageProvider).value;
     if (stage == null) return const SignInScreen.starting();
     if (stage.kind == AuthorizationStageKind.ready) return const HomeScreen();
-    return SignInScreen(stage: stage);
+    // Signing in to an added account, or to one closed elsewhere: back
+    // to another account.
+    return AccountBackButton(child: SignInScreen(stage: stage));
   }
 }

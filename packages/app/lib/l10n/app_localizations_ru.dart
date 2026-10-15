@@ -509,6 +509,18 @@ class AppLocalizationsRu extends AppLocalizations {
   String get menuForward => 'Переслать';
 
   @override
+  String get menuSaveAs => 'Сохранить как…';
+
+  @override
+  String get menuSaveToDownloads => 'Сохранить в загрузки';
+
+  @override
+  String get menuShowInFinder => 'Показать в Finder';
+
+  @override
+  String get menuShowInFolder => 'Показать в папке';
+
+  @override
   String get menuDelete => 'Удалить';
 
   @override
@@ -575,6 +587,15 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get editingMessage => 'Редактирование';
+
+  @override
+  String get linkPreviewAboveText => 'Показать превью над текстом';
+
+  @override
+  String get linkPreviewBelowText => 'Показать превью под текстом';
+
+  @override
+  String get removeLinkPreview => 'Убрать превью ссылки';
 
   @override
   String get forwardTitle => 'Переслать в чат';
@@ -2746,6 +2767,157 @@ class AppLocalizationsRu extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get accounts => 'Аккаунты';
+
+  @override
+  String accountsAbout(int count) {
+    return 'До $count аккаунтов, у каждого свои чаты и вкладки.';
+  }
+
+  @override
+  String get addAccount => 'Добавить аккаунт';
+
+  @override
+  String accountNumber(int number) {
+    return 'Аккаунт $number';
+  }
+
+  @override
+  String switchToAccount(String name) {
+    return 'Переключиться на $name';
+  }
+
+  @override
+  String get notSignedIn => 'Вход не выполнен';
+
+  @override
+  String logOutAccountTitle(String name) {
+    return 'Выйти из аккаунта $name?';
+  }
+
+  @override
+  String backToAccount(String name) {
+    return 'Вернуться к $name';
+  }
+
+  @override
+  String get loggingOut => 'Выход…';
+
+  @override
+  String accountsFull(int count) {
+    return 'Это предел: $count аккаунта. Выйдите из одного, чтобы добавить другой.';
+  }
+
+  @override
+  String get accountsLegacy =>
+      'Не удалось перенести папку данных прежней версии, поэтому доступен только этот аккаунт. Перезапустите Mollygram, чтобы попробовать снова.';
+
+  @override
+  String duplicateAccountTitle(String name) {
+    return 'В $name уже выполнен вход';
+  }
+
+  @override
+  String get duplicateAccountMessage =>
+      'Переключиться на него и выйти из этой копии?';
+
+  @override
+  String get switchAccount => 'Переключиться';
+
+  @override
+  String get proxy => 'Прокси';
+
+  @override
+  String get useProxy => 'Использовать прокси';
+
+  @override
+  String get proxyHint =>
+      'Telegram подключается через выбранный прокси. Пинг показывает время отклика в миллисекундах.';
+
+  @override
+  String get savedProxies => 'Сохранённые прокси';
+
+  @override
+  String get addProxy => 'Добавить прокси';
+
+  @override
+  String get editProxy => 'Изменить прокси';
+
+  @override
+  String get proxyServer => 'Сервер';
+
+  @override
+  String get proxyPort => 'Порт';
+
+  @override
+  String get proxyUsername => 'Имя пользователя';
+
+  @override
+  String get proxyPassword => 'Пароль';
+
+  @override
+  String get proxySecret => 'Ключ';
+
+  @override
+  String get proxyCheck => 'Проверить';
+
+  @override
+  String get proxyChecking => 'Проверка…';
+
+  @override
+  String proxyPing(int ms) {
+    return '$ms мс';
+  }
+
+  @override
+  String get proxyUnavailable => 'Недоступен';
+
+  @override
+  String get proxyRemove => 'Удалить прокси';
+
+  @override
+  String proxyRemoveTitle(String address) {
+    return 'Удалить $address?';
+  }
+
+  @override
+  String get proxyConnect => 'Подключиться';
+
+  @override
+  String get proxyFromLink => 'Добавить этот прокси и подключиться через него?';
+
+  @override
+  String get proxyNone => 'Прокси пока нет';
+
+  @override
+  String get language => 'Язык';
+
+  @override
+  String get languageSystem => 'Как в системе';
+
+  @override
+  String get languageHint =>
+      'Меняет язык приложения. Чаты и сообщения остаются как есть.';
+
+  @override
+  String get proxyEditButton => 'Изменить';
+
+  @override
+  String get proxyInvalidSecret => 'Неверный ключ';
+
+  @override
+  String get proxyRemoveAction => 'Удалить';
+
+  @override
+  String get proxyLoadFailed => 'Не удалось загрузить прокси.';
+
+  @override
+  String get proxyShowSecret => 'Показать ключ';
+
+  @override
+  String get proxyHideSecret => 'Скрыть ключ';
 
   @override
   String get pluginShowMessage => 'Показать';

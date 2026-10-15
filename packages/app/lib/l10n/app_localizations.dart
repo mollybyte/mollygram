@@ -980,6 +980,30 @@ abstract class AppLocalizations {
   /// **'Forward'**
   String get menuForward;
 
+  /// No description provided for @menuSaveAs.
+  ///
+  /// In en, this message translates to:
+  /// **'Save as…'**
+  String get menuSaveAs;
+
+  /// No description provided for @menuSaveToDownloads.
+  ///
+  /// In en, this message translates to:
+  /// **'Save to Downloads'**
+  String get menuSaveToDownloads;
+
+  /// No description provided for @menuShowInFinder.
+  ///
+  /// In en, this message translates to:
+  /// **'Show in Finder'**
+  String get menuShowInFinder;
+
+  /// No description provided for @menuShowInFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Show in folder'**
+  String get menuShowInFolder;
+
   /// No description provided for @menuDelete.
   ///
   /// In en, this message translates to:
@@ -1093,6 +1117,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Editing'**
   String get editingMessage;
+
+  /// No description provided for @linkPreviewAboveText.
+  ///
+  /// In en, this message translates to:
+  /// **'Show the preview above the text'**
+  String get linkPreviewAboveText;
+
+  /// No description provided for @linkPreviewBelowText.
+  ///
+  /// In en, this message translates to:
+  /// **'Show the preview below the text'**
+  String get linkPreviewBelowText;
+
+  /// No description provided for @removeLinkPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove the link preview'**
+  String get removeLinkPreview;
 
   /// No description provided for @forwardTitle.
   ///
@@ -4609,6 +4651,264 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, one{{count} day} other{{count} days}}'**
   String ttlDays(int count);
+
+  /// No description provided for @accounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Accounts'**
+  String get accounts;
+
+  /// No description provided for @accountsAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to {count} accounts, each with its own chats and tabs.'**
+  String accountsAbout(int count);
+
+  /// No description provided for @addAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Add account'**
+  String get addAccount;
+
+  /// No description provided for @accountNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Account {number}'**
+  String accountNumber(int number);
+
+  /// No description provided for @switchToAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to {name}'**
+  String switchToAccount(String name);
+
+  /// No description provided for @notSignedIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Not signed in'**
+  String get notSignedIn;
+
+  /// No description provided for @logOutAccountTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Log out of {name}?'**
+  String logOutAccountTitle(String name);
+
+  /// No description provided for @backToAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to {name}'**
+  String backToAccount(String name);
+
+  /// No description provided for @loggingOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Logging out…'**
+  String get loggingOut;
+
+  /// No description provided for @accountsFull.
+  ///
+  /// In en, this message translates to:
+  /// **'That\'s the limit of {count} accounts. Log out of one to add another.'**
+  String accountsFull(int count);
+
+  /// No description provided for @accountsLegacy.
+  ///
+  /// In en, this message translates to:
+  /// **'The data folder from an earlier version couldn\'t be moved, so only this account can be used. Restart Mollygram to try again.'**
+  String get accountsLegacy;
+
+  /// No description provided for @duplicateAccountTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is already signed in here'**
+  String duplicateAccountTitle(String name);
+
+  /// No description provided for @duplicateAccountMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to it and log out of this copy?'**
+  String get duplicateAccountMessage;
+
+  /// No description provided for @switchAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch'**
+  String get switchAccount;
+
+  /// No description provided for @proxy.
+  ///
+  /// In en, this message translates to:
+  /// **'Proxy'**
+  String get proxy;
+
+  /// No description provided for @useProxy.
+  ///
+  /// In en, this message translates to:
+  /// **'Use proxy'**
+  String get useProxy;
+
+  /// No description provided for @proxyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Telegram connects through the selected proxy. Ping shows the round trip in milliseconds.'**
+  String get proxyHint;
+
+  /// No description provided for @savedProxies.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved proxies'**
+  String get savedProxies;
+
+  /// No description provided for @addProxy.
+  ///
+  /// In en, this message translates to:
+  /// **'Add proxy'**
+  String get addProxy;
+
+  /// No description provided for @editProxy.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit proxy'**
+  String get editProxy;
+
+  /// No description provided for @proxyServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Server'**
+  String get proxyServer;
+
+  /// No description provided for @proxyPort.
+  ///
+  /// In en, this message translates to:
+  /// **'Port'**
+  String get proxyPort;
+
+  /// No description provided for @proxyUsername.
+  ///
+  /// In en, this message translates to:
+  /// **'Username'**
+  String get proxyUsername;
+
+  /// No description provided for @proxyPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get proxyPassword;
+
+  /// No description provided for @proxySecret.
+  ///
+  /// In en, this message translates to:
+  /// **'Secret'**
+  String get proxySecret;
+
+  /// No description provided for @proxyCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Check'**
+  String get proxyCheck;
+
+  /// No description provided for @proxyChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking…'**
+  String get proxyChecking;
+
+  /// No description provided for @proxyPing.
+  ///
+  /// In en, this message translates to:
+  /// **'{ms} ms'**
+  String proxyPing(int ms);
+
+  /// No description provided for @proxyUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable'**
+  String get proxyUnavailable;
+
+  /// No description provided for @proxyRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove proxy'**
+  String get proxyRemove;
+
+  /// No description provided for @proxyRemoveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {address}?'**
+  String proxyRemoveTitle(String address);
+
+  /// No description provided for @proxyConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect'**
+  String get proxyConnect;
+
+  /// No description provided for @proxyFromLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Add this proxy and connect through it?'**
+  String get proxyFromLink;
+
+  /// No description provided for @proxyNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No proxies yet'**
+  String get proxyNone;
+
+  /// No description provided for @language.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get language;
+
+  /// No description provided for @languageSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get languageSystem;
+
+  /// No description provided for @languageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes the language of the app. Chats and messages stay as they are.'**
+  String get languageHint;
+
+  /// No description provided for @proxyEditButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get proxyEditButton;
+
+  /// No description provided for @proxyInvalidSecret.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid secret'**
+  String get proxyInvalidSecret;
+
+  /// No description provided for @proxyRemoveAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get proxyRemoveAction;
+
+  /// No description provided for @proxyLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the proxies.'**
+  String get proxyLoadFailed;
+
+  /// No description provided for @proxyShowSecret.
+  ///
+  /// In en, this message translates to:
+  /// **'Show secret'**
+  String get proxyShowSecret;
+
+  /// No description provided for @proxyHideSecret.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide secret'**
+  String get proxyHideSecret;
 
   /// No description provided for @pluginShowMessage.
   ///

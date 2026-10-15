@@ -506,6 +506,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get menuForward => 'Forward';
 
   @override
+  String get menuSaveAs => 'Save as…';
+
+  @override
+  String get menuSaveToDownloads => 'Save to Downloads';
+
+  @override
+  String get menuShowInFinder => 'Show in Finder';
+
+  @override
+  String get menuShowInFolder => 'Show in folder';
+
+  @override
   String get menuDelete => 'Delete';
 
   @override
@@ -571,6 +583,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get editingMessage => 'Editing';
+
+  @override
+  String get linkPreviewAboveText => 'Show the preview above the text';
+
+  @override
+  String get linkPreviewBelowText => 'Show the preview below the text';
+
+  @override
+  String get removeLinkPreview => 'Remove the link preview';
 
   @override
   String get forwardTitle => 'Forward to chat';
@@ -2711,6 +2732,157 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get accounts => 'Accounts';
+
+  @override
+  String accountsAbout(int count) {
+    return 'Up to $count accounts, each with its own chats and tabs.';
+  }
+
+  @override
+  String get addAccount => 'Add account';
+
+  @override
+  String accountNumber(int number) {
+    return 'Account $number';
+  }
+
+  @override
+  String switchToAccount(String name) {
+    return 'Switch to $name';
+  }
+
+  @override
+  String get notSignedIn => 'Not signed in';
+
+  @override
+  String logOutAccountTitle(String name) {
+    return 'Log out of $name?';
+  }
+
+  @override
+  String backToAccount(String name) {
+    return 'Back to $name';
+  }
+
+  @override
+  String get loggingOut => 'Logging out…';
+
+  @override
+  String accountsFull(int count) {
+    return 'That\'s the limit of $count accounts. Log out of one to add another.';
+  }
+
+  @override
+  String get accountsLegacy =>
+      'The data folder from an earlier version couldn\'t be moved, so only this account can be used. Restart Mollygram to try again.';
+
+  @override
+  String duplicateAccountTitle(String name) {
+    return '$name is already signed in here';
+  }
+
+  @override
+  String get duplicateAccountMessage =>
+      'Switch to it and log out of this copy?';
+
+  @override
+  String get switchAccount => 'Switch';
+
+  @override
+  String get proxy => 'Proxy';
+
+  @override
+  String get useProxy => 'Use proxy';
+
+  @override
+  String get proxyHint =>
+      'Telegram connects through the selected proxy. Ping shows the round trip in milliseconds.';
+
+  @override
+  String get savedProxies => 'Saved proxies';
+
+  @override
+  String get addProxy => 'Add proxy';
+
+  @override
+  String get editProxy => 'Edit proxy';
+
+  @override
+  String get proxyServer => 'Server';
+
+  @override
+  String get proxyPort => 'Port';
+
+  @override
+  String get proxyUsername => 'Username';
+
+  @override
+  String get proxyPassword => 'Password';
+
+  @override
+  String get proxySecret => 'Secret';
+
+  @override
+  String get proxyCheck => 'Check';
+
+  @override
+  String get proxyChecking => 'Checking…';
+
+  @override
+  String proxyPing(int ms) {
+    return '$ms ms';
+  }
+
+  @override
+  String get proxyUnavailable => 'Unavailable';
+
+  @override
+  String get proxyRemove => 'Remove proxy';
+
+  @override
+  String proxyRemoveTitle(String address) {
+    return 'Remove $address?';
+  }
+
+  @override
+  String get proxyConnect => 'Connect';
+
+  @override
+  String get proxyFromLink => 'Add this proxy and connect through it?';
+
+  @override
+  String get proxyNone => 'No proxies yet';
+
+  @override
+  String get language => 'Language';
+
+  @override
+  String get languageSystem => 'System';
+
+  @override
+  String get languageHint =>
+      'Changes the language of the app. Chats and messages stay as they are.';
+
+  @override
+  String get proxyEditButton => 'Edit';
+
+  @override
+  String get proxyInvalidSecret => 'Invalid secret';
+
+  @override
+  String get proxyRemoveAction => 'Remove';
+
+  @override
+  String get proxyLoadFailed => 'Couldn\'t load the proxies.';
+
+  @override
+  String get proxyShowSecret => 'Show secret';
+
+  @override
+  String get proxyHideSecret => 'Hide secret';
 
   @override
   String get pluginShowMessage => 'Show';

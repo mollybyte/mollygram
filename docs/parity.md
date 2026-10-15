@@ -93,7 +93,7 @@ M8 calls and macOS release, M9 after release.
 | Reply with quote (part of the text) | done | Select text, Quote in the menu | S | M2 |
 | Pin and unpin | done (#49) | | S | M1 |
 | Forward without author or caption | done | Checkboxes in the forward picker | S | M2 |
-| Save media to Downloads, show in Finder | missing | | S | M1 |
+| Save media to Downloads, show in Finder | done | Message menu: Save as, Save to Downloads (the chosen folder, numbered when taken), Show in Finder for a downloaded file; photos, videos, GIFs, files, music, voice and video messages, stickers | | |
 | Report message | done | `ReportChat` step by step: reason, sub-reason, details, toast (`chat/report.dart`) | | |
 | Who read and who reacted | done | Rows at the top of the message menu, read time in private chats | S | M2 |
 | Message info: view count, forwards, edit date | done | Views and forwards on channel posts, full date and edit time on hover | S | M2 |
@@ -131,7 +131,7 @@ M8 calls and macOS release, M9 after release.
 | Media editor: filters and adjustments (brightness, contrast, saturation, warmth, vignette) | done | `packages/media_editor`: seven looks, six sliders | | |
 | Video editor: trim, mute, cover frame, quality | partial | `packages/media_editor`: trim, mute and cover done (macOS, AVFoundation); quality presets pending | S | M4 |
 | Slowmode and restriction notices | done | Members who may not write see why instead of the composer; slowmode counts down under it (`chat/slow_mode.dart`) | | |
-| Link preview control (remove, above/below) | missing | | S | M2 |
+| Link preview control (remove, above/below) | done | The composer shows the preview of the first link in the draft, with a button to put it above the text and one to drop it; the choice goes with the draft and the message | | |
 
 ### Media
 
@@ -203,7 +203,7 @@ M8 calls and macOS release, M9 after release.
 | Contacts list, add and edit contact | partial | Contacts sheet: list with status, add by phone, delete; editing a contact's name is not there yet | S | M6 |
 | New message / compose (pick a user) | done | ⌘N sheet: recent chats, contacts, username search | | |
 | Edit own profile: name, bio, username, photo, birthday | partial | Name, username and bio in Settings; photo and birthday missing | M | M6 |
-| Multiple accounts and switching | missing | Several TDLib clients | L | M6 |
+| Multiple accounts and switching | done | Up to 3 accounts in Settings, Account: switch, add, log out per account. Only the open account runs (one TDLib client; the others get no updates or notifications until opened); a switch restarts the session on the chosen slot. Layout is per account, preferences shared. Palette commands `app.account.<n>` | L | M6 |
 | Log out | done | Settings, My profile, Log out | | |
 
 ### Settings
@@ -219,10 +219,10 @@ M8 calls and macOS release, M9 after release.
 | Delete account if away for 1, 3, 6 or 12 months | done | Privacy and security, Delete my account | | |
 | Data and storage: cache usage, clear, limits, network usage | partial | Usage by kind, clear by kind, download folder; auto-download switches are stored but not yet applied; no limits or network usage | M | M7 |
 | Appearance: theme, accent, night mode schedule, chat background, text size | partial | Theme, accent, wallpaper on or off, message text size, reduce motion; no night schedule or custom backgrounds | M | M7 |
-| Language: UI language picker, translation settings | partial | RU and EN follow the system | S | M7 |
+| Language: UI language picker, translation settings | partial | System, English or Russian in Settings, Language, applied at once; no translation settings or TDLib language packs | S | M7 |
 | Stickers and emoji: packs, reorder, archived, suggest, large emoji | missing | `InstalledStickerPacksController` | M | M7 |
 | Quick reaction choice | missing | | S | M7 |
-| Proxy: SOCKS5, MTProto, list, share | missing | `ProxyListController` | M | M7 |
+| Proxy: SOCKS5, MTProto, list, share | partial | SOCKS5, HTTP and MTProto in Settings, Proxy: "Use proxy", ping per proxy, add, edit, remove, `tg://proxy` and `t.me/proxy` links, a Proxy button on the sign-in screens; no share link or QR. TDLib keeps proxies per account database, so a new account slot starts without them (mirroring them is for the accounts work) | S | M7 |
 | Connection status in the window ("Connecting…") | done | `ConnectionMonitor`, capsule in the sidebar title bar | | |
 | Keyboard shortcuts list | partial | Shell shortcuts exist; no list | S | M7 |
 | Auto-delete messages default | missing | | S | M7 |
