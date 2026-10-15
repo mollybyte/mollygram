@@ -2094,7 +2094,10 @@ class _ChatViewState extends ConsumerState<ChatView> {
         caption: caption.text,
         captionEntities: caption.entities,
         replyTo: replyTo?.id,
+        silent: choice.silent,
+        schedule: choice.schedule,
       );
+      _toastScheduled(choice.schedule, chatId);
     } catch (_) {
       if (!mounted || widget.chatId != chatId) return;
       // Give the caption and the reply back, as a failed text send does.
@@ -2144,7 +2147,10 @@ class _ChatViewState extends ConsumerState<ChatView> {
         caption: caption.text,
         captionEntities: caption.entities,
         replyTo: replyTo?.id,
+        silent: choice.silent,
+        schedule: choice.schedule,
       );
+      _toastScheduled(choice.schedule, widget.chatId);
     } catch (_) {
       if (!mounted || _thread != thread) return;
       if (useDraft && _threadDraft.text.isEmpty) {
@@ -2155,6 +2161,18 @@ class _ChatViewState extends ConsumerState<ChatView> {
         _threadReplyTo ??= replyTo;
       });
     }
+  }
+
+  /// Says when scheduled media goes out, since it leaves the timeline.
+  void _toastScheduled(td.MessageSchedulingState? schedule, int chatId) {
+    if (schedule is! td.MessageSchedulingStateSendAtDate) return;
+    if (!mounted || widget.chatId != chatId) return;
+    final l10n = AppLocalizations.of(context);
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    showMgToast(
+      context,
+      l10n.scheduledFor(formatFullDate(schedule.sendDate, locale)),
+    );
   }
 
   /// Adds the pixel size and length the server shows before it has the

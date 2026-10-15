@@ -1036,10 +1036,13 @@ final class ConversationController {
     List<td.TextEntity> captionEntities = const [],
     int? replyTo,
     int? threadId,
+    bool silent = false,
+    td.MessageSchedulingState? schedule,
   }) async {
     final topic = threadId == null
         ? null
         : td.MessageTopicThread(messageThreadId: threadId);
+    final options = sendOptions(silent: silent, schedule: schedule);
     final sent = <td.Message>[];
     // A caption longer than the server takes goes first as its own
     // message, as the official apps do.
@@ -1056,6 +1059,7 @@ final class ConversationController {
                     checklistTaskId: 0,
                     pollOptionId: '',
                   ),
+            options: options,
             inputMessageContent: td.InputMessageText(
               text: td.FormattedText(text: caption, entities: captionEntities),
               clearDraft: false,
@@ -1093,6 +1097,7 @@ final class ConversationController {
               chatId: chatId,
               topicId: topic,
               replyTo: reply,
+              options: options,
               inputMessageContent: contents.single,
             ),
           ),
@@ -1104,6 +1109,7 @@ final class ConversationController {
             chatId: chatId,
             topicId: topic,
             replyTo: reply,
+            options: options,
             inputMessageContents: contents,
           ),
         );

@@ -949,6 +949,33 @@ void main() {
     );
   });
 
+  testWidgets('sends a dropped file without sound', (tester) async {
+    final directory = Directory.systemTemp.createTempSync('drop');
+    addTearDown(() => directory.deleteSync(recursive: true));
+    final file = File('${directory.path}/notes.txt')..writeAsStringSync('hi');
+    await pump(tester);
+    tester.widget<DropTarget>(find.byType(DropTarget)).onDragDone!(
+      DropDoneDetails(
+        files: [DropItemFile(file.path)],
+        localPosition: Offset.zero,
+        globalPosition: Offset.zero,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Send'), buttons: kSecondaryButton);
+    await tester.pump();
+    await tester.tap(find.text('Send without sound'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+
+    final send = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    expect(
+      (send['input_message_content']! as Map)['@type'],
+      'inputMessageDocument',
+    );
+    expect((send['options']! as Map)['disable_notification'], isTrue);
+  });
+
   testWidgets('marks a post whose comments are unread', (tester) async {
     json.history = [
       _message(id: 14, senderId: 2, text: 'Post', comments: 2, unread: true),
