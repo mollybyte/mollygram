@@ -93,7 +93,7 @@ M8 calls and macOS release, M9 after release.
 | Reply with quote (part of the text) | done | Select text, Quote in the menu | S | M2 |
 | Pin and unpin | done (#49) | | S | M1 |
 | Forward without author or caption | done | Checkboxes in the forward picker | S | M2 |
-| Save media to Downloads, show in Finder | missing | | S | M1 |
+| Save media to Downloads, show in Finder | done | Message menu: Save as, Save to Downloads (the chosen folder, numbered when taken), Show in Finder for a downloaded file; photos, videos, GIFs, files, music, voice and video messages, stickers | | |
 | Report message | done | `ReportChat` step by step: reason, sub-reason, details, toast (`chat/report.dart`) | | |
 | Who read and who reacted | done | Rows at the top of the message menu, read time in private chats | S | M2 |
 | Message info: view count, forwards, edit date | done | Views and forwards on channel posts, full date and edit time on hover | S | M2 |
@@ -203,7 +203,7 @@ M8 calls and macOS release, M9 after release.
 | Contacts list, add and edit contact | partial | Contacts sheet: list with status, add by phone, delete; editing a contact's name is not there yet | S | M6 |
 | New message / compose (pick a user) | done | ⌘N sheet: recent chats, contacts, username search | | |
 | Edit own profile: name, bio, username, photo, birthday | partial | Name, username and bio in Settings; photo and birthday missing | M | M6 |
-| Multiple accounts and switching | missing | Several TDLib clients | L | M6 |
+| Multiple accounts and switching | done | Up to 3 accounts in Settings, Account: switch, add, log out per account. Only the open account runs (one TDLib client; the others get no updates or notifications until opened); a switch restarts the session on the chosen slot. Layout is per account, preferences shared. Palette commands `app.account.<n>` | L | M6 |
 | Log out | done | Settings, My profile, Log out | | |
 
 ### Settings

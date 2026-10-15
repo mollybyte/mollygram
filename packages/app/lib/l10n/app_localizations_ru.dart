@@ -509,6 +509,18 @@ class AppLocalizationsRu extends AppLocalizations {
   String get menuForward => 'Переслать';
 
   @override
+  String get menuSaveAs => 'Сохранить как…';
+
+  @override
+  String get menuSaveToDownloads => 'Сохранить в загрузки';
+
+  @override
+  String get menuShowInFinder => 'Показать в Finder';
+
+  @override
+  String get menuShowInFolder => 'Показать в папке';
+
+  @override
   String get menuDelete => 'Удалить';
 
   @override
@@ -2519,6 +2531,64 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get folderDeletedChat => 'Удалённый чат';
+
+  @override
+  String get accounts => 'Аккаунты';
+
+  @override
+  String accountsAbout(int count) {
+    return 'До $count аккаунтов, у каждого свои чаты и вкладки.';
+  }
+
+  @override
+  String get addAccount => 'Добавить аккаунт';
+
+  @override
+  String accountNumber(int number) {
+    return 'Аккаунт $number';
+  }
+
+  @override
+  String switchToAccount(String name) {
+    return 'Переключиться на $name';
+  }
+
+  @override
+  String get notSignedIn => 'Вход не выполнен';
+
+  @override
+  String logOutAccountTitle(String name) {
+    return 'Выйти из аккаунта $name?';
+  }
+
+  @override
+  String backToAccount(String name) {
+    return 'Вернуться к $name';
+  }
+
+  @override
+  String get loggingOut => 'Выход…';
+
+  @override
+  String accountsFull(int count) {
+    return 'Это предел: $count аккаунта. Выйдите из одного, чтобы добавить другой.';
+  }
+
+  @override
+  String get accountsLegacy =>
+      'Не удалось перенести папку данных прежней версии, поэтому доступен только этот аккаунт. Перезапустите Mollygram, чтобы попробовать снова.';
+
+  @override
+  String duplicateAccountTitle(String name) {
+    return 'В $name уже выполнен вход';
+  }
+
+  @override
+  String get duplicateAccountMessage =>
+      'Переключиться на него и выйти из этой копии?';
+
+  @override
+  String get switchAccount => 'Переключиться';
 
   @override
   String get proxy => 'Прокси';

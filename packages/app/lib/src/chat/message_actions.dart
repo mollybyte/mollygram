@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -12,6 +13,7 @@ import 'describe.dart';
 import 'formatted_text.dart';
 import 'message_tile.dart';
 import 'report.dart';
+import 'save_file.dart';
 
 /// What the chat does for the commands of the message menu.
 final class MessageMenuHandlers {
@@ -111,6 +113,8 @@ Future<void> showMessageMenu(
       properties != null &&
       (properties.canBeDeletedOnlyForSelf ||
           properties.canBeDeletedForAllUsers);
+  final savable = protected ? null : savableFileOf(target.message);
+  final savedPath = savable == null ? null : downloadedPath(savable.file);
 
   final items = <MgMenuItem>[
     if (properties?.canBeReplied ?? false)
@@ -147,6 +151,39 @@ Future<void> showMessageMenu(
               .catchError((Object _) {}),
         ),
       ),
+    if (savable != null) ...[
+      MgMenuItem(
+        label: l10n.menuSaveAs,
+        onSelected: () => unawaited(
+          saveMessageFile(
+            context,
+            file: savable.file,
+            name: savable.name,
+            toDownloads: false,
+            isShown: isShown,
+          ),
+        ),
+      ),
+      MgMenuItem(
+        label: l10n.menuSaveToDownloads,
+        onSelected: () => unawaited(
+          saveMessageFile(
+            context,
+            file: savable.file,
+            name: savable.name,
+            toDownloads: true,
+            isShown: isShown,
+          ),
+        ),
+      ),
+      if (savedPath != null)
+        MgMenuItem(
+          label: Platform.isMacOS
+              ? l10n.menuShowInFinder
+              : l10n.menuShowInFolder,
+          onSelected: () => unawaited(revealFile(savedPath)),
+        ),
+    ],
     if (properties?.canBeForwarded ?? false)
       MgMenuItem(
         label: l10n.menuForward,
