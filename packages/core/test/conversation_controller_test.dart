@@ -488,6 +488,28 @@ void main() {
     expect(mention?.id, 30);
   });
 
+  test('keeps the pinned messages of a chat up to date', () async {
+    await controller.start();
+    await controller.loadPinned(7);
+    expect(controller.store.pinnedIds(7), [50, 20]);
+    expect(controller.store.message(7, 20)?.text, 'Pinned');
+
+    json.push({
+      '@type': 'updateMessageIsPinned',
+      'chat_id': 7,
+      'message_id': 20,
+      'is_pinned': false,
+    });
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    expect(controller.store.pinnedIds(7), [50]);
+
+    await controller.setPinned(7, 60, pinned: true);
+    final pin = json.sent.lastWhere((r) => r['@type'] == 'pinChatMessage');
+    expect(pin['message_id'], 60);
+    await controller.setPinned(7, 50, pinned: false);
+    expect(json.sent.last['@type'], 'unpinChatMessage');
+  });
+
   test('finds photos and videos around a message, oldest first', () async {
     await controller.start();
 
@@ -758,6 +780,21 @@ final class _FakeTdJson implements td.TdJson {
             _message(id: id, chatId: 7, text: 'm$id').toJson(),
         ],
       },
+      'searchChatMessages'
+          when (decoded['filter']! as Map)['@type'] ==
+              'searchMessagesFilterPinned' =>
+        {
+          '@type': 'foundChatMessages',
+          'total_count': 2,
+          'messages': [
+            for (final id in [50, 20])
+              {
+                ..._message(id: id, chatId: 7, text: 'Pinned').toJson(),
+                'is_pinned': true,
+              },
+          ],
+          'next_from_message_id': 0,
+        },
       'searchChatMessages'
           when (decoded['filter']! as Map)['@type'] ==
               'searchMessagesFilterUnreadMention' =>

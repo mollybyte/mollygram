@@ -1567,6 +1567,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You can\'t view this chat.'**
   String get linkForbidden;
+
+  /// No description provided for @menuPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Pin'**
+  String get menuPin;
+
+  /// No description provided for @menuUnpin.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpin'**
+  String get menuUnpin;
+
+  /// No description provided for @pinnedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinned message'**
+  String get pinnedMessage;
+
+  /// No description provided for @pinnedMessageNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinned message #{number}'**
+  String pinnedMessageNumber(int number);
+
+  /// No description provided for @hidePinned.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide pinned messages'**
+  String get hidePinned;
 }
 
 class _AppLocalizationsDelegate

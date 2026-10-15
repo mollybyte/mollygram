@@ -400,5 +400,13 @@
   "linkMissing": "This link is invalid or has expired.",
   "linkUnsupported": "Mollygram can't open this kind of link yet.",
   "done": "Done",
-  "linkForbidden": "You can't view this chat."
+  "linkForbidden": "You can't view this chat.",
+  "menuPin": "Pin",
+  "menuUnpin": "Unpin",
+  "pinnedMessage": "Pinned message",
+  "pinnedMessageNumber": "Pinned message #{number}",
+  "@pinnedMessageNumber": {
+    "placeholders": { "number": { "type": "int" } }
+  },
+  "hidePinned": "Hide pinned messages"
 }

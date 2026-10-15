@@ -947,4 +947,21 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get linkForbidden => 'Вы не можете просматривать этот чат.';
+
+  @override
+  String get menuPin => 'Закрепить';
+
+  @override
+  String get menuUnpin => 'Открепить';
+
+  @override
+  String get pinnedMessage => 'Закреплённое сообщение';
+
+  @override
+  String pinnedMessageNumber(int number) {
+    return 'Закреплённое сообщение #$number';
+  }
+
+  @override
+  String get hidePinned => 'Скрыть закреплённые';
 }
