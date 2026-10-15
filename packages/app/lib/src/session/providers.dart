@@ -169,11 +169,23 @@ final chatListProvider =
           .requireValue
           .chatLists;
       if (!list.isMain) unawaited(_ignoreClosed(chatLists.loadMore(list)));
+      // Every update of any chat fires `changes`; a list that holds the very
+      // same rows is not sent on, so the sidebar does not rebuild for it.
       return _startWith(
         chatLists.store.chatsFor(list),
         chatLists.changes.map((_) => chatLists.store.chatsFor(list)),
-      );
+      ).distinct(_sameRows);
     });
+
+/// Whether two lists hold the same entries, by identity: the store replaces
+/// an entry when it changes.
+bool _sameRows(List<ChatListEntry> a, List<ChatListEntry> b) {
+  if (a.length != b.length) return false;
+  for (var i = 0; i < a.length; i++) {
+    if (!identical(a[i], b[i])) return false;
+  }
+  return true;
+}
 
 /// One chat's sidebar entry, kept current, for the chat header.
 final chatEntryProvider = StreamProvider.family<ChatListEntry?, int>((
