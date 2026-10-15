@@ -196,7 +196,7 @@ class SettingsFooter extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(2, 6, 2, 0),
       child: AnimatedSwitcher(
-        duration: settingsMotion,
+        duration: settingsMotionOf(context),
         layoutBuilder: (current, previous) => Stack(
           alignment: Alignment.topLeft,
           children: [...previous, ?current],
@@ -380,7 +380,7 @@ class _SettingsButtonState extends State<SettingsButton> {
           onTapUp: (_) => setState(() => _pressed = false),
           onTap: widget.onPressed,
           child: AnimatedOpacity(
-            duration: settingsMotion,
+            duration: settingsMotionOf(context),
             opacity: enabled ? 1 : 0.45,
             child: Container(
               height: 24,
@@ -422,6 +422,117 @@ class SettingsSpinner extends StatelessWidget {
     child: CircularProgressIndicator(
       strokeWidth: 1.6,
       color: MgColors.of(context).fg2,
+    ),
+  );
+}
+
+/// [settingsMotion], or nothing when animations are off (the system's or
+/// Mollygram's "Reduce motion").
+Duration settingsMotionOf(BuildContext context) =>
+    MediaQuery.disableAnimationsOf(context) ? Duration.zero : settingsMotion;
+
+/// A macOS switch: a small capsule, the accent when on.
+class SettingsSwitch extends StatelessWidget {
+  const SettingsSwitch({
+    super.key,
+    required this.value,
+    required this.onChanged,
+    this.label,
+  });
+
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+
+  /// Read by screen readers when the row doesn't say it.
+  final String? label;
+
+  static const _width = 32.0;
+  static const _height = 18.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    final enabled = onChanged != null;
+    final motion = settingsMotionOf(context);
+    return Semantics(
+      toggled: value,
+      enabled: enabled,
+      label: label,
+      onTap: enabled ? () => onChanged!(!value) : null,
+      child: MouseRegion(
+        cursor: enabled ? SystemMouseCursors.click : MouseCursor.defer,
+        child: GestureDetector(
+          onTap: enabled ? () => onChanged!(!value) : null,
+          child: AnimatedOpacity(
+            duration: motion,
+            opacity: enabled ? 1 : 0.45,
+            child: AnimatedContainer(
+              duration: motion,
+              curve: settingsCurve,
+              width: _width,
+              height: _height,
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                color: value
+                    ? c.accent
+                    : (c.isDark
+                          ? const Color(0xFF48484C)
+                          : const Color(0xFFD9D9DE)),
+                borderRadius: BorderRadius.circular(_height / 2),
+              ),
+              child: AnimatedAlign(
+                duration: motion,
+                curve: settingsCurve,
+                alignment: value ? Alignment.centerRight : Alignment.centerLeft,
+                child: Container(
+                  width: _height - 4,
+                  height: _height - 4,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFFFFFF),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Color(0x33000000),
+                        blurRadius: 2,
+                        offset: Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A group row with a switch; a click anywhere on the row flips it.
+class SettingsSwitchRow extends StatelessWidget {
+  const SettingsSwitchRow({
+    super.key,
+    required this.title,
+    required this.value,
+    required this.onChanged,
+    this.subtitle,
+    this.leading,
+  });
+
+  final String title;
+  final String? subtitle;
+  final Widget? leading;
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+
+  @override
+  Widget build(BuildContext context) => SettingsRow(
+    title: title,
+    subtitle: subtitle,
+    leading: leading,
+    onTap: onChanged == null ? null : () => onChanged!(!value),
+    trailing: ExcludeSemantics(
+      child: SettingsSwitch(value: value, onChanged: onChanged),
     ),
   );
 }

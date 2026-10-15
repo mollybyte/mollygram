@@ -42,7 +42,7 @@ class DrawPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = MediaEditorStrings.of(context);
     final c = MgColors.of(context);
-    final erasing = brush == BrushTool.eraser;
+    final erasing = brush == BrushTool.eraser || brush.isEffect;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -51,6 +51,8 @@ class DrawPanel extends StatelessWidget {
           (BrushTool.marker, EditorIcons.marker, s.marker),
           (BrushTool.arrow, EditorIcons.arrow, s.arrow),
           (BrushTool.eraser, EditorIcons.eraser, s.eraser),
+          (BrushTool.blur, EditorIcons.blur, s.blur),
+          (BrushTool.pixelate, EditorIcons.pixelate, s.pixelate),
         ])
           MgIconButton(
             icon: icon,

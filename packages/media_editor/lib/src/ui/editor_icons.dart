@@ -91,4 +91,18 @@ abstract final class EditorIcons {
     '<path d="M4 7h16"/><path d="M10 11v6M14 11v6"/>'
         '<path d="M6 7l1 13h10l1-13"/><path d="M9 7V4h6v3"/>',
   );
+  static const blur = MgIconData(
+    'blur',
+    '<path d="M12 3.5c3.5 4.2 6 7.3 6 10.3a6 6 0 0 1-12 0c0-3 2.5-6.1 6-10.3z"/>'
+        '<path d="M9 14a3 3 0 0 0 3 3"/>',
+  );
+  static const pixelate = MgIconData(
+    'pixelate',
+    '<path d="M4 4h5v5H4zM9 9h5v5H9zM14 4h5v5h-5zM4 14h5v5H4zM14 14h5v5h-5z"/>',
+  );
+  static const adjust = MgIconData(
+    'adjust',
+    '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/>'
+        '<circle cx="16" cy="7" r="2.2"/><circle cx="10" cy="17" r="2.2"/>',
+  );
 }

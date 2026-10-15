@@ -1,0 +1,500 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mollygram_core/mollygram_core.dart';
+import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
+import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
+
+import '../../l10n/app_localizations.dart';
+import '../chat/file_content.dart';
+import '../chat/formatted_text.dart' show openLink;
+import '../chat/media_content.dart';
+import '../chat/media_viewer.dart';
+import '../home/format.dart';
+import '../session/providers.dart';
+import 'shared_link.dart';
+
+/// A chat's shared media: tabs for photos and videos, files, links, voice
+/// messages and music, each loaded page by page with `searchChatMessages`.
+///
+/// Photos and videos open in the media viewer, files and audio play or
+/// open in place, links open in the browser. [onOpenMessage] shows a
+/// message in the chat ("Show in chat").
+class SharedMediaView extends ConsumerStatefulWidget {
+  const SharedMediaView({
+    super.key,
+    required this.chatId,
+    this.onOpenMessage,
+    this.initialKind = SharedMediaKind.media,
+  });
+
+  final int chatId;
+  final ValueChanged<ConversationMessage>? onOpenMessage;
+  final SharedMediaKind initialKind;
+
+  @override
+  ConsumerState<SharedMediaView> createState() => _SharedMediaViewState();
+}
+
+class _SharedMediaViewState extends ConsumerState<SharedMediaView> {
+  late var _kind = widget.initialKind;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+          child: _Tabs(
+            selected: _kind,
+            labels: {
+              SharedMediaKind.media: l10n.sharedMediaTab,
+              SharedMediaKind.files: l10n.sharedFilesTab,
+              SharedMediaKind.links: l10n.sharedLinksTab,
+              SharedMediaKind.voice: l10n.sharedVoiceTab,
+              SharedMediaKind.music: l10n.sharedMusicTab,
+            },
+            onSelect: (kind) => setState(() => _kind = kind),
+          ),
+        ),
+        Expanded(
+          child: _SharedList(
+            // A new list per chat and tab, so each starts from the newest.
+            key: ValueKey((widget.chatId, _kind)),
+            chatId: widget.chatId,
+            kind: _kind,
+            onOpenMessage: widget.onOpenMessage,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// A macOS-style segmented control.
+class _Tabs extends StatelessWidget {
+  const _Tabs({
+    required this.selected,
+    required this.labels,
+    required this.onSelect,
+  });
+
+  final SharedMediaKind selected;
+  final Map<SharedMediaKind, String> labels;
+  final ValueChanged<SharedMediaKind> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    return Container(
+      height: 28,
+      padding: const EdgeInsets.all(2),
+      decoration: BoxDecoration(
+        color: c.field,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          for (final MapEntry(key: kind, value: label) in labels.entries)
+            Expanded(
+              child: Semantics(
+                button: true,
+                selected: kind == selected,
+                label: label,
+                excludeSemantics: true,
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => onSelect(kind),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 140),
+                      curve: Curves.easeOut,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: kind == selected
+                            ? (c.isDark
+                                  ? const Color(0x2EFFFFFF)
+                                  : const Color(0xFFFFFFFF))
+                            : const Color(0x00FFFFFF),
+                        borderRadius: BorderRadius.circular(6),
+                        boxShadow: kind == selected && !c.isDark
+                            ? const [
+                                BoxShadow(
+                                  color: Color(0x1F000000),
+                                  blurRadius: 2,
+                                  offset: Offset(0, 0.5),
+                                ),
+                              ]
+                            : null,
+                      ),
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: mgTextStyle(
+                          c,
+                          size: MgType.small,
+                          weight: kind == selected ? FontWeight.w500 : null,
+                          color: kind == selected ? c.fg : c.fg2,
+                          height: 1.2,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SharedList extends ConsumerStatefulWidget {
+  const _SharedList({
+    super.key,
+    required this.chatId,
+    required this.kind,
+    required this.onOpenMessage,
+  });
+
+  final int chatId;
+  final SharedMediaKind kind;
+  final ValueChanged<ConversationMessage>? onOpenMessage;
+
+  @override
+  ConsumerState<_SharedList> createState() => _SharedListState();
+}
+
+enum _Load { loading, ready, failed }
+
+class _SharedListState extends ConsumerState<_SharedList> {
+  late final SharedMediaList _list = ref
+      .read(telegramSessionProvider)
+      .requireValue
+      .chatSearch
+      .sharedMedia(widget.chatId, widget.kind);
+  final _scroll = ScrollController();
+  var _load = _Load.loading;
+
+  @override
+  void initState() {
+    super.initState();
+    _scroll.addListener(_maybeLoadMore);
+    unawaited(_loadMore());
+  }
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  void _maybeLoadMore() {
+    if (_list.isComplete || _load == _Load.loading) return;
+    final position = _scroll.position;
+    if (position.pixels > position.maxScrollExtent - 400) {
+      unawaited(_loadMore());
+    }
+  }
+
+  Future<void> _loadMore() async {
+    // The first load starts in initState, already marked as loading.
+    if (_load != _Load.loading) setState(() => _load = _Load.loading);
+    try {
+      await _list.loadMore();
+      if (!mounted) return;
+      setState(() => _load = _Load.ready);
+      // A first page that does not fill the panel leaves nothing to scroll.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _scroll.hasClients) _maybeLoadMore();
+      });
+    } on Object {
+      if (mounted) setState(() => _load = _Load.failed);
+    }
+  }
+
+  String _empty(AppLocalizations l10n) => switch (widget.kind) {
+    SharedMediaKind.media => l10n.sharedMediaEmpty,
+    SharedMediaKind.files => l10n.sharedFilesEmpty,
+    SharedMediaKind.links => l10n.sharedLinksEmpty,
+    SharedMediaKind.voice => l10n.sharedVoiceEmpty,
+    SharedMediaKind.music => l10n.sharedMusicEmpty,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    final l10n = AppLocalizations.of(context);
+    final messages = _list.messages;
+    if (messages.isEmpty) {
+      return Center(
+        child: switch (_load) {
+          _Load.loading => const _Spinner(),
+          _Load.failed => Text(
+            l10n.sharedLoadFailed,
+            style: mgTextStyle(c, color: c.fg2),
+          ),
+          _Load.ready => Text(
+            _empty(l10n),
+            textAlign: TextAlign.center,
+            style: mgTextStyle(c, color: c.fg2),
+          ),
+        },
+      );
+    }
+    if (widget.kind == SharedMediaKind.media) return _grid(messages);
+    return ListView.builder(
+      controller: _scroll,
+      padding: const EdgeInsets.fromLTRB(8, 0, 8, 12),
+      itemCount: messages.length,
+      itemBuilder: (context, i) => _row(context, messages[i]),
+    );
+  }
+
+  Widget _grid(List<ConversationMessage> messages) {
+    final conversations = ref
+        .read(telegramSessionProvider)
+        .requireValue
+        .conversations;
+    return GridView.builder(
+      controller: _scroll,
+      padding: const EdgeInsets.fromLTRB(2, 0, 2, 12),
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 128,
+        mainAxisSpacing: 2,
+        crossAxisSpacing: 2,
+      ),
+      itemCount: messages.length,
+      itemBuilder: (context, i) {
+        final message = messages[i];
+        void view() => unawaited(
+          showChatMediaViewer(
+            context,
+            message: message,
+            conversations: conversations,
+          ),
+        );
+        return LayoutBuilder(
+          key: ValueKey(message.id),
+          builder: (context, box) {
+            final size = Size.square(box.maxWidth);
+            return ClipRect(
+              child: switch (message.content) {
+                td.MessagePhoto(:final photo) => PhotoContent(
+                  photo: photo,
+                  size: size,
+                  onTap: view,
+                ),
+                td.MessageVideo(:final video) => VideoContent(
+                  video: video,
+                  size: size,
+                  onTap: view,
+                ),
+                _ => const SizedBox.shrink(),
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _row(BuildContext context, ConversationMessage message) {
+    final c = MgColors.of(context);
+    final l10n = AppLocalizations.of(context);
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final date = Text(
+      formatChatTime(message.date, locale),
+      style: mgTextStyle(c, size: MgType.small, color: c.fg2),
+    );
+    final Widget body = switch (message.content) {
+      td.MessageDocument(:final document) => DocumentContent(
+        document: document,
+        meta: date,
+      ),
+      td.MessageVoiceNote(:final voiceNote) => VoiceNoteContent(
+        chatId: message.chatId,
+        messageId: message.id,
+        voiceNote: voiceNote,
+        meta: date,
+      ),
+      td.MessageAudio(:final audio) => AudioContent(
+        chatId: message.chatId,
+        messageId: message.id,
+        audio: audio,
+        meta: date,
+      ),
+      _ => switch (sharedLinkOf(message)) {
+        final link? => _LinkRow(link: link, date: date),
+        null => const SizedBox.shrink(),
+      },
+    };
+    final open = widget.onOpenMessage;
+    return Padding(
+      key: ValueKey(message.id),
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Expanded(child: body),
+          if (open != null) ...[
+            const SizedBox(width: 4),
+            MgIconButton(
+              icon: MgIcons.chat,
+              iconSize: 15,
+              tooltip: l10n.showInChat,
+              onPressed: () => open(message),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _LinkRow extends StatefulWidget {
+  const _LinkRow({required this.link, required this.date});
+
+  final SharedLink link;
+  final Widget date;
+
+  @override
+  State<_LinkRow> createState() => _LinkRowState();
+}
+
+class _LinkRowState extends State<_LinkRow> {
+  var _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    final link = widget.link;
+    final initial = link.title.characters.firstOrNull?.toUpperCase() ?? '';
+    return Semantics(
+      link: true,
+      label: link.title,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _hover = true),
+        onExit: (_) => setState(() => _hover = false),
+        child: GestureDetector(
+          onTap: () => unawaited(openLink(link.url)),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 120),
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: _hover ? c.hover : const Color(0x00000000),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: c.field,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    initial,
+                    style: mgTextStyle(
+                      c,
+                      size: 17,
+                      weight: FontWeight.w600,
+                      color: c.fg2,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              link.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: mgTextStyle(c, weight: FontWeight.w600),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          widget.date,
+                        ],
+                      ),
+                      if (link.description.isNotEmpty)
+                        Text(
+                          link.description,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: mgTextStyle(c, size: MgType.small),
+                        ),
+                      Text(
+                        link.url,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: mgTextStyle(
+                          c,
+                          size: MgType.small,
+                          color: c.accent,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Shown only when loading takes long enough to notice.
+class _Spinner extends StatefulWidget {
+  const _Spinner();
+
+  @override
+  State<_Spinner> createState() => _SpinnerState();
+}
+
+class _SpinnerState extends State<_Spinner> {
+  var _visible = false;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer(const Duration(milliseconds: 300), () {
+      if (mounted) setState(() => _visible = true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    return AnimatedOpacity(
+      opacity: _visible ? 1 : 0,
+      duration: const Duration(milliseconds: 160),
+      child: SizedBox.square(
+        dimension: 16,
+        child: CircularProgressIndicator(strokeWidth: 1.6, color: c.fg2),
+      ),
+    );
+  }
+}

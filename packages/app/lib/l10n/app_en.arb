@@ -151,6 +151,60 @@
   "sensitiveMedia": "18+",
   "forwardFailed": "Couldn't forward the message",
   "close": "Close",
+  "peerInfo": "Info",
+  "statusOnline": "online",
+  "lastSeenJustNow": "last seen just now",
+  "lastSeenMinutesAgo": "{count, plural, =1{last seen 1 minute ago} other{last seen {count} minutes ago}}",
+  "@lastSeenMinutesAgo": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "lastSeenToday": "last seen today at {time}",
+  "@lastSeenToday": {
+    "placeholders": { "time": { "type": "String" } }
+  },
+  "lastSeenYesterday": "last seen yesterday at {time}",
+  "@lastSeenYesterday": {
+    "placeholders": { "time": { "type": "String" } }
+  },
+  "lastSeenDate": "last seen {date}",
+  "@lastSeenDate": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "lastSeenRecently": "last seen recently",
+  "lastSeenWeek": "last seen within a week",
+  "lastSeenMonth": "last seen within a month",
+  "lastSeenLongAgo": "last seen a long time ago",
+  "statusBot": "bot",
+  "deletedAccount": "Deleted account",
+  "membersCount": "{count, plural, =0{no members} =1{1 member} other{{count} members}}",
+  "@membersCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "subscribersCount": "{count, plural, =0{no subscribers} =1{1 subscriber} other{{count} subscribers}}",
+  "@subscribersCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "infoBio": "Bio",
+  "infoUsername": "Username",
+  "infoPhone": "Mobile",
+  "infoBirthday": "Birthday",
+  "infoDescription": "Description",
+  "infoLink": "Link",
+  "copied": "Copied",
+  "infoMessage": "Message",
+  "infoMute": "Mute",
+  "infoUnmute": "Unmute",
+  "blockUser": "Block user",
+  "unblockUser": "Unblock user",
+  "blockConfirmTitle": "Block {name}?",
+  "@blockConfirmTitle": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "blockConfirmMessage": "They won't be able to send you messages or call you.",
+  "block": "Block",
+  "memberOwner": "owner",
+  "memberAdmin": "admin",
+  "infoFailed": "Couldn't load the info",
   "fileSizeBytes": "{size} B",
   "@fileSizeBytes": {
     "placeholders": { "size": { "type": "String" } }
@@ -389,9 +443,81 @@
   "terminateOthersTitle": "Terminate all other sessions?",
   "logOutFailed": "Couldn't log out. Check the connection and try again.",
   "connectedBot": "Connected business bot",
+  "connectedBotFailed": "Couldn't load the connected bot",
   "connectedBotHint": "This bot can read and answer your business chats.",
   "disconnect": "Disconnect",
   "disconnectBotTitle": "Disconnect {name}?",
+  "appearance": "Appearance",
+  "themeAuto": "Auto",
+  "themeLight": "Light",
+  "themeDark": "Dark",
+  "accentColor": "Accent color",
+  "accentBlue": "Blue",
+  "accentIndigo": "Indigo",
+  "accentTeal": "Teal",
+  "accentGreen": "Green",
+  "accentOrange": "Orange",
+  "accentGraphite": "Graphite",
+  "chatWallpaper": "Chat wallpaper",
+  "chatWallpaperHint": "When off, chats sit on a plain background.",
+  "messageTextSize": "Message text size",
+  "textSizeValue": "{size} pt",
+  "@textSizeValue": {
+    "placeholders": { "size": { "type": "String" } }
+  },
+  "previewSender": "Anna",
+  "previewMessage": "Good morning! The new settings look great.",
+  "reduceMotion": "Reduce motion",
+  "reduceMotionHint": "Turns animations off. Mollygram also follows the same setting in macOS Accessibility.",
+  "dataAndStorage": "Data and storage",
+  "storageUsage": "Storage",
+  "storageCalculating": "Calculating…",
+  "storageUsed": "{size} of media and files",
+  "@storageUsed": {
+    "placeholders": { "size": { "type": "String" } }
+  },
+  "storageEmpty": "No media or files are stored on this computer.",
+  "storagePhotos": "Photos",
+  "storageVideos": "Videos",
+  "storageFiles": "Files",
+  "storageVoiceAndMusic": "Voice and music",
+  "storageStickers": "Stickers",
+  "storageOther": "Other",
+  "storageDatabase": "Message database",
+  "storageHint": "Cleared media stays in the Telegram cloud and downloads again when needed. Messages are kept.",
+  "storageFailed": "Couldn't read the storage usage.",
+  "clearCache": "Clear cache…",
+  "clearCacheTitle": "Clear {size} from this computer?",
+  "@clearCacheTitle": {
+    "placeholders": { "size": { "type": "String" } }
+  },
+  "clearCacheMessage": "Media stays in the Telegram cloud and downloads again when you open it.",
+  "clear": "Clear",
+  "clearCacheFailed": "Couldn't clear the cache.",
+  "autoDownload": "Automatic media download",
+  "autoDownloadWifi": "On Wi-Fi and Ethernet",
+  "autoDownloadOther": "On other networks",
+  "autoDownloadHint": "Other networks are personal hotspots and other metered connections.",
+  "downloadFolder": "Download folder",
+  "downloadFolderDefault": "Downloads",
+  "chooseFolder": "Choose…",
+  "downloadFolderHint": "Files you save from chats go here.",
+  "sizeBytes": "{size} B",
+  "@sizeBytes": {
+    "placeholders": { "size": { "type": "String" } }
+  },
+  "sizeKilobytes": "{size} KB",
+  "@sizeKilobytes": {
+    "placeholders": { "size": { "type": "String" } }
+  },
+  "sizeMegabytes": "{size} MB",
+  "@sizeMegabytes": {
+    "placeholders": { "size": { "type": "String" } }
+  },
+  "sizeGigabytes": "{size} GB",
+  "@sizeGigabytes": {
+    "placeholders": { "size": { "type": "String" } }
+  },
   "@disconnectBotTitle": {
     "placeholders": { "name": { "type": "String" } }
   },
@@ -439,6 +565,27 @@
   "scrollToBottom": "Scroll to the newest message",
   "nextMention": "Next mention",
   "nextReaction": "Next reaction",
+  "linkJoinChannel": "Join channel",
+  "linkJoinGroup": "Join group",
+  "linkRequestToJoin": "Request to join",
+  "linkViewChannel": "View channel",
+  "linkViewGroup": "View group",
+  "linkSubscribers": "{count, plural, =0{No subscribers} one{{count} subscriber} other{{count} subscribers}}",
+  "@linkSubscribers": {
+    "placeholders": { "count": { "type": "int", "format": "decimalPattern" } }
+  },
+  "linkMembers": "{count, plural, =0{No members} one{{count} member} other{{count} members}}",
+  "@linkMembers": {
+    "placeholders": { "count": { "type": "int", "format": "decimalPattern" } }
+  },
+  "linkApprovalHint": "An admin has to approve your request.",
+  "linkRequestSent": "Request sent",
+  "linkRequestSentHint": "You'll join once an admin approves it.",
+  "linkJoinFailed": "Couldn't join. Try again later.",
+  "linkMissing": "This link is invalid or has expired.",
+  "linkUnsupported": "Mollygram can't open this kind of link yet.",
+  "done": "Done",
+  "linkForbidden": "You can't view this chat.",
   "menuPin": "Pin",
   "menuUnpin": "Unpin",
   "pinnedMessage": "Pinned message",
@@ -447,5 +594,39 @@
     "placeholders": { "number": { "type": "int" } }
   },
   "hidePinned": "Hide pinned messages",
-  "backToPrevious": "Back to where you were"
+  "backToPrevious": "Back to where you were",
+  "searchInChat": "Search in chat",
+  "searchCounter": "{index} of {count}",
+  "@searchCounter": {
+    "placeholders": { "index": { "type": "int" }, "count": { "type": "int" } }
+  },
+  "searchNoResults": "No results",
+  "searchOlder": "Previous result",
+  "searchNewer": "Next result",
+  "sharedMedia": "Shared media",
+  "sharedMediaTab": "Media",
+  "sharedFilesTab": "Files",
+  "sharedLinksTab": "Links",
+  "sharedVoiceTab": "Voice",
+  "sharedMusicTab": "Music",
+  "sharedMediaEmpty": "No photos or videos yet",
+  "sharedFilesEmpty": "No files yet",
+  "sharedLinksEmpty": "No links yet",
+  "sharedVoiceEmpty": "No voice messages yet",
+  "sharedMusicEmpty": "No music yet",
+  "sharedLoadFailed": "Couldn't load the list",
+  "showInChat": "Show in chat",
+  "joinChannel": "Join channel",
+  "joinGroup": "Join group",
+  "muteChat": "Mute",
+  "unmuteChat": "Unmute",
+  "chatUnavailable": "You can't take part in this chat",
+  "chatActionFailed": "Couldn't do that, try again",
+  "menuSelect": "Select",
+  "selectedCount": "{count, plural, one{{count} selected} other{{count} selected}}",
+  "@selectedCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "clearSelection": "Clear selection",
+  "copy": "Copy"
 }

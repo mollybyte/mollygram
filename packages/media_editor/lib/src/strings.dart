@@ -1,5 +1,7 @@
 import 'package:flutter/widgets.dart';
 
+import 'model/adjustments.dart';
+
 /// The editor's own strings in English and Russian, picked by the ambient
 /// locale. The editor ships them itself so it can be used without the
 /// app's localizations.
@@ -43,6 +45,11 @@ final class MediaEditorStrings {
     required this.filled,
     required this.delete,
     required this.size,
+    required this.blur,
+    required this.pixelate,
+    required this.adjust,
+    required this.presetNames,
+    required this.adjustmentNames,
   });
 
   /// Opens the editor, on the attachment preview.
@@ -92,6 +99,16 @@ final class MediaEditorStrings {
   final String filled;
   final String delete;
   final String size;
+  final String blur;
+  final String pixelate;
+
+  /// The adjust tool, its looks and its adjustments.
+  final String adjust;
+  final List<String> presetNames;
+  final List<String> adjustmentNames;
+
+  String preset(FilterPreset p) => presetNames[p.index];
+  String adjustment(Adjustment a) => adjustmentNames[a.index];
 
   static const en = MediaEditorStrings._(
     edit: 'Edit',
@@ -130,6 +147,26 @@ final class MediaEditorStrings {
     filled: 'Filled',
     delete: 'Delete',
     size: 'Size',
+    blur: 'Blur',
+    pixelate: 'Pixelate',
+    adjust: 'Adjust',
+    presetNames: [
+      'Original',
+      'Vivid',
+      'Warm',
+      'Cool',
+      'Mono',
+      'Faded',
+      'Dramatic',
+    ],
+    adjustmentNames: [
+      'Brightness',
+      'Contrast',
+      'Saturation',
+      'Warmth',
+      'Fade',
+      'Vignette',
+    ],
   );
 
   static const ru = MediaEditorStrings._(
@@ -169,6 +206,26 @@ final class MediaEditorStrings {
     filled: 'Залитая',
     delete: 'Удалить',
     size: 'Размер',
+    blur: 'Размытие',
+    pixelate: 'Пикселизация',
+    adjust: 'Коррекция',
+    presetNames: [
+      'Оригинал',
+      'Яркий',
+      'Тёплый',
+      'Холодный',
+      'Моно',
+      'Выцветший',
+      'Драма',
+    ],
+    adjustmentNames: [
+      'Яркость',
+      'Контраст',
+      'Насыщенность',
+      'Теплота',
+      'Выцветание',
+      'Виньетка',
+    ],
   );
 
   /// The strings for the ambient locale: Russian for `ru`, English

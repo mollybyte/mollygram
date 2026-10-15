@@ -4,6 +4,8 @@ import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../links/link_router.dart';
+
 /// Message text with its entities: bold, italic, code, links, mentions,
 /// spoilers. A [trailing] span (the room for the time) goes after the last
 /// line.
@@ -51,7 +53,8 @@ class _FormattedTextViewState extends State<FormattedTextView> {
       colors: c,
       revealed: _revealed,
       onLink: (url) {
-        final r = TapGestureRecognizer()..onTap = () => openLink(url);
+        final r = TapGestureRecognizer()
+          ..onTap = () => openLinkFrom(context, url);
         _recognizers.add(r);
         return r;
       },

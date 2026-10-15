@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 
+import 'adjustments.dart';
 import 'overlay.dart';
 import 'stroke.dart';
 
@@ -44,6 +45,7 @@ final class MediaEdit {
     this.portrait = false,
     this.strokes = const [],
     this.overlays = const [],
+    this.adjustments = const Adjustments(),
   }) : assert(quarterTurns >= 0 && quarterTurns < 4);
 
   /// Clockwise quarter turns of the source, 0 to 3.
@@ -68,13 +70,17 @@ final class MediaEdit {
   /// Text, emoji and shapes over the strokes, bottom first.
   final List<MediaOverlay> overlays;
 
+  /// Colour adjustments and the vignette.
+  final Adjustments adjustments;
+
   /// Nothing to apply: the original file can be sent as is.
   bool get isIdentity =>
       quarterTurns == 0 &&
       !flipped &&
       _nearlyUnit(crop) &&
       strokes.isEmpty &&
-      overlays.isEmpty;
+      overlays.isEmpty &&
+      adjustments.isIdentity;
 
   /// Size of the oriented picture for a source of [source] pixels.
   Size orientedSize(Size source) =>
@@ -113,6 +119,7 @@ final class MediaEdit {
       for (final s in strokes) s.mapPoints((p) => Offset(p.dy, 1 - p.dx)),
     ],
     overlays: [for (final o in overlays) o.rotatedLeft()],
+    adjustments: adjustments,
   );
 
   /// Mirrored left to right, crop included.
@@ -126,6 +133,7 @@ final class MediaEdit {
       for (final s in strokes) s.mapPoints((p) => Offset(1 - p.dx, p.dy)),
     ],
     overlays: [for (final o in overlays) o.flippedHorizontally()],
+    adjustments: adjustments,
   );
 
   MediaEdit copyWith({
@@ -134,6 +142,7 @@ final class MediaEdit {
     bool? portrait,
     List<Stroke>? strokes,
     List<MediaOverlay>? overlays,
+    Adjustments? adjustments,
   }) => MediaEdit(
     quarterTurns: quarterTurns,
     flipped: flipped,
@@ -142,6 +151,7 @@ final class MediaEdit {
     portrait: portrait ?? this.portrait,
     strokes: strokes ?? this.strokes,
     overlays: overlays ?? this.overlays,
+    adjustments: adjustments ?? this.adjustments,
   );
 
   /// With [stroke] drawn on top.
@@ -202,7 +212,8 @@ final class MediaEdit {
       other.aspect == aspect &&
       other.portrait == portrait &&
       listEquals(other.strokes, strokes) &&
-      listEquals(other.overlays, overlays);
+      listEquals(other.overlays, overlays) &&
+      other.adjustments == adjustments;
 
   @override
   int get hashCode => Object.hash(
@@ -213,6 +224,7 @@ final class MediaEdit {
     portrait,
     Object.hashAll(strokes),
     Object.hashAll(overlays),
+    adjustments,
   );
 
   @override

@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_media/mollygram_media.dart';
+import 'package:mollygram_shell/mollygram_shell.dart' show primaryShortcut;
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 import 'package:pasteboard/pasteboard.dart';
@@ -25,7 +26,10 @@ import '../chat/message_actions.dart';
 import '../chat/message_tile.dart';
 import '../chat/timeline_scroll.dart';
 import '../chat/timeline_view.dart';
+import '../chat_search/chat_search_bar.dart';
+import '../profile/peer_info_state.dart';
 import '../session/providers.dart';
+import '../shared_media/message_jump.dart';
 import '../voice/voice_record_composer.dart';
 import '../window_drag_area.dart';
 
@@ -65,6 +69,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
   /// Whether the emoji and sticker panel is open over the composer.
   var _panelOpen = false;
 
+  /// Whether the ⌘F search capsule takes the title's place.
+  var _searching = false;
+
   final _scroll = TimelineScrollController();
   final _timelineKey = GlobalKey();
 
@@ -98,6 +105,17 @@ class _ChatViewState extends ConsumerState<ChatView> {
   static final _pinnedHidden = <int>{};
   var _pinnedShown = false;
 
+  /// A join or mute request on its way.
+  var _actionPending = false;
+
+  /// The ids of the selected messages while messages are being selected;
+  /// null otherwise.
+  Set<int>? _selected;
+
+  /// What the selection allows, from the properties of its messages.
+  var _canForwardSelected = false;
+  List<td.MessageProperties>? _selectedProperties;
+
   @override
   void initState() {
     super.initState();
@@ -108,6 +126,14 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _draft.addListener(_clearSendError);
     _scroll.addListener(_followScroll);
     _open(widget.chatId);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _takeJump());
+  }
+
+  /// Shows the message another panel asked this chat to show.
+  void _takeJump() {
+    if (!mounted) return;
+    final id = ref.read(messageJumpProvider.notifier).take(widget.chatId);
+    if (id != null) unawaited(_jumpTo(id));
   }
 
   @override
@@ -125,11 +151,14 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _setAside = '';
     _replyAside = null;
     _panelOpen = false;
+    _searching = false;
     _anchor = null;
     _unreadFrom = null;
     _flashId = null;
     _returnTo = null;
     _pinnedIndex = 0;
+    _selected = null;
+    _selectedProperties = null;
     _flashTimer?.cancel();
     _scroll.pinToBottom();
     _away.value = false;
@@ -250,6 +279,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
       ),
     ),
     onJump: (messageId) => unawaited(_jumpTo(messageId)),
+    onSelectToggle: _toggleSelected,
   );
 
   /// The scroll offset that puts the anchor's row just under the header.
@@ -416,6 +446,163 @@ class _ChatViewState extends ConsumerState<ChatView> {
         onReply: _reply,
         onEdit: _edit,
         onForward: (messages) => unawaited(_forward(messages)),
+        onSelect: _select,
+      ),
+    );
+  }
+
+  /// Starts selecting with [row], or adds it when already selecting.
+  void _select(MessageRow row) {
+    if (row.primary.chatId != widget.chatId) return;
+    final selected = _selected ?? <int>{};
+    selected.addAll([for (final message in row.messages) message.id]);
+    _setSelection(selected);
+  }
+
+  void _toggleSelected(MessageRow row) {
+    final selected = _selected;
+    if (selected == null) return;
+    final ids = [for (final message in row.messages) message.id];
+    if (ids.any(selected.contains)) {
+      selected.removeAll(ids);
+    } else {
+      selected.addAll(ids);
+    }
+    // Taking the last one out ends the selection, as in the official app.
+    _setSelection(selected.isEmpty ? null : selected);
+  }
+
+  void _setSelection(Set<int>? selected) {
+    // A fresh set each time, so a request for properties can tell whether
+    // the selection it was made for still stands.
+    final fresh = selected == null ? null : Set.of(selected);
+    setState(() {
+      _selected = fresh;
+      _selectedProperties = null;
+      _canForwardSelected = false;
+    });
+    if (fresh == null) {
+      _focus.requestFocus();
+    } else {
+      unawaited(_loadSelectedProperties(fresh));
+    }
+  }
+
+  void _clearSelection() {
+    if (_selected != null) _setSelection(null);
+  }
+
+  /// The selected messages, oldest first.
+  List<ConversationMessage> _selectedMessages() {
+    final selected = _selected ?? const <int>{};
+    return [
+      for (final message in _conversations.store.messagesFor(widget.chatId))
+        if (selected.contains(message.id)) message,
+    ].reversed.toList();
+  }
+
+  /// Fetches what may be done with the selection; the bar's commands
+  /// enable once it is known. A change of selection meanwhile wins.
+  Future<void> _loadSelectedProperties(Set<int> selected) async {
+    final chatId = widget.chatId;
+    final ids = selected.toList();
+    final List<td.MessageProperties> properties;
+    try {
+      properties = await Future.wait([
+        for (final id in ids) _conversations.propertiesOf(chatId, id),
+      ]);
+    } on Object {
+      return;
+    }
+    if (!mounted ||
+        widget.chatId != chatId ||
+        !identical(_selected, selected)) {
+      return;
+    }
+    setState(() {
+      _selectedProperties = properties;
+      _canForwardSelected = properties.every((p) => p.canBeForwarded);
+    });
+  }
+
+  /// Copies the texts of the selected messages, one under another.
+  Future<void> _copySelected() async {
+    final texts = [
+      for (final message in _selectedMessages())
+        if (message.text.isNotEmpty) message.text,
+    ];
+    _clearSelection();
+    if (texts.isEmpty) return;
+    await Clipboard.setData(ClipboardData(text: texts.join('\n\n')));
+  }
+
+  Future<void> _forwardSelected() async {
+    final messages = _selectedMessages();
+    _clearSelection();
+    await _forward(messages);
+  }
+
+  Future<void> _deleteSelected() async {
+    final properties = _selectedProperties;
+    final messages = _selectedMessages();
+    if (properties == null || messages.isEmpty) return;
+    final store = _conversations.store;
+    final chat = ref.read(chatEntryProvider(widget.chatId)).value;
+    final isPrivate =
+        chat != null && !chat.isGroup && !store.isChannel(widget.chatId);
+    final chatId = widget.chatId;
+    await confirmDeleteMessages(
+      context,
+      conversations: _conversations,
+      messages: messages,
+      properties: properties,
+      peerName: isPrivate ? chat.title : null,
+      isShown: () => mounted && widget.chatId == chatId,
+    );
+    if (mounted && widget.chatId == chatId) _clearSelection();
+  }
+
+  /// The bar in place of the composer while messages are selected. Esc
+  /// ends the selection.
+  Widget _selectionBar(AppLocalizations l10n) {
+    final selected = _selected!;
+    final properties = _selectedProperties;
+    final canDelete =
+        properties != null &&
+        (properties.every((p) => p.canBeDeletedForAllUsers) ||
+            properties.every((p) => p.canBeDeletedOnlyForSelf));
+    final hasText = _selectedMessages().any((m) => m.text.isNotEmpty);
+    return Focus(
+      autofocus: true,
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.escape) {
+          _clearSelection();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: SelectionBar(
+        countLabel: l10n.selectedCount(selected.length),
+        closeTooltip: l10n.clearSelection,
+        onClose: _clearSelection,
+        actions: [
+          SelectionBarAction(
+            label: l10n.copy,
+            onPressed: hasText ? () => unawaited(_copySelected()) : null,
+          ),
+          SelectionBarAction(
+            label: l10n.menuForward,
+            onPressed: _canForwardSelected
+                ? () => unawaited(_forwardSelected())
+                : null,
+          ),
+          SelectionBarAction(
+            label: l10n.menuDelete,
+            destructive: true,
+            onPressed: canDelete ? () => unawaited(_deleteSelected()) : null,
+          ),
+        ],
       ),
     );
   }
@@ -474,6 +661,13 @@ class _ChatViewState extends ConsumerState<ChatView> {
 
   void _togglePanel() {
     setState(() => _panelOpen = !_panelOpen);
+    _focus.requestFocus();
+  }
+
+  void _openSearch() => setState(() => _searching = true);
+
+  void _closeSearch() {
+    setState(() => _searching = false);
     _focus.requestFocus();
   }
 
@@ -937,6 +1131,55 @@ class _ChatViewState extends ConsumerState<ChatView> {
     );
   }
 
+  /// The bar in place of the composer when the user can't write here:
+  /// Join when they are not in the chat, Mute or Unmute in a channel they
+  /// only read. Null when the composer belongs.
+  Widget? _actionBar(AppLocalizations l10n, ConversationStore store) {
+    final chatId = widget.chatId;
+    if (store.canPost(chatId)) return null;
+    final isChannel = store.isChannel(chatId);
+    switch (store.membership(chatId)) {
+      case ChatMembership.member:
+        if (!isChannel) return null;
+        final muted = store.isMuted(chatId);
+        return ComposerActionBar(
+          label: muted ? l10n.unmuteChat : l10n.muteChat,
+          loading: _actionPending,
+          onPressed: () => unawaited(
+            _chatAction(() => _conversations.setMuted(chatId, muted: !muted)),
+          ),
+        );
+      case ChatMembership.left:
+        return ComposerActionBar(
+          label: isChannel ? l10n.joinChannel : l10n.joinGroup,
+          loading: _actionPending,
+          onPressed: () =>
+              unawaited(_chatAction(() => _conversations.joinChat(chatId))),
+        );
+      case ChatMembership.banned:
+        return ComposerActionBar(label: l10n.chatUnavailable, onPressed: null);
+      case ChatMembership.unknown:
+        return const SizedBox(height: 44);
+    }
+  }
+
+  Future<void> _chatAction(Future<void> Function() action) async {
+    final chatId = widget.chatId;
+    setState(() {
+      _actionPending = true;
+      _failure = null;
+    });
+    try {
+      await action();
+    } catch (_) {
+      if (mounted && widget.chatId == chatId) {
+        setState(() => _failure = _Failure.chatAction);
+      }
+    } finally {
+      if (mounted) setState(() => _actionPending = false);
+    }
+  }
+
   /// Files are being dragged over the chat.
   var _dragging = false;
 
@@ -954,10 +1197,16 @@ class _ChatViewState extends ConsumerState<ChatView> {
     final l10n = AppLocalizations.of(context);
     final session = ref.watch(telegramSessionProvider).requireValue;
     final chat = ref.watch(chatEntryProvider(widget.chatId)).value;
+    ref.listen(messageJumpProvider.select((jumps) => jumps[widget.chatId]), (
+      _,
+      jump,
+    ) {
+      if (jump != null) _takeJump();
+    });
     final messages = ref.watch(conversationProvider(widget.chatId));
     final store = session.conversations.store;
 
-    return DropTarget(
+    final view = DropTarget(
       onDragEntered: (_) => setState(() => _dragging = true),
       onDragExited: (_) => setState(() => _dragging = false),
       onDragDone: (details) {
@@ -990,6 +1239,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
                   flashId: _flashId,
                   flash: _flash,
                   topInset: _topInset,
+                  selection: _selected,
                   onShown: _shown,
                   onNearTop: _loadOlder,
                   onNearBottom: _loadNewer,
@@ -1011,7 +1261,21 @@ class _ChatViewState extends ConsumerState<ChatView> {
             left: 14,
             right: 14,
             child: ChatHeaderBar(
-              title: ChatTitleCapsule(title: chat?.title ?? ''),
+              title: _searching
+                  ? SizedBox(
+                      width: double.infinity,
+                      child: ChatSearchBar(
+                        key: ValueKey(widget.chatId),
+                        find: (query) =>
+                            session.chatSearch.find(widget.chatId, query),
+                        onResult: (id) => unawaited(_jumpTo(id)),
+                        onClose: _closeSearch,
+                      ),
+                    )
+                  : ChatTitleCapsule(
+                      title: chat?.title ?? '',
+                      onTap: () => togglePeerInfo(ref, widget.chatId),
+                    ),
               actions: const SizedBox.shrink(),
               fill: const WindowDragArea(),
             ),
@@ -1033,6 +1297,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
                         _Failure.edit => l10n.editFailed,
                         _Failure.attach => l10n.attachFailed,
                         _Failure.forward => l10n.forwardFailed,
+                        _Failure.chatAction => l10n.chatActionFailed,
                       },
                       textAlign: TextAlign.center,
                       style: mgTextStyle(
@@ -1061,36 +1326,45 @@ class _ChatViewState extends ConsumerState<ChatView> {
                       ),
                     ),
                   ),
-                TapRegion(
-                  groupId: _EmojiPanelRegion,
-                  child: VoiceRecordComposer(
-                    onRecorded: _sendVoice,
-                    builder: (context, recordButton, recordingBar) => Composer(
-                      controller: _draft,
-                      focusNode: _focus,
-                      header: _composerHeader(l10n),
-                      onCancel:
-                          _panelOpen || _editing != null || _replyTo != null
-                          ? _cancel
-                          : null,
-                      onEditLast: () => unawaited(_editLast()),
-                      onAttach: () => unawaited(_chooseFiles()),
-                      onEmoji: _togglePanel,
-                      onPaste: _paste,
-                      allowEmpty: _editing != null && _isCaption(_editing!),
-                      labels: ComposerLabels(
-                        hint: l10n.messageHint,
-                        attach: l10n.attach,
-                        emoji: l10n.emoji,
-                        record: l10n.record,
-                        send: l10n.send,
-                      ),
-                      onSend: (text) => unawaited(_send(text)),
-                      recordButton: recordButton,
-                      replacement: recordingBar,
+                if (_selected != null)
+                  _selectionBar(l10n)
+                else if (_actionBar(l10n, store) case final bar?)
+                  bar
+                else
+                  TapRegion(
+                    groupId: _EmojiPanelRegion,
+                    child: VoiceRecordComposer(
+                      onRecorded: _sendVoice,
+                      builder: (context, recordButton, recordingBar) =>
+                          Composer(
+                            controller: _draft,
+                            focusNode: _focus,
+                            header: _composerHeader(l10n),
+                            onCancel:
+                                _panelOpen ||
+                                    _editing != null ||
+                                    _replyTo != null
+                                ? _cancel
+                                : null,
+                            onEditLast: () => unawaited(_editLast()),
+                            onAttach: () => unawaited(_chooseFiles()),
+                            onEmoji: _togglePanel,
+                            onPaste: _paste,
+                            allowEmpty:
+                                _editing != null && _isCaption(_editing!),
+                            labels: ComposerLabels(
+                              hint: l10n.messageHint,
+                              attach: l10n.attach,
+                              emoji: l10n.emoji,
+                              record: l10n.record,
+                              send: l10n.send,
+                            ),
+                            onSend: (text) => unawaited(_send(text)),
+                            recordButton: recordButton,
+                            replacement: recordingBar,
+                          ),
                     ),
                   ),
-                ),
               ],
             ),
           ),
@@ -1112,10 +1386,14 @@ class _ChatViewState extends ConsumerState<ChatView> {
         ],
       ),
     );
+    return CallbackShortcuts(
+      bindings: {primaryShortcut(LogicalKeyboardKey.keyF): _openSearch},
+      child: view,
+    );
   }
 }
 
-enum _Failure { send, edit, attach, forward }
+enum _Failure { send, edit, attach, forward, chatAction }
 
 /// Clicks in the panel and the composer keep the emoji panel open.
 abstract final class _EmojiPanelRegion {}

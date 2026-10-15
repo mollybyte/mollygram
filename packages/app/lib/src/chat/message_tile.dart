@@ -9,6 +9,7 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../home/format.dart';
+import '../links/link_router.dart';
 import 'concealed.dart';
 import 'describe.dart';
 import 'file_content.dart';
@@ -50,6 +51,8 @@ class MessageRowContext {
     required this.endsRun,
     required this.lastReadOutbox,
     this.startsForwards = false,
+    this.selecting = false,
+    this.selected = false,
   });
 
   /// Incoming messages show the sender's name and avatar.
@@ -68,6 +71,13 @@ class MessageRowContext {
 
   /// Outgoing messages up to this id are read by the other side.
   final int lastReadOutbox;
+
+  /// Messages are being selected: a check shows at the left of each row
+  /// and a click picks the row instead of acting on its content.
+  final bool selecting;
+
+  /// This row is among the selected ones.
+  final bool selected;
 }
 
 /// Callbacks of a message row.
@@ -80,6 +90,7 @@ class MessageRowActions {
     this.onOpen,
     this.onViewMedia,
     this.onJump,
+    this.onSelectToggle,
   });
 
   /// Adds the reaction, or takes it back when the user had chosen it.
@@ -104,6 +115,10 @@ class MessageRowActions {
 
   /// A click on a reply's quote, which scrolls to the message it answers.
   final void Function(int messageId)? onJump;
+
+  /// A click on a row while selecting: the row joins or leaves the
+  /// selection.
+  final void Function(MessageRow row)? onSelectToggle;
 }
 
 /// A message, or an album, in Telegram's flat layout: no bubbles, the
@@ -156,9 +171,11 @@ class MessageTile extends StatelessWidget {
     final c = MgColors.of(buildContext);
     final message = row.primary;
     if (message.isService) {
-      return ServiceMessage(
+      final service = ServiceMessage(
         describeService(l10n, store, message, isChannel: context.isChannel),
       );
+      // Chat events can't be selected; while selecting they just sit there.
+      return context.selecting ? IgnorePointer(child: service) : service;
     }
     final locale = Localizations.localeOf(buildContext).toLanguageTag();
     final info = message.message.interactionInfo;
@@ -277,11 +294,85 @@ class MessageTile extends StatelessWidget {
         ],
       ),
     );
-    if (onMenu == null) return tile;
+    final onSelectToggle = actions.onSelectToggle;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onSecondaryTapUp: (details) => onMenu(row, details.globalPosition),
-      child: tile,
+      onSecondaryTapUp: onMenu == null
+          ? null
+          : (details) => onMenu(row, details.globalPosition),
+      onTap: context.selecting && onSelectToggle != null
+          ? () => onSelectToggle(row)
+          : null,
+      child: _Selectable(
+        selecting: context.selecting,
+        selected: context.selected,
+        // The check sits level with the first line of the row.
+        top: context.startsRun ? 9 : 3,
+        child: tile,
+      ),
+    );
+  }
+}
+
+/// The check column that slides in at the left while selecting, and the
+/// accent tint over a selected row. The row's own controls stop taking
+/// clicks, which go to the selection instead.
+class _Selectable extends StatelessWidget {
+  const _Selectable({
+    required this.selecting,
+    required this.selected,
+    required this.top,
+    required this.child,
+  });
+
+  final bool selecting;
+  final bool selected;
+  final double top;
+  final Widget child;
+
+  static const double _column = SelectCheck.size + 12;
+  static const _duration = Duration(milliseconds: 200);
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    return AnimatedContainer(
+      duration: _duration,
+      curve: Curves.easeOutCubic,
+      decoration: BoxDecoration(
+        color: selected
+            ? c.accent.withValues(alpha: 0.12)
+            : const Color(0x00000000),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      // The check is laid over the row rather than beside it, so a short
+      // row keeps its height while selecting.
+      child: Stack(
+        children: [
+          AnimatedPadding(
+            duration: _duration,
+            curve: Curves.easeOutCubic,
+            padding: EdgeInsets.only(left: selecting ? _column : 0),
+            child: AbsorbPointer(absorbing: selecting, child: child),
+          ),
+          Positioned(
+            left: 4,
+            top: top,
+            child: IgnorePointer(
+              child: AnimatedSlide(
+                duration: _duration,
+                curve: Curves.easeOutCubic,
+                offset: selecting ? Offset.zero : const Offset(-1.3, 0),
+                child: AnimatedOpacity(
+                  duration: _duration,
+                  opacity: selecting ? 1 : 0,
+                  child: SelectCheck(selected: selected),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -794,7 +885,7 @@ class _LinkPreview extends StatelessWidget {
       description: preview.description.text,
       image: image,
       largeImage: large,
-      onTap: () => openLink(preview.url),
+      onTap: () => openLinkFrom(context, preview.url),
     );
   }
 }

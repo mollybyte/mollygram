@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 
@@ -9,10 +10,23 @@ void main() {
   late _FakeTdJson json;
   late td.Td tdlib;
   late AuthorizationController controller;
+  var failLogOut = false;
+  var hangLogOut = false;
 
   setUp(() {
+    failLogOut = false;
+    hangLogOut = false;
     json = _FakeTdJson((request) {
       switch (request['@type']) {
+        case 'logOut' when failLogOut:
+          return [
+            {'@type': 'error', 'code': 500, 'message': 'Request aborted'},
+          ];
+        case 'logOut' when hangLogOut:
+          // Accepted, but the client never reports itself closed.
+          return [
+            {'@type': 'ok'},
+          ];
         case 'getAuthorizationState':
           return [
             {'@type': 'authorizationStateWaitPhoneNumber'},
@@ -116,6 +130,40 @@ void main() {
     expect(json.sent.last['@type'], 'logOut');
     expect(stages.last.kind, AuthorizationStageKind.closing);
     await subscription.cancel();
+  });
+
+  test('marks the log out as its own only while it goes through', () async {
+    await controller.start();
+    failLogOut = true;
+
+    await expectLater(
+      controller.abandonQrCode(),
+      throwsA(isA<td.TdException>()),
+    );
+    expect(controller.logOutRequested, isFalse);
+
+    failLogOut = false;
+    await controller.abandonQrCode();
+    expect(controller.logOutRequested, isTrue);
+  });
+
+  test('fails a log out that does not close in time', () async {
+    await controller.start();
+    hangLogOut = true;
+
+    await expectLater(
+      controller.logOut(timeout: const Duration(milliseconds: 10)),
+      throwsA(isA<TimeoutException>()),
+    );
+  });
+
+  test('leaves the QR step even when the close is slow', () async {
+    await controller.start();
+    hangLogOut = true;
+
+    await controller.abandonQrCode(timeout: const Duration(milliseconds: 10));
+
+    expect(json.sent.last['@type'], 'logOut');
   });
 
   test('keeps the English country name for search', () async {

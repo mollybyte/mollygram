@@ -189,9 +189,9 @@ class _AccountFormState extends ConsumerState<_AccountForm> {
   late String _firstDraft = _profile.firstName;
   late String _lastDraft = _profile.lastName;
 
-  /// The username the latest check was for, so a late answer about an
-  /// older one is dropped.
-  String _checking = '';
+  /// Bumped on every edit, so a check answered after the text changed is
+  /// dropped.
+  int _usernameGeneration = 0;
 
   AccountProfile get _profile => widget.profile;
 
@@ -265,6 +265,7 @@ class _AccountFormState extends ConsumerState<_AccountForm> {
 
   void _usernameChanged(String value) {
     _usernameCheck?.cancel();
+    final generation = ++_usernameGeneration;
     final name = value.trim();
     setState(() => _usernameError = null);
     if (name.isEmpty || name.toLowerCase() == _profile.username.toLowerCase()) {
@@ -277,7 +278,6 @@ class _AccountFormState extends ConsumerState<_AccountForm> {
       return;
     }
     setState(() => _usernameNote = const _UsernameChecking());
-    _checking = name;
     _usernameCheck = Timer(const Duration(milliseconds: 350), () async {
       UsernameAvailability answer;
       try {
@@ -285,7 +285,7 @@ class _AccountFormState extends ConsumerState<_AccountForm> {
       } catch (_) {
         answer = UsernameAvailability.unavailable;
       }
-      if (!mounted || _checking != name) return;
+      if (!mounted || _usernameGeneration != generation) return;
       setState(() => _usernameNote = _UsernameAnswer(name, answer));
     });
   }
@@ -311,13 +311,14 @@ class _AccountFormState extends ConsumerState<_AccountForm> {
       return note.availability == UsernameAvailability.available;
     }
     _usernameCheck?.cancel();
+    final generation = _usernameGeneration;
     UsernameAvailability answer;
     try {
       answer = await _account.checkUsername(_profile.userId, name);
     } catch (_) {
       answer = UsernameAvailability.unavailable;
     }
-    if (mounted && _checking == name) {
+    if (mounted && _usernameGeneration == generation) {
       setState(() => _usernameNote = _UsernameAnswer(name, answer));
     }
     return answer == UsernameAvailability.available;
@@ -462,7 +463,7 @@ class _AccountFormState extends ConsumerState<_AccountForm> {
                   setState(() => _bioLength = v.characters.length),
               onFocusChanged: (f) => setState(() => _bioFocused = f),
               trailing: AnimatedOpacity(
-                duration: settingsMotion,
+                duration: settingsMotionOf(context),
                 opacity: _bioFocused ? 1 : 0,
                 child: Text(
                   '$remaining',

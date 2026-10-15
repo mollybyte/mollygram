@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
+import 'model/adjustments.dart';
 import 'model/crop_geometry.dart';
 import 'model/media_edit.dart';
 import 'model/overlay.dart';
@@ -13,6 +14,7 @@ import 'model/stroke.dart';
 import 'render/overlays.dart';
 import 'render/render.dart';
 import 'strings.dart';
+import 'ui/adjust_panel.dart';
 import 'ui/controls.dart';
 import 'ui/draw_panel.dart';
 import 'ui/editor_icons.dart';
@@ -78,7 +80,7 @@ Future<MediaEditResult?> showMediaEditor(
 );
 
 /// The editor's tools. [none] shows the result.
-enum EditorTool { none, crop, draw, text, emoji, shapes }
+enum EditorTool { none, crop, draw, text, emoji, shapes, adjust }
 
 /// The editor screen. Use [showMediaEditor] to open it.
 class MediaEditorPage extends StatefulWidget {
@@ -105,6 +107,7 @@ const _ease = Cubic(0.2, 0.8, 0.2, 1);
 class _MediaEditorPageState extends State<MediaEditorPage>
     with TickerProviderStateMixin {
   ui.Image? _image;
+  ui.Image? _pixelated;
   Size _source = Size.zero;
   var _loadFailed = false;
   var _saving = false;
@@ -136,6 +139,7 @@ class _MediaEditorPageState extends State<MediaEditorPage>
   final _textFocus = FocusNode();
   var _shapeColor = brushColors[1];
   var _shapeThickness = 0.35;
+  var _adjustment = Adjustment.brightness;
   late final _selection = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 160),
@@ -207,6 +211,12 @@ class _MediaEditorPageState extends State<MediaEditorPage>
         _source = source;
       });
       await _appear.forward();
+      final pixelated = await pixelatedCopy(image);
+      if (!mounted) {
+        pixelated.dispose();
+        return;
+      }
+      setState(() => _pixelated = pixelated);
     } on Object {
       if (mounted) setState(() => _loadFailed = true);
     }
@@ -215,6 +225,7 @@ class _MediaEditorPageState extends State<MediaEditorPage>
   @override
   void dispose() {
     _image?.dispose();
+    _pixelated?.dispose();
     _cropMode.dispose();
     _grid.dispose();
     _appear.dispose();
@@ -454,6 +465,7 @@ class _MediaEditorPageState extends State<MediaEditorPage>
       BrushTool.pen || BrushTool.arrow => base,
       BrushTool.marker => base * 2.4,
       BrushTool.eraser => base * 2.6,
+      BrushTool.blur || BrushTool.pixelate => base * 3,
     };
   }
 
@@ -640,6 +652,18 @@ class _MediaEditorPageState extends State<MediaEditorPage>
 
   void _setTextScale(double scale) =>
       _updateSelected((o) => o.placed(scale: scale), live: true);
+
+  void _setPreset(FilterPreset preset) =>
+      _commit(_edit.copyWith(adjustments: preset.look));
+
+  void _setAdjustment(double value) {
+    _beginLive();
+    setState(
+      () => _edit = _edit.copyWith(
+        adjustments: _edit.adjustments.set(_adjustment, value),
+      ),
+    );
+  }
 
   void _setShapeColor(Color color) {
     setState(() => _shapeColor = color);
@@ -891,8 +915,16 @@ class _MediaEditorPageState extends State<MediaEditorPage>
             children: [
               Positioned.fill(child: _Backdrop(colors: c)),
               Positioned.fill(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(32, 32, 32, 132),
+                child: AnimatedPadding(
+                  duration: const Duration(milliseconds: 260),
+                  curve: _ease,
+                  // The adjust panel has two rows, so the stage gives way.
+                  padding: EdgeInsets.fromLTRB(
+                    32,
+                    32,
+                    32,
+                    _tool == EditorTool.adjust ? 170 : 132,
+                  ),
                   child: _buildStage(context),
                 ),
               ),
@@ -939,6 +971,18 @@ class _MediaEditorPageState extends State<MediaEditorPage>
                         _ToolPanel(
                           visible: _tool == EditorTool.emoji,
                           child: EmojiGridPanel(onEmoji: _addEmoji),
+                        ),
+                        _ToolPanel(
+                          visible: _tool == EditorTool.adjust,
+                          child: AdjustPanel(
+                            values: _edit.adjustments,
+                            selected: _adjustment,
+                            onPreset: _setPreset,
+                            onSelect: (a) => setState(() => _adjustment = a),
+                            onChanged: _setAdjustment,
+                            onChangeStart: _beginLive,
+                            onChangeEnd: _endLive,
+                          ),
                         ),
                         _ToolPanel(
                           visible: _tool == EditorTool.shapes,
@@ -1049,6 +1093,7 @@ class _MediaEditorPageState extends State<MediaEditorPage>
                         frameOpacity: mode,
                         gridOpacity: _grid.value,
                         liveStroke: _liveStroke,
+                        pixelated: _pixelated,
                       ),
                     ),
                   ),
@@ -1113,6 +1158,12 @@ class _MediaEditorPageState extends State<MediaEditorPage>
               tooltip: s.shapes,
               selected: _tool == EditorTool.shapes,
               onPressed: ready ? () => _setTool(EditorTool.shapes) : null,
+            ),
+            MgIconButton(
+              icon: EditorIcons.adjust,
+              tooltip: s.adjust,
+              selected: _tool == EditorTool.adjust,
+              onPressed: ready ? () => _setTool(EditorTool.adjust) : null,
             ),
             const Spacer(),
             if (_saveFailed) ...[

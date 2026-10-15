@@ -437,6 +437,143 @@ class AppLocalizationsRu extends AppLocalizations {
   String get close => 'Закрыть';
 
   @override
+  String get peerInfo => 'Информация';
+
+  @override
+  String get statusOnline => 'в сети';
+
+  @override
+  String get lastSeenJustNow => 'был(а) только что';
+
+  @override
+  String lastSeenMinutesAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'был(а) $count минут назад',
+      few: 'был(а) $count минуты назад',
+      one: 'был(а) $count минуту назад',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String lastSeenToday(String time) {
+    return 'был(а) сегодня в $time';
+  }
+
+  @override
+  String lastSeenYesterday(String time) {
+    return 'был(а) вчера в $time';
+  }
+
+  @override
+  String lastSeenDate(String date) {
+    return 'был(а) $date';
+  }
+
+  @override
+  String get lastSeenRecently => 'был(а) недавно';
+
+  @override
+  String get lastSeenWeek => 'был(а) на этой неделе';
+
+  @override
+  String get lastSeenMonth => 'был(а) в этом месяце';
+
+  @override
+  String get lastSeenLongAgo => 'был(а) давно';
+
+  @override
+  String get statusBot => 'бот';
+
+  @override
+  String get deletedAccount => 'Удалённый аккаунт';
+
+  @override
+  String membersCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count участников',
+      few: '$count участника',
+      one: '$count участник',
+      zero: 'нет участников',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String subscribersCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count подписчиков',
+      few: '$count подписчика',
+      one: '$count подписчик',
+      zero: 'нет подписчиков',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get infoBio => 'О себе';
+
+  @override
+  String get infoUsername => 'Имя пользователя';
+
+  @override
+  String get infoPhone => 'Телефон';
+
+  @override
+  String get infoBirthday => 'День рождения';
+
+  @override
+  String get infoDescription => 'Описание';
+
+  @override
+  String get infoLink => 'Ссылка';
+
+  @override
+  String get copied => 'Скопировано';
+
+  @override
+  String get infoMessage => 'Написать';
+
+  @override
+  String get infoMute => 'Без звука';
+
+  @override
+  String get infoUnmute => 'Со звуком';
+
+  @override
+  String get blockUser => 'Заблокировать';
+
+  @override
+  String get unblockUser => 'Разблокировать';
+
+  @override
+  String blockConfirmTitle(String name) {
+    return 'Заблокировать $name?';
+  }
+
+  @override
+  String get blockConfirmMessage =>
+      'Пользователь не сможет писать и звонить вам.';
+
+  @override
+  String get block => 'Заблокировать';
+
+  @override
+  String get memberOwner => 'владелец';
+
+  @override
+  String get memberAdmin => 'админ';
+
+  @override
+  String get infoFailed => 'Не удалось загрузить информацию';
+
+  @override
   String fileSizeBytes(String size) {
     return '$size Б';
   }
@@ -912,6 +1049,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get connectedBot => 'Подключённый бизнес-бот';
 
   @override
+  String get connectedBotFailed => 'Не удалось загрузить подключённого бота';
+
+  @override
   String get connectedBotHint =>
       'Этот бот может читать ваши бизнес-чаты и отвечать в них.';
 
@@ -921,6 +1061,175 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String disconnectBotTitle(String name) {
     return 'Отключить $name?';
+  }
+
+  @override
+  String get appearance => 'Оформление';
+
+  @override
+  String get themeAuto => 'Авто';
+
+  @override
+  String get themeLight => 'Светлая';
+
+  @override
+  String get themeDark => 'Тёмная';
+
+  @override
+  String get accentColor => 'Цвет акцента';
+
+  @override
+  String get accentBlue => 'Синий';
+
+  @override
+  String get accentIndigo => 'Индиго';
+
+  @override
+  String get accentTeal => 'Бирюзовый';
+
+  @override
+  String get accentGreen => 'Зелёный';
+
+  @override
+  String get accentOrange => 'Оранжевый';
+
+  @override
+  String get accentGraphite => 'Графит';
+
+  @override
+  String get chatWallpaper => 'Обои в чатах';
+
+  @override
+  String get chatWallpaperHint => 'Если выключено, у чатов будет простой фон.';
+
+  @override
+  String get messageTextSize => 'Размер текста сообщений';
+
+  @override
+  String textSizeValue(String size) {
+    return '$size пт';
+  }
+
+  @override
+  String get previewSender => 'Анна';
+
+  @override
+  String get previewMessage => 'Доброе утро! Новые настройки отлично выглядят.';
+
+  @override
+  String get reduceMotion => 'Уменьшить движение';
+
+  @override
+  String get reduceMotionHint =>
+      'Отключает анимацию. Mollygram также учитывает одноимённую настройку универсального доступа macOS.';
+
+  @override
+  String get dataAndStorage => 'Данные и память';
+
+  @override
+  String get storageUsage => 'Хранилище';
+
+  @override
+  String get storageCalculating => 'Подсчёт…';
+
+  @override
+  String storageUsed(String size) {
+    return 'Медиа и файлы: $size';
+  }
+
+  @override
+  String get storageEmpty =>
+      'На этом компьютере нет сохранённых медиа и файлов.';
+
+  @override
+  String get storagePhotos => 'Фото';
+
+  @override
+  String get storageVideos => 'Видео';
+
+  @override
+  String get storageFiles => 'Файлы';
+
+  @override
+  String get storageVoiceAndMusic => 'Голосовые и музыка';
+
+  @override
+  String get storageStickers => 'Стикеры';
+
+  @override
+  String get storageOther => 'Другое';
+
+  @override
+  String get storageDatabase => 'База сообщений';
+
+  @override
+  String get storageHint =>
+      'Удалённые медиа остаются в облаке Telegram и загружаются снова, когда нужны. Сообщения сохраняются.';
+
+  @override
+  String get storageFailed => 'Не удалось подсчитать занятое место.';
+
+  @override
+  String get clearCache => 'Очистить кэш…';
+
+  @override
+  String clearCacheTitle(String size) {
+    return 'Удалить $size с этого компьютера?';
+  }
+
+  @override
+  String get clearCacheMessage =>
+      'Медиа останутся в облаке Telegram и загрузятся снова, когда вы их откроете.';
+
+  @override
+  String get clear => 'Очистить';
+
+  @override
+  String get clearCacheFailed => 'Не удалось очистить кэш.';
+
+  @override
+  String get autoDownload => 'Автозагрузка медиа';
+
+  @override
+  String get autoDownloadWifi => 'По Wi-Fi и Ethernet';
+
+  @override
+  String get autoDownloadOther => 'В других сетях';
+
+  @override
+  String get autoDownloadHint =>
+      'Другие сети — это режим модема и прочие лимитные подключения.';
+
+  @override
+  String get downloadFolder => 'Папка загрузок';
+
+  @override
+  String get downloadFolderDefault => 'Загрузки';
+
+  @override
+  String get chooseFolder => 'Выбрать…';
+
+  @override
+  String get downloadFolderHint => 'Сюда сохраняются файлы из чатов.';
+
+  @override
+  String sizeBytes(String size) {
+    return '$size Б';
+  }
+
+  @override
+  String sizeKilobytes(String size) {
+    return '$size КБ';
+  }
+
+  @override
+  String sizeMegabytes(String size) {
+    return '$size МБ';
+  }
+
+  @override
+  String sizeGigabytes(String size) {
+    return '$size ГБ';
   }
 
   @override
@@ -1049,6 +1358,81 @@ class AppLocalizationsRu extends AppLocalizations {
   String get nextReaction => 'Следующая реакция';
 
   @override
+  String get linkJoinChannel => 'Подписаться на канал';
+
+  @override
+  String get linkJoinGroup => 'Вступить в группу';
+
+  @override
+  String get linkRequestToJoin => 'Подать заявку';
+
+  @override
+  String get linkViewChannel => 'Открыть канал';
+
+  @override
+  String get linkViewGroup => 'Открыть группу';
+
+  @override
+  String linkSubscribers(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString подписчиков',
+      few: '$countString подписчика',
+      one: '$countString подписчик',
+      zero: 'Нет подписчиков',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String linkMembers(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString участников',
+      few: '$countString участника',
+      one: '$countString участник',
+      zero: 'Нет участников',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get linkApprovalHint => 'Заявку должен одобрить администратор.';
+
+  @override
+  String get linkRequestSent => 'Заявка отправлена';
+
+  @override
+  String get linkRequestSentHint =>
+      'Вы вступите, когда администратор её одобрит.';
+
+  @override
+  String get linkJoinFailed => 'Не удалось вступить. Попробуйте позже.';
+
+  @override
+  String get linkMissing => 'Ссылка недействительна или устарела.';
+
+  @override
+  String get linkUnsupported =>
+      'Mollygram пока не умеет открывать такие ссылки.';
+
+  @override
+  String get done => 'Готово';
+
+  @override
+  String get linkForbidden => 'Вы не можете просматривать этот чат.';
+
+  @override
   String get menuPin => 'Закрепить';
 
   @override
@@ -1067,4 +1451,99 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get backToPrevious => 'Вернуться назад';
+
+  @override
+  String get searchInChat => 'Поиск в чате';
+
+  @override
+  String searchCounter(int index, int count) {
+    return '$index из $count';
+  }
+
+  @override
+  String get searchNoResults => 'Ничего не найдено';
+
+  @override
+  String get searchOlder => 'Предыдущий результат';
+
+  @override
+  String get searchNewer => 'Следующий результат';
+
+  @override
+  String get sharedMedia => 'Общие материалы';
+
+  @override
+  String get sharedMediaTab => 'Медиа';
+
+  @override
+  String get sharedFilesTab => 'Файлы';
+
+  @override
+  String get sharedLinksTab => 'Ссылки';
+
+  @override
+  String get sharedVoiceTab => 'Голосовые';
+
+  @override
+  String get sharedMusicTab => 'Музыка';
+
+  @override
+  String get sharedMediaEmpty => 'Здесь пока нет фото и видео';
+
+  @override
+  String get sharedFilesEmpty => 'Здесь пока нет файлов';
+
+  @override
+  String get sharedLinksEmpty => 'Здесь пока нет ссылок';
+
+  @override
+  String get sharedVoiceEmpty => 'Здесь пока нет голосовых сообщений';
+
+  @override
+  String get sharedMusicEmpty => 'Здесь пока нет музыки';
+
+  @override
+  String get sharedLoadFailed => 'Не удалось загрузить список';
+
+  @override
+  String get showInChat => 'Показать в чате';
+
+  @override
+  String get joinChannel => 'Подписаться';
+
+  @override
+  String get joinGroup => 'Вступить в группу';
+
+  @override
+  String get muteChat => 'Без звука';
+
+  @override
+  String get unmuteChat => 'Включить звук';
+
+  @override
+  String get chatUnavailable => 'Вы не можете участвовать в этом чате';
+
+  @override
+  String get chatActionFailed => 'Не получилось, попробуйте ещё раз';
+
+  @override
+  String get menuSelect => 'Выбрать';
+
+  @override
+  String selectedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Выбрано $count сообщений',
+      few: 'Выбрано $count сообщения',
+      one: 'Выбрано $count сообщение',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get clearSelection => 'Снять выделение';
+
+  @override
+  String get copy => 'Копировать';
 }
