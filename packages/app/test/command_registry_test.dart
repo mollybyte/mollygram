@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mollygram/src/commands/command_registry.dart';
+import 'package:mollygram/src/commands/shortcut_key.dart';
 import 'package:mollygram_shell/mollygram_shell.dart';
 
 void main() {
@@ -99,8 +100,11 @@ void main() {
         ],
       );
     final bindings = registry.shortcutsOf('app');
-    expect(bindings.keys, [key]);
-    bindings[key]!();
+    expect(
+      [for (final k in bindings.keys) ShortcutKey.of(k as SingleActivator)],
+      [ShortcutKey.of(key)],
+    );
+    bindings.values.single();
     expect(ran, ['app.a']);
   });
 }

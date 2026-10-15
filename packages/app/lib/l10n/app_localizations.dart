@@ -4225,6 +4225,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Deleted chat'**
   String get folderDeletedChat;
+
+  /// No description provided for @keyboardShortcuts.
+  ///
+  /// In en, this message translates to:
+  /// **'Keyboard shortcuts'**
+  String get keyboardShortcuts;
+
+  /// No description provided for @shortcutsSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search shortcuts'**
+  String get shortcutsSearch;
+
+  /// No description provided for @shortcutsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Click a shortcut, then press the new keys. Esc cancels, Delete removes the shortcut.'**
+  String get shortcutsHint;
+
+  /// No description provided for @shortcutsGroupApp.
+  ///
+  /// In en, this message translates to:
+  /// **'App'**
+  String get shortcutsGroupApp;
+
+  /// No description provided for @shortcutsGroupChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat'**
+  String get shortcutsGroupChat;
+
+  /// No description provided for @shortcutsGroupNavigation.
+  ///
+  /// In en, this message translates to:
+  /// **'Navigation'**
+  String get shortcutsGroupNavigation;
+
+  /// No description provided for @shortcutsGroupAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Accounts'**
+  String get shortcutsGroupAccounts;
+
+  /// No description provided for @shortcutsGroupPlugins.
+  ///
+  /// In en, this message translates to:
+  /// **'Plugins'**
+  String get shortcutsGroupPlugins;
+
+  /// No description provided for @shortcutNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get shortcutNone;
+
+  /// No description provided for @shortcutRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Type a shortcut'**
+  String get shortcutRecording;
+
+  /// No description provided for @shortcutChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Change shortcut'**
+  String get shortcutChange;
+
+  /// No description provided for @shortcutNeedsModifier.
+  ///
+  /// In en, this message translates to:
+  /// **'Add ⌘, ⌃ or ⌥ to the key'**
+  String get shortcutNeedsModifier;
+
+  /// No description provided for @shortcutUsedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Already used by “{title}”'**
+  String shortcutUsedBy(String title);
+
+  /// No description provided for @shortcutReplace.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace'**
+  String get shortcutReplace;
+
+  /// No description provided for @shortcutRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore default'**
+  String get shortcutRestore;
+
+  /// No description provided for @shortcutsRestoreAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore defaults'**
+  String get shortcutsRestoreAll;
+
+  /// No description provided for @shortcutsRestoreAllTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore all shortcuts?'**
+  String get shortcutsRestoreAllTitle;
+
+  /// No description provided for @shortcutsRestoreAllMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Every shortcut you changed goes back to its default.'**
+  String get shortcutsRestoreAllMessage;
+
+  /// No description provided for @shortcutsRestoreConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get shortcutsRestoreConfirm;
 }
 
 class _AppLocalizationsDelegate

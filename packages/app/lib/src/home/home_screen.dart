@@ -60,8 +60,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     super.initState();
     _registry
       ..register('app', _commands)
-      ..register('shell', _shellCommands);
+      ..register('shell', _shellCommands)
+      ..registerShortcuts('shell', _shellShortcuts)
+      ..addListener(_keysChanged);
   }
+
+  /// The user changed a key: the bindings are built again.
+  void _keysChanged() => setState(() {});
 
   @override
   void didChangeDependencies() {
@@ -75,8 +80,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void dispose() {
     _registry
+      ..removeListener(_keysChanged)
       ..unregister('app', _commands)
-      ..unregister('shell', _shellCommands);
+      ..unregister('shell', _shellCommands)
+      ..unregisterShortcuts('shell', _shellShortcuts);
     super.dispose();
   }
 
@@ -123,6 +130,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ];
   }
 
+  List<ShortcutAction> _shellShortcuts() => shellShortcutActions(_shellStrings);
+
   List<PaletteCommand> _shellCommands() =>
       shellCommands(ref.read(workspaceControllerProvider), _shellStrings);
 
@@ -130,6 +139,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final workspace = ref.watch(workspaceControllerProvider);
     final directory = ref.watch(chatDirectoryProvider);
+    final keys = _registry.effectiveKeys();
     final home = CallbackShortcuts(
       // The shell binds its own shortcuts.
       bindings: _registry.shortcutsOf('app'),
@@ -143,6 +153,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 controller: workspace,
                 directory: directory,
                 commandSource: () => _registry.commands,
+                shortcuts: (id) => keys[id]?.activator,
                 sidebar: Padding(
                   padding: const EdgeInsets.all(8),
                   child: Stack(

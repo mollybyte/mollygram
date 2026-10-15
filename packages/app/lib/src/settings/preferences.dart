@@ -53,6 +53,7 @@ final class Preferences {
     this.reduceMotion = false,
     this.autoDownload = defaultAutoDownload,
     this.downloadFolder,
+    this.shortcuts = const {},
   });
 
   static const minTextSize = 12;
@@ -82,6 +83,10 @@ final class Preferences {
   /// Where saved files go; null for the system Downloads folder.
   final String? downloadFolder;
 
+  /// Keyboard shortcuts the user changed, by action id: an encoded
+  /// `ShortcutKey`, or null for an action they took the key from.
+  final Map<String, String?> shortcuts;
+
   AutoDownload autoDownloadOf(AutoDownloadKind kind) =>
       autoDownload[kind] ?? defaultAutoDownload[kind]!;
 
@@ -93,6 +98,7 @@ final class Preferences {
     bool? reduceMotion,
     Map<AutoDownloadKind, AutoDownload>? autoDownload,
     String? downloadFolder,
+    Map<String, String?>? shortcuts,
   }) => Preferences(
     theme: theme ?? this.theme,
     accent: accent ?? this.accent,
@@ -101,6 +107,7 @@ final class Preferences {
     reduceMotion: reduceMotion ?? this.reduceMotion,
     autoDownload: autoDownload ?? this.autoDownload,
     downloadFolder: downloadFolder ?? this.downloadFolder,
+    shortcuts: shortcuts ?? this.shortcuts,
   );
 
   /// The same with [kind] changed.
@@ -118,6 +125,7 @@ final class Preferences {
         kind.name: autoDownloadOf(kind).toJson(),
     },
     'downloadFolder': ?downloadFolder,
+    if (shortcuts.isNotEmpty) 'shortcuts': shortcuts,
   };
 
   /// Reads what [toJson] wrote. Anything missing or unknown, say from an
@@ -128,6 +136,7 @@ final class Preferences {
     final downloads = json['autoDownload'];
     final size = json['textSize'];
     final folder = json['downloadFolder'];
+    final shortcuts = json['shortcuts'];
     return Preferences(
       theme: _byName(ThemeMode.values, json['theme']) ?? defaults.theme,
       accent: _byName(AccentChoice.values, json['accent']) ?? defaults.accent,
@@ -144,6 +153,12 @@ final class Preferences {
           ),
       },
       downloadFolder: folder is String && folder.isNotEmpty ? folder : null,
+      shortcuts: {
+        if (shortcuts is Map)
+          for (final MapEntry(:key, :value) in shortcuts.entries)
+            if (key is String && (value == null || value is String))
+              key: value as String?,
+      },
     );
   }
 }
