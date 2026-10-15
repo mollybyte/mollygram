@@ -29,10 +29,46 @@ ThemeData buildMgTheme(
     extensions: [colors, metrics],
   );
   return base.copyWith(
-    textTheme: base.textTheme.apply(
-      bodyColor: colors.fg,
-      displayColor: colors.fg,
+    textTheme: _unified(
+      base.textTheme.apply(bodyColor: colors.fg, displayColor: colors.fg),
     ),
+  );
+}
+
+/// Material's text theme tracks and spaces its lines its own way (+0.25 and
+/// 1.43 for body text). A style that names only a size inherits both from
+/// the ambient text style, so the same 13 px came out differently wherever
+/// no [mgTextStyle] sat above it. Every role gets the system tracking and
+/// the UI's line height instead.
+TextTheme _unified(TextTheme theme) {
+  TextStyle? unify(TextStyle? style, {bool ambient = false}) {
+    if (style == null) return null;
+    return style.copyWith(
+      fontFamily: mgFontFamily,
+      fontFamilyFallback: mgFontFamilyFallback,
+      height: 1.4,
+      // Text that sets only its size inherits this: no tracking of its own
+      // at the body size, so it never gets the tracking of another size.
+      letterSpacing: ambient ? 0 : mgTracking(style.fontSize ?? MgType.body),
+    );
+  }
+
+  return theme.copyWith(
+    displayLarge: unify(theme.displayLarge),
+    displayMedium: unify(theme.displayMedium),
+    displaySmall: unify(theme.displaySmall),
+    headlineLarge: unify(theme.headlineLarge),
+    headlineMedium: unify(theme.headlineMedium),
+    headlineSmall: unify(theme.headlineSmall),
+    titleLarge: unify(theme.titleLarge),
+    titleMedium: unify(theme.titleMedium),
+    titleSmall: unify(theme.titleSmall),
+    bodyLarge: unify(theme.bodyLarge),
+    bodyMedium: unify(theme.bodyMedium, ambient: true),
+    bodySmall: unify(theme.bodySmall),
+    labelLarge: unify(theme.labelLarge),
+    labelMedium: unify(theme.labelMedium),
+    labelSmall: unify(theme.labelSmall),
   );
 }
 
