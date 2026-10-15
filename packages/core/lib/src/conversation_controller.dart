@@ -500,18 +500,24 @@ final class ConversationController {
   }
 
   /// Sends local files, grouped into albums as [groupForSending] does.
-  /// [caption] goes under the first file, and the first message answers
-  /// [replyTo] when it is set.
+  /// [caption], formatted by [captionEntities], goes under the first
+  /// file, and the first message answers [replyTo] when it is set.
   Future<void> sendFiles(
     int chatId,
     List<OutgoingFile> files, {
     String caption = '',
+    List<td.TextEntity> captionEntities = const [],
     int? replyTo,
   }) async {
     // A caption longer than the server takes goes first as its own
     // message, as the official apps do.
     if (caption.trim().isNotEmpty && caption.length > await _captionLimit()) {
-      await sendText(chatId, caption, replyTo: replyTo);
+      await sendText(
+        chatId,
+        caption,
+        replyTo: replyTo,
+        entities: captionEntities,
+      );
       caption = '';
       replyTo = null;
     }
@@ -529,7 +535,7 @@ final class ConversationController {
           inputContentOf(
             file,
             caption: first && i == 0 && caption.trim().isNotEmpty
-                ? td.FormattedText(text: caption, entities: const [])
+                ? td.FormattedText(text: caption, entities: captionEntities)
                 : null,
           ),
       ];
@@ -573,11 +579,11 @@ final class ConversationController {
     final current = content == null ? null : captionOf(content);
     final formatted = td.FormattedText(
       text: text,
-      entities:
-          entities ??
-          (current == null
-              ? const []
-              : carryEntities(current.text, text, current.entities)),
+      entities: current == null
+          ? entities ?? const []
+          : entities == null
+          ? carryEntities(current.text, text, current.entities)
+          : keepHiddenEntities(current.text, text, current.entities, entities),
     );
     if (content == null || content is td.MessageText) {
       await _client.send(

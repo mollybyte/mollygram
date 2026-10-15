@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/cupertino.dart'
+    show CupertinoDesktopTextSelectionToolbarButton;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -234,12 +236,9 @@ class _ComposerState extends State<Composer> {
 
   Future<void> _askLink(RichTextEditingController text) async {
     final selection = text.selection;
-    var initial = text.selectedLink ?? '';
-    if (initial.isEmpty) {
-      final clip = (await Clipboard.getData(Clipboard.kTextPlain))?.text ?? '';
-      if (looksLikeUrl(clip)) initial = clip.trim();
-    }
-    if (!mounted) return;
+    // Not prefilled from the clipboard: reading it without a paste would
+    // make macOS ask the user for permission.
+    final initial = text.selectedLink ?? '';
     final url = await showLinkSheet(
       context,
       labels: widget.labels.format!,
@@ -255,21 +254,62 @@ class _ComposerState extends State<Composer> {
   Widget _contextMenu(BuildContext context, EditableTextState state) {
     final labels = widget.labels.format;
     final text = _text;
-    final items = [...state.contextMenuButtonItems];
-    if (labels != null &&
-        text is RichTextEditingController &&
-        !text.selection.isCollapsed) {
-      void run(VoidCallback action) {
-        ContextMenuController.removeAny();
-        action();
-      }
+    final system = AdaptiveTextSelectionToolbar.getAdaptiveButtons(
+      context,
+      state.contextMenuButtonItems,
+    ).toList();
+    if (labels == null ||
+        text is! RichTextEditingController ||
+        text.selection.isCollapsed) {
+      return AdaptiveTextSelectionToolbar(
+        anchors: state.contextMenuAnchors,
+        children: system,
+      );
+    }
+    void run(VoidCallback action) {
+      ContextMenuController.removeAny();
+      action();
+    }
 
-      ContextMenuButtonItem toggle(String label, TextFormat format) =>
-          ContextMenuButtonItem(
-            label: label,
-            onPressed: () => run(() => text.toggle(format)),
-          );
-      items.addAll([
+    Widget item(String label, VoidCallback action, {bool on = false}) {
+      // Formats already on get a checkmark, as in a macOS menu.
+      final content = Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 16,
+            child: on ? const Text('\u2713') : null,
+          ),
+          Text(label),
+        ],
+      );
+      void pressed() => run(action);
+      return defaultTargetPlatform == TargetPlatform.macOS
+          ? CupertinoDesktopTextSelectionToolbarButton(
+              onPressed: pressed,
+              child: content,
+            )
+          : DesktopTextSelectionToolbarButton(
+              onPressed: pressed,
+              child: content,
+            );
+    }
+
+    Widget toggle(String label, TextFormat format) => item(
+      label,
+      () => text.toggle(format),
+      on: text.isActive(format),
+    );
+    final c = MgColors.of(context);
+    return AdaptiveTextSelectionToolbar(
+      anchors: state.contextMenuAnchors,
+      children: [
+        ...system,
+        Container(
+          height: 1,
+          margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          color: c.separator,
+        ),
         toggle(labels.bold, TextFormat.bold),
         toggle(labels.italic, TextFormat.italic),
         toggle(labels.underline, TextFormat.underline),
@@ -277,19 +317,13 @@ class _ComposerState extends State<Composer> {
         toggle(labels.monospace, TextFormat.monospace),
         toggle(labels.spoiler, TextFormat.spoiler),
         toggle(labels.quote, TextFormat.quote),
-        ContextMenuButtonItem(
-          label: labels.link,
-          onPressed: () => run(() => unawaited(_askLink(text))),
+        item(
+          labels.link,
+          () => unawaited(_askLink(text)),
+          on: text.selectedLink != null,
         ),
-        ContextMenuButtonItem(
-          label: labels.plain,
-          onPressed: () => run(text.clearFormatting),
-        ),
-      ]);
-    }
-    return AdaptiveTextSelectionToolbar.buttonItems(
-      anchors: state.contextMenuAnchors,
-      buttonItems: items,
+        item(labels.plain, text.clearFormatting),
+      ],
     );
   }
 
@@ -317,6 +351,15 @@ class _ComposerState extends State<Composer> {
     if (command &&
         !keyboard.isAltPressed &&
         text is RichTextEditingController) {
+      // Undo and redo bring the formatting back with the text.
+      final key = event.logicalKey;
+      if (key == LogicalKeyboardKey.keyZ ||
+          (!mac && key == LogicalKeyboardKey.keyY)) {
+        final redo = key == LogicalKeyboardKey.keyY || keyboard.isShiftPressed;
+        return text.prepareUndo(redo: redo)
+            ? KeyEventResult.handled
+            : KeyEventResult.ignored;
+      }
       final result = _onFormatKey(event, text);
       if (result == KeyEventResult.handled) return result;
     }
@@ -485,28 +528,52 @@ class _ComposerState extends State<Composer> {
       heightFactor: 1,
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: Composer.maxWidth),
-        child: suggestions.isEmpty
-            ? composer
-            : Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 320),
-                    child: ComposerSuggestionList(
-                      suggestions: suggestions,
-                      highlighted: _highlighted.clamp(
-                        0,
-                        suggestions.length - 1,
-                      ),
-                      onPick: (i) => widget.onSuggestion?.call(i),
-                      onHover: (i) => setState(() => _highlighted = i),
-                    ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // The list grows in over the composer rather than popping up.
+            AnimatedSize(
+              duration: const Duration(milliseconds: 160),
+              curve: Curves.easeOutCubic,
+              alignment: Alignment.bottomLeft,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 160),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                transitionBuilder: (child, animation) => FadeTransition(
+                  opacity: animation,
+                  child: SlideTransition(
+                    position: Tween(
+                      begin: const Offset(0, 0.06),
+                      end: Offset.zero,
+                    ).animate(animation),
+                    child: child,
                   ),
-                  const SizedBox(height: 6),
-                  composer,
-                ],
+                ),
+                child: suggestions.isEmpty
+                    ? const SizedBox(key: ValueKey('none'), width: 0)
+                    : Padding(
+                        key: const ValueKey('suggestions'),
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 320),
+                          child: ComposerSuggestionList(
+                            suggestions: suggestions,
+                            highlighted: _highlighted.clamp(
+                              0,
+                              suggestions.length - 1,
+                            ),
+                            onPick: (i) => widget.onSuggestion?.call(i),
+                            onHover: (i) => setState(() => _highlighted = i),
+                          ),
+                        ),
+                      ),
               ),
+            ),
+            composer,
+          ],
+        ),
       ),
     );
   }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 
 import '../theme/colors.dart';
@@ -25,6 +27,43 @@ class RichTextEditingController extends TextEditingController {
   /// Formats ⌘B and the like set for the text typed next at the caret.
   Set<TextFormat> get typingFormats => Set.unmodifiable(_typing);
 
+  /// The drafts before recent changes, newest last, so undo and redo
+  /// bring their formatting back with the text.
+  final List<(String, List<FormatRange>)> _history = [];
+  static const _historyLimit = 100;
+
+  /// Set by [prepareUndo] for the text change undo or redo makes next.
+  var _undoing = false;
+
+  void _remember(String text, List<FormatRange> ranges) {
+    if (_history.isNotEmpty &&
+        _history.last.$1 == text &&
+        identical(_history.last.$2, ranges)) {
+      return;
+    }
+    _history.add((text, ranges));
+    if (_history.length > _historyLimit) _history.removeAt(0);
+  }
+
+  /// ⌘Z or ⇧⌘Z is about to change the text. When the last change only
+  /// formatted the text, an undo takes that back here and returns true;
+  /// otherwise the field's own undo runs, and the formatting the text had
+  /// at that point comes back with it.
+  bool prepareUndo({bool redo = false}) {
+    if (!redo &&
+        _history.isNotEmpty &&
+        _history.last.$1 == text &&
+        !identical(_history.last.$2, _ranges)) {
+      _ranges = _history.removeLast().$2;
+      notifyListeners();
+      return true;
+    }
+    _undoing = true;
+    // Undo changes the text at once; whatever comes later is typing.
+    scheduleMicrotask(() => _undoing = false);
+    return false;
+  }
+
   @override
   set value(TextEditingValue newValue) {
     final old = super.value;
@@ -35,7 +74,22 @@ class RichTextEditingController extends TextEditingController {
               old.selection.baseOffset == _typingAt
           ? _typing
           : const <TextFormat>{};
-      _ranges = shiftForEdit(_ranges, old.text, newValue.text, typing: typing);
+      _remember(old.text, _ranges);
+      final restored = _undoing
+          ? _history.lastIndexWhere((entry) => entry.$1 == newValue.text)
+          : -1;
+      _undoing = false;
+      _ranges = restored >= 0
+          ? _history[restored].$2
+          : shiftForEdit(
+              _ranges,
+              old.text,
+              newValue.text,
+              typing: typing,
+              selection: old.selection.isValid
+                  ? (old.selection.start, old.selection.end)
+                  : null,
+            );
       final caret = newValue.selection;
       if (typing.isNotEmpty && caret.isCollapsed) {
         _typingAt = caret.baseOffset;
@@ -94,6 +148,7 @@ class RichTextEditingController extends TextEditingController {
       notifyListeners();
       return;
     }
+    _remember(text, _ranges);
     _ranges = toggleFormat(_ranges, format, selection.start, selection.end);
     notifyListeners();
   }
@@ -103,6 +158,7 @@ class RichTextEditingController extends TextEditingController {
   void setLink(String url) {
     final selection = value.selection;
     if (!selection.isValid || selection.isCollapsed) return;
+    _remember(text, _ranges);
     _ranges = toggleFormat(
       _ranges,
       TextFormat.link,
@@ -121,6 +177,7 @@ class RichTextEditingController extends TextEditingController {
     for (final format in TextFormat.values) {
       ranges = removeFormat(ranges, format, selection.start, selection.end);
     }
+    _remember(text, _ranges);
     _ranges = ranges;
     notifyListeners();
   }
@@ -194,9 +251,13 @@ class RichTextEditingController extends TextEditingController {
     required bool withComposing,
   }) {
     final composing = value.composing;
-    // While an input method is composing, its underline matters more.
-    if (_ranges.isEmpty ||
-        (withComposing && composing.isValid && !composing.isCollapsed)) {
+    // An input method's marked text is underlined over the formatting.
+    final marked =
+        withComposing &&
+        composing.isValid &&
+        !composing.isCollapsed &&
+        composing.end <= text.length;
+    if (_ranges.isEmpty && !marked) {
       return super.buildTextSpan(
         context: context,
         style: style,
@@ -208,8 +269,13 @@ class RichTextEditingController extends TextEditingController {
     for (final range in _ranges) {
       if (range.end > text.length) continue;
       cuts
-        ..add(range.start)
-        ..add(range.end);
+        ..add(snapToCharacter(text, range.start))
+        ..add(snapToCharacter(text, range.end));
+    }
+    if (marked) {
+      cuts
+        ..add(composing.start)
+        ..add(composing.end);
     }
     final points = cuts.toList()..sort();
     final children = <TextSpan>[];
@@ -217,15 +283,21 @@ class RichTextEditingController extends TextEditingController {
       final start = points[i];
       final end = points[i + 1];
       if (start == end) continue;
-      children.add(
-        TextSpan(
-          text: text.substring(start, end),
-          style: styleFor({
-            for (final range in _ranges)
-              if (range.start <= start && range.end >= end) range.format,
-          }, colors),
-        ),
-      );
+      var piece = styleFor({
+        for (final range in _ranges)
+          if (snapToCharacter(text, range.start) <= start &&
+              snapToCharacter(text, range.end) >= end)
+            range.format,
+      }, colors);
+      if (marked && start >= composing.start && end <= composing.end) {
+        piece = piece.copyWith(
+          decoration: TextDecoration.combine([
+            ?piece.decoration,
+            TextDecoration.underline,
+          ]),
+        );
+      }
+      children.add(TextSpan(text: text.substring(start, end), style: piece));
     }
     return TextSpan(style: style, children: children);
   }

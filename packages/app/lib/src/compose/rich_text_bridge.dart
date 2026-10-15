@@ -6,31 +6,36 @@ import '../../l10n/app_localizations.dart';
 /// The draft as TDLib takes it: Markdown shortcuts applied on top of the
 /// formatting set in the field, then each range as a TDLib entity.
 td.FormattedText formattedDraft(String text, List<FormatRange> ranges) {
-  final (converted, formats) = applyMarkdown(text, ranges);
+  var (converted, formats) = applyMarkdown(text, ranges);
+  // Markers around nothing but spaces leave nothing worth sending.
+  if (converted.trim().isEmpty) (converted, formats) = ('', const []);
   return td.FormattedText(
     text: converted,
     entities: [
       for (final range in formats)
-        td.TextEntity(
-          offset: range.start,
-          length: range.length,
-          type: switch (range.format) {
-            TextFormat.bold => const td.TextEntityTypeBold(),
-            TextFormat.italic => const td.TextEntityTypeItalic(),
-            TextFormat.underline => const td.TextEntityTypeUnderline(),
-            TextFormat.strikethrough => const td.TextEntityTypeStrikethrough(),
-            TextFormat.spoiler => const td.TextEntityTypeSpoiler(),
-            TextFormat.quote => const td.TextEntityTypeBlockQuote(),
-            TextFormat.monospace =>
-              converted.substring(range.start, range.end).contains('\n')
-                  ? const td.TextEntityTypePre()
-                  : const td.TextEntityTypeCode(),
-            TextFormat.link => td.TextEntityTypeTextUrl(url: range.url ?? ''),
-            TextFormat.mention => td.TextEntityTypeMentionName(
-              userId: range.userId ?? 0,
-            ),
-          },
-        ),
+        // A mention whose user is unknown would name nobody.
+        if (range.format != TextFormat.mention || range.userId != null)
+          td.TextEntity(
+            offset: range.start,
+            length: range.length,
+            type: switch (range.format) {
+              TextFormat.bold => const td.TextEntityTypeBold(),
+              TextFormat.italic => const td.TextEntityTypeItalic(),
+              TextFormat.underline => const td.TextEntityTypeUnderline(),
+              TextFormat.strikethrough =>
+                const td.TextEntityTypeStrikethrough(),
+              TextFormat.spoiler => const td.TextEntityTypeSpoiler(),
+              TextFormat.quote => const td.TextEntityTypeBlockQuote(),
+              TextFormat.monospace =>
+                converted.substring(range.start, range.end).contains('\n')
+                    ? const td.TextEntityTypePre()
+                    : const td.TextEntityTypeCode(),
+              TextFormat.link => td.TextEntityTypeTextUrl(url: range.url ?? ''),
+              TextFormat.mention => td.TextEntityTypeMentionName(
+                userId: range.userId!,
+              ),
+            },
+          ),
     ],
   );
 }

@@ -170,19 +170,39 @@ List<FormatRange> shiftForEdit(
   String before,
   String after, {
   Set<TextFormat> typing = const {},
+  (int, int)? selection,
 }) {
   if (before == after) return ranges;
+  // Typing and pasting replace the selection; when the texts agree with
+  // that, the edit is exactly there, even where the texts alone can't
+  // tell (typing "a" before or after another "a").
+  if (selection case (final start, final end)
+      when start >= 0 &&
+          start <= end &&
+          end <= before.length &&
+          after.length - (before.length - end) >= start &&
+          after.startsWith(before.substring(0, start)) &&
+          after.endsWith(before.substring(end))) {
+    final inserted = after.length - (before.length - end) - start;
+    return _applyEdit(ranges, start, end, inserted, after.length, typing);
+  }
   var p = 0;
   final shortest = before.length < after.length ? before.length : after.length;
   while (p < shortest && before.codeUnitAt(p) == after.codeUnitAt(p)) {
     p++;
   }
+  // Never between the halves of an emoji: both texts share the high
+  // surrogate, but the character it starts was changed.
+  if (p > 0 && _isHighSurrogate(before.codeUnitAt(p - 1))) p--;
   var suffix = 0;
   while (suffix < before.length - p &&
       suffix < after.length - p &&
       before.codeUnitAt(before.length - 1 - suffix) ==
           after.codeUnitAt(after.length - 1 - suffix)) {
     suffix++;
+  }
+  if (suffix > 0 && _isLowSurrogate(after.codeUnitAt(after.length - suffix))) {
+    suffix--;
   }
   return _applyEdit(
     ranges,
@@ -193,6 +213,20 @@ List<FormatRange> shiftForEdit(
     typing,
   );
 }
+
+bool _isHighSurrogate(int unit) => unit >= 0xD800 && unit <= 0xDBFF;
+
+bool _isLowSurrogate(int unit) => unit >= 0xDC00 && unit <= 0xDFFF;
+
+/// Moves [index] back off the second half of a surrogate pair in [text],
+/// so a cut there keeps the emoji whole.
+int snapToCharacter(String text, int index) =>
+    index > 0 &&
+        index < text.length &&
+        _isLowSurrogate(text.codeUnitAt(index)) &&
+        _isHighSurrogate(text.codeUnitAt(index - 1))
+    ? index - 1
+    : index;
 
 /// [ranges] after `[p, q)` of the old text was replaced by [inserted]
 /// code units, giving a text [length] long.
@@ -234,8 +268,11 @@ List<FormatRange> _applyEdit(
 
 /// Markdown markers the composer turns into formatting on send, in the
 /// order they are looked for: code first, so markers inside it stay text.
+/// Each content starts and ends with something other than a space.
 final _markdown = <(RegExp, TextFormat)>[
   (RegExp(r'```([^`][\s\S]*?)```'), TextFormat.monospace),
+  // Double backticks hold code with backticks in it: `` `x` ``.
+  (RegExp(r'``(?!`) ?([^ \n](?:[^\n]*?[^ \n])?) ?``'), TextFormat.monospace),
   (RegExp(r'`([^`\n]+)`'), TextFormat.monospace),
   (RegExp(r'\*\*([^*\s](?:[^\n]*?[^*\s])?)\*\*'), TextFormat.bold),
   (RegExp(r'__([^_\s](?:[^\n]*?[^_\s])?)__'), TextFormat.italic),
@@ -243,58 +280,58 @@ final _markdown = <(RegExp, TextFormat)>[
   (RegExp(r'\|\|([^|\s](?:[^\n]*?[^|\s])?)\|\|'), TextFormat.spoiler),
 ];
 
+/// The characters a backslash keeps from being a marker.
+const _escapable = r'*_~|`\';
+
+/// Where escaped characters wait while the markers are found: one code
+/// unit each in the private use area, so offsets don't move.
+const _escapeBase = 0xE000;
+
 /// Replaces Markdown shortcuts in [text] with formatting: `**bold**`,
 /// `__italic__`, `` `code` ``, ```` ```code block``` ````, `~~strike~~`
 /// and `||spoiler||`. The markers are removed and [ranges] move with the
-/// text; markers inside code are kept as they are.
+/// text; markers inside code are kept as they are. A backslash before a
+/// marker character keeps it as text (`\_\_init\_\_`) and is removed.
 (String, List<FormatRange>) applyMarkdown(
   String text,
   List<FormatRange> ranges,
 ) {
-  var current = text;
   var formats = normalizeRanges(ranges);
+  final escaped = _escape(text, formats, (ranges) => formats = ranges);
+  var current = escaped ?? text;
   for (final (pattern, format) in _markdown) {
     final matches = pattern.allMatches(current).toList();
     // From the end, so earlier matches keep their offsets.
     for (final match in matches.reversed) {
-      final inCode = formats.any(
-        (r) =>
-            r.format == TextFormat.monospace &&
-            r.start < match.end &&
-            r.end > match.start,
-      );
-      if (inCode) continue;
-      final marker = (match.end - match.start - match.group(1)!.length) ~/ 2;
-      var contentStart = match.start + marker;
-      var contentEnd = match.end - marker;
+      final content = match.group(1)!;
+      if (content.trim().isEmpty) continue;
+      final whole = match.group(0)!;
+      final open = whole.indexOf(content, 1);
+      var contentStart = match.start + open;
+      var contentEnd = contentStart + content.length;
       // A code block may start and end on lines of its own.
-      var cutStart = marker;
-      var cutEnd = marker;
-      if (marker == 3) {
-        if (current.codeUnitAt(contentStart) == 0x0A) {
-          contentStart++;
-          cutStart++;
-        }
+      if (whole.startsWith('```')) {
+        if (current.codeUnitAt(contentStart) == 0x0A) contentStart++;
         if (contentEnd > contentStart &&
             current.codeUnitAt(contentEnd - 1) == 0x0A) {
           contentEnd--;
-          cutEnd++;
         }
       }
       if (contentEnd <= contentStart) continue;
-      current = current.replaceRange(contentEnd, contentEnd + cutEnd, '');
-      formats = _applyEdit(
-        formats,
-        contentEnd,
-        contentEnd + cutEnd,
-        0,
-        current.length,
+      // Formats may wrap code, but their markers can't be inside it.
+      bool inCode(int start, int end) => formats.any(
+        (r) => r.format == TextFormat.monospace && r.start < end && r.end > start,
       );
-      current = current.replaceRange(match.start, match.start + cutStart, '');
+      if (inCode(match.start, contentStart) || inCode(contentEnd, match.end)) {
+        continue;
+      }
+      current = current.replaceRange(contentEnd, match.end, '');
+      formats = _applyEdit(formats, contentEnd, match.end, 0, current.length);
+      current = current.replaceRange(match.start, contentStart, '');
       formats = _applyEdit(
         formats,
         match.start,
-        match.start + cutStart,
+        contentStart,
         0,
         current.length,
       );
@@ -308,5 +345,52 @@ final _markdown = <(RegExp, TextFormat)>[
       ]);
     }
   }
-  return (current, formats);
+  return (escaped == null ? current : _unescape(current), formats);
 }
+
+/// Takes the backslash off each escaped marker character of [text] and
+/// hides the character from the patterns. Null when there is nothing to
+/// escape, or when the text already uses the hiding place.
+String? _escape(
+  String text,
+  List<FormatRange> ranges,
+  void Function(List<FormatRange>) moved,
+) {
+  if (!text.contains(r'\')) return null;
+  for (final unit in text.codeUnits) {
+    if (unit >= _escapeBase && unit < _escapeBase + _escapable.length) {
+      return null;
+    }
+  }
+  final out = StringBuffer();
+  var formats = ranges;
+  var removed = 0;
+  for (var i = 0; i < text.length; i++) {
+    final unit = text.codeUnitAt(i);
+    final next = i + 1 < text.length ? text[i + 1] : '';
+    final kind = next.isEmpty ? -1 : _escapable.indexOf(next);
+    final at = i - removed;
+    final inCode = formats.any(
+      (r) => r.format == TextFormat.monospace && r.start <= at && r.end > at,
+    );
+    if (unit == 0x5C && kind >= 0 && !inCode) {
+      formats = _applyEdit(formats, at, at + 1, 0, text.length - removed - 1);
+      removed++;
+      out.writeCharCode(_escapeBase + kind);
+      i++;
+    } else {
+      out.writeCharCode(unit);
+    }
+  }
+  if (removed == 0) return null;
+  final escaped = out.toString();
+  moved(formats);
+  return escaped;
+}
+
+String _unescape(String text) => String.fromCharCodes([
+  for (final unit in text.codeUnits)
+    unit >= _escapeBase && unit < _escapeBase + _escapable.length
+        ? _escapable.codeUnitAt(unit - _escapeBase)
+        : unit,
+]);

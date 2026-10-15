@@ -31,6 +31,7 @@ class MentionSuggester extends ChangeNotifier {
   String? _dismissed;
   Timer? _debounce;
   var _generation = 0;
+  var _disposed = false;
 
   /// The members offered now, best match first.
   List<MentionCandidate> get candidates => _candidates;
@@ -64,6 +65,7 @@ class MentionSuggester extends ChangeNotifier {
   }
 
   void _set(List<MentionCandidate> candidates) {
+    if (_disposed) return;
     if (candidates.isEmpty && _candidates.isEmpty) return;
     _candidates = candidates;
     _suggestions = [
@@ -101,8 +103,22 @@ class MentionSuggester extends ChangeNotifier {
     _set(const []);
   }
 
+  /// Another chat: forgets what Esc dismissed and looks at the draft
+  /// again, so an @word carried over is offered in the new chat.
+  void reset() {
+    _dismissed = null;
+    _query = null;
+    _generation++;
+    _debounce?.cancel();
+    _set(const []);
+    _changed();
+  }
+
   @override
   void dispose() {
+    // A search still running must not report to a disposed listener.
+    _disposed = true;
+    _generation++;
     _debounce?.cancel();
     controller.removeListener(_changed);
     super.dispose();

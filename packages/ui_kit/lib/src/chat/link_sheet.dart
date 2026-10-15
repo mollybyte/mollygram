@@ -67,17 +67,22 @@ Future<String?> showLinkSheet(
   barrierDismissible: true,
   barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
   barrierColor: const Color(0x00000000),
-  transitionDuration: const Duration(milliseconds: 140),
-  transitionBuilder: (context, animation, _, child) => FadeTransition(
-    opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
-    child: ScaleTransition(
-      scale: Tween(
-        begin: 0.97,
-        end: 1.0,
-      ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
-      child: child,
-    ),
-  ),
+  // The same short, eased entrance as the other sheets.
+  transitionDuration: const Duration(milliseconds: 160),
+  transitionBuilder: (context, animation, _, child) {
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInCubic,
+    );
+    return FadeTransition(
+      opacity: curved,
+      child: ScaleTransition(
+        scale: Tween(begin: 0.96, end: 1.0).animate(curved),
+        child: child,
+      ),
+    );
+  },
   pageBuilder: (context, _, _) => Center(
     child: _LinkSheet(labels: labels, initial: initial),
   ),

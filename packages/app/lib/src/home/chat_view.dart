@@ -132,7 +132,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     if (_editing != null) _draft.setFormatted(_setAside, _setAsideRanges);
     _mentions
       ..search = _mentionSearch()
-      ..dismiss();
+      ..reset();
     _failure = null;
     _replyTo = null;
     _editing = null;
@@ -656,6 +656,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     final replyTo = _replyTo;
     final ranges = _draft.ranges;
     final formatted = formattedDraft(text, ranges);
+    if (formatted.text.isEmpty) return;
     _draft.clear();
     setState(() {
       _failure = null;
@@ -689,6 +690,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     final formatted = formattedDraft(text, ranges);
     final old = captionOf(message.content);
     if (old != null && sameDraft(formatted, old)) return _stopEditing();
+    if (formatted.text.isEmpty && !_isCaption(message)) return;
     _stopEditing();
     try {
       await _conversations.editText(
@@ -804,10 +806,12 @@ class _ChatViewState extends ConsumerState<ChatView> {
     // The draft becomes the caption, as in the official apps; not while
     // editing, where the composer holds another message's text.
     final useDraft = _editing == null;
+    final draft = useDraft ? _draft.text : '';
+    final draftFormats = useDraft ? _draft.ranges : const <FormatRange>[];
     final choice = await showAttachmentPreview(
       context,
       paths: paths,
-      caption: useDraft ? _draft.text : '',
+      caption: draft,
     );
     if (choice == null && temporary) {
       for (final path in paths) {
@@ -821,6 +825,12 @@ class _ChatViewState extends ConsumerState<ChatView> {
       _replyTo = null;
     });
     if (useDraft) _draft.clear();
+    // The draft's formatting goes with it, unless the caption was
+    // rewritten in the preview; Markdown applies either way.
+    final captionRanges = choice.caption == draft
+        ? draftFormats
+        : const <FormatRange>[];
+    final caption = formattedDraft(choice.caption, captionRanges);
     unawaited(_toLatestForSend());
     try {
       // One at a time: each video or song opens a player to be measured.
@@ -831,13 +841,16 @@ class _ChatViewState extends ConsumerState<ChatView> {
       await _conversations.sendFiles(
         chatId,
         files,
-        caption: choice.caption,
+        caption: caption.text,
+        captionEntities: caption.entities,
         replyTo: replyTo?.id,
       );
     } catch (_) {
       if (!mounted || widget.chatId != chatId) return;
       // Give the caption and the reply back, as a failed text send does.
-      if (useDraft && _draft.text.isEmpty) _draft.text = choice.caption;
+      if (useDraft && _draft.text.isEmpty) {
+        _draft.setFormatted(choice.caption, captionRanges);
+      }
       setState(() {
         _failure = _Failure.attach;
         _replyTo ??= replyTo;
