@@ -11,22 +11,22 @@ import '../theme/theme.dart';
 /// colors from the server; they fall back to the built-in ones.
 Color peerNameColor(MgColors c, int id) {
   const light = [
-    Color(0xFFCC5049),
-    Color(0xFFD67722),
-    Color(0xFF955CDB),
-    Color(0xFF40A920),
-    Color(0xFF309EBA),
-    Color(0xFF368AD1),
-    Color(0xFFC7508B),
+    Color(0xFFD9443B),
+    Color(0xFFDE7012),
+    Color(0xFF8E4FE0),
+    Color(0xFF35A512),
+    Color(0xFF1F9BBF),
+    Color(0xFF2B84D6),
+    Color(0xFFD13F86),
   ];
   const dark = [
-    Color(0xFFFF7B72),
-    Color(0xFFFFA357),
-    Color(0xFFB794FF),
-    Color(0xFF7BD15C),
-    Color(0xFF5CC8E0),
-    Color(0xFF6CB2F2),
-    Color(0xFFF07AB3),
+    Color(0xFFFF6B61),
+    Color(0xFFFF9A40),
+    Color(0xFFAA85FF),
+    Color(0xFF66CF45),
+    Color(0xFF3FC3E2),
+    Color(0xFF55A9F7),
+    Color(0xFFF7649F),
   ];
   final palette = c.brightness == Brightness.dark ? dark : light;
   return palette[id.abs() % palette.length];
