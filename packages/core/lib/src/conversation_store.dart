@@ -165,6 +165,7 @@ final class ConversationStore {
   final _basicGroupStatus = <int, td.ChatMemberStatus>{};
   final _muteFor = <int, int>{};
   final _permissions = <int, td.ChatPermissions>{};
+  final _drafts = <int, td.DraftMessage>{};
   final _slowMode = <int, ({int delay, DateTime until})>{};
 
   /// Replaces the timeline of [chatId] with [messages], keeping the ones in
@@ -454,6 +455,22 @@ final class ConversationStore {
       if (entry.value == basicGroupId) return entry.key;
     }
     return null;
+  }
+
+  /// The unsent draft of [chatId] as TDLib keeps it, synced across the
+  /// user's devices; null when there is none.
+  td.DraftMessage? draft(int chatId) => _drafts[chatId];
+
+  /// Remembers the draft of [chatId]; true when it changed.
+  bool setDraft(int chatId, td.DraftMessage? draft) {
+    final same =
+        _drafts[chatId]?.toJson().toString() == draft?.toJson().toString();
+    if (draft == null) {
+      _drafts.remove(chatId);
+    } else {
+      _drafts[chatId] = draft;
+    }
+    return !same;
   }
 
   /// The supergroup behind [chatId], when it is one.
