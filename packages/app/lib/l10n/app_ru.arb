@@ -186,5 +186,8 @@
   "emojiFlags": "Флаги",
   "favoriteStickers": "Избранные",
   "stickersFailed": "Не удалось загрузить стикеры",
-  "noStickerSets": "Пока нет стикеров"
+  "noStickerSets": "Пока нет стикеров",
+  "forwardedMessages": "Пересланные сообщения",
+  "leaveComment": "Оставить комментарий",
+  "commentCount": "{count, plural, one{{count} комментарий} few{{count} комментария} other{{count} комментариев}}"
 }

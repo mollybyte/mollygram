@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
+import 'package:intl/intl.dart';
 import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
@@ -48,6 +49,7 @@ class MessageRowContext {
     required this.startsRun,
     required this.endsRun,
     required this.lastReadOutbox,
+    this.startsForwards = false,
   });
 
   /// Incoming messages show the sender's name and avatar.
@@ -59,6 +61,10 @@ class MessageRowContext {
 
   /// The last one: it gets the avatar.
   final bool endsRun;
+
+  /// The first of forwarded messages in a row: "Forwarded messages" goes
+  /// above it.
+  final bool startsForwards;
 
   /// Outgoing messages up to this id are read by the other side.
   final int lastReadOutbox;
@@ -127,6 +133,15 @@ class MessageTile extends StatelessWidget {
     };
   }
 
+  Widget _replierAvatar(AppLocalizations l10n, td.MessageSender sender) {
+    final id = MessageSenderId.of(sender);
+    return SenderAvatar(
+      name: nameOfSender(l10n, store, id),
+      photo: store.photoOf(id),
+      size: 19,
+    );
+  }
+
   @override
   Widget build(BuildContext buildContext) {
     final l10n = AppLocalizations.of(buildContext);
@@ -138,12 +153,71 @@ class MessageTile extends StatelessWidget {
       );
     }
     final locale = Localizations.localeOf(buildContext).toLanguageTag();
+    final info = message.message.interactionInfo;
+    final isPost = message.message.isChannelPost;
     final meta = MessageMeta(
       time: formatMessageTime(message.date, locale),
       status: _status,
       label: message.editDate > 0 ? l10n.edited : null,
+      views: isPost && info != null && info.viewCount > 0
+          ? NumberFormat.compact(locale: locale).format(info.viewCount)
+          : null,
     );
-    final reactions = message.message.interactionInfo?.reactions?.reactions;
+    final reactions = info?.reactions?.reactions;
+    final comments = isPost ? info?.replyInfo : null;
+    final forward = message.message.forwardInfo;
+    Widget content = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _MessageBody(row: row, store: store, actions: actions),
+        if (reactions != null && reactions.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 5),
+            child: Wrap(
+              spacing: 4,
+              runSpacing: 4,
+              children: [
+                for (final reaction in reactions)
+                  ReactionChip(
+                    emoji: _reactionEmoji(reaction.type),
+                    count: reaction.totalCount,
+                    chosen: reaction.isChosen,
+                    onTap: reaction.type is td.ReactionTypePaid
+                        ? null
+                        : () => actions.onReaction(
+                            message,
+                            reaction.type,
+                            reaction.isChosen,
+                          ),
+                  ),
+              ],
+            ),
+          ),
+        if (comments != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: CommentsRow(
+              label: comments.replyCount == 0
+                  ? l10n.leaveComment
+                  : l10n.commentCount(comments.replyCount),
+              avatars: [
+                for (final sender in comments.recentReplierIds.take(3))
+                  _replierAvatar(l10n, sender),
+              ],
+            ),
+          ),
+      ],
+    );
+    if (forward != null) {
+      final source = originSender(forward.origin);
+      content = ForwardedBlock(
+        source: forwardOriginName(l10n, store, forward.origin),
+        date: formatChatTime(forward.date, locale),
+        color: source == null ? null : peerNameColor(c, store.colorOf(source)),
+        child: content,
+      );
+    }
     final name = nameOfSender(l10n, store, message.sender);
     final onMenu = actions.onMenu;
     final tile = Padding(
@@ -178,30 +252,15 @@ class MessageTile extends StatelessWidget {
                       color: peerNameColor(c, store.colorOf(message.sender)),
                     ),
                   ),
-                _MessageBody(row: row, store: store, actions: actions),
-                if (reactions != null && reactions.isNotEmpty)
+                if (context.startsForwards)
                   Padding(
-                    padding: const EdgeInsets.only(top: 5),
-                    child: Wrap(
-                      spacing: 4,
-                      runSpacing: 4,
-                      children: [
-                        for (final reaction in reactions)
-                          ReactionChip(
-                            emoji: _reactionEmoji(reaction.type),
-                            count: reaction.totalCount,
-                            chosen: reaction.isChosen,
-                            onTap: reaction.type is td.ReactionTypePaid
-                                ? null
-                                : () => actions.onReaction(
-                                    message,
-                                    reaction.type,
-                                    reaction.isChosen,
-                                  ),
-                          ),
-                      ],
+                    padding: const EdgeInsets.only(bottom: 3),
+                    child: Text(
+                      l10n.forwardedMessages,
+                      style: mgTextStyle(c, color: c.fg2),
                     ),
                   ),
+                content,
               ],
             ),
           ),
@@ -420,17 +479,9 @@ class _MessageBody extends StatelessWidget {
     );
   }
 
-  /// "Forwarded from" and the reply quote.
+  /// The reply quote; the source of a forward is drawn around the body.
   List<Widget> _headers(AppLocalizations l10n) {
     final headers = <Widget>[];
-    final forward = message.message.forwardInfo;
-    if (forward != null) {
-      headers.add(
-        ForwardHeader(
-          l10n.forwardedFrom(forwardOriginName(l10n, store, forward.origin)),
-        ),
-      );
-    }
     final reply = message.message.replyTo;
     if (reply is td.MessageReplyToMessage) {
       headers.add(

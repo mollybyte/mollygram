@@ -222,6 +222,16 @@ abstract final class MgIcons {
         'M20 12.5h-4.5a3 3 0 0 0-3 3V20"/>',
   );
 
+  static const views = MgIconData(
+    'views',
+    '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/>'
+        '<circle cx="12" cy="12" r="3"/>',
+  );
+  static const comment = MgIconData(
+    'comment',
+    '<path d="M12 20a8 8 0 1 0-7.1-4.3L4 20l4.3-.9A8 8 0 0 0 12 20z"/>',
+  );
+
   static const List<MgIconData> all = [
     compose,
     search,
@@ -267,6 +277,8 @@ abstract final class MgIcons {
     symbols,
     flag,
     sticker,
+    views,
+    comment,
   ];
 }
 
