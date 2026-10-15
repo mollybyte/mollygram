@@ -6,6 +6,7 @@ import 'package:mollygram_tdlib/mollygram_tdlib.dart' show TdException;
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../proxy/sign_in_proxy_button.dart';
 import '../session/providers.dart';
 import '../window_drag_area.dart';
 import 'country_picker.dart';
@@ -280,6 +281,8 @@ class _SignInFlowState extends ConsumerState<_SignInFlow> {
     final view = _view;
     return SignInPage(
       titleBarFill: const WindowDragArea(),
+      // Where Telegram is blocked, a proxy is the way in.
+      footer: view == _View.countries ? null : const SignInProxyButton(),
       backTooltip: l10n.back,
       onBack: switch (view) {
         _View.countries => () => setState(() => _picking = false),

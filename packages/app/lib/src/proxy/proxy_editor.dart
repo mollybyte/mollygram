@@ -18,6 +18,7 @@ Future<void> showProxyEditor(
   SavedProxy? editing,
   ProxySettings? initial,
   bool fromLink = false,
+  bool connect = false,
 }) => showGeneralDialog<void>(
   context: context,
   barrierDismissible: true,
@@ -47,6 +48,7 @@ Future<void> showProxyEditor(
         editing: editing,
         initial: initial ?? editing?.settings,
         fromLink: fromLink,
+        connect: connect,
       ),
     ),
   ),
@@ -60,11 +62,15 @@ class ProxyEditor extends ConsumerStatefulWidget {
     this.editing,
     this.initial,
     this.fromLink = false,
+    this.connect = false,
   });
 
   final SavedProxy? editing;
   final ProxySettings? initial;
   final bool fromLink;
+
+  /// Saving [editing] also connects through it, as on the sign-in screen.
+  final bool connect;
 
   @override
   ConsumerState<ProxyEditor> createState() => _ProxyEditorState();
@@ -84,6 +90,7 @@ class _ProxyEditorState extends ConsumerState<ProxyEditor> {
   var _check = _Check.idle;
   Duration? _ping;
   var _saving = false;
+  var _showSecret = false;
   String? _error;
 
   ProxyController get _proxies =>
@@ -149,7 +156,11 @@ class _ProxyEditorState extends ConsumerState<ProxyEditor> {
       if (editing == null) {
         await _proxies.add(settings, enable: true);
       } else {
-        await _proxies.edit(editing.id, settings, enable: editing.isEnabled);
+        await _proxies.edit(
+          editing.id,
+          settings,
+          enable: editing.isEnabled || widget.connect,
+        );
       }
     } on Object {
       if (!mounted) return;
@@ -159,7 +170,9 @@ class _ProxyEditorState extends ConsumerState<ProxyEditor> {
       });
       return;
     }
-    ref.invalidate(savedProxiesProvider);
+    ref
+      ..invalidate(savedProxiesProvider)
+      ..invalidate(proxyPingProvider);
     if (mounted) Navigator.of(context).pop();
   }
 
@@ -168,8 +181,10 @@ class _ProxyEditorState extends ConsumerState<ProxyEditor> {
     final l10n = AppLocalizations.of(context);
     final confirmed = await showMgConfirm(
       context,
-      title: l10n.proxyRemoveTitle(editing.settings.server),
-      confirmLabel: l10n.delete,
+      title: l10n.proxyRemoveTitle(
+        '${editing.settings.server}:${editing.settings.port}',
+      ),
+      confirmLabel: l10n.proxyRemoveAction,
       cancelLabel: l10n.cancel,
       destructive: true,
     );
@@ -185,7 +200,9 @@ class _ProxyEditorState extends ConsumerState<ProxyEditor> {
       });
       return;
     }
-    ref.invalidate(savedProxiesProvider);
+    ref
+      ..invalidate(savedProxiesProvider)
+      ..invalidate(proxyPingProvider);
     if (mounted) Navigator.of(context).pop();
   }
 
@@ -203,6 +220,10 @@ class _ProxyEditorState extends ConsumerState<ProxyEditor> {
         : widget.editing == null
         ? l10n.addProxy
         : l10n.editProxy;
+    final badSecret =
+        _kind == ProxyKind.mtproto &&
+        _secret.text.trim().isNotEmpty &&
+        !ProxySettings.isValidSecret(_secret.text);
     return PopScope(
       canPop: !_saving,
       child: CallbackShortcuts(
@@ -210,153 +231,196 @@ class _ProxyEditorState extends ConsumerState<ProxyEditor> {
           const SingleActivator(LogicalKeyboardKey.escape): _close,
           const SingleActivator(LogicalKeyboardKey.enter): () =>
               unawaited(_save()),
+          const SingleActivator(LogicalKeyboardKey.numpadEnter): () =>
+              unawaited(_save()),
         },
-        child: SizedBox(
-          width: 360,
-          child: Glass(
-            radius: 14,
-            padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(title, style: mgTextStyle(c, weight: FontWeight.w600)),
-                const SizedBox(height: 12),
-                _KindPicker(
-                  value: _kind,
-                  enabled: !_saving,
-                  onChanged: (kind) => setState(() {
-                    _kind = kind;
-                    _check = _Check.idle;
-                  }),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _Field(
-                        key: const ValueKey('server'),
-                        controller: _server,
-                        hint: l10n.proxyServer,
-                        autofocus: !widget.fromLink,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    SizedBox(
-                      width: 84,
-                      child: _Field(
-                        key: const ValueKey('port'),
-                        controller: _port,
-                        hint: l10n.proxyPort,
-                        digits: true,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                AnimatedSize(
-                  duration: const Duration(milliseconds: 160),
-                  curve: Curves.easeOutCubic,
-                  alignment: Alignment.topCenter,
-                  child: _kind == ProxyKind.mtproto
-                      ? _Field(
-                          key: const ValueKey('secret'),
-                          controller: _secret,
-                          hint: l10n.proxySecret,
-                        )
-                      : Column(
-                          children: [
-                            _Field(
-                              key: const ValueKey('username'),
-                              controller: _username,
-                              hint: l10n.proxyUsername,
-                            ),
-                            const SizedBox(height: 8),
-                            _Field(
-                              key: const ValueKey('password'),
-                              controller: _password,
-                              hint: l10n.proxyPassword,
-                              obscure: true,
-                            ),
-                          ],
+        // From a link no field takes focus, so the sheet itself does and
+        // Enter and Esc still work.
+        child: Focus(
+          autofocus: widget.fromLink,
+          child: SizedBox(
+            width: 360,
+            child: Glass(
+              radius: 14,
+              padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(title, style: mgTextStyle(c, weight: FontWeight.w600)),
+                  const SizedBox(height: 12),
+                  _KindPicker(
+                    value: _kind,
+                    enabled: !_saving,
+                    onChanged: (kind) => setState(() {
+                      _kind = kind;
+                      _check = _Check.idle;
+                    }),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _Field(
+                          key: const ValueKey('server'),
+                          controller: _server,
+                          hint: l10n.proxyServer,
+                          autofocus: !widget.fromLink,
                         ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    MgTextButton(
-                      label: l10n.proxyCheck,
-                      onPressed:
-                          settings.isComplete && _check != _Check.checking
-                          ? () => unawaited(_runCheck())
-                          : null,
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 140),
-                        child: Text(
-                          switch (_check) {
-                            _Check.idle => '',
-                            _Check.checking => l10n.proxyChecking,
-                            _Check.done => switch (_ping) {
-                              final ping? => l10n.proxyPing(
-                                ping.inMilliseconds,
+                      ),
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        width: 84,
+                        child: _Field(
+                          key: const ValueKey('port'),
+                          controller: _port,
+                          hint: l10n.proxyPort,
+                          digits: true,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  AnimatedSize(
+                    duration: const Duration(milliseconds: 160),
+                    curve: Curves.easeOutCubic,
+                    alignment: Alignment.topCenter,
+                    child: _kind == ProxyKind.mtproto
+                        ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _Field(
+                                key: const ValueKey('secret'),
+                                controller: _secret,
+                                hint: l10n.proxySecret,
+                                obscure: !_showSecret,
+                                trailing: MgIconButton(
+                                  key: const ValueKey('revealSecret'),
+                                  icon: _showSecret ? _eyeClosed : _eye,
+                                  tooltip: _showSecret
+                                      ? l10n.proxyHideSecret
+                                      : l10n.proxyShowSecret,
+                                  iconSize: 15,
+                                  onPressed: () => setState(
+                                    () => _showSecret = !_showSecret,
+                                  ),
+                                ),
                               ),
-                              null => l10n.proxyUnavailable,
+                              if (badSecret)
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    2,
+                                    4,
+                                    2,
+                                    0,
+                                  ),
+                                  child: Text(
+                                    l10n.proxyInvalidSecret,
+                                    style: mgTextStyle(
+                                      c,
+                                      size: MgType.caption,
+                                      color: MgDestructive.color,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          )
+                        : Column(
+                            children: [
+                              _Field(
+                                key: const ValueKey('username'),
+                                controller: _username,
+                                hint: l10n.proxyUsername,
+                              ),
+                              const SizedBox(height: 8),
+                              _Field(
+                                key: const ValueKey('password'),
+                                controller: _password,
+                                hint: l10n.proxyPassword,
+                                obscure: true,
+                              ),
+                            ],
+                          ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      MgTextButton(
+                        label: l10n.proxyCheck,
+                        onPressed:
+                            settings.isComplete && _check != _Check.checking
+                            ? () => unawaited(_runCheck())
+                            : null,
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 140),
+                          child: Text(
+                            switch (_check) {
+                              _Check.idle => '',
+                              _Check.checking => l10n.proxyChecking,
+                              _Check.done => switch (_ping) {
+                                final ping? => l10n.proxyPing(
+                                  ping.inMilliseconds,
+                                ),
+                                null => l10n.proxyUnavailable,
+                              },
                             },
-                          },
-                          key: ValueKey((_check, _ping)),
-                          style: mgTextStyle(
-                            c,
-                            size: MgType.small,
-                            color: _check == _Check.done && _ping == null
-                                ? MgDestructive.color
-                                : c.fg2,
+                            key: ValueKey((_check, _ping)),
+                            style: mgTextStyle(
+                              c,
+                              size: MgType.small,
+                              color: _check == _Check.done && _ping == null
+                                  ? MgDestructive.color
+                                  : c.fg2,
+                            ),
                           ),
                         ),
                       ),
+                    ],
+                  ),
+                  if (_error case final error?) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      error,
+                      style: mgTextStyle(
+                        c,
+                        size: MgType.caption,
+                        color: MgDestructive.color,
+                      ),
                     ),
                   ],
-                ),
-                if (_error case final error?) ...[
-                  const SizedBox(height: 6),
-                  Text(
-                    error,
-                    style: mgTextStyle(
-                      c,
-                      size: MgType.caption,
-                      color: MgDestructive.color,
-                    ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      if (widget.editing != null)
+                        MgTextButton(
+                          label: l10n.proxyRemove,
+                          onPressed: _saving
+                              ? null
+                              : () => unawaited(_remove()),
+                        ),
+                      const Spacer(),
+                      MgTextButton(
+                        label: l10n.cancel,
+                        onPressed: _saving ? null : _close,
+                      ),
+                      const SizedBox(width: 8),
+                      MgPrimaryButton(
+                        label: widget.editing == null || widget.connect
+                            ? l10n.proxyConnect
+                            : l10n.save,
+                        height: 28,
+                        loading: _saving,
+                        onPressed: settings.isComplete && !_saving
+                            ? () => unawaited(_save())
+                            : null,
+                      ),
+                    ],
                   ),
                 ],
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    if (widget.editing != null)
-                      MgTextButton(
-                        label: l10n.proxyRemove,
-                        onPressed: _saving ? null : () => unawaited(_remove()),
-                      ),
-                    const Spacer(),
-                    MgTextButton(
-                      label: l10n.cancel,
-                      onPressed: _saving ? null : _close,
-                    ),
-                    const SizedBox(width: 8),
-                    MgPrimaryButton(
-                      label: widget.editing == null
-                          ? l10n.proxyConnect
-                          : l10n.save,
-                      height: 28,
-                      loading: _saving,
-                      onPressed: settings.isComplete && !_saving
-                          ? () => unawaited(_save())
-                          : null,
-                    ),
-                  ],
-                ),
-              ],
+              ),
             ),
           ),
         ),
@@ -448,6 +512,7 @@ class _Field extends StatelessWidget {
     this.digits = false,
     this.obscure = false,
     this.autofocus = false,
+    this.trailing,
   });
 
   final TextEditingController controller;
@@ -455,6 +520,9 @@ class _Field extends StatelessWidget {
   final bool digits;
   final bool obscure;
   final bool autofocus;
+
+  /// A button at the end of the field.
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -468,24 +536,42 @@ class _Field extends StatelessWidget {
         color: c.field,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: TextField(
-        controller: controller,
-        autofocus: autofocus,
-        obscureText: obscure,
-        keyboardType: digits ? TextInputType.number : null,
-        inputFormatters: digits
-            ? [
-                FilteringTextInputFormatter.digitsOnly,
-                LengthLimitingTextInputFormatter(5),
-              ]
-            : null,
-        style: style,
-        cursorHeight: 15,
-        decoration: InputDecoration.collapsed(
-          hintText: hint,
-          hintStyle: style.copyWith(color: c.fg2),
-        ),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: controller,
+              autofocus: autofocus,
+              obscureText: obscure,
+              keyboardType: digits ? TextInputType.number : null,
+              inputFormatters: digits
+                  ? [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(5),
+                    ]
+                  : null,
+              style: style,
+              cursorHeight: 15,
+              decoration: InputDecoration.collapsed(
+                hintText: hint,
+                hintStyle: style.copyWith(color: c.fg2),
+              ),
+            ),
+          ),
+          ?trailing,
+        ],
       ),
     );
   }
 }
+
+const _eye = MgIconData(
+  'eye',
+  '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/>'
+      '<circle cx="12" cy="12" r="3"/>',
+);
+const _eyeClosed = MgIconData(
+  'eyeClosed',
+  '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/>'
+      '<circle cx="12" cy="12" r="3"/><path d="M4 4l16 16"/>',
+);

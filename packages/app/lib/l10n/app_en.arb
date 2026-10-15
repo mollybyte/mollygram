@@ -775,9 +775,9 @@
   },
   "proxyUnavailable": "Unavailable",
   "proxyRemove": "Remove proxy",
-  "proxyRemoveTitle": "Remove {server}?",
+  "proxyRemoveTitle": "Remove {address}?",
   "@proxyRemoveTitle": {
-    "placeholders": { "server": { "type": "String" } }
+    "placeholders": { "address": { "type": "String" } }
   },
   "proxyConnect": "Connect",
   "proxyFromLink": "Add this proxy and connect through it?",
@@ -785,5 +785,10 @@
   "language": "Language",
   "languageSystem": "System",
   "languageHint": "Changes the language of the app. Chats and messages stay as they are.",
-  "proxyEditButton": "Edit"
+  "proxyEditButton": "Edit",
+  "proxyInvalidSecret": "Invalid secret",
+  "proxyRemoveAction": "Remove",
+  "proxyLoadFailed": "Couldn't load the proxies.",
+  "proxyShowSecret": "Show secret",
+  "proxyHideSecret": "Hide secret"
 }

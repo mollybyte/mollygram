@@ -220,7 +220,7 @@ M8 calls and macOS release, M9 after release.
 | Language: UI language picker, translation settings | partial | System, English or Russian in Settings, Language, applied at once; no translation settings or TDLib language packs | S | M7 |
 | Stickers and emoji: packs, reorder, archived, suggest, large emoji | missing | `InstalledStickerPacksController` | M | M7 |
 | Quick reaction choice | missing | | S | M7 |
-| Proxy: SOCKS5, MTProto, list, share | partial | SOCKS5, HTTP and MTProto in Settings, Proxy: "Use proxy", ping per proxy, add, edit, remove, `tg://proxy` and `t.me/proxy` links; no share link or QR | S | M7 |
+| Proxy: SOCKS5, MTProto, list, share | partial | SOCKS5, HTTP and MTProto in Settings, Proxy: "Use proxy", ping per proxy, add, edit, remove, `tg://proxy` and `t.me/proxy` links, a Proxy button on the sign-in screens; no share link or QR. TDLib keeps proxies per account database, so a new account slot starts without them (mirroring them is for the accounts work) | S | M7 |
 | Connection status in the window ("Connecting…") | done | `ConnectionMonitor`, capsule in the sidebar title bar | | |
 | Keyboard shortcuts list | partial | Shell shortcuts exist; no list | S | M7 |
 | Auto-delete messages default | missing | | S | M7 |

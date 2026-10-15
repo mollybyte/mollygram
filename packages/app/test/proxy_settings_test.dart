@@ -8,10 +8,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mollygram/l10n/app_localizations.dart';
 import 'package:mollygram/src/app.dart';
 import 'package:mollygram/src/proxy/proxy_editor.dart';
+import 'package:mollygram/src/proxy/sign_in_proxy_button.dart';
 import 'package:mollygram/src/session/providers.dart';
 import 'package:mollygram/src/settings/language_page.dart';
 import 'package:mollygram/src/settings/preferences.dart';
 import 'package:mollygram/src/settings/proxy_page.dart';
+import 'package:mollygram/src/settings/selection_check.dart';
 import 'package:mollygram/src/settings/settings_style.dart';
 import 'package:mollygram/src/settings/settings_window.dart';
 import 'package:mollygram_core/mollygram_core.dart';
@@ -102,8 +104,18 @@ void main() {
 
       expect(find.text('a.example:1080'), findsOneWidget);
       expect(find.text('b.example:443'), findsOneWidget);
-      expect(find.text('SOCKS5 · 42 ms'), findsOneWidget);
-      expect(find.text('MTProto · Unavailable'), findsOneWidget);
+      expect(find.text('SOCKS5'), findsOneWidget);
+      expect(find.text('MTProto'), findsOneWidget);
+      final quick = tester.widget<Text>(find.text('42 ms'));
+      expect(quick.style?.color, pingColor(const Duration(milliseconds: 42)));
+      final down = tester.widget<Text>(find.text('Unavailable'));
+      expect(down.style?.color, MgDestructive.color);
+      expect(
+        tester
+            .widgetList<SelectionCheck>(find.byType(SelectionCheck))
+            .map((c) => c.checked),
+        [true, false],
+      );
       final use = tester.widget<SettingsSwitchRow>(
         find.byKey(const ValueKey('useProxy')),
       );
@@ -174,7 +186,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
       await tester.enterText(find.byKey(const ValueKey('server')), 'mt.ex');
       await tester.enterText(find.byKey(const ValueKey('port')), '443x');
-      await tester.enterText(find.byKey(const ValueKey('secret')), 'ee00');
+      await tester.enterText(find.byKey(const ValueKey('secret')), _secret);
       await tester.pump();
       await tester.tap(find.text('Connect'));
       await settle(tester);
@@ -183,7 +195,7 @@ void main() {
       expect(request['enable'], isTrue);
       expect((request['proxy']! as Map)['server'], 'mt.ex');
       expect((request['proxy']! as Map)['port'], 443);
-      expect(typeOf(request), {'@type': 'proxyTypeMtproto', 'secret': 'ee00'});
+      expect(typeOf(request), {'@type': 'proxyTypeMtproto', 'secret': _secret});
       expect(find.byType(ProxyEditor), findsNothing);
       expect(find.text('mt.ex:443'), findsOneWidget);
     });
@@ -221,11 +233,65 @@ void main() {
       await settle(tester);
       await tester.tap(find.text('Remove proxy'));
       await settle(tester);
-      expect(find.text('Remove a.example?'), findsOneWidget);
-      await tester.tap(find.text('Delete'));
+      expect(find.text('Remove a.example:1080?'), findsOneWidget);
+      await tester.tap(find.text('Remove'));
       await settle(tester);
       expect(sent('removeProxy')['proxy_id'], 1);
       expect(find.text('a.example:1080'), findsNothing);
+    });
+
+    testWidgets('says when a secret is not valid', (tester) async {
+      await pump(tester, const ProxyPage());
+      await tester.tap(find.text('Add proxy'));
+      await settle(tester);
+      await tester.tap(find.text('MTProto'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.enterText(find.byKey(const ValueKey('server')), 'mt.ex');
+      await tester.enterText(find.byKey(const ValueKey('port')), '443');
+      await tester.enterText(find.byKey(const ValueKey('secret')), 'ee00');
+      await tester.pump();
+      expect(find.text('Invalid secret'), findsOneWidget);
+      await tester.tap(find.text('Connect'));
+      await settle(tester);
+      expect(json.sent.any((r) => r['@type'] == 'addProxy'), isFalse);
+
+      TextField secretField() => tester.widget<TextField>(
+        find.descendant(
+          of: find.byKey(const ValueKey('secret')),
+          matching: find.byType(TextField),
+        ),
+      );
+      expect(secretField().obscureText, isTrue);
+      await tester.tap(find.byKey(const ValueKey('revealSecret')));
+      await tester.pump();
+      expect(secretField().obscureText, isFalse);
+
+      await tester.enterText(find.byKey(const ValueKey('secret')), _secret);
+      await tester.pump();
+      expect(find.text('Invalid secret'), findsNothing);
+    });
+
+    testWidgets('pings again after switching proxies', (tester) async {
+      json.proxies = [
+        _added(1, 'a.example', 1080, enabled: true),
+        _added(2, 'b.example', 443),
+      ];
+      await pump(tester, const ProxyPage());
+      int pings() => json.sent.where((r) => r['@type'] == 'pingProxy').length;
+      final before = pings();
+      expect(before, 2);
+
+      await tester.tap(find.text('b.example:443'));
+      await settle(tester);
+      expect(pings(), before + 2);
+    });
+
+    testWidgets('says when the proxies could not be read', (tester) async {
+      json.failing.add('getProxies');
+      await pump(tester, const ProxyPage());
+      expect(find.text("Couldn't load the proxies."), findsOneWidget);
+      expect(find.text('No proxies yet'), findsNothing);
     });
 
     testWidgets('a failed save keeps the sheet open', (tester) async {
@@ -255,7 +321,7 @@ void main() {
                   server: 'mt.ex',
                   port: 443,
                   kind: ProxyKind.mtproto,
-                  secret: 'ee00',
+                  secret: _secret,
                 ),
                 fromLink: true,
               ),
@@ -271,9 +337,38 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('50 ms'), findsOneWidget);
+      // Nothing has focus in a sheet from a link, and Enter still adds.
+      await tester.sendKeyEvent(LogicalKeyboardKey.numpadEnter);
+      await settle(tester);
+      expect(typeOf(sent('addProxy'))['secret'], _secret);
+      expect(find.byType(ProxyEditor), findsNothing);
+    });
+  });
+
+  group('sign-in', () {
+    testWidgets('connects through the proxy used last', (tester) async {
+      json.proxies = [
+        _added(1, 'a.example', 1080, lastUsed: 10),
+        _added(2, 'b.example', 1080, lastUsed: 90),
+      ];
+      await pump(tester, const Center(child: SignInProxyButton()));
+      expect(find.text('Proxy'), findsOneWidget);
+
+      await tester.tap(find.text('Proxy'));
+      await settle(tester);
+      expect(find.text('Edit proxy'), findsOneWidget);
       await tester.tap(find.text('Connect'));
       await settle(tester);
-      expect(typeOf(sent('addProxy'))['secret'], 'ee00');
+      expect(sent('editProxy')['proxy_id'], 2);
+      expect(sent('editProxy')['enable'], isTrue);
+      expect(find.text('Proxy: b.example'), findsOneWidget);
+    });
+
+    testWidgets('adds a proxy when none is saved', (tester) async {
+      await pump(tester, const Center(child: SignInProxyButton()));
+      await tester.tap(find.text('Proxy'));
+      await settle(tester);
+      expect(find.text('Add proxy'), findsOneWidget);
     });
   });
 
@@ -308,6 +403,27 @@ void main() {
       expect(find.text('Нет ключей Telegram API'), findsOneWidget);
       await container.read(preferencesProvider.notifier).flush();
       expect((storage.saved! as Map)['language'], 'russian');
+    });
+
+    testWidgets('a saved choice applies from the start', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            telegramApiConfigProvider.overrideWithValue(
+              const TelegramApiConfig(apiId: 0, apiHash: ''),
+            ),
+            preferencesStorageProvider.overrideWithValue(
+              MemoryPreferencesStorage(),
+            ),
+            initialPreferencesProvider.overrideWithValue(
+              Preferences.fromJson({'language': 'russian'}),
+            ),
+          ],
+          child: const MollygramApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Нет ключей Telegram API'), findsOneWidget);
     });
 
     testWidgets('lists the languages and marks the current one', (
@@ -350,6 +466,9 @@ void main() {
 }
 
 const _tick = Duration(milliseconds: 20);
+
+/// A plain MTProto secret: 16 bytes in hex.
+const _secret = '000102030405060708090a0b0c0d0e0f';
 
 class _WhenSignedIn extends ConsumerWidget {
   const _WhenSignedIn({required this.child});

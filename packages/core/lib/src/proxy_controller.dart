@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 
 /// The kinds of proxy TDLib can connect through.
@@ -49,12 +51,49 @@ final class ProxySettings {
   final String secret;
 
   /// Whether TDLib would take it: a server, a port in range and, for
-  /// MTProto, a secret.
+  /// MTProto, a valid secret.
   bool get isComplete =>
       server.trim().isNotEmpty &&
       port > 0 &&
       port < 65536 &&
-      (kind != ProxyKind.mtproto || secret.trim().isNotEmpty);
+      (kind != ProxyKind.mtproto || isValidSecret(secret));
+
+  static final _hex = RegExp(r'^[0-9a-fA-F]+$');
+  static final _base64 = RegExp(r'^[A-Za-z0-9+/_-]+={0,2}$');
+
+  /// Whether [secret] is an MTProto secret: 16 key bytes, the same with a
+  /// `dd` prefix (random padding), or an `ee` prefix with a domain after
+  /// the key (fake TLS). Written in hex, or in base64 as links carry it.
+  static bool isValidSecret(String secret) {
+    final text = secret.trim();
+    if (text.isEmpty) return false;
+    final bytes = _hex.hasMatch(text) && text.length.isEven
+        ? [
+            for (var i = 0; i < text.length; i += 2)
+              int.parse(text.substring(i, i + 2), radix: 16),
+          ]
+        : _decodeBase64(text);
+    if (bytes == null) return false;
+    return switch (bytes.length) {
+      16 => true,
+      17 => bytes.first == 0xdd,
+      > 17 => bytes.first == 0xee,
+      _ => false,
+    };
+  }
+
+  static List<int>? _decodeBase64(String text) {
+    if (!_base64.hasMatch(text)) return null;
+    final unpadded = text.replaceAll('=', '');
+    if (unpadded.length % 4 == 1) return null;
+    try {
+      return base64Url.decode(
+        base64Url.normalize(unpadded.replaceAll('+', '-').replaceAll('/', '_')),
+      );
+    } on FormatException {
+      return null;
+    }
+  }
 
   td.Proxy toTd() => td.Proxy(
     server: server.trim(),

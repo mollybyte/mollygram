@@ -541,12 +541,17 @@
   "proxyPing": "{ms} мс",
   "proxyUnavailable": "Недоступен",
   "proxyRemove": "Удалить прокси",
-  "proxyRemoveTitle": "Удалить {server}?",
+  "proxyRemoveTitle": "Удалить {address}?",
   "proxyConnect": "Подключиться",
   "proxyFromLink": "Добавить этот прокси и подключиться через него?",
   "proxyNone": "Прокси пока нет",
   "language": "Язык",
   "languageSystem": "Как в системе",
   "languageHint": "Меняет язык приложения. Чаты и сообщения остаются как есть.",
-  "proxyEditButton": "Изменить"
+  "proxyEditButton": "Изменить",
+  "proxyInvalidSecret": "Неверный ключ",
+  "proxyRemoveAction": "Удалить",
+  "proxyLoadFailed": "Не удалось загрузить прокси.",
+  "proxyShowSecret": "Показать ключ",
+  "proxyHideSecret": "Скрыть ключ"
 }

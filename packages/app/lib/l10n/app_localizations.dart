@@ -3347,8 +3347,8 @@ abstract class AppLocalizations {
   /// No description provided for @proxyRemoveTitle.
   ///
   /// In en, this message translates to:
-  /// **'Remove {server}?'**
-  String proxyRemoveTitle(String server);
+  /// **'Remove {address}?'**
+  String proxyRemoveTitle(String address);
 
   /// No description provided for @proxyConnect.
   ///
@@ -3391,6 +3391,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Edit'**
   String get proxyEditButton;
+
+  /// No description provided for @proxyInvalidSecret.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid secret'**
+  String get proxyInvalidSecret;
+
+  /// No description provided for @proxyRemoveAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get proxyRemoveAction;
+
+  /// No description provided for @proxyLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the proxies.'**
+  String get proxyLoadFailed;
+
+  /// No description provided for @proxyShowSecret.
+  ///
+  /// In en, this message translates to:
+  /// **'Show secret'**
+  String get proxyShowSecret;
+
+  /// No description provided for @proxyHideSecret.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide secret'**
+  String get proxyHideSecret;
 }
 
 class _AppLocalizationsDelegate

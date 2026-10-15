@@ -4,6 +4,7 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
 import 'preferences.dart';
+import 'selection_check.dart';
 import 'settings_style.dart';
 import 'settings_window.dart';
 
@@ -32,7 +33,6 @@ class LanguagePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final c = MgColors.of(context);
     final l10n = AppLocalizations.of(context);
     final current = ref.watch(preferencesProvider.select((p) => p.language));
     return SettingsPage(
@@ -52,9 +52,7 @@ class LanguagePage extends ConsumerWidget {
                       : () => ref
                             .read(preferencesProvider.notifier)
                             .update((p) => p.copyWith(language: language)),
-                  trailing: language == current
-                      ? MgIcon(_check, size: 16, stroke: 2.4, color: c.accent)
-                      : null,
+                  trailing: SelectionCheck(checked: language == current),
                 ),
               ),
           ],
@@ -63,5 +61,3 @@ class LanguagePage extends ConsumerWidget {
     );
   }
 }
-
-const _check = MgIconData('check', '<path d="M5 12.5l4.5 4.5L19 7"/>');

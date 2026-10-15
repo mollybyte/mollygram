@@ -1962,8 +1962,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get proxyRemove => 'Remove proxy';
 
   @override
-  String proxyRemoveTitle(String server) {
-    return 'Remove $server?';
+  String proxyRemoveTitle(String address) {
+    return 'Remove $address?';
   }
 
   @override
@@ -1987,4 +1987,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get proxyEditButton => 'Edit';
+
+  @override
+  String get proxyInvalidSecret => 'Invalid secret';
+
+  @override
+  String get proxyRemoveAction => 'Remove';
+
+  @override
+  String get proxyLoadFailed => 'Couldn\'t load the proxies.';
+
+  @override
+  String get proxyShowSecret => 'Show secret';
+
+  @override
+  String get proxyHideSecret => 'Hide secret';
 }

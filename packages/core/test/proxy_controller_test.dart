@@ -32,7 +32,7 @@ void main() {
     server: 'mt.example',
     port: 443,
     kind: ProxyKind.mtproto,
-    secret: 'ee00',
+    secret: 'dd000102030405060708090a0b0c0d0e0f',
   );
 
   test('lists the saved proxies of every kind', () async {
@@ -75,7 +75,7 @@ void main() {
     expect(sent('editProxy')['enable'], isTrue);
     expect(
       ((sent('editProxy')['proxy']! as Map)['type']! as Map)['secret'],
-      'ee00',
+      'dd000102030405060708090a0b0c0d0e0f',
     );
     await proxies.enable(3);
     expect(sent('enableProxy')['proxy_id'], 3);
@@ -117,6 +117,55 @@ void main() {
         server: 'a',
         port: 443,
         kind: ProxyKind.mtproto,
+      ).isComplete,
+      isFalse,
+    );
+  });
+
+  test('checks MTProto secrets', () {
+    const key = '000102030405060708090a0b0c0d0e0f';
+    final domain = utf8
+        .encode('example.com')
+        .map((b) => b.toRadixString(16).padLeft(2, '0'))
+        .join();
+    final valid = [
+      key,
+      key.toUpperCase(),
+      'dd$key',
+      'ee$key$domain',
+      // The same in base64, as t.me links carry them.
+      base64Url.encode([for (var i = 0; i < 16; i++) i]),
+      base64Url
+          .encode([0xdd, for (var i = 0; i < 16; i++) i])
+          .replaceAll('=', ''),
+      base64.encode([
+        0xee,
+        for (var i = 0; i < 16; i++) i,
+        ...utf8.encode('a.b'),
+      ]),
+    ];
+    for (final secret in valid) {
+      expect(ProxySettings.isValidSecret(secret), isTrue, reason: secret);
+    }
+    final invalid = [
+      '',
+      'ee00',
+      key.substring(1),
+      'ff$key',
+      'dd${key}00',
+      'ee$key',
+      'zz${key.substring(2)}',
+      'not a secret',
+    ];
+    for (final secret in invalid) {
+      expect(ProxySettings.isValidSecret(secret), isFalse, reason: secret);
+    }
+    expect(
+      ProxySettings(
+        server: 'a',
+        port: 443,
+        kind: ProxyKind.mtproto,
+        secret: 'ff$key',
       ).isComplete,
       isFalse,
     );

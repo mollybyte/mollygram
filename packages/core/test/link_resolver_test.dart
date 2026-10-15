@@ -44,12 +44,11 @@ void main() {
     );
   });
 
-  test('reports a proxy link without a proxy', () async {
+  test('a proxy link without a proxy is not supported', () async {
     json.linkType = {'@type': 'internalLinkTypeProxy'};
-    expect(
-      await links.resolve('t.me/proxy?server=x'),
-      isA<MissingLinkTarget>(),
-    );
+    final target = await links.resolve('tg://proxy?server=x');
+    expect(target, isA<UnsupportedLinkTarget>());
+    expect((target! as UnsupportedLinkTarget).webFallback, isNull);
   });
 
   test('opens other sites in the browser without asking TDLib', () async {

@@ -162,8 +162,9 @@ final class LinkResolver {
       case td.InternalLinkTypeSavedMessages():
         return _savedMessages();
       case td.InternalLinkTypeProxy(:final proxy):
+        // A proxy of a kind TDLib doesn't describe, as from a newer app.
         return proxy == null
-            ? const MissingLinkTarget()
+            ? const UnsupportedLinkTarget()
             : ProxyLinkTarget(ProxySettings.fromTd(proxy));
       case td.InternalLinkTypeSettings():
         return const CommandLinkTarget('app.settings');

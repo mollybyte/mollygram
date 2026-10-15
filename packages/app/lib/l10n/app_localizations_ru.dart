@@ -1982,8 +1982,8 @@ class AppLocalizationsRu extends AppLocalizations {
   String get proxyRemove => 'Удалить прокси';
 
   @override
-  String proxyRemoveTitle(String server) {
-    return 'Удалить $server?';
+  String proxyRemoveTitle(String address) {
+    return 'Удалить $address?';
   }
 
   @override
@@ -2007,4 +2007,19 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get proxyEditButton => 'Изменить';
+
+  @override
+  String get proxyInvalidSecret => 'Неверный ключ';
+
+  @override
+  String get proxyRemoveAction => 'Удалить';
+
+  @override
+  String get proxyLoadFailed => 'Не удалось загрузить прокси.';
+
+  @override
+  String get proxyShowSecret => 'Показать ключ';
+
+  @override
+  String get proxyHideSecret => 'Скрыть ключ';
 }
