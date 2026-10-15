@@ -191,6 +191,44 @@ void main() {
       expect(container.read(peerInfoPanelsProvider), isEmpty);
     });
 
+    testWidgets('squeezes a wide pane and covers a narrow one', (tester) async {
+      await pump(tester);
+      final pane = find.byKey(const ValueKey('pane'));
+      Widget child() => KeyedSubtree(
+        key: const ValueKey('pane'),
+        child: const Focus(autofocus: true, child: SizedBox.expand()),
+      );
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            theme: buildMgTheme(MgColors.light),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Material(child: PeerInfoHost(chatId: 10, child: child())),
+          ),
+        ),
+      );
+      await settle(tester);
+      expect(tester.getSize(pane).width, 900);
+
+      open(10);
+      await settle(tester);
+      // 900 - 340 leaves 560 for the chat, more than the minimum.
+      expect(tester.getSize(pane).width, 900 - PeerInfoHost.width);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await settle(tester);
+      expect(tester.getSize(pane).width, 900);
+
+      tester.view.physicalSize = const Size(800, 800);
+      await settle(tester);
+      open(10);
+      await settle(tester);
+      expect(tester.getSize(pane).width, 800);
+      expect(find.text('Alina Petrova'), findsOneWidget);
+    });
+
     testWidgets('copies the username', (tester) async {
       await pump(tester);
       open(10);
