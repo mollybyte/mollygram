@@ -1929,4 +1929,82 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get folderDeletedChat => 'Удалённый чат';
+
+  @override
+  String get proxy => 'Прокси';
+
+  @override
+  String get useProxy => 'Использовать прокси';
+
+  @override
+  String get proxyHint =>
+      'Telegram подключается через выбранный прокси. Пинг показывает время отклика в миллисекундах.';
+
+  @override
+  String get savedProxies => 'Сохранённые прокси';
+
+  @override
+  String get addProxy => 'Добавить прокси';
+
+  @override
+  String get editProxy => 'Изменить прокси';
+
+  @override
+  String get proxyServer => 'Сервер';
+
+  @override
+  String get proxyPort => 'Порт';
+
+  @override
+  String get proxyUsername => 'Имя пользователя';
+
+  @override
+  String get proxyPassword => 'Пароль';
+
+  @override
+  String get proxySecret => 'Ключ';
+
+  @override
+  String get proxyCheck => 'Проверить';
+
+  @override
+  String get proxyChecking => 'Проверка…';
+
+  @override
+  String proxyPing(int ms) {
+    return '$ms мс';
+  }
+
+  @override
+  String get proxyUnavailable => 'Недоступен';
+
+  @override
+  String get proxyRemove => 'Удалить прокси';
+
+  @override
+  String proxyRemoveTitle(String server) {
+    return 'Удалить $server?';
+  }
+
+  @override
+  String get proxyConnect => 'Подключиться';
+
+  @override
+  String get proxyFromLink => 'Добавить этот прокси и подключиться через него?';
+
+  @override
+  String get proxyNone => 'Прокси пока нет';
+
+  @override
+  String get language => 'Язык';
+
+  @override
+  String get languageSystem => 'Как в системе';
+
+  @override
+  String get languageHint =>
+      'Меняет язык приложения. Чаты и сообщения остаются как есть.';
+
+  @override
+  String get proxyEditButton => 'Изменить';
 }

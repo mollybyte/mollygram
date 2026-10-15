@@ -9,8 +9,10 @@ import '../window_drag_area.dart';
 import 'account_page.dart';
 import 'appearance_page.dart';
 import 'folders_page.dart';
+import 'language_page.dart';
 import 'plugins_page.dart';
 import 'privacy_extras_page.dart';
+import 'proxy_page.dart';
 import 'sessions_page.dart';
 import 'settings_style.dart';
 import 'storage_page.dart';
@@ -106,6 +108,7 @@ final settingsSections = <SettingsSection>[
     ],
     builder: (context) => const StoragePage(),
   ),
+  proxySection,
   SettingsSection(
     id: 'appearance',
     icon: MgIcons.appearance,
@@ -122,6 +125,7 @@ final settingsSections = <SettingsSection>[
     builder: (context) => const AppearancePage(),
   ),
   foldersSection,
+  languageSection,
   SettingsSection(
     id: 'plugins',
     icon: MgIcons.plugin,

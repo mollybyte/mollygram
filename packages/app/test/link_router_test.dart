@@ -38,6 +38,14 @@ void main() {
     )..presenter = presenter;
   });
 
+  test('offers the proxy of a proxy link', () async {
+    targets['t.me/proxy'] = const ProxyLinkTarget(
+      ProxySettings(server: 'p.example', port: 443, kind: ProxyKind.mtproto),
+    );
+    await router.open('t.me/proxy');
+    expect(log, ['proxy p.example:443']);
+  });
+
   test('opens other sites in the browser', () async {
     targets['example.com'] = ExternalLinkTarget(
       Uri.parse('https://example.com'),
@@ -170,4 +178,8 @@ class _Presenter implements LinkPresenter {
 
   @override
   void showNotice(LinkNotice notice) => log.add('notice ${notice.name}');
+
+  @override
+  Future<void> offerProxy(ProxySettings proxy) async =>
+      log.add('proxy ${proxy.server}:${proxy.port}');
 }

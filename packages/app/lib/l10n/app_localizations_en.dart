@@ -1909,4 +1909,82 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get folderDeletedChat => 'Deleted chat';
+
+  @override
+  String get proxy => 'Proxy';
+
+  @override
+  String get useProxy => 'Use proxy';
+
+  @override
+  String get proxyHint =>
+      'Telegram connects through the selected proxy. Ping shows the round trip in milliseconds.';
+
+  @override
+  String get savedProxies => 'Saved proxies';
+
+  @override
+  String get addProxy => 'Add proxy';
+
+  @override
+  String get editProxy => 'Edit proxy';
+
+  @override
+  String get proxyServer => 'Server';
+
+  @override
+  String get proxyPort => 'Port';
+
+  @override
+  String get proxyUsername => 'Username';
+
+  @override
+  String get proxyPassword => 'Password';
+
+  @override
+  String get proxySecret => 'Secret';
+
+  @override
+  String get proxyCheck => 'Check';
+
+  @override
+  String get proxyChecking => 'Checking…';
+
+  @override
+  String proxyPing(int ms) {
+    return '$ms ms';
+  }
+
+  @override
+  String get proxyUnavailable => 'Unavailable';
+
+  @override
+  String get proxyRemove => 'Remove proxy';
+
+  @override
+  String proxyRemoveTitle(String server) {
+    return 'Remove $server?';
+  }
+
+  @override
+  String get proxyConnect => 'Connect';
+
+  @override
+  String get proxyFromLink => 'Add this proxy and connect through it?';
+
+  @override
+  String get proxyNone => 'No proxies yet';
+
+  @override
+  String get language => 'Language';
+
+  @override
+  String get languageSystem => 'System';
+
+  @override
+  String get languageHint =>
+      'Changes the language of the app. Chats and messages stay as they are.';
+
+  @override
+  String get proxyEditButton => 'Edit';
 }

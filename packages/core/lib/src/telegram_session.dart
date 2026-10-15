@@ -18,6 +18,7 @@ import 'mention_search.dart';
 import 'notification_controller.dart';
 import 'peer_info.dart';
 import 'privacy_guard.dart';
+import 'proxy_controller.dart';
 import 'sticker_library.dart';
 import 'storage_usage.dart';
 import 'tdlib_initializer.dart';
@@ -57,6 +58,7 @@ final class TelegramSession {
     required this.privacy,
     required this.contacts,
     required this.links,
+    required this.proxies,
     required this._initializer,
   });
 
@@ -92,6 +94,9 @@ final class TelegramSession {
   /// Contacts and the users TDLib has sent.
   final ContactsController contacts;
   final LinkResolver links;
+
+  /// The proxies TDLib can connect through.
+  final ProxyController proxies;
   final _errors = StreamController<Object>.broadcast(sync: true);
   final _closedElsewhere = Completer<void>();
   StreamSubscription<AuthorizationStage>? _stageSubscription;
@@ -141,6 +146,7 @@ final class TelegramSession {
       privacy: guard,
       contacts: contacts,
       links: LinkResolver(client),
+      proxies: ProxyController(client),
       initializer: TdlibInitializer(client, parameters: parameters),
     );
     session._stageSubscription = authorization.stages.listen(session._onStage);

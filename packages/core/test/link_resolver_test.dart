@@ -20,6 +20,38 @@ void main() {
 
   List<Object?> sentTypes() => [for (final r in json.sent) r['@type']];
 
+  test('offers the proxy of a proxy link', () async {
+    json.linkType = {
+      '@type': 'internalLinkTypeProxy',
+      'proxy': {
+        '@type': 'proxy',
+        'server': 'mt.example',
+        'port': 443,
+        'type': {'@type': 'proxyTypeMtproto', 'secret': 'ee00'},
+      },
+    };
+    final target = await links.resolve(
+      'tg://proxy?server=mt.example&port=443&secret=ee00',
+    );
+    expect(
+      (target! as ProxyLinkTarget).proxy,
+      const ProxySettings(
+        server: 'mt.example',
+        port: 443,
+        kind: ProxyKind.mtproto,
+        secret: 'ee00',
+      ),
+    );
+  });
+
+  test('reports a proxy link without a proxy', () async {
+    json.linkType = {'@type': 'internalLinkTypeProxy'};
+    expect(
+      await links.resolve('t.me/proxy?server=x'),
+      isA<MissingLinkTarget>(),
+    );
+  });
+
   test('opens other sites in the browser without asking TDLib', () async {
     final target = await links.resolve('example.com/page');
     expect(target, isA<ExternalLinkTarget>());

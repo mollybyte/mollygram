@@ -20,6 +20,9 @@ abstract interface class LinkPresenter {
 
   /// Tells the user why nothing opened.
   void showNotice(LinkNotice notice);
+
+  /// Offers to add [proxy] from a proxy link and connect through it.
+  Future<void> offerProxy(ProxySettings proxy);
 }
 
 enum LinkNotice {
@@ -95,6 +98,8 @@ class LinkRouter {
         }
         final chat = await presenter.confirmJoin(preview, () => _join(preview));
         if (chat != null && chat != 0) _openChat(chat);
+      case ProxyLinkTarget(:final proxy):
+        await presenter?.offerProxy(proxy);
       case CommandLinkTarget(:final commandId):
         if (!_runCommand(commandId)) {
           presenter?.showNotice(LinkNotice.unsupported);
