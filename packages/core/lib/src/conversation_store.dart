@@ -167,6 +167,8 @@ final class ConversationStore {
   final _permissions = <int, td.ChatPermissions>{};
   final _drafts = <int, td.DraftMessage>{};
   final _slowMode = <int, ({int delay, DateTime until})>{};
+  final _hasScheduled = <int>{};
+  final _scheduledVersion = <int, int>{};
 
   /// Replaces the timeline of [chatId] with [messages], keeping the ones in
   /// [keep] that are still present (messages that arrived while the history
@@ -460,6 +462,25 @@ final class ConversationStore {
   /// The unsent draft of [chatId] as TDLib keeps it, synced across the
   /// user's devices; null when there is none.
   td.DraftMessage? draft(int chatId) => _drafts[chatId];
+
+  /// Whether [chatId] has messages waiting to be sent later.
+  bool hasScheduledMessages(int chatId) => _hasScheduled.contains(chatId);
+
+  /// Remembers whether [chatId] has scheduled messages; true when changed.
+  bool setHasScheduled(int chatId, bool has) {
+    final changed = has
+        ? _hasScheduled.add(chatId)
+        : _hasScheduled.remove(chatId);
+    if (changed) bumpScheduled(chatId);
+    return changed;
+  }
+
+  /// Counts up whenever the scheduled messages of [chatId] may have
+  /// changed, so a view of them knows to load them again.
+  int scheduledVersion(int chatId) => _scheduledVersion[chatId] ?? 0;
+
+  void bumpScheduled(int chatId) =>
+      _scheduledVersion[chatId] = scheduledVersion(chatId) + 1;
 
   /// Remembers the draft of [chatId]; true when it changed.
   bool setDraft(int chatId, td.DraftMessage? draft) {

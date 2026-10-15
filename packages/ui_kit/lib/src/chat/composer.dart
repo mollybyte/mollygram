@@ -51,6 +51,7 @@ class Composer extends StatefulWidget {
     this.focusNode,
     this.onSend,
     this.onSendMenu,
+    this.extraButton,
     this.onAttach,
     this.onEmoji,
     this.onRecord,
@@ -78,6 +79,10 @@ class Composer extends StatefulWidget {
   /// A right click or long press on the send button, with the draft and
   /// where it happened, for other ways to send.
   final void Function(String text, Offset position)? onSendMenu;
+
+  /// A button before the emoji one, such as the way to the chat's
+  /// scheduled messages while it has some.
+  final Widget? extraButton;
   final VoidCallback? onAttach;
   final VoidCallback? onEmoji;
   final VoidCallback? onRecord;
@@ -438,6 +443,7 @@ class _ComposerState extends State<Composer> {
           ),
         ),
         const SizedBox(width: 2),
+        ?widget.extraButton,
         MgIconButton(
           icon: MgIcons.emoji,
           tooltip: l.emoji,

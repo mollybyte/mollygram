@@ -539,6 +539,27 @@ class AppLocalizationsRu extends AppLocalizations {
   String get scheduleAction => 'Запланировать';
 
   @override
+  String get scheduledList => 'Запланированные сообщения';
+
+  @override
+  String scheduledCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count запланированных сообщений',
+      few: '$count запланированных сообщения',
+      one: '$count запланированное сообщение',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get menuSendNow => 'Отправить сейчас';
+
+  @override
+  String get menuReschedule => 'Перенести…';
+
+  @override
   String scheduledFor(String date) {
     return 'Запланировано на $date';
   }

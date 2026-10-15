@@ -1040,6 +1040,30 @@ abstract class AppLocalizations {
   /// **'Schedule'**
   String get scheduleAction;
 
+  /// No description provided for @scheduledList.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled messages'**
+  String get scheduledList;
+
+  /// No description provided for @scheduledCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} scheduled message} other{{count} scheduled messages}}'**
+  String scheduledCount(int count);
+
+  /// No description provided for @menuSendNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Send now'**
+  String get menuSendNow;
+
+  /// No description provided for @menuReschedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Reschedule…'**
+  String get menuReschedule;
+
   /// No description provided for @scheduledFor.
   ///
   /// In en, this message translates to:

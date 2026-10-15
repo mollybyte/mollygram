@@ -181,6 +181,13 @@
   "scheduleHint": "Pick the day and the time it goes out.",
   "scheduleTimeHint": "HH:MM",
   "scheduleAction": "Schedule",
+  "scheduledList": "Scheduled messages",
+  "scheduledCount": "{count, plural, one{{count} scheduled message} other{{count} scheduled messages}}",
+  "@scheduledCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "menuSendNow": "Send now",
+  "menuReschedule": "Reschedule…",
   "scheduledFor": "Scheduled for {date}",
   "@scheduledFor": {
     "placeholders": { "date": { "type": "String" } }
