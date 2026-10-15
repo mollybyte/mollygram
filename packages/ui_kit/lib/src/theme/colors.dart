@@ -115,6 +115,9 @@ class MgColors extends ThemeExtension<MgColors> {
 
   bool get isDark => brightness == Brightness.dark;
 
+  /// The "Draft:" lead in the chat list, the system red of both themes.
+  static const draftRed = Color(0xFFFF453A);
+
   static const light = MgColors(
     brightness: Brightness.light,
     fg: Color(0xFF1D1D1F),

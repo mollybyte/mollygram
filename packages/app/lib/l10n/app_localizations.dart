@@ -356,6 +356,12 @@ abstract class AppLocalizations {
   /// **'Nothing found'**
   String get nothingFound;
 
+  /// No description provided for @draftLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft:'**
+  String get draftLabel;
+
   /// No description provided for @newMessage.
   ///
   /// In en, this message translates to:

@@ -286,8 +286,16 @@ final class ChatListController {
         );
       // A draft change can move a chat and is sent instead of
       // updateChatPosition, so its positions are applied too.
-      case td.UpdateChatDraftMessage(:final chatId, :final positions):
-        store.replacePositions(chatId, _positionsFrom(positions));
+      case td.UpdateChatDraftMessage(
+        :final chatId,
+        :final draftMessage,
+        :final positions,
+      ):
+        store.updateDraft(
+          chatId,
+          _draftFrom(draftMessage),
+          _positionsFrom(positions),
+        );
       case td.UpdateChatPosition(:final chatId, :final position):
         store.updatePosition(chatId, _positionFrom(position));
       case td.UpdateChatRemovedFromList(:final chatId, :final chatList):
@@ -342,6 +350,7 @@ ChatListEntry _entryFrom(td.Chat chat) {
     canDeleteOnlyForSelf: chat.canBeDeletedOnlyForSelf,
     positions: _positionsFrom(chat.positions),
     lastMessage: _previewFrom(chat.lastMessage),
+    draft: _draftFrom(chat.draftMessage),
   );
 }
 
@@ -371,6 +380,15 @@ td.ChatNotificationSettings _withMuteFor(
       s.useDefaultDisableMentionNotifications,
   disableMentionNotifications: s.disableMentionNotifications,
 );
+
+ChatDraft? _draftFrom(td.DraftMessage? draft) {
+  if (draft == null) return null;
+  final text = switch (draft.content) {
+    td.DraftMessageContentText(:final text) => text.text,
+    _ => '',
+  };
+  return ChatDraft(text: text, date: draft.date);
+}
 
 ChatPreview? _previewFrom(td.Message? message) {
   if (message == null) return null;

@@ -73,18 +73,22 @@ class _SidebarState extends ConsumerState<Sidebar> {
     final list = ref.watch(selectedChatListProvider);
     final folders = ref.watch(chatFoldersProvider).value ?? const [];
     final chats = ref.watch(chatListProvider(list)).value ?? const [];
-    // The archive row on the main list needs the archive loaded too.
-    final archived = list.isMain
+    final query = _search.text.trim().toLowerCase();
+    // The archive row on the main list needs the archive loaded too, and a
+    // search looks there as well.
+    final archived = list.isMain || query.isNotEmpty
         ? ref.watch(chatListProvider(const ChatListLocation.archive())).value ??
               const <ChatListEntry>[]
         : const <ChatListEntry>[];
-    final query = _search.text.trim().toLowerCase();
+    // A search looks through every chat, whatever folder is open, as the
+    // official client does: the open list first, then the rest.
+    final everything = query.isEmpty
+        ? const <ChatListEntry>[]
+        : ref.watch(chatListProvider(const ChatListLocation.main())).value ??
+              const <ChatListEntry>[];
     final shown = query.isEmpty
         ? chats
-        : [
-            for (final chat in chats)
-              if (chat.title.toLowerCase().contains(query)) chat,
-          ];
+        : _matching(query, [...chats, ...everything, ...archived]);
     final select = ref.read(selectedChatListProvider.notifier).select;
     final showArchive = list.isMain && query.isEmpty && archived.isNotEmpty;
 
@@ -189,6 +193,18 @@ class _SidebarState extends ConsumerState<Sidebar> {
   }
 
   static const _listSwitch = Duration(milliseconds: 240);
+
+  /// The chats whose title contains [query], each once, in list order.
+  static List<ChatListEntry> _matching(
+    String query,
+    Iterable<ChatListEntry> chats,
+  ) {
+    final seen = <int>{};
+    return [
+      for (final chat in chats)
+        if (chat.title.toLowerCase().contains(query) && seen.add(chat.id)) chat,
+    ];
+  }
 }
 
 /// The way back from the archive: a pill with a chevron and the title.
@@ -555,10 +571,18 @@ class _ChatRowState extends ConsumerState<_ChatRow>
     final last = chat.lastMessage;
     final actors = ref.watch(chatActivityProvider(chat.id)).value ?? const [];
     final online = ref.watch(chatOnlineProvider(chat.id)).value ?? false;
+    final draft = chat.draft;
     final tile = ChatListTile(
       title: chat.title,
-      subtitle: formatPreview(l10n, last),
-      time: last == null ? '' : formatChatTime(last.date, locale),
+      subtitle: draft == null
+          ? formatPreview(l10n, last)
+          : draft.text.replaceAll('\n', ' '),
+      draftLabel: draft == null ? null : l10n.draftLabel,
+      time: switch ((draft, last)) {
+        (final draft?, _) => formatChatTime(draft.date, locale),
+        (null, final last?) => formatChatTime(last.date, locale),
+        (null, null) => '',
+      },
       unread: chat.unreadCount,
       unreadLabel: NumberFormat.compact(locale: locale)
           .format(chat.unreadCount),

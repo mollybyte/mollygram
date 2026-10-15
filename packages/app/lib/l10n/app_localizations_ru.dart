@@ -149,6 +149,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get nothingFound => 'Ничего не найдено';
 
   @override
+  String get draftLabel => 'Черновик:';
+
+  @override
   String get newMessage => 'Новое сообщение';
 
   @override

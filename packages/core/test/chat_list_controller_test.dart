@@ -114,6 +114,53 @@ void main() {
     expect(controller.store.chat(5)!.positionFor(main)!.order, 99);
   });
 
+  test('keeps the draft text and date, and drops a cleared draft', () async {
+    const main = ChatListLocation.main();
+    await controller.start();
+    controller.store.upsert(
+      ChatListEntry(
+        id: 5,
+        title: 'Draft',
+        unreadCount: 0,
+        positions: [ChatListPosition(list: main, order: 10, isPinned: false)],
+      ),
+    );
+    final positions = [
+      {
+        '@type': 'chatPosition',
+        'list': {'@type': 'chatListMain'},
+        'order': '99',
+        'is_pinned': false,
+      },
+    ];
+    json.push({
+      '@type': 'updateChatDraftMessage',
+      'chat_id': 5,
+      'draft_message': {
+        '@type': 'draftMessage',
+        'date': 1700000000,
+        'effect_id': '0',
+        'content': {
+          '@type': 'draftMessageContentText',
+          'text': {'@type': 'formattedText', 'text': 'hello', 'entities': []},
+        },
+      },
+      'positions': positions,
+    });
+    await pumpEventQueue();
+    final draft = controller.store.chat(5)!.draft;
+    expect(draft?.text, 'hello');
+    expect(draft?.date, 1700000000);
+
+    json.push({
+      '@type': 'updateChatDraftMessage',
+      'chat_id': 5,
+      'positions': positions,
+    });
+    await pumpEventQueue();
+    expect(controller.store.chat(5)!.draft, isNull);
+  });
+
   group('chat state and actions', () {
     const main = ChatListLocation.main();
 

@@ -43,6 +43,7 @@
   "connectionConnecting": "Соединение…",
   "connectionUpdating": "Обновление…",
   "nothingFound": "Ничего не найдено",
+  "draftLabel": "Черновик:",
   "newMessage": "Новое сообщение",
   "contacts": "Контакты",
   "peopleSearchHint": "Имя или имя пользователя",
