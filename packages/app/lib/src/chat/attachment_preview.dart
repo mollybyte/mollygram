@@ -39,8 +39,23 @@ Future<AttachmentChoice?> showAttachmentPreview(
   context: context,
   barrierDismissible: true,
   barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-  barrierColor: const Color(0x00000000),
-  transitionDuration: Duration.zero,
+  barrierColor: const Color(0x33000000),
+  transitionDuration: const Duration(milliseconds: 180),
+  transitionBuilder: (context, animation, _, child) {
+    if (MediaQuery.disableAnimationsOf(context)) return child;
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: const Cubic(0.23, 1, 0.32, 1),
+      reverseCurve: Curves.easeIn,
+    );
+    return FadeTransition(
+      opacity: curved,
+      child: ScaleTransition(
+        scale: Tween<double>(begin: 0.97, end: 1).animate(curved),
+        child: child,
+      ),
+    );
+  },
   pageBuilder: (context, _, _) => Material(
     type: MaterialType.transparency,
     child: Center(
@@ -250,141 +265,211 @@ class _PreviewState extends State<_Preview> {
     final anyMedia = widget.files.any((file) => file.isMedia);
     final allPhotos = files.every((file) => file.kind == OutgoingKind.photo);
     final style = mgTextStyle(c, size: MgType.title);
+    final media = [
+      for (final (i, file) in files.indexed)
+        if (file.kind == OutgoingKind.photo || file.kind == OutgoingKind.video)
+          (i, file),
+    ];
+    final others = [
+      for (final file in files)
+        if (file.kind != OutgoingKind.photo && file.kind != OutgoingKind.video)
+          file,
+    ];
+    final single = media.length == 1 && others.isEmpty;
+    Widget tile((int, OutgoingFile) entry, {required double? side}) {
+      final (i, file) = entry;
+      return switch (file.kind) {
+        OutgoingKind.photo => _Thumbnail(
+          key: ValueKey(file.path),
+          side: side,
+          image: Image.file(
+            File(file.path),
+            fit: side == null ? BoxFit.contain : BoxFit.cover,
+            cacheWidth: side == null ? 900 : 300,
+            errorBuilder: (context, _, _) => ColoredBox(color: c.field),
+          ),
+          onEdit: () => _edit(widget.files[i]),
+        ),
+        _ => _VideoThumbnail(
+          key: ValueKey(file.path),
+          side: side,
+          path: file.path,
+          engine: _videoEngine,
+          onEdit: () => _edit(widget.files[i]),
+        ),
+      };
+    }
+
+    const gap = 6.0;
     return SizedBox(
-      width: 420,
-      child: Glass(
-        radius: 14,
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              allPhotos
-                  ? l10n.attachPhotosTitle(files.length)
-                  : l10n.attachTitle(files.length),
-              style: mgTextStyle(c, weight: FontWeight.w600),
-            ),
-            const SizedBox(height: 12),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 360),
-              child: SingleChildScrollView(
-                child: Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: [
-                    for (final (i, file) in files.indexed)
-                      switch (file.kind) {
-                        OutgoingKind.photo => _Thumbnail(
-                          key: ValueKey(file.path),
-                          image: Image.file(
-                            File(file.path),
-                            fit: BoxFit.cover,
-                            cacheWidth: 250,
-                            errorBuilder: (context, _, _) =>
-                                ColoredBox(color: c.field),
-                          ),
-                          onEdit: () => _edit(widget.files[i]),
-                        ),
-                        OutgoingKind.video => _VideoThumbnail(
-                          key: ValueKey(file.path),
-                          path: file.path,
-                          engine: _videoEngine,
-                          onEdit: () => _edit(widget.files[i]),
-                        ),
-                        _ => _FileLine(file: file),
-                      },
-                  ],
-                ),
-              ),
-            ),
-            if (anyMedia) ...[
-              const SizedBox(height: 10),
-              _CheckRow(
-                label: l10n.sendAsFiles,
-                value: _asFiles,
-                onChanged: (value) => setState(() => _asFiles = value),
-              ),
-              // A file can't hide behind a spoiler or burn; only media can.
-              if (!_asFiles) ...[
-                const SizedBox(height: 6),
-                _CheckRow(
-                  label: l10n.hideWithSpoiler,
-                  value: _spoiler,
-                  onChanged: (value) => setState(() => _spoiler = value),
-                ),
-                if (widget.allowSelfDestruct) ...[
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      Text(l10n.selfDestructTitle, style: mgTextStyle(c)),
-                      const Spacer(),
-                      Builder(
-                        builder: (anchor) => MgTextButton(
-                          label: _timerLabel(l10n, _selfDestruct),
-                          onPressed: () => _pickTimer(anchor),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ],
-            ],
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-              decoration: BoxDecoration(
-                color: c.field,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Focus(
-                onKeyEvent: _onKey,
-                skipTraversal: true,
-                child: TextField(
-                  controller: _caption,
-                  focusNode: _focus,
-                  minLines: 1,
-                  maxLines: 5,
-                  keyboardType: TextInputType.multiline,
-                  style: style,
-                  decoration: InputDecoration.collapsed(
-                    hintText: l10n.captionHint,
-                    hintStyle: style.copyWith(color: c.fg2),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 14),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                MgTextButton(
-                  label: l10n.cancel,
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-                const SizedBox(width: 10),
-                GestureDetector(
-                  onSecondaryTapUp: (details) =>
-                      unawaited(_sendMenu(details.globalPosition)),
-                  child: MgPrimaryButton(
-                    label: l10n.send,
-                    height: 28,
-                    onPressed: _send,
-                  ),
-                ),
-              ],
+      width: 440,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: c.card,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: c.separator, width: 0.5),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x33000000),
+              blurRadius: 40,
+              offset: Offset(0, 14),
             ),
           ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      allPhotos
+                          ? l10n.attachPhotosTitle(files.length)
+                          : l10n.attachTitle(files.length),
+                      style: mgTextStyle(
+                        c,
+                        size: MgType.title,
+                        weight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  MgIconButton(
+                    icon: MgIcons.close,
+                    iconSize: 14,
+                    tooltip: l10n.cancel,
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 340),
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (single)
+                        Center(child: tile(media.single, side: null))
+                      else if (media.isNotEmpty)
+                        LayoutBuilder(
+                          builder: (context, box) {
+                            final columns = media.length == 2 ? 2 : 3;
+                            final side =
+                                (box.maxWidth - gap * (columns - 1)) / columns;
+                            return Wrap(
+                              spacing: gap,
+                              runSpacing: gap,
+                              children: [
+                                for (final entry in media)
+                                  tile(entry, side: side),
+                              ],
+                            );
+                          },
+                        ),
+                      if (media.isNotEmpty && others.isNotEmpty)
+                        const SizedBox(height: 10),
+                      for (final (i, file) in others.indexed) ...[
+                        if (i > 0) const SizedBox(height: 8),
+                        _FileLine(file: file),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              if (anyMedia) ...[
+                const SizedBox(height: 14),
+                _OptionRow(
+                  label: l10n.sendAsFiles,
+                  value: _asFiles,
+                  onChanged: (value) => setState(() => _asFiles = value),
+                ),
+                // A file can't hide behind a spoiler or burn; only media can.
+                if (!_asFiles) ...[
+                  _OptionRow(
+                    label: l10n.hideWithSpoiler,
+                    value: _spoiler,
+                    onChanged: (value) => setState(() => _spoiler = value),
+                  ),
+                  if (widget.allowSelfDestruct)
+                    SizedBox(
+                      height: 34,
+                      child: Row(
+                        children: [
+                          Text(l10n.selfDestructTitle, style: mgTextStyle(c)),
+                          const Spacer(),
+                          Builder(
+                            builder: (anchor) => MgTextButton(
+                              label: _timerLabel(l10n, _selfDestruct),
+                              onPressed: () => _pickTimer(anchor),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ],
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 9,
+                ),
+                decoration: BoxDecoration(
+                  color: c.field,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Focus(
+                  onKeyEvent: _onKey,
+                  skipTraversal: true,
+                  child: TextField(
+                    controller: _caption,
+                    focusNode: _focus,
+                    minLines: 1,
+                    maxLines: 5,
+                    keyboardType: TextInputType.multiline,
+                    style: style,
+                    decoration: InputDecoration.collapsed(
+                      hintText: l10n.captionHint,
+                      hintStyle: style.copyWith(color: c.fg2),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  MgTextButton(
+                    label: l10n.cancel,
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                  const SizedBox(width: 10),
+                  GestureDetector(
+                    onSecondaryTapUp: (details) =>
+                        unawaited(_sendMenu(details.globalPosition)),
+                    child: MgPrimaryButton(
+                      label: l10n.send,
+                      height: 30,
+                      onPressed: _send,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-/// A photo with an edit button that appears on hover.
-/// A small checkbox with its label; the label toggles it too.
-class _CheckRow extends StatelessWidget {
-  const _CheckRow({
+/// An option: its label on the left and a switch on the right; the whole
+/// row toggles it.
+class _OptionRow extends StatelessWidget {
+  const _OptionRow({
     required this.label,
     required this.value,
     required this.onChanged,
@@ -397,25 +482,26 @@ class _CheckRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = MgColors.of(context);
-    return MergeSemantics(
-      child: Row(
-        children: [
-          SizedBox.square(
-            dimension: 18,
-            child: Checkbox(
-              value: value,
-              activeColor: c.accent,
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              visualDensity: VisualDensity.compact,
-              onChanged: (value) => onChanged(value ?? false),
+    return Semantics(
+      toggled: value,
+      label: label,
+      onTap: () => onChanged(!value),
+      excludeSemantics: true,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => onChanged(!value),
+          child: SizedBox(
+            height: 34,
+            child: Row(
+              children: [
+                Expanded(child: Text(label, style: mgTextStyle(c))),
+                MgSwitch(value: value),
+              ],
             ),
           ),
-          const SizedBox(width: 8),
-          GestureDetector(
-            onTap: () => onChanged(!value),
-            child: Text(label, style: mgTextStyle(c)),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -427,9 +513,14 @@ class _Thumbnail extends StatefulWidget {
     required this.image,
     required this.onEdit,
     this.badge,
+    this.side,
   });
 
   final Widget image;
+
+  /// The edge of a square tile in a grid; null shows the picture whole,
+  /// in its own proportions, as large as the dialog allows.
+  final double? side;
 
   /// Null hides the edit button.
   final VoidCallback? onEdit;
@@ -447,23 +538,26 @@ class _ThumbnailState extends State<_Thumbnail> {
   @override
   Widget build(BuildContext context) {
     final c = MgColors.of(context);
+    final side = widget.side;
     return MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: SizedBox.square(
-          dimension: 125,
-          child: Stack(
-            fit: StackFit.expand,
+        borderRadius: BorderRadius.circular(side == null ? 12 : 10),
+        child: _sized(
+          Stack(
+            fit: side == null ? StackFit.loose : StackFit.expand,
             children: [
-              widget.image,
+              if (side == null)
+                widget.image
+              else
+                Positioned.fill(child: widget.image),
               if (widget.badge != null)
-                Positioned(left: 6, bottom: 6, child: widget.badge!),
+                Positioned(left: 8, bottom: 8, child: widget.badge!),
               if (widget.onEdit != null)
                 Positioned(
-                  right: 6,
-                  top: 6,
+                  right: 8,
+                  top: 8,
                   child: AnimatedOpacity(
                     opacity: _hover ? 1 : 0,
                     duration: const Duration(milliseconds: 120),
@@ -486,6 +580,16 @@ class _ThumbnailState extends State<_Thumbnail> {
       ),
     );
   }
+
+  Widget _sized(Widget child) {
+    final side = widget.side;
+    return side == null
+        ? ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 320),
+            child: child,
+          )
+        : SizedBox.square(dimension: side, child: child);
+  }
 }
 
 /// A video's first frame with a play mark; the edit button appears once
@@ -496,8 +600,10 @@ class _VideoThumbnail extends StatefulWidget {
     required this.path,
     required this.engine,
     required this.onEdit,
+    this.side,
   });
 
+  final double? side;
   final String path;
   final VideoEngine engine;
   final VoidCallback onEdit;
@@ -534,6 +640,7 @@ class _VideoThumbnailState extends State<_VideoThumbnail> {
     final c = MgColors.of(context);
     final frame = _frame;
     return _Thumbnail(
+      side: widget.side,
       image: frame == null
           ? ColoredBox(
               color: c.field,
