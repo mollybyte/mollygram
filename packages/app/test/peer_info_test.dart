@@ -11,6 +11,7 @@ import 'package:mollygram/src/profile/last_seen.dart';
 import 'package:mollygram/src/profile/peer_info_host.dart';
 import 'package:mollygram/src/profile/peer_info_state.dart';
 import 'package:mollygram/src/session/providers.dart';
+import 'package:mollygram/src/shared_media/message_jump.dart';
 import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
@@ -113,6 +114,16 @@ void main() {
         await tester.pump();
       }
       await tester.pumpAndSettle();
+    }
+
+    /// Like [settle], for pages with a spinner that never settles while
+    /// TDLib hasn't answered.
+    Future<void> load(WidgetTester tester) async {
+      for (var i = 0; i < 6; i++) {
+        await tester.runAsync(() => Future<void>.delayed(_tick));
+        await tester.pump();
+      }
+      await tester.pump(const Duration(milliseconds: 400));
     }
 
     Future<void> pump(WidgetTester tester, {int chatId = 10}) async {
@@ -269,10 +280,110 @@ void main() {
       await settle(tester);
       expect(find.text('Flutter'), findsOneWidget);
     });
+
+    testWidgets('shows shared media with a way back to the info', (
+      tester,
+    ) async {
+      await pump(tester);
+      open(10);
+      await settle(tester);
+
+      await tester.tap(find.text('Shared media'));
+      await load(tester);
+      expect(find.text('Alina Petrova'), findsNothing);
+      expect(find.text('No photos or videos yet'), findsOneWidget);
+      expect(
+        json.sent.lastWhere((r) => r['@type'] == 'searchChatMessages'),
+        containsPair('chat_id', 10),
+      );
+
+      await tester.tap(find.text('Links'));
+      await load(tester);
+      expect(find.text('Example'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Show in chat'));
+      await tester.pump();
+      expect(container.read(messageJumpProvider)[10]?.messageId, 40);
+      // The pane's own chat: the panel stays to go on browsing.
+      expect(find.text('Example'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Back'));
+      await settle(tester);
+      expect(find.text('Alina Petrova'), findsOneWidget);
+      expect(find.byTooltip('Back'), findsNothing);
+    });
+
+    testWidgets('opens the info, not the media, the next time', (tester) async {
+      await pump(tester);
+      open(10);
+      await settle(tester);
+      await tester.tap(find.text('Shared media'));
+      await load(tester);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await settle(tester);
+      open(10);
+      await settle(tester);
+      expect(find.text('Alina Petrova'), findsOneWidget);
+      expect(find.text('Shared media'), findsOneWidget);
+    });
+  });
+
+  group('message jumps', () {
+    test('are taken once, and a repeat counts again', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final jumps = container.read(messageJumpProvider.notifier);
+
+      jumps.request(10, 40);
+      final first = container.read(messageJumpProvider)[10];
+      jumps.request(10, 40);
+      expect(container.read(messageJumpProvider)[10], isNot(first));
+
+      expect(jumps.take(10), 40);
+      expect(jumps.take(10), isNull);
+      expect(container.read(messageJumpProvider), isEmpty);
+    });
   });
 }
 
 const _tick = Duration(milliseconds: 20);
+
+Map<String, Object?> _linkMessage(int chatId, int id) => {
+  '@type': 'message',
+  'id': id,
+  'sender_id': {'@type': 'messageSenderUser', 'user_id': 5},
+  'chat_id': chatId,
+  'date': _now - 60,
+  'content': {
+    '@type': 'messageText',
+    'text': {
+      '@type': 'formattedText',
+      'text': 'https://example.com/a',
+      'entities': [
+        {
+          '@type': 'textEntity',
+          'offset': 0,
+          'length': 21,
+          'type': {'@type': 'textEntityTypeUrl'},
+        },
+      ],
+    },
+    'link_preview': {
+      '@type': 'linkPreview',
+      'url': 'https://example.com/a',
+      'display_url': 'example.com/a',
+      'site_name': 'Example site',
+      'title': 'Example',
+      'description': {
+        '@type': 'formattedText',
+        'text': '',
+        'entities': <Object?>[],
+      },
+      'type': {'@type': 'linkPreviewTypeArticle'},
+    },
+  },
+};
 
 int get _now => DateTime.now().millisecondsSinceEpoch ~/ 1000;
 
@@ -378,6 +489,16 @@ final class _FakeTdJson implements td.TdJson {
           '@type': 'giftSettings',
           'accepted_gift_types': {'@type': 'acceptedGiftTypes'},
         },
+      },
+      'searchChatMessages' => {
+        '@type': 'foundChatMessages',
+        'total_count': 0,
+        'messages': [
+          if ((decoded['filter'] as Map?)?['@type'] ==
+              'searchMessagesFilterUrl')
+            _linkMessage(decoded['chat_id']! as int, 40),
+        ],
+        'next_from_message_id': 0,
       },
       'getPhoneNumberInfo' => {
         '@type': 'phoneNumberInfo',

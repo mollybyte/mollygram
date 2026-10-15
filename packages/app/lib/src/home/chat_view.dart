@@ -29,6 +29,7 @@ import '../chat/timeline_view.dart';
 import '../chat_search/chat_search_bar.dart';
 import '../profile/peer_info_state.dart';
 import '../session/providers.dart';
+import '../shared_media/message_jump.dart';
 import '../voice/voice_record_composer.dart';
 import '../window_drag_area.dart';
 
@@ -117,6 +118,14 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _draft.addListener(_clearSendError);
     _scroll.addListener(_followScroll);
     _open(widget.chatId);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _takeJump());
+  }
+
+  /// Shows the message another panel asked this chat to show.
+  void _takeJump() {
+    if (!mounted) return;
+    final id = ref.read(messageJumpProvider.notifier).take(widget.chatId);
+    if (id != null) unawaited(_jumpTo(id));
   }
 
   @override
@@ -1020,6 +1029,12 @@ class _ChatViewState extends ConsumerState<ChatView> {
     final l10n = AppLocalizations.of(context);
     final session = ref.watch(telegramSessionProvider).requireValue;
     final chat = ref.watch(chatEntryProvider(widget.chatId)).value;
+    ref.listen(messageJumpProvider.select((jumps) => jumps[widget.chatId]), (
+      _,
+      jump,
+    ) {
+      if (jump != null) _takeJump();
+    });
     final messages = ref.watch(conversationProvider(widget.chatId));
     final store = session.conversations.store;
 
