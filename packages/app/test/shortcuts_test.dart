@@ -131,7 +131,7 @@ void main() {
       expect(registry.whoUses(_cmdK), 'app.b');
     });
 
-    test('accounts get ⌘1…⌘3 before tabs', () {
+    test('accounts get ⌃⌘1…⌃⌘3, tabs keep ⌘1…⌘9', () {
       registry
         ..registerShortcuts(
           'shell',
@@ -139,14 +139,22 @@ void main() {
         )
         ..register('app', () => [command('app.account.1')]);
       final keys = registry.effectiveKeys();
-      final cmd1 = ShortcutKey.primary(LogicalKeyboardKey.digit1);
-      expect(keys['app.account.1'], cmd1);
-      expect(keys['shell.tab.1'], isNull);
+      const account1 = ShortcutKey(
+        LogicalKeyboardKey.digit1,
+        meta: true,
+        control: true,
+      );
+      expect(keys['app.account.1'], account1);
+      expect(account1.label, '⌃⌘1');
+      expect(
+        keys['shell.tab.1'],
+        ShortcutKey.primary(LogicalKeyboardKey.digit1),
+      );
       expect(
         keys['shell.tab.2'],
         ShortcutKey.primary(LogicalKeyboardKey.digit2),
       );
-      expect(ShortcutKey.of(registry.commands.single.shortcut!), cmd1);
+      expect(ShortcutKey.of(registry.commands.single.shortcut!), account1);
     });
 
     test('closing split view shares the key of opening it', () {

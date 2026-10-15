@@ -53,14 +53,20 @@ class CommandRegistry extends ChangeNotifier {
 
   /// Defaults for commands that come without one, by id, so they are
   /// bound as soon as their owner registers them.
-  static final Map<String, ShortcutKey> extraDefaults = {
-    // ⌘1…⌘3 switch accounts, as in Telegram.
+  static Map<String, ShortcutKey> get extraDefaults => {
+    // ⌃⌘1…⌃⌘3 switch accounts (Ctrl+Alt off macOS); ⌘1…⌘9 stay on the
+    // tabs, as in a browser.
     for (final (n, key) in [
       (1, LogicalKeyboardKey.digit1),
       (2, LogicalKeyboardKey.digit2),
       (3, LogicalKeyboardKey.digit3),
     ])
-      'app.account.$n': ShortcutKey.primary(key),
+      'app.account.$n': ShortcutKey(
+        key,
+        meta: usesCommandKey,
+        control: true,
+        alt: !usesCommandKey,
+      ),
   };
 
   /// Adds the commands of [owner], replacing what it registered before.
