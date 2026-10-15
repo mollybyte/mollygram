@@ -1187,6 +1187,22 @@ class _ChatViewState extends ConsumerState<ChatView> {
     }
   }
 
+  /// Opens the profile of [sender], or the info of the channel it is.
+  Future<void> _openSender(MessageSenderId sender) async {
+    if (sender.isChat) {
+      openPeerInfo(ref, sender.id);
+      return;
+    }
+    final peers = ref.read(telegramSessionProvider).requireValue.peers;
+    final int chatId;
+    try {
+      chatId = await peers.privateChatOf(sender.id);
+    } on Object {
+      return;
+    }
+    if (mounted) openPeerInfo(ref, chatId);
+  }
+
   /// Opens the comments under [message], a channel post: its thread in
   /// the discussion group takes the timeline's place.
   Future<void> _openComments(ConversationMessage message) async {
@@ -1634,6 +1650,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
         unawaited(_pressInlineButton(message, button)),
     onComments: (message) => unawaited(_openComments(message)),
     onOpenForwardSource: (origin) => unawaited(_openForwardSource(origin)),
+    onOpenSender: (sender) => unawaited(_openSender(sender)),
     onMenu: (row, position) => unawaited(_showMenu(row, position)),
     onViewMedia: (message) => unawaited(
       showChatMediaViewer(

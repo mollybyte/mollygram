@@ -135,6 +135,7 @@ class MessageRowActions {
     this.onInlineButton,
     this.onComments,
     this.onOpenForwardSource,
+    this.onOpenSender,
   });
 
   /// Adds the reaction, or takes it back when the user had chosen it.
@@ -201,6 +202,52 @@ class MessageRowActions {
   /// A click on the name a forward came from, which opens that channel, at
   /// the original post when it is known, or that person's profile.
   final void Function(td.MessageOrigin origin)? onOpenForwardSource;
+
+  /// A click on a sender's avatar or name, which opens their profile, or
+  /// the channel's info for a channel post.
+  final void Function(MessageSenderId sender)? onOpenSender;
+}
+
+/// Makes [child] open a sender's profile: a pointer cursor over it and, for
+/// the avatar, a faint dimming on hover.
+class _SenderLink extends StatefulWidget {
+  const _SenderLink({
+    required this.onTap,
+    required this.child,
+    this.dimOnHover = false,
+  });
+
+  final VoidCallback? onTap;
+  final Widget child;
+  final bool dimOnHover;
+
+  @override
+  State<_SenderLink> createState() => _SenderLinkState();
+}
+
+class _SenderLinkState extends State<_SenderLink> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.onTap == null) return widget.child;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onTap,
+        child: widget.dimOnHover
+            ? AnimatedOpacity(
+                duration: const Duration(milliseconds: 120),
+                opacity: _hover ? 0.82 : 1,
+                child: widget.child,
+              )
+            : widget.child,
+      ),
+    );
+  }
 }
 
 /// A message, or an album, in Telegram's flat layout: no bubbles, the
@@ -399,6 +446,10 @@ class MessageTile extends StatelessWidget {
     }
     final name = nameOfSender(l10n, store, message.sender);
     final onMenu = actions.onMenu;
+    final onOpenSender = actions.onOpenSender;
+    final VoidCallback? openSender = onOpenSender == null
+        ? null
+        : () => onOpenSender(message.sender);
     final metrics = MgMetrics.of(buildContext);
     final tile = Padding(
       padding: EdgeInsets.only(
@@ -412,10 +463,14 @@ class MessageTile extends StatelessWidget {
           SizedBox(
             width: avatarSize,
             child: context.startsRun
-                ? SenderAvatar(
-                    name: name,
-                    photo: store.photoOf(message.sender),
-                    size: avatarSize,
+                ? _SenderLink(
+                    dimOnHover: true,
+                    onTap: openSender,
+                    child: SenderAvatar(
+                      name: name,
+                      photo: store.photoOf(message.sender),
+                      size: avatarSize,
+                    ),
                   )
                 : null,
           ),
@@ -427,14 +482,17 @@ class MessageTile extends StatelessWidget {
               children: [
                 if (context.startsRun)
                   SelectionContainer.disabled(
-                    child: Text(
-                      name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: mgTextStyle(
-                        c,
-                        weight: FontWeight.w600,
-                        height: 1.35,
+                    child: _SenderLink(
+                      onTap: openSender,
+                      child: Text(
+                        name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: mgTextStyle(
+                          c,
+                          weight: FontWeight.w600,
+                          height: 1.35,
+                        ),
                       ),
                     ),
                   ),
