@@ -4399,6 +4399,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Hide secret'**
   String get proxyHideSecret;
+
+  /// No description provided for @pluginShowMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Show'**
+  String get pluginShowMessage;
+
+  /// No description provided for @pluginFilteredMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Filtered by a plugin'**
+  String get pluginFilteredMessage;
 }
 
 class _AppLocalizationsDelegate

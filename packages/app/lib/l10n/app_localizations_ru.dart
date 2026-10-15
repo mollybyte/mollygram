@@ -2603,4 +2603,10 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get proxyHideSecret => 'Скрыть ключ';
+
+  @override
+  String get pluginShowMessage => 'Показать';
+
+  @override
+  String get pluginFilteredMessage => 'Скрыто плагином';
 }

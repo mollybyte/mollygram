@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:isolate';
 
 import 'manifest.dart';
@@ -30,6 +31,14 @@ final class PluginWorker {
   PluginStatus _status = PluginStatus.stopped;
   String? _disabledReason;
   final _statusChanges = StreamController<PluginStatus>.broadcast();
+  final _logs = ListQueue<String>();
+  final _logLines = StreamController<String>.broadcast();
+
+  /// The plugin's last [PluginInstance.maxLogLines] log lines.
+  List<String> get logs => List.unmodifiable(_logs);
+
+  /// Each line as the plugin logs it.
+  Stream<String> get logLines => _logLines.stream;
 
   PluginStatus get status => _status;
   String? get disabledReason => _disabledReason;
@@ -99,6 +108,7 @@ final class PluginWorker {
     _failPending('plugin stopped');
     _setStatus(PluginStatus.stopped, null);
     unawaited(_statusChanges.close());
+    unawaited(_logLines.close());
   }
 
   void _failPending(String why) {
@@ -140,6 +150,12 @@ final class PluginWorker {
         error == null ? c.complete(value) : c.completeError(error);
       case ('status', final PluginStatus s, final String? reason):
         _setStatus(s, reason);
+      case ('logs', final List<String> lines):
+        for (final line in lines) {
+          _logs.add(line);
+          if (_logs.length > PluginInstance.maxLogLines) _logs.removeFirst();
+          if (!_logLines.isClosed) _logLines.add(line);
+        }
       case (
         'service',
         final int id,
@@ -197,10 +213,46 @@ final class _RemoteServices implements PluginServices {
   }
 }
 
+/// Sends log lines to the app isolate in batches, at most every
+/// [_LogBatcher.interval], keeping the last [PluginInstance.maxLogLines]:
+/// a plugin logging in a loop cannot flood the app.
+final class _LogBatcher {
+  _LogBatcher(this._port);
+
+  static const interval = Duration(milliseconds: 100);
+
+  final SendPort _port;
+  final _lines = ListQueue<String>();
+  var _dropped = 0;
+  Timer? _timer;
+
+  void add(String line) {
+    _lines.add(line);
+    if (_lines.length > PluginInstance.maxLogLines) {
+      _lines.removeFirst();
+      _dropped++;
+    }
+    _timer ??= Timer(interval, flush);
+  }
+
+  void flush() {
+    _timer?.cancel();
+    _timer = null;
+    if (_lines.isEmpty) return;
+    _port.send((
+      'logs',
+      [if (_dropped > 0) '… $_dropped lines skipped', ..._lines],
+    ));
+    _lines.clear();
+    _dropped = 0;
+  }
+}
+
 void _workerMain(_WorkerArgs args) {
   final port = args.port;
   final inbox = ReceivePort();
   final services = _RemoteServices(port);
+  final logs = _LogBatcher(port);
   final plugin = PluginInstance(
     manifest: args.manifest,
     services: services,
@@ -208,11 +260,13 @@ void _workerMain(_WorkerArgs args) {
     policy: args.policy,
     locale: args.locale,
     settings: args.settings,
+    onLog: logs.add,
   );
   var lastStatus = plugin.status;
   Isolate.current.addErrorListener(port);
 
   void reportStatus() {
+    logs.flush();
     if (plugin.status == lastStatus) return;
     lastStatus = plugin.status;
     port.send(('status', plugin.status, plugin.disabledReason));

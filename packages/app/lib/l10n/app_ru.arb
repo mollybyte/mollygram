@@ -716,5 +716,7 @@
   "proxyRemoveAction": "Удалить",
   "proxyLoadFailed": "Не удалось загрузить прокси.",
   "proxyShowSecret": "Показать ключ",
-  "proxyHideSecret": "Скрыть ключ"
+  "proxyHideSecret": "Скрыть ключ",
+  "pluginShowMessage": "Показать",
+  "pluginFilteredMessage": "Скрыто плагином"
 }

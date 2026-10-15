@@ -989,5 +989,7 @@
   "proxyRemoveAction": "Remove",
   "proxyLoadFailed": "Couldn't load the proxies.",
   "proxyShowSecret": "Show secret",
-  "proxyHideSecret": "Hide secret"
+  "proxyHideSecret": "Hide secret",
+  "pluginShowMessage": "Show",
+  "pluginFilteredMessage": "Filtered by a plugin"
 }

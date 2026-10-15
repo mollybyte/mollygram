@@ -106,7 +106,7 @@ M8 calls and macOS release, M9 after release.
 | Text, Enter to send, Shift+Enter newline | done | | | |
 | Attach photos, videos, files: pick, drop, paste, albums | done | #31 | | |
 | Edit mode and reply panel | done | #30 | | |
-| Drafts saved to the server and synced | partial | Draft is local to the open view; `SetChatDraftMessage` not called | S | M1 |
+| Drafts saved to the server and synced | done | Composer loads the chat's draft and saves its own (text, formatting, reply) after a pause and on leaving | | |
 | Emoji picker | done | #34: groups, recent, keyword search | | |
 | Sticker panel, recent and favourite stickers, sticker search | partial | #34: recent, favourites, installed sets; no search, no set management | S | M1 |
 | GIF panel and GIF search | missing | `GifKeyboardController` | M | M2 |
