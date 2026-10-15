@@ -147,18 +147,23 @@ final class ConversationController {
     if (oldest == null || store.reachedStart(chatId)) return false;
     if (!_loadingOlder.add(chatId)) return false;
     try {
-      final response = await _client.send(
-        td.GetChatHistory(
-          chatId: chatId,
-          fromMessageId: oldest,
-          offset: 0,
-          limit: 50,
-          onlyLocal: false,
-        ),
-      );
-      final added = store.addOlder(chatId, [
-        for (final message in response.messages) ConversationMessage(message),
-      ]);
+      var added = 0;
+      // TDLib can answer a first request with nothing while it fetches the
+      // page from the server; only a second empty answer is the start.
+      for (var attempt = 0; attempt < 2 && added == 0; attempt++) {
+        final response = await _client.send(
+          td.GetChatHistory(
+            chatId: chatId,
+            fromMessageId: oldest,
+            offset: 0,
+            limit: 50,
+            onlyLocal: false,
+          ),
+        );
+        added = store.addOlder(chatId, [
+          for (final message in response.messages) ConversationMessage(message),
+        ]);
+      }
       if (added == 0) store.markReachedStart(chatId);
       _notify();
       return added > 0;

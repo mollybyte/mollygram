@@ -2405,11 +2405,11 @@ void main() {
     await pump(tester);
 
     // The date pill above the first message comes once the start of the
-    // chat is known, a page later.
-    await tester.runAsync(() => Future<void>.delayed(_tick));
-    await tester.pump();
-    await tester.runAsync(() => Future<void>.delayed(_tick));
-    await tester.pump();
+    // chat is known, a page later (after one more ask to be sure it is empty).
+    for (var i = 0; i < 3; i++) {
+      await tester.runAsync(() => Future<void>.delayed(_tick));
+      await tester.pump();
+    }
     // The history is from October 2025.
     await tester.tap(find.byType(DatePill).first);
     await tester.pump();
