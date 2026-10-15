@@ -26,13 +26,30 @@ void paintStrokes(
   canvas.restore();
 }
 
+/// Paints [stroke] as an opaque mask: the cut-out for the blur and
+/// pixelate brushes, which draw the treated picture over it with srcIn.
+void paintStrokeMask(Canvas canvas, Stroke stroke, Size oriented) {
+  final short = math.min(oriented.width, oriented.height);
+  canvas.drawPath(
+    smoothPath(_points(stroke, oriented)),
+    Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = math.max(1.0, stroke.width * short)
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..color = const Color(0xFF000000),
+  );
+}
+
+List<Offset> _points(Stroke stroke, Size oriented) => [
+  for (final p in stroke.points)
+    Offset(p.dx * oriented.width, p.dy * oriented.height),
+];
+
 void _paintStroke(Canvas canvas, Stroke stroke, Size oriented) {
   final short = math.min(oriented.width, oriented.height);
   final width = math.max(1.0, stroke.width * short);
-  final points = [
-    for (final p in stroke.points)
-      Offset(p.dx * oriented.width, p.dy * oriented.height),
-  ];
+  final points = _points(stroke, oriented);
   final paint = Paint()
     ..style = PaintingStyle.stroke
     ..strokeWidth = width
@@ -51,6 +68,10 @@ void _paintStroke(Canvas canvas, Stroke stroke, Size oriented) {
       paint
         ..color = const Color(0xFF000000)
         ..blendMode = BlendMode.clear;
+    case BrushTool.blur:
+    case BrushTool.pixelate:
+      // Effects are applied to the picture in paintEdited.
+      return;
   }
   canvas.drawPath(smoothPath(points), paint);
   if (stroke.tool == BrushTool.arrow && points.length >= 2) {

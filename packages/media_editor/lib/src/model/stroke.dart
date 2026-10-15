@@ -15,6 +15,15 @@ enum BrushTool {
 
   /// Removes what was drawn under it.
   eraser,
+
+  /// Blurs the picture under it.
+  blur,
+
+  /// Turns the picture under it into large square cells.
+  pixelate;
+
+  /// Changes the picture itself rather than painting over it.
+  bool get isEffect => this == blur || this == pixelate;
 }
 
 /// One drawn line in the oriented picture, with every coordinate
