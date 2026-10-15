@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:code_assets/code_assets.dart';
 import 'package:hooks/hooks.dart';
 import 'package:logging/logging.dart';
@@ -10,6 +12,16 @@ void main(List<String> args) async {
     if (!input.config.buildCodeAssets) return;
     final os = input.config.code.targetOS;
     const qjs = 'third_party/quickjs-ng';
+    // quickjs-ng is a git submodule. Without it clang fails with a wall of
+    // "no such file" errors, so say what is wrong before compiling.
+    final engine = File.fromUri(input.packageRoot.resolve('$qjs/quickjs.c'));
+    if (!engine.existsSync()) {
+      throw StateError(
+        'QuickJS sources are missing: ${engine.parent.path} is empty.\n'
+        'It is a git submodule. Fetch it from the repository root with:\n'
+        '  git submodule update --init --recursive',
+      );
+    }
     final builder = CBuilder.library(
       name: 'mg_qjs',
       assetName: 'src/native/bindings.dart',

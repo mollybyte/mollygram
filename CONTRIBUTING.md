@@ -9,8 +9,19 @@ By taking part you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md). Se
 Flutter is managed with [fvm](https://fvm.app); the version is pinned in [`.fvmrc`](.fvmrc).
 
 ```sh
+git clone --recurse-submodules https://github.com/mollybyte/mollygram.git
+cd mollygram
 fvm install
 fvm flutter pub get
+```
+
+If you already cloned without submodules, run `git submodule update --init --recursive`; the plugin host builds QuickJS from the `quickjs-ng` submodule.
+
+Run the app from `packages/app` with your own Telegram API keys (see the [README](README.md#development)):
+
+```sh
+cd packages/app
+fvm flutter run -d macos --dart-define-from-file=../../config/telegram.json
 ```
 
 The repository is a [pub workspace](https://dart.dev/tools/pub/workspaces): one `pub get` at the root resolves every package under `packages/`. See the [README](README.md#development) for the package layout and for running the app with your own Telegram API keys.
