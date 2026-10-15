@@ -189,6 +189,11 @@ Future<void> showMessageMenu(
           ),
         ),
       ),
+      if (savedPath != null && Platform.isMacOS)
+        MgMenuItem(
+          label: l10n.menuQuickLook,
+          onSelected: () => unawaited(quickLookFile(savedPath)),
+        ),
       if (savedPath != null)
         MgMenuItem(
           label: Platform.isMacOS

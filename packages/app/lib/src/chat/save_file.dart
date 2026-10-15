@@ -150,3 +150,11 @@ Future<void> _revealWithSystem(String path) async {
     await Process.run('xdg-open', [File(path).parent.path]);
   }
 }
+
+/// Previews [path] with Quick Look, as a click on a file does in Telegram
+/// for macOS. Swapped in tests.
+Future<void> Function(String path) quickLookFile = _quickLookWithSystem;
+
+Future<void> _quickLookWithSystem(String path) async {
+  await Process.run('qlmanage', ['-p', path]);
+}
