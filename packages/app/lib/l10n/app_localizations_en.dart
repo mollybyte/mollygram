@@ -1835,6 +1835,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get searchInChat => 'Search in chat';
 
   @override
+  String get searchByDate => 'Jump to date';
+
+  @override
   String searchCounter(int index, int count) {
     return '$index of $count';
   }

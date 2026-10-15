@@ -15,6 +15,7 @@ import 'package:mollygram/src/chat/recent_emoji.dart';
 import 'package:mollygram/src/chat/save_file.dart';
 import 'package:mollygram/src/chat/sticker_suggestions.dart';
 import 'package:mollygram/src/chat/timeline_view.dart';
+import 'package:mollygram/src/chat_search/chat_search_bar.dart';
 import 'package:mollygram/src/home/chat_view.dart';
 import 'package:mollygram/src/session/providers.dart';
 import 'package:mollygram/src/settings/preferences.dart';
@@ -1593,6 +1594,32 @@ void main() {
       DateTime(2025, 10, 10).millisecondsSinceEpoch ~/ 1000 - 1,
     );
     expect(tester.widget<TimelineView>(find.byType(TimelineView)).anchor, 11);
+  });
+
+  testWidgets('jumps to a day from the search bar', (tester) async {
+    await pump(tester);
+    // The shortcut needs the focus inside the chat.
+    await tester.tap(find.byType(TextField));
+    await tester.pump();
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyF);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await tester.pump();
+    expect(find.byType(ChatSearchBar), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Jump to date'));
+    await tester.pump();
+    expect(find.byType(MgCalendar), findsOneWidget);
+    await tester.tap(find.text('1').first);
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+    expect(find.byType(MgCalendar), findsNothing);
+    final request = json.sent.lastWhere(
+      (r) => r['@type'] == 'getChatMessageByDate',
+    );
+    expect(request['chat_id'], 7);
+    // The search stays open for the next step.
+    expect(find.byType(ChatSearchBar), findsOneWidget);
   });
 
   testWidgets('opens a photo full screen and pages through the chat media', (

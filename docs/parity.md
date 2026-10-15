@@ -161,7 +161,7 @@ M8 calls and macOS release, M9 after release.
 |---|---|---|---|---|
 | Chat search in the sidebar and ⌘K palette | done | `chat_search.dart`, #27 | | |
 | Global message search | partial | `SearchMessages` used by the palette; no jump to the message | M | M2 |
-| Search inside a chat, by sender, by date | partial | ⌘F capsule with result arrows (`chat_search/`); sender filter in core only, no date jump | S | M2 |
+| Search inside a chat, by sender, by date | partial | ⌘F capsule with result arrows (`chat_search/`) and a calendar button that jumps to a day; sender filter in core only | S | M2 |
 | Hashtag and cashtag search | partial | A tapped hashtag or cashtag opens the ⌘K message search with it; no dedicated hashtag results view | S | M2 |
 | Search filters (media, links, files, voice) | partial | `ChatSearchController` filters back the shared media tabs; not offered in ⌘F yet | S | M2 |
 | Recent searches and top peers | missing | | S | M2 |

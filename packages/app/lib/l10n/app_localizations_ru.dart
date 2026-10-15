@@ -1855,6 +1855,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get searchInChat => 'Поиск в чате';
 
   @override
+  String get searchByDate => 'Перейти к дате';
+
+  @override
   String searchCounter(int index, int count) {
     return '$index из $count';
   }
