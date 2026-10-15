@@ -2393,6 +2393,18 @@ class AppLocalizationsRu extends AppLocalizations {
   String get savedHiddenAuthor => 'Скрытый автор';
 
   @override
+  String get savedTagName => 'Назвать тег';
+
+  @override
+  String get savedTagClearName => 'Убрать название';
+
+  @override
+  String get savedTagFailed => 'Не удалось загрузить эти сообщения';
+
+  @override
+  String get savedAllMessages => 'Все сохранённые сообщения';
+
+  @override
   String deleteSavedTopicConfirm(String name) {
     return 'Удалить всё сохранённое из «$name»?';
   }

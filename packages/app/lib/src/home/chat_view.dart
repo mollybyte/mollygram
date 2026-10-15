@@ -21,6 +21,7 @@ import '../chat/attachment_preview.dart';
 import '../chat/audio_player_bar.dart';
 import '../chat/bot_keyboard.dart';
 import '../chat/contact_picker.dart';
+import '../chat/custom_emoji.dart';
 import '../chat/describe.dart';
 import '../chat/emoji_sticker_panel.dart';
 import '../chat/formatted_text.dart';
@@ -34,6 +35,7 @@ import '../chat/message_actions.dart';
 import '../chat/message_tile.dart';
 import '../chat/poll_composer.dart';
 import '../chat/poll_content.dart';
+import '../chat/saved_tags.dart';
 import '../chat/saved_topics.dart';
 import '../chat/schedule_picker.dart';
 import '../chat/send_as.dart';
@@ -190,6 +192,12 @@ class _ChatViewState extends ConsumerState<ChatView> {
   StreamSubscription<void>? _savedTopicsSub;
   var _savedTopicsOpening = false;
   var _savedOpen = false;
+
+  /// The tags on Saved Messages, in a bar under the header while there
+  /// are any; one opens the messages carrying it in the timeline's place.
+  SavedTags? _savedTags;
+  StreamSubscription<void>? _savedTagsSub;
+  var _savedTagsOpening = false;
   StreamSubscription<void>? _threadSub;
   final _threadScroll = TimelineScrollController();
   final _threadDraft = RichTextEditingController();
@@ -609,6 +617,138 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _savedTopics = null;
     _savedTopicsOpening = false;
     _savedOpen = false;
+    _savedTagsSub?.cancel();
+    _savedTagsSub = null;
+    _savedTags?.dispose();
+    _savedTags = null;
+    _savedTagsOpening = false;
+  }
+
+  /// The tag whose messages the open thread shows, as a reaction key.
+  String? get _selectedTag => switch (_thread?.savedTag) {
+    final tag? => reactionKey(tag),
+    null => null,
+  };
+
+  /// Whether the tag bar has a place: Saved Messages with tags, showing
+  /// the timeline or one tag's messages.
+  bool get _tagsShown =>
+      _saved &&
+      (_savedTags?.tags.isNotEmpty ?? false) &&
+      (!_listOpen || _selectedTag != null);
+
+  /// The tag bar under the header, loading the tags the first time Saved
+  /// Messages shows.
+  Widget? _tagBar(AppLocalizations l10n) {
+    if (!_saved) return null;
+    final tags = _savedTags;
+    if (tags == null) {
+      if (!_savedTagsOpening) {
+        _savedTagsOpening = true;
+        scheduleMicrotask(() => unawaited(_openSavedTags()));
+      }
+      return null;
+    }
+    if (!_tagsShown) return null;
+    return SavedTagBar(
+      tags: tags.tags,
+      selected: _selectedTag,
+      onSelect: (tag) => unawaited(_toggleSavedTag(tag)),
+      onMenu: (tag, position) => unawaited(_showTagMenu(l10n, tag, position)),
+    );
+  }
+
+  Future<void> _openSavedTags() async {
+    final chatId = widget.chatId;
+    final tags = _conversations.openSavedTags();
+    try {
+      await tags.load();
+    } on td.TdException {
+      tags.dispose();
+      return;
+    }
+    if (!mounted || widget.chatId != chatId) {
+      tags.dispose();
+      return;
+    }
+    setState(() => _savedTags = tags);
+    _savedTagsSub = tags.changes.listen((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  /// Shows the Saved Messages carrying [tag] in the timeline's place, or
+  /// the whole timeline again when its chip is clicked once more.
+  Future<void> _toggleSavedTag(td.SavedMessagesTag tag) async {
+    if (_selectedTag == reactionKey(tag.tag)) {
+      _closeThread();
+      return;
+    }
+    final chatId = widget.chatId;
+    final MessageThread thread;
+    try {
+      thread = await _conversations.openSavedTag(chatId, tag.tag);
+      await thread.load();
+    } on td.TdException {
+      if (mounted) {
+        showMgToast(context, AppLocalizations.of(context).savedTagFailed);
+      }
+      return;
+    }
+    if (!mounted || widget.chatId != chatId) {
+      thread.dispose();
+      return;
+    }
+    _dropThread();
+    setState(() {
+      _thread = thread;
+      _savedOpen = false;
+      _selected = null;
+    });
+    _threadSub = thread.changes.listen((_) {
+      if (mounted) setState(() {});
+    });
+    _threadFocus.requestFocus();
+  }
+
+  Future<void> _showTagMenu(
+    AppLocalizations l10n,
+    td.SavedMessagesTag tag,
+    Offset position,
+  ) async {
+    final tags = _savedTags;
+    if (tags == null) return;
+    await showMgMenu(
+      context,
+      position: position,
+      items: [
+        MgMenuItem(
+          label: l10n.savedTagName,
+          onSelected: () => unawaited(_nameTag(l10n, tags, tag)),
+        ),
+        if (tag.label.isNotEmpty)
+          MgMenuItem(
+            label: l10n.savedTagClearName,
+            onSelected: () => unawaited(_quiet(tags.setLabel(tag.tag, ''))),
+          ),
+      ],
+    );
+  }
+
+  Future<void> _nameTag(
+    AppLocalizations l10n,
+    SavedTags tags,
+    td.SavedMessagesTag tag,
+  ) async {
+    final label = await showMgPrompt(
+      context,
+      title: l10n.savedTagName,
+      confirmLabel: l10n.save,
+      cancelLabel: l10n.cancel,
+      hint: tag.label,
+    );
+    if (label == null || !mounted) return;
+    await _quiet(tags.setLabel(tag.tag, label.trim()));
   }
 
   /// The name of the topic the open thread is, forum or Saved Messages.
@@ -618,6 +758,11 @@ class _ChatViewState extends ConsumerState<ChatView> {
     if (thread.forumTopic case final topic?) return topic.name;
     if (thread.savedTopic case final topic?) {
       return savedTopicName(l10n, _conversations.store, topic);
+    }
+    if (thread.savedTag case final tag?) {
+      final key = reactionKey(tag);
+      final named = _savedTags?.tags.where((t) => reactionKey(t.tag) == key);
+      return named == null || named.isEmpty ? key : savedTagName(named.first);
     }
     return null;
   }
@@ -1210,6 +1355,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
   /// Where the timeline starts under the header and the pinned bar.
   double get _topInset =>
       TimelineView.headerInset +
+      (_tagsShown ? SavedTagBar.height + 8 : 0) +
       (_pinnedShown && !_pinnedListOpen ? PinnedBar.height + 8 : 0);
 
   /// Keeps [_scroll.pinned] and the down button in step with where the
@@ -3171,10 +3317,21 @@ class _ChatViewState extends ConsumerState<ChatView> {
               _ => const SizedBox.shrink(),
             },
           ),
+          if (_tagBar(l10n) case final bar?)
+            Positioned(
+              top: 10 + ChatHeaderBar.height + 8,
+              left: 14,
+              right: 14,
+              child: bar,
+            ),
           if (!_listOpen)
             if (_pinnedBar(l10n, store) case final bar?)
               Positioned(
-                top: 10 + ChatHeaderBar.height + 8,
+                top:
+                    10 +
+                    ChatHeaderBar.height +
+                    8 +
+                    (_tagsShown ? SavedTagBar.height + 8 : 0),
                 left: 14,
                 right: 14,
                 child: bar,
@@ -3225,7 +3382,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
                               : l10n.commentCount(_thread!.replyCount)),
                       avatar: MgIconButton(
                         icon: MgIcons.back,
-                        tooltip: _thread!.isStandalone
+                        tooltip: _thread!.isSavedTag
+                            ? l10n.savedAllMessages
+                            : _thread!.isStandalone
                             ? l10n.backToTopics
                             : l10n.backToChat,
                         onPressed: _closeThread,

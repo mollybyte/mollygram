@@ -2367,6 +2367,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get savedHiddenAuthor => 'Hidden author';
 
   @override
+  String get savedTagName => 'Name the tag';
+
+  @override
+  String get savedTagClearName => 'Remove the name';
+
+  @override
+  String get savedTagFailed => 'Couldn\'t load these messages';
+
+  @override
+  String get savedAllMessages => 'All saved messages';
+
+  @override
   String deleteSavedTopicConfirm(String name) {
     return 'Delete everything saved from $name?';
   }

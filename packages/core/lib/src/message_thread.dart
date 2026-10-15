@@ -34,6 +34,7 @@ final class MessageThread {
     required this.threadId,
     this.forumTopic,
     this.savedTopic,
+    this.savedTag,
     required List<td.Message> roots,
     required this._replyCount,
     required this._onDispose,
@@ -65,43 +66,76 @@ final class MessageThread {
   /// from one chat, through TDLib's Saved Messages topic functions.
   final td.SavedMessagesTopic? savedTopic;
 
+  /// Set when the thread is the Saved Messages carrying one tag: found
+  /// through `searchSavedMessages`, and a message leaves it with the tag.
+  final td.ReactionType? savedTag;
+
   bool get isForumTopic => forumTopic != null;
   bool get isSavedTopic => savedTopic != null;
+  bool get isSavedTag => savedTag != null;
 
-  /// A forum or Saved Messages topic: a chat of its own with no root,
-  /// where a message is not a reply to anything.
-  bool get isStandalone => isForumTopic || isSavedTopic;
+  /// A forum or Saved Messages topic, or a Saved Messages tag: a chat of
+  /// its own with no root, where a message is not a reply to anything.
+  bool get isStandalone => isForumTopic || isSavedTopic || isSavedTag;
 
-  td.MessageTopic get _topic => isSavedTopic
+  /// Where a sent message goes; a tag is a filter, not a topic.
+  td.MessageTopic? get _topic => isSavedTag
+      ? null
+      : isSavedTopic
       ? td.MessageTopicSavedMessages(savedMessagesTopicId: threadId)
       : forumTopic == null
       ? td.MessageTopicThread(messageThreadId: threadId)
       : td.MessageTopicForum(forumTopicId: threadId);
 
-  Future<td.Messages> _history(int fromMessageId) => _client.send(
-    isSavedTopic
-        ? td.GetSavedMessagesTopicHistory(
-            savedMessagesTopicId: threadId,
-            fromMessageId: fromMessageId,
-            offset: 0,
-            limit: 50,
-          )
-        : forumTopic == null
-        ? td.GetMessageThreadHistory(
-            chatId: chatId,
-            messageId: threadId,
-            fromMessageId: fromMessageId,
-            offset: 0,
-            limit: 50,
-          )
-        : td.GetForumTopicHistory(
-            chatId: chatId,
-            forumTopicId: threadId,
-            fromMessageId: fromMessageId,
-            offset: 0,
-            limit: 50,
-          ),
-  );
+  static const _page = 50;
+
+  /// The page of history before [fromMessageId] (0 for the newest), and
+  /// whether it was the last one.
+  Future<(List<td.Message>, bool)> _history(int fromMessageId) async {
+    if (isSavedTag) {
+      final found = await _client.send(
+        td.SearchSavedMessages(
+          savedMessagesTopicId: 0,
+          tag: savedTag,
+          query: '',
+          fromMessageId: fromMessageId,
+          offset: 0,
+          limit: _page,
+        ),
+      );
+      return (found.messages, found.nextFromMessageId == 0);
+    }
+    final page = await _client.send(
+      isSavedTopic
+          ? td.GetSavedMessagesTopicHistory(
+              savedMessagesTopicId: threadId,
+              fromMessageId: fromMessageId,
+              offset: 0,
+              limit: _page,
+            )
+          : forumTopic == null
+          ? td.GetMessageThreadHistory(
+              chatId: chatId,
+              messageId: threadId,
+              fromMessageId: fromMessageId,
+              offset: 0,
+              limit: _page,
+            )
+          : td.GetForumTopicHistory(
+              chatId: chatId,
+              forumTopicId: threadId,
+              fromMessageId: fromMessageId,
+              offset: 0,
+              limit: _page,
+            ),
+    );
+    // A short first page is the whole history; a later one may be short
+    // because TDLib trims, so only an empty one ends it.
+    final last = fromMessageId == 0
+        ? page.messages.length < _page
+        : page.messages.isEmpty;
+    return (page.messages, last);
+  }
 
   final void Function(MessageThread) _onDispose;
   final FileSender _sendFiles;
@@ -128,10 +162,10 @@ final class MessageThread {
 
   /// Loads the newest page of comments.
   Future<void> load() async {
-    final page = await _history(0);
+    final (messages, last) = await _history(0);
     if (_disposed) return;
-    _addAll(page.messages);
-    if (page.messages.length < 50) _reachedStart = true;
+    _addAll(messages);
+    if (last) _reachedStart = true;
     _notify();
   }
 
@@ -142,10 +176,10 @@ final class MessageThread {
     if (oldest == null) return;
     _loadingOlder = true;
     try {
-      final page = await _history(oldest);
+      final (messages, last) = await _history(oldest);
       if (_disposed) return;
-      _addAll(page.messages);
-      if (page.messages.isEmpty) _reachedStart = true;
+      _addAll(messages);
+      if (last) _reachedStart = true;
       _notify();
     } finally {
       _loadingOlder = false;
@@ -223,7 +257,7 @@ final class MessageThread {
     td.ViewMessages(
       chatId: chatId,
       messageIds: ids,
-      source: isSavedTopic
+      source: isSavedTopic || isSavedTag
           ? const td.MessageSourceChatHistory()
           : isForumTopic
           ? const td.MessageSourceForumTopicHistory()
@@ -270,6 +304,12 @@ final class MessageThread {
             :final interactionInfo,
           )
           when chatId == this.chatId:
+        if (isSavedTag && !_carriesTag(interactionInfo)) {
+          if (_messages.remove(messageId) == null) return;
+          _replyCount--;
+          _notify();
+          return;
+        }
         _patch(messageId, {'interaction_info': interactionInfo?.toJson()});
       case td.UpdateDeleteMessages(
             :final chatId,
@@ -287,8 +327,17 @@ final class MessageThread {
     }
   }
 
+  /// Whether a tagged thread keeps a message with these reactions.
+  bool _carriesTag(td.MessageInteractionInfo? info) {
+    final tag = savedTag!;
+    final reactions = info?.reactions?.reactions ?? const [];
+    return reactions.any((r) => r.isChosen && r.type == tag);
+  }
+
   bool _inThread(td.Message message) =>
       message.chatId == chatId &&
+      // A new saved message has no tag yet; it joins the thread with one.
+      !isSavedTag &&
       message.id != threadId &&
       switch (message.topicId) {
         td.MessageTopicThread(:final messageThreadId) =>

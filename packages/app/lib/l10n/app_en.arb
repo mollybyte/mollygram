@@ -928,6 +928,10 @@
   "savedShowAsMessages": "Show as messages",
   "savedMyNotes": "My notes",
   "savedHiddenAuthor": "Hidden author",
+  "savedTagName": "Name the tag",
+  "savedTagClearName": "Remove the name",
+  "savedTagFailed": "Couldn't load these messages",
+  "savedAllMessages": "All saved messages",
   "deleteSavedTopicConfirm": "Delete everything saved from {name}?",
   "@deleteSavedTopicConfirm": {
     "placeholders": {

@@ -4016,6 +4016,30 @@ abstract class AppLocalizations {
   /// **'Hidden author'**
   String get savedHiddenAuthor;
 
+  /// No description provided for @savedTagName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name the tag'**
+  String get savedTagName;
+
+  /// No description provided for @savedTagClearName.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove the name'**
+  String get savedTagClearName;
+
+  /// No description provided for @savedTagFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load these messages'**
+  String get savedTagFailed;
+
+  /// No description provided for @savedAllMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'All saved messages'**
+  String get savedAllMessages;
+
   /// No description provided for @deleteSavedTopicConfirm.
   ///
   /// In en, this message translates to:

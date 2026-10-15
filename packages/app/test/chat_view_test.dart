@@ -1314,6 +1314,76 @@ void main() {
     expect(find.byTooltip('Back to topics'), findsOneWidget);
   });
 
+  testWidgets('filters Saved Messages by a tag from the bar', (tester) async {
+    json.push({
+      '@type': 'updateOption',
+      'name': 'my_id',
+      'value': {'@type': 'optionValueInteger', 'value': 7},
+    });
+    json.push(
+      _chat(
+        lastRead: 13,
+        unread: 0,
+        last: 13,
+        type: {'@type': 'chatTypePrivate', 'user_id': 7},
+      ),
+    );
+    await pump(tester);
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    expect(
+      json.sent.lastWhere(
+        (r) => r['@type'] == 'getSavedMessagesTags',
+      )['saved_messages_topic_id'],
+      0,
+    );
+    expect(find.text('Work'), findsOneWidget);
+    expect(find.text('2'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('saved-tag-🔥')));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    final search = json.sent.lastWhere(
+      (r) => r['@type'] == 'searchSavedMessages',
+    );
+    expect((search['tag']! as Map)['emoji'], '🔥');
+    expect(search['query'], '');
+    expect(find.text('Tagged two'), findsOneWidget);
+    expect(find.byTooltip('All saved messages'), findsOneWidget);
+    // The bar stays, so another tag is one click away; the capsule names
+    // the tag.
+    expect(find.byKey(const ValueKey('saved-tag-🔥')), findsOneWidget);
+    expect(find.text('Work'), findsNWidgets(2));
+
+    // The same chip again shows every saved message.
+    await tester.tap(find.byKey(const ValueKey('saved-tag-🔥')));
+    await tester.pump();
+    expect(find.text('Tagged two'), findsNothing);
+    expect(find.byTooltip('All saved messages'), findsNothing);
+
+    // A new label arrives with the update.
+    json.push({
+      '@type': 'updateSavedMessagesTags',
+      'saved_messages_topic_id': 0,
+      'tags': {
+        '@type': 'savedMessagesTags',
+        'tags': [
+          {
+            '@type': 'savedMessagesTag',
+            'tag': {'@type': 'reactionTypeEmoji', 'emoji': '🔥'},
+            'label': 'Ideas',
+            'count': 3,
+          },
+        ],
+      },
+    });
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    expect(find.text('Ideas'), findsOneWidget);
+  });
+
   testWidgets('puts a switch-to-inline button\'s query in the composer', (
     tester,
   ) async {
@@ -3522,6 +3592,26 @@ final class _FakeTdJson implements td.TdJson {
       'getUser' when decoded['user_id'] == 2 => _user(2, 'Boris'),
       'getMe' => _user(7, 'Me', '79990000000'),
       'getUser' when decoded['user_id'] == 7 => _user(7, 'Me'),
+      'getSavedMessagesTags' => {
+        '@type': 'savedMessagesTags',
+        'tags': [
+          {
+            '@type': 'savedMessagesTag',
+            'tag': {'@type': 'reactionTypeEmoji', 'emoji': '🔥'},
+            'label': 'Work',
+            'count': 2,
+          },
+        ],
+      },
+      'searchSavedMessages' => {
+        '@type': 'foundChatMessages',
+        'total_count': 2,
+        'messages': [
+          _message(id: 62, senderId: 7, text: 'Tagged two').toJson(),
+          _message(id: 61, senderId: 7, text: 'Tagged one').toJson(),
+        ],
+        'next_from_message_id': 0,
+      },
       'getSavedMessagesTopicHistory' => {
         '@type': 'messages',
         'total_count': 1,
