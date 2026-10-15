@@ -11,6 +11,8 @@ class MainFlutterWindow: NSWindow {
   private static let buttonsLeft: CGFloat = 23
   private static let buttonsSpacing: CGFloat = 20
 
+  private var notifications: NotificationsChannel?
+
   override func awakeFromNib() {
     let flutterViewController = FlutterViewController()
     self.contentViewController = flutterViewController
@@ -42,6 +44,11 @@ class MainFlutterWindow: NSWindow {
         result(FlutterMethodNotImplemented)
       }
     }
+
+    // Set up before launch finishes, so a notification tap that launched
+    // the app is not lost.
+    notifications = NotificationsChannel(
+      messenger: flutterViewController.engine.binaryMessenger, window: self)
 
     RegisterGeneratedPlugins(registry: flutterViewController)
 

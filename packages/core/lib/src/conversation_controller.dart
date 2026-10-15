@@ -21,6 +21,9 @@ final class ConversationController {
   /// Chats with a page of older history on its way.
   final _loadingOlder = <int>{};
 
+  /// Chats with a page of newer history on its way.
+  final _loadingNewer = <int>{};
+
   /// Replied-to messages requested from TDLib, by chat and message id.
   final _requested = <(int, int)>{};
   StreamSubscription<td.TdObject>? _subscription;
@@ -35,11 +38,23 @@ final class ConversationController {
   }
 
   /// Loads the newest page of [chatId], replacing what was loaded before.
+  /// With [atUnread] and unread messages in the chat, it loads the page
+  /// around the last read message instead, where the official apps open a
+  /// chat.
   ///
   /// TDLib answers the first request from its local database, which may
   /// hold only the last message, so older pages follow until the screen
   /// has [minimum] messages or the chat has no more.
-  Future<void> loadHistory(int chatId, {int minimum = 30}) async {
+  Future<void> loadHistory(
+    int chatId, {
+    int minimum = 30,
+    bool atUnread = true,
+  }) async {
+    final read = store.lastReadInbox(chatId);
+    final last = store.lastMessageId(chatId);
+    if (atUnread && store.unreadCount(chatId) > 0 && read != 0 && last > read) {
+      return loadAround(chatId, read, newer: 40, minimum: minimum);
+    }
     final arrived = _arrivedDuringLoad[chatId] ??= {};
     final td.Messages response;
     try {
@@ -62,6 +77,40 @@ final class ConversationController {
     ], keep: arrived);
     if (response.messages.isEmpty) store.markReachedStart(chatId);
     _notify();
+    await _fillOlder(chatId, minimum);
+  }
+
+  /// Replaces the timeline of [chatId] with the messages around
+  /// [messageId]: up to [newer] after it, the message itself and older ones
+  /// up to a page in all. Newer pages then load with [loadNewer].
+  Future<void> loadAround(
+    int chatId,
+    int messageId, {
+    int newer = 25,
+    int minimum = 30,
+  }) async {
+    final response = await _client.send(
+      td.GetChatHistory(
+        chatId: chatId,
+        fromMessageId: messageId,
+        offset: -newer,
+        limit: 50,
+        onlyLocal: false,
+      ),
+    );
+    store.replaceHistory(chatId, [
+      for (final message in response.messages) ConversationMessage(message),
+    ], latest: false);
+    if (response.messages.isEmpty) {
+      store
+        ..markReachedStart(chatId)
+        ..markReachedEnd(chatId);
+    }
+    _notify();
+    await _fillOlder(chatId, minimum);
+  }
+
+  Future<void> _fillOlder(int chatId, int minimum) async {
     while (!store.reachedStart(chatId) &&
         store.messagesFor(chatId).length < minimum) {
       if (!await loadOlder(chatId)) break;
@@ -93,6 +142,60 @@ final class ConversationController {
     } finally {
       _loadingOlder.remove(chatId);
     }
+  }
+
+  /// Loads the page after the newest loaded message, while the timeline
+  /// stops short of the chat's last message. Returns whether it added
+  /// anything; false also while another page is on its way.
+  Future<bool> loadNewer(int chatId) async {
+    final newest = store.newestId(chatId);
+    if (newest == null || store.reachedEnd(chatId)) return false;
+    if (!_loadingNewer.add(chatId)) return false;
+    try {
+      final response = await _client.send(
+        td.GetChatHistory(
+          chatId: chatId,
+          fromMessageId: newest,
+          offset: -49,
+          limit: 50,
+          onlyLocal: false,
+        ),
+      );
+      final added = store.addNewer(chatId, [
+        for (final message in response.messages)
+          if (message.id > newest) ConversationMessage(message),
+      ]);
+      if (added == 0) store.markReachedEnd(chatId);
+      _notify();
+      return added > 0;
+    } finally {
+      _loadingNewer.remove(chatId);
+    }
+  }
+
+  /// The oldest unread message of [chatId] that mentions the user, or with
+  /// [reactions] the oldest of theirs with a reaction they haven't seen.
+  /// Viewing it marks it read.
+  Future<ConversationMessage?> firstUnread(
+    int chatId, {
+    bool reactions = false,
+  }) async {
+    final found = await _client.send(
+      td.SearchChatMessages(
+        chatId: chatId,
+        query: '',
+        fromMessageId: 0,
+        offset: 0,
+        limit: 100,
+        filter: reactions
+            ? const td.SearchMessagesFilterUnreadReaction()
+            : const td.SearchMessagesFilterUnreadMention(),
+      ),
+    );
+    // Newest first.
+    return found.messages.isEmpty
+        ? null
+        : ConversationMessage(found.messages.last);
   }
 
   /// Makes sure the message that [messageId] of [chatId] replies to is in
@@ -201,6 +304,31 @@ final class ConversationController {
       ),
     );
     _add(message);
+  }
+
+  /// Photos and videos of a chat around [fromMessageId], for the media
+  /// viewer: up to [newer] after it, the message itself when it is one,
+  /// and older ones up to [limit] in all. Oldest first.
+  Future<List<ConversationMessage>> mediaAround(
+    int chatId,
+    int fromMessageId, {
+    int newer = 0,
+    int limit = 30,
+  }) async {
+    final found = await _client.send(
+      td.SearchChatMessages(
+        chatId: chatId,
+        query: '',
+        fromMessageId: fromMessageId,
+        offset: -newer,
+        limit: limit,
+        filter: const td.SearchMessagesFilterPhotoAndVideo(),
+      ),
+    );
+    return [
+      for (final message in found.messages.reversed)
+        ConversationMessage(message),
+    ];
   }
 
   /// Sends [sticker] on its own, as a reply to [replyTo] when given.
@@ -471,13 +599,52 @@ final class ConversationController {
           ..setPhoto(MessageSenderId.chat(chat.id), chat.photo?.small)
           ..setReadInbox(chat.id, chat.lastReadInboxMessageId)
           ..setReadOutbox(chat.id, chat.lastReadOutboxMessageId)
+          ..setLastMessageId(chat.id, chat.lastMessage?.id ?? 0)
+          ..setUnreadCount(chat.id, chat.unreadCount)
+          ..setUnreadMentionCount(chat.id, chat.unreadMentionCount)
+          ..setUnreadReactionCount(chat.id, chat.unreadReactionCount)
           ..setChannel(chat.id, switch (chat.type) {
             td.ChatTypeSupergroup(:final isChannel) => isChannel,
             _ => false,
           });
-      case td.UpdateChatReadInbox(:final chatId, :final lastReadInboxMessageId):
-        store.setReadInbox(chatId, lastReadInboxMessageId);
+      case td.UpdateChatReadInbox(
+        :final chatId,
+        :final lastReadInboxMessageId,
+        :final unreadCount,
+      ):
+        store
+          ..setReadInbox(chatId, lastReadInboxMessageId)
+          ..setUnreadCount(chatId, unreadCount);
         _notify();
+      case td.UpdateChatLastMessage(:final chatId, :final lastMessage):
+        store.setLastMessageId(chatId, lastMessage?.id ?? 0);
+      case td.UpdateChatUnreadMentionCount(
+        :final chatId,
+        :final unreadMentionCount,
+      ):
+      case td.UpdateMessageMentionRead(
+        :final chatId,
+        :final unreadMentionCount,
+      ):
+        if (store.setUnreadMentionCount(chatId, unreadMentionCount)) _notify();
+      case td.UpdateChatUnreadReactionCount(
+        :final chatId,
+        :final unreadReactionCount,
+      ):
+        if (store.setUnreadReactionCount(chatId, unreadReactionCount)) {
+          _notify();
+        }
+      case td.UpdateMessageUnreadReactions(
+        :final chatId,
+        :final messageId,
+        :final unreadReactions,
+        :final unreadReactionCount,
+      ):
+        final count = store.setUnreadReactionCount(chatId, unreadReactionCount);
+        final patched = store.patch(chatId, messageId, {
+          'unread_reactions': [for (final r in unreadReactions) r.toJson()],
+        });
+        if (count || patched) _notify();
       case td.UpdateChatReadOutbox(
         :final chatId,
         :final lastReadOutboxMessageId,
@@ -566,7 +733,14 @@ final class ConversationController {
   }
 
   void _add(td.Message message) {
-    _arrivedDuringLoad[message.chatId]?.add(message.id);
+    final chatId = message.chatId;
+    _arrivedDuringLoad[chatId]?.add(message.id);
+    // A window around an older message has a gap after it; what arrives
+    // beyond the gap waits for the newer pages.
+    final newest = store.newestId(chatId);
+    if (!store.reachedEnd(chatId) && newest != null && message.id > newest) {
+      return;
+    }
     store.upsert(ConversationMessage(message));
     _notify();
   }

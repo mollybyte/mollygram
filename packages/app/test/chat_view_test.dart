@@ -138,6 +138,71 @@ void main() {
     }
   });
 
+  testWidgets('opens at the first unread message and goes back down', (
+    tester,
+  ) async {
+    json.chat = [for (var id = 1; id <= 120; id++) id];
+    json.push(_chat(lastRead: 80, unread: 40, last: 120));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await pump(tester);
+    await tester.pumpAndSettle();
+
+    // The band sits above message 81, which is on screen; the newest
+    // message is not loaded yet.
+    expect(find.text('Unread messages'), findsOneWidget);
+    final band = tester.getRect(find.text('Unread messages'));
+    final first = tester.getRect(
+      find.textContaining('Message 81', findRichText: true),
+    );
+    expect(band.bottom, lessThanOrEqualTo(first.top));
+    expect(band.top, greaterThan(72));
+    expect(
+      find.textContaining('Message 120', findRichText: true),
+      findsNothing,
+    );
+    final viewed = {
+      for (final r in json.sent)
+        if (r['@type'] == 'viewMessages') ...(r['message_ids']! as List),
+    };
+    expect(viewed, contains(81));
+    expect(viewed, isNot(contains(120)));
+
+    // The down button shows, since the newest message is further down.
+    final down = find.byTooltip('Scroll to the newest message');
+    expect(down, findsOneWidget);
+    await tester.tap(down);
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining('Message 120', findRichText: true),
+      findsOneWidget,
+    );
+    expect(find.text('Unread messages'), findsNothing);
+  });
+
+  testWidgets('scrolls to the message a reply answers', (tester) async {
+    json.chat = [for (var id = 1; id <= 60; id++) id];
+    // The newest message answers the oldest, far above the screen.
+    json.repliesTo = {60: 1};
+    json.push(_chat(lastRead: 60, unread: 0, last: 60));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await pump(tester);
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining(RegExp(r'Message 1(?!\d)'), findRichText: true),
+      findsNothing,
+    );
+
+    await tester.tap(find.byType(ReplyHeader));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+
+    final target = tester.getRect(
+      find.textContaining(RegExp(r'Message 1(?!\d)'), findRichText: true),
+    );
+    expect(target.top, inInclusiveRange(0, 800));
+  });
+
   testWidgets('names the sender once per run in a group', (tester) async {
     await pump(tester);
 
@@ -260,6 +325,32 @@ void main() {
     final forward = json.sent.lastWhere((r) => r['@type'] == 'forwardMessages');
     expect(forward['chat_id'], 9);
     expect(forward['message_ids'], [12]);
+  });
+
+  testWidgets('opens a photo full screen and pages through the chat media', (
+    tester,
+  ) async {
+    json.history = [td.Message.fromJson(_photo(15)), ..._history];
+    await pump(tester);
+
+    await tester.tap(find.byType(PhotoContent));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+
+    final search = json.sent.lastWhere(
+      (r) => r['@type'] == 'searchChatMessages',
+    );
+    expect(search['from_message_id'], 15);
+    expect(find.text('2 of 2'), findsOneWidget);
+    expect(find.text('Boris'), findsWidgets);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+    await tester.pumpAndSettle();
+    expect(find.text('1 of 2'), findsOneWidget);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.text('1 of 2'), findsNothing);
   });
 
   testWidgets('copies the text of a message', (tester) async {
@@ -434,12 +525,64 @@ td.Message _message({
   chatInstance: 0,
 );
 
+/// The ids TDLib returns for a history request over [ids], newest first.
+List<int> _page(List<int> ids, int from, int offset, int limit) {
+  final newestFirst = [...ids]..sort((a, b) => b.compareTo(a));
+  var start = from == 0 ? 0 : newestFirst.indexWhere((id) => id <= from);
+  if (start < 0) return const [];
+  start = (start + offset).clamp(0, newestFirst.length);
+  return newestFirst.skip(start).take(limit).toList();
+}
+
+/// TDLib's description of chat 7, with what the user has read of it.
+Map<String, Object?> _chat({
+  required int lastRead,
+  required int unread,
+  required int last,
+}) => {
+  '@type': 'updateNewChat',
+  'chat': {
+    '@type': 'chat',
+    'id': 7,
+    'type': {'@type': 'chatTypePrivate', 'user_id': 2},
+    'title': 'Boris',
+    'last_message': _message(
+      id: last,
+      senderId: 2,
+      text: 'Message $last',
+    ).toJson(),
+    'unread_count': unread,
+    'last_read_inbox_message_id': lastRead,
+    'last_read_outbox_message_id': 0,
+    'permissions': {'@type': 'chatPermissions'},
+    'positions': <Object?>[],
+    'chat_lists': <Object?>[],
+    'notification_settings': {'@type': 'chatNotificationSettings'},
+    'available_reactions': {
+      '@type': 'chatAvailableReactionsAll',
+      'max_reaction_count': 11,
+    },
+    'video_chat': {'@type': 'videoChat'},
+  },
+};
+
 final class _FakeTdJson implements td.TdJson {
   final _queue = Queue<String>();
   final sent = <Map<String, Object?>>[];
   var failSend = false;
   var history = _history;
+
+  /// A whole chat from Boris with these ids, paged as TDLib does with
+  /// from_message_id, offset and limit; takes the place of [history].
+  List<int>? chat;
+
+  /// Which message of [chat] each of these answers.
+  var repliesTo = <int, int>{};
   var _nextClientId = 0;
+
+  /// Delivers [update] as TDLib would.
+  void push(Map<String, Object?> update) =>
+      _queue.add(jsonEncode({...update, '@client_id': 1}));
 
   @override
   int createClientId() => ++_nextClientId;
@@ -460,6 +603,27 @@ final class _FakeTdJson implements td.TdJson {
     }
     final response = switch (type) {
       'getAuthorizationState' => {'@type': 'authorizationStateReady'},
+      'getChatHistory' when chat != null => {
+        '@type': 'messages',
+        'total_count': chat!.length,
+        'messages': [
+          for (final id in _page(
+            chat!,
+            decoded['from_message_id']! as int,
+            decoded['offset']! as int,
+            decoded['limit']! as int,
+          ))
+            {
+              ..._message(id: id, senderId: 2, text: 'Message $id').toJson(),
+              if (repliesTo[id] case final original?)
+                'reply_to': {
+                  '@type': 'messageReplyToMessage',
+                  'chat_id': 7,
+                  'message_id': original,
+                },
+            },
+        ],
+      },
       'getChatHistory' => {
         '@type': 'messages',
         'total_count': history.length,
@@ -517,6 +681,12 @@ final class _FakeTdJson implements td.TdJson {
         'stickers': [_sticker(2, '😸'), _sticker(3, '😺')],
         'emojis': <Object?>[],
       },
+      'searchChatMessages' => {
+        '@type': 'foundChatMessages',
+        'total_count': 2,
+        'messages': [_photo(15), _photo(14)],
+        'next_from_message_id': 0,
+      },
       'downloadFile' => _stickerFile(decoded['file_id']! as int),
       'forwardMessages' => {
         '@type': 'messages',
@@ -571,6 +741,28 @@ final class _FakeTdJson implements td.TdJson {
     }
   }
 }
+
+/// A photo from Boris as TDLib sends it.
+Map<String, Object?> _photo(int id) => {
+  ..._message(id: id, senderId: 2, text: '').toJson(),
+  'content': {
+    '@type': 'messagePhoto',
+    'photo': {
+      '@type': 'photo',
+      'sizes': [
+        {
+          '@type': 'photoSize',
+          'type': 'x',
+          'photo': _stickerFile(400 + id),
+          'width': 800,
+          'height': 600,
+          'progressive_sizes': <Object?>[],
+        },
+      ],
+    },
+    'caption': {'@type': 'formattedText', 'text': '', 'entities': <Object?>[]},
+  },
+};
 
 Map<String, Object?> _sticker(int id, String emoji) => {
   '@type': 'sticker',

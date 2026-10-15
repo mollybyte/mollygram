@@ -3,7 +3,7 @@ name: CI
 # Pull requests get the fast layer only: format, analyze, codegen check and
 # tests on Linux. Desktop builds (macOS minutes are the most expensive) run on
 # main, on manual runs, and on pull requests labelled `full-ci`. Changes that
-# touch none of the paths below (docs, design, website, prototype) skip this
+# touch none of the paths below (docs, design, website) skip this
 # workflow entirely.
 
 on:
@@ -164,6 +164,6 @@ jobs:
           cache: true
       - run: flutter pub get
       # Only checks that it builds: the CI VM has no 120 Hz display and its
-      # virtual GPU crashes media_kit (see prototype results). The numbers
+      # virtual GPU crashes media_kit. The numbers
       # come from a real Mac, see packages/media/example/README.md.
       - run: flutter build macos --profile

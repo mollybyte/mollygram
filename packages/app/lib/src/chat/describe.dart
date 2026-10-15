@@ -66,6 +66,18 @@ String forwardOriginName(
   ),
 };
 
+/// Who a forward came from, when Telegram says.
+MessageSenderId? originSender(td.MessageOrigin origin) => switch (origin) {
+  td.MessageOriginUser(:final senderUserId) => MessageSenderId.user(
+    senderUserId,
+  ),
+  td.MessageOriginChat(:final senderChatId) => MessageSenderId.chat(
+    senderChatId,
+  ),
+  td.MessageOriginChannel(:final chatId) => MessageSenderId.chat(chatId),
+  td.MessageOriginHiddenUser() => null,
+};
+
 String _signed(String name, String signature) =>
     signature.isEmpty ? name : '$name ($signature)';
 

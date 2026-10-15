@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../notifications/notifications_page.dart';
 import '../window_drag_area.dart';
 import 'account_page.dart';
 import 'plugins_page.dart';
@@ -62,6 +63,14 @@ final settingsSections = <SettingsSection>[
       l10n.terminateOthers,
     ],
     builder: (context) => const PrivacyPage(),
+  ),
+  SettingsSection(
+    id: 'notifications',
+    icon: MgIcons.notifications,
+    tint: const Color(0xFFE5343B),
+    title: (l10n) => l10n.notifications,
+    builder: (context) => const NotificationsPage(),
+    fullBleed: true,
   ),
   SettingsSection(
     id: 'plugins',
