@@ -14,6 +14,8 @@ typedef FileSender = Future<List<td.Message>> Function(
   List<td.TextEntity> captionEntities,
   int? replyTo,
   int? threadId,
+  bool silent,
+  td.MessageSchedulingState? schedule,
 });
 
 /// The comments under a channel post, or the replies to a message in a
@@ -158,6 +160,8 @@ final class MessageThread {
     String caption = '',
     List<td.TextEntity> captionEntities = const [],
     int? replyTo,
+    bool silent = false,
+    td.MessageSchedulingState? schedule,
   }) async {
     final sent = await _sendFiles(
       chatId,
@@ -166,6 +170,8 @@ final class MessageThread {
       captionEntities: captionEntities,
       replyTo: replyTo ?? threadId,
       threadId: threadId,
+      silent: silent,
+      schedule: schedule,
     );
     if (_disposed) return;
     sent.forEach(_add);

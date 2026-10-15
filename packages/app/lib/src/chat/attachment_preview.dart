@@ -1,19 +1,29 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_media_editor/mollygram_media_editor.dart';
+import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../media/native_video_engine.dart';
 import '../secret/secret_chat.dart' show selfDestructLabel;
 import 'describe.dart';
+import 'schedule_picker.dart';
 import 'sticker_picker.dart';
 
 /// What the user confirmed in [showAttachmentPreview].
-typedef AttachmentChoice = ({List<OutgoingFile> files, String caption});
+/// What the preview sends back: the files, their caption, and whether
+/// they go without sound or at a later time.
+typedef AttachmentChoice = ({
+  List<OutgoingFile> files,
+  String caption,
+  bool silent,
+  td.MessageSchedulingState? schedule,
+});
 
 /// Shows the files about to be sent, with a caption field and, for photos
 /// and videos, the choice to send them untouched as files or hidden
@@ -169,8 +179,44 @@ class _PreviewState extends State<_Preview> {
     _focus.requestFocus();
   }
 
-  void _send() =>
-      Navigator.of(context).pop((files: _files, caption: _caption.text));
+  void _send({bool silent = false, td.MessageSchedulingState? schedule}) =>
+      Navigator.of(context).pop((
+        files: _files,
+        caption: _caption.text,
+        silent: silent,
+        schedule: schedule,
+      ));
+
+  /// A right click on Send: without sound, or at a day and time, as the
+  /// composer's send button offers.
+  Future<void> _sendMenu(Offset position) async {
+    final l10n = AppLocalizations.of(context);
+    await showMgMenu(
+      context,
+      position: position,
+      items: [
+        MgMenuItem(
+          label: l10n.sendWithoutSound,
+          onSelected: () => _send(silent: true),
+        ),
+        MgMenuItem(
+          label: l10n.scheduleMessage,
+          onSelected: () => unawaited(_schedule()),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _schedule() async {
+    final when = await pickScheduleTime(context);
+    if (when == null || !mounted) return;
+    _send(
+      schedule: td.MessageSchedulingStateSendAtDate(
+        sendDate: when.millisecondsSinceEpoch ~/ 1000,
+        repeatPeriod: 0,
+      ),
+    );
+  }
 
   KeyEventResult _onKey(FocusNode node, KeyEvent event) {
     if (event is KeyDownEvent &&
@@ -303,7 +349,15 @@ class _PreviewState extends State<_Preview> {
                   onPressed: () => Navigator.of(context).pop(),
                 ),
                 const SizedBox(width: 10),
-                MgPrimaryButton(label: l10n.send, height: 28, onPressed: _send),
+                GestureDetector(
+                  onSecondaryTapUp: (details) =>
+                      unawaited(_sendMenu(details.globalPosition)),
+                  child: MgPrimaryButton(
+                    label: l10n.send,
+                    height: 28,
+                    onPressed: _send,
+                  ),
+                ),
               ],
             ),
           ],

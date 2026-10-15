@@ -1,11 +1,13 @@
 import 'dart:io';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mollygram/l10n/app_localizations.dart';
 import 'package:mollygram/src/chat/attachment_preview.dart';
 import 'package:mollygram_core/mollygram_core.dart';
+import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 void main() {
@@ -68,6 +70,38 @@ void main() {
       [OutgoingKind.photo, OutgoingKind.document],
     );
     expect(choice!.caption, 'Draft');
+  });
+
+  testWidgets('sends without sound or later from the send menu', (
+    tester,
+  ) async {
+    await open(tester, ['notes.pdf']);
+    await tester.tap(find.text('Send'), buttons: kSecondaryButton);
+    await tester.pump();
+    await tester.tap(find.text('Send without sound'));
+    await tester.pump();
+    expect(closed, isTrue);
+    expect(choice!.silent, isTrue);
+    expect(choice!.schedule, isNull);
+
+    closed = false;
+    await tester.tap(find.text('open'));
+    await tester.pump();
+    await tester.tap(find.text('Send'), buttons: kSecondaryButton);
+    await tester.pump();
+    await tester.tap(find.text('Schedule message…'));
+    await tester.pump();
+    await tester.enterText(find.byType(TextField).last, '23:59');
+    await tester.pump();
+    await tester.tap(find.text('Schedule'));
+    await tester.pump();
+    expect(closed, isTrue);
+    expect(choice!.silent, isFalse);
+    final state = choice!.schedule! as td.MessageSchedulingStateSendAtDate;
+    final when = DateTime.fromMillisecondsSinceEpoch(state.sendDate * 1000);
+    expect(when.hour, 23);
+    expect(when.minute, 59);
+    expect(when.isAfter(DateTime.now()), isTrue);
   });
 
   testWidgets('sends photos as files when asked', (tester) async {
