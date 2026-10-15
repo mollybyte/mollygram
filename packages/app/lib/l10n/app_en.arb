@@ -752,5 +752,6 @@
   "unpinAllTitle": "{count, plural, one{Unpin {count} message?} other{Unpin all {count} messages?}}",
   "@unpinAllTitle": {
     "placeholders": { "count": { "type": "int" } }
-  }
+  },
+  "folderDeletedChat": "Deleted chat"
 }

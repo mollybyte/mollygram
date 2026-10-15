@@ -1841,7 +1841,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get folderReorderHint =>
-      'Перетаскивайте папки за маркеры, чтобы изменить их порядок в боковой панели.';
+      'Потяните за маркер, чтобы изменить порядок папок.';
 
   @override
   String get recommendedFolders => 'Рекомендуемые папки';
@@ -1920,4 +1920,7 @@ class AppLocalizationsRu extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get folderDeletedChat => 'Удалённый чат';
 }

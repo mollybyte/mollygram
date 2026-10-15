@@ -79,7 +79,17 @@ class _FoldersPageState extends ConsumerState<FoldersPage> {
         _adding.remove(title);
         _error = AppLocalizations.of(context).saveFailed;
       });
+      return;
     }
+    // The suggestions come back without it; only then is it let go, so
+    // it doesn't show again in between.
+    try {
+      ref.invalidate(recommendedFoldersProvider);
+      await ref.read(recommendedFoldersProvider.future);
+    } on Object {
+      // A list that fails to load shows nothing anyway.
+    }
+    if (mounted) setState(() => _adding.remove(title));
   }
 
   @override
@@ -180,7 +190,7 @@ class _FolderList extends StatelessWidget {
     final c = MgColors.of(context);
     final s = SettingsColors.of(context);
     final l10n = AppLocalizations.of(context);
-    return ReorderableListView(
+    final list = ReorderableListView(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       buildDefaultDragHandles: false,
@@ -194,7 +204,7 @@ class _FolderList extends StatelessWidget {
             child: DecoratedBox(
               decoration: BoxDecoration(
                 color: s.group,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(10),
                 boxShadow: [
                   BoxShadow(
                     color: Color.fromRGBO(0, 0, 0, 0.18 * t),
@@ -211,34 +221,59 @@ class _FolderList extends StatelessWidget {
       ),
       children: [
         for (var i = 0; i < folders.length; i++)
-          Column(
+          SizedBox(
             key: ValueKey(folders[i].id),
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // The group draws the line above the first one.
-              if (i > 0)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Container(height: 0.5, color: c.separator),
-                ),
-              SettingsRow(
-                leading: SettingsSymbol(
-                  icon: folderIcon(folders[i].iconName),
-                  tint: c.accent,
-                ),
-                title: folders[i].title,
-                onTap: () => onOpen(folders[i]),
-                trailing: ReorderableDragStartListener(
-                  index: i,
-                  child: _Handle(label: l10n.folderReorder),
-                ),
+            height: _rowHeight,
+            child: SettingsRow(
+              leading: SettingsSymbol(
+                icon: folderIcon(folders[i].iconName),
+                tint: c.accent,
               ),
-            ],
+              title: folders[i].title,
+              onTap: () => onOpen(folders[i]),
+              trailing: ReorderableDragStartListener(
+                index: i,
+                child: _Handle(label: l10n.folderReorder),
+              ),
+            ),
           ),
       ],
     );
+    // The hairlines belong to the slots, not the rows: none travels with
+    // a dragged row. The group draws the one above the first.
+    return Stack(
+      children: [
+        list,
+        Positioned.fill(
+          child: IgnorePointer(
+            child: Column(
+              children: [
+                for (var i = 0; i < folders.length; i++)
+                  SizedBox(
+                    height: _rowHeight,
+                    child: i == 0
+                        ? null
+                        : Align(
+                            alignment: Alignment.topCenter,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
+                              child: Container(height: 0.5, color: c.separator),
+                            ),
+                          ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
   }
+
+  /// Every folder row is this tall, so the hairlines can sit between the
+  /// slots.
+  static const _rowHeight = 40.0;
 }
 
 /// Three short lines that brighten under the pointer, with a grab cursor.

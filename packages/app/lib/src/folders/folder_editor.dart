@@ -11,6 +11,7 @@ import '../chat/message_tile.dart' show SenderAvatar;
 import '../session/providers.dart';
 import 'folder_chat_picker.dart';
 import 'folder_icons.dart';
+import 'folder_sheet.dart';
 
 /// Opens the folder editor as a sheet: folder [id] when given, otherwise
 /// a new folder that starts from [initial], such as a recommended one.
@@ -18,34 +19,7 @@ Future<void> showFolderEditor(
   BuildContext context, {
   int? id,
   ChatFolderDraft initial = const ChatFolderDraft(),
-}) => showGeneralDialog<void>(
-  context: context,
-  barrierDismissible: true,
-  barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-  barrierColor: const Color(0x14000000),
-  transitionDuration: MediaQuery.disableAnimationsOf(context)
-      ? Duration.zero
-      : const Duration(milliseconds: 200),
-  transitionBuilder: (context, animation, _, child) {
-    final curved = CurvedAnimation(
-      parent: animation,
-      curve: Curves.easeOutCubic,
-    );
-    return FadeTransition(
-      opacity: curved,
-      child: ScaleTransition(
-        scale: Tween(begin: 0.96, end: 1.0).animate(curved),
-        child: child,
-      ),
-    );
-  },
-  pageBuilder: (context, _, _) => Material(
-    type: MaterialType.transparency,
-    child: Center(
-      child: FolderEditor(id: id, initial: initial),
-    ),
-  ),
-);
+}) => showFolderSheet<void>(context, FolderEditor(id: id, initial: initial));
 
 /// The rules of one folder, after TelegramSwift's folder editor: its icon
 /// and name, the chats and kinds of chats it takes in, those it leaves
@@ -71,6 +45,9 @@ class _FolderEditorState extends ConsumerState<FolderEditor> {
   late final _name = TextEditingController(text: widget.initial.title);
   final _nameFocus = FocusNode();
   final _chats = <int, FolderChat>{};
+
+  /// Chats asked about, so one TDLib doesn't know reads "Deleted chat".
+  final _described = <int>{};
   var _iconsOpen = false;
   var _saving = false;
   var _loadFailed = false;
@@ -118,6 +95,7 @@ class _FolderEditorState extends ConsumerState<FolderEditor> {
         if (!_chats.containsKey(id)) id,
     ];
     if (missing.isEmpty) return;
+    _described.addAll(missing);
     final found = await _folders
         .describe(missing)
         .catchError((Object _) => <FolderChat>[]);
@@ -163,14 +141,20 @@ class _FolderEditorState extends ConsumerState<FolderEditor> {
   Future<void> _pick({required bool include}) async {
     final draft = _draft!;
     final l10n = AppLocalizations.of(context);
-    final rules = include ? FolderRule.included : FolderRule.excluded;
+    // A shared folder can only list chats by name.
+    final rules = draft.isShareable
+        ? const <FolderRule>[]
+        : include
+        ? FolderRule.included
+        : FolderRule.excluded;
+    // TDLib caps the chats taken in and those left out separately.
     final choice = await showFolderChatPicker(
       context,
       title: include ? l10n.folderIncluded : l10n.folderExcluded,
       rules: rules,
       selectedRules: include ? _includedRules(draft) : _excludedRules(draft),
       selectedChats: include ? draft.chosenChatIds : draft.excludedChatIds,
-      maxChats: include ? _folders.maxChosenChats : null,
+      maxChats: _folders.maxChosenChats,
     );
     if (choice == null || !mounted) return;
     var next = _draft!;
@@ -282,62 +266,67 @@ class _FolderEditorState extends ConsumerState<FolderEditor> {
     final c = MgColors.of(context);
     final l10n = AppLocalizations.of(context);
     final draft = _draft;
-    return CallbackShortcuts(
-      bindings: {
-        const SingleActivator(LogicalKeyboardKey.escape): () =>
-            Navigator.of(context).pop(),
-      },
-      child: SizedBox(
-        width: 440,
-        height: 600,
-        child: Glass(
-          radius: 14,
-          padding: EdgeInsets.zero,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(18, 14, 10, 6),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        widget.id == null ? l10n.newFolder : l10n.editFolder,
-                        style: mgTextStyle(c, weight: FontWeight.w600),
+    // While a save or delete is out the sheet stays, so its error shows.
+    return PopScope(
+      canPop: !_saving,
+      child: CallbackShortcuts(
+        bindings: {const SingleActivator(LogicalKeyboardKey.escape): _close},
+        child: SizedBox(
+          width: 440,
+          height: 600,
+          child: Glass(
+            radius: 14,
+            padding: EdgeInsets.zero,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 14, 10, 6),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          widget.id == null ? l10n.newFolder : l10n.editFolder,
+                          style: mgTextStyle(c, weight: FontWeight.w600),
+                        ),
                       ),
-                    ),
-                    MgIconButton(
-                      icon: MgIcons.close,
-                      tooltip: l10n.close,
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                  ],
+                      MgIconButton(
+                        icon: MgIcons.close,
+                        tooltip: l10n.close,
+                        onPressed: _saving ? null : _close,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              Expanded(
-                child: draft == null
-                    ? Center(
-                        child: _loadFailed
-                            ? MgTextButton(
-                                label: l10n.tryAgain,
-                                onPressed: () => unawaited(_load()),
-                              )
-                            : SizedBox.square(
-                                dimension: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 1.6,
-                                  color: c.fg2,
+                Expanded(
+                  child: draft == null
+                      ? Center(
+                          child: _loadFailed
+                              ? MgTextButton(
+                                  label: l10n.tryAgain,
+                                  onPressed: () => unawaited(_load()),
+                                )
+                              : SizedBox.square(
+                                  dimension: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 1.6,
+                                    color: c.fg2,
+                                  ),
                                 ),
-                              ),
-                      )
-                    : _body(context, draft),
-              ),
-              _bottomBar(context, draft),
-            ],
+                        )
+                      : _body(context, draft),
+                ),
+                _bottomBar(context, draft),
+              ],
+            ),
           ),
         ),
       ),
     );
+  }
+
+  void _close() {
+    if (!_saving) Navigator.of(context).pop();
   }
 
   Widget _body(BuildContext context, ChatFolderDraft draft) {
@@ -348,7 +337,7 @@ class _FolderEditorState extends ConsumerState<FolderEditor> {
     Widget chatRow(int id) {
       final chat = _chats[id];
       final title = chat == null
-          ? ''
+          ? (_described.contains(id) ? l10n.folderDeletedChat : '')
           : chat.isSelf
           ? l10n.folderSavedMessages
           : chat.title;
@@ -422,25 +411,29 @@ class _FolderEditorState extends ConsumerState<FolderEditor> {
               label: l10n.folderAddChats,
               onTap: () => unawaited(_pick(include: true)),
             ),
-            for (final rule in FolderRule.included)
-              if (included.contains(rule)) ruleRow(rule),
+            if (!draft.isShareable)
+              for (final rule in FolderRule.included)
+                if (included.contains(rule)) ruleRow(rule),
             for (final id in draft.chosenChatIds) chatRow(id),
           ],
         ),
-        const SizedBox(height: 18),
-        _Box(
-          title: l10n.folderExcluded,
-          footer: l10n.folderExcludedHint,
-          children: [
-            _AddRow(
-              label: l10n.folderExcludeChats,
-              onTap: () => unawaited(_pick(include: false)),
-            ),
-            for (final rule in FolderRule.excluded)
-              if (excluded.contains(rule)) ruleRow(rule),
-            for (final id in draft.excludedChatIds) chatRow(id),
-          ],
-        ),
+        // A shared folder takes no rules and leaves nothing out.
+        if (!draft.isShareable) ...[
+          const SizedBox(height: 18),
+          _Box(
+            title: l10n.folderExcluded,
+            footer: l10n.folderExcludedHint,
+            children: [
+              _AddRow(
+                label: l10n.folderExcludeChats,
+                onTap: () => unawaited(_pick(include: false)),
+              ),
+              for (final rule in FolderRule.excluded)
+                if (excluded.contains(rule)) ruleRow(rule),
+              for (final id in draft.excludedChatIds) chatRow(id),
+            ],
+          ),
+        ],
         if (_error case final error?)
           Padding(
             padding: const EdgeInsets.only(top: 12),
@@ -476,7 +469,7 @@ class _FolderEditorState extends ConsumerState<FolderEditor> {
             const Spacer(),
             MgTextButton(
               label: l10n.cancel,
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: _saving ? null : _close,
             ),
             const SizedBox(width: 8),
             MgPrimaryButton(
@@ -501,18 +494,9 @@ Future<List<int>?> showDeleteFolderConfirm(
   BuildContext context, {
   required String title,
   required List<FolderChat> chats,
-}) => showGeneralDialog<List<int>>(
-  context: context,
-  barrierDismissible: true,
-  barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-  barrierColor: const Color(0x00000000),
-  transitionDuration: Duration.zero,
-  pageBuilder: (context, _, _) => Material(
-    type: MaterialType.transparency,
-    child: Center(
-      child: _DeleteConfirm(title: title, chats: chats),
-    ),
-  ),
+}) => showFolderSheet<List<int>>(
+  context,
+  _DeleteConfirm(title: title, chats: chats),
 );
 
 class _DeleteConfirm extends StatefulWidget {

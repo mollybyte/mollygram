@@ -265,6 +265,116 @@ void main() {
     });
   });
 
+  group('limits', () {
+    void limit(int max) => json.push({
+      '@type': 'updateOption',
+      'name': 'chat_folder_chosen_chat_count_max',
+      'value': {'@type': 'optionValueInteger', 'value': '$max'},
+    });
+
+    testWidgets('the picker stops at the limit, secret chats aside', (
+      tester,
+    ) async {
+      limit(1);
+      await pump(tester, const FolderEditor());
+      await tester.tap(find.text('Add chats'));
+      await settle(tester);
+      expect(find.text('0 of 1'), findsOneWidget);
+
+      await tester.tap(find.text('News'));
+      await tester.pump();
+      await tester.tap(find.text('Flutter'));
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(find.text('1 of 1'), findsOneWidget);
+      expect(find.text('A folder can have up to 1 chats.'), findsOneWidget);
+
+      await tester.tap(find.text('Secret'));
+      await tester.pump();
+      expect(find.text('1 of 1'), findsOneWidget);
+      await tester.tap(find.text('Done'));
+      await settle(tester);
+      expect(find.text('News'), findsOneWidget);
+      expect(find.text('Secret'), findsOneWidget);
+      expect(find.text('Flutter'), findsNothing);
+    });
+
+    testWidgets('Done waits while a folder is over the limit', (tester) async {
+      limit(1);
+      await pump(tester, const FolderEditor(id: 1));
+      await tester.tap(find.text('Add chats'));
+      await settle(tester);
+      expect(find.text('2 of 1'), findsOneWidget);
+      expect(find.text('A folder can have up to 1 chats.'), findsOneWidget);
+      await tester.tap(find.text('Done'));
+      await settle(tester);
+      expect(find.text('Chat types'), findsOneWidget);
+
+      // Unticking one brings it back within the limit.
+      await tester.tap(find.text('Flutter').last);
+      await tester.pump();
+      await tester.tap(find.text('Done'));
+      await settle(tester);
+      expect(find.text('Chat types'), findsNothing);
+    });
+
+    testWidgets('the exclude picker has a limit too', (tester) async {
+      limit(5);
+      await pump(tester, const FolderEditor());
+      await tester.tap(find.text('Exclude chats'));
+      await settle(tester);
+      expect(find.text('0 of 5'), findsOneWidget);
+    });
+  });
+
+  testWidgets('a shared folder offers no chat types or exclusions', (
+    tester,
+  ) async {
+    json.shareable = true;
+    await pump(tester, const FolderEditor(id: 1));
+    expect(find.text('Excluded chats'), findsNothing);
+    expect(find.text('Muted'), findsNothing);
+    await tester.tap(find.text('Add chats'));
+    await settle(tester);
+    expect(find.text('Chat types'), findsNothing);
+    expect(find.text('News'), findsOneWidget);
+  });
+
+  testWidgets('names chats TDLib no longer knows', (tester) async {
+    json.extraIncluded = [99];
+    await pump(tester, const FolderEditor(id: 1));
+    expect(find.text('Deleted chat'), findsOneWidget);
+  });
+
+  testWidgets('stays open while saving, to show a failure', (tester) async {
+    json
+      ..failing.add('editChatFolder')
+      ..held.add('editChatFolder');
+    await pump(
+      tester,
+      Builder(
+        builder: (context) => Center(
+          child: GestureDetector(
+            onTap: () => showFolderEditor(context, id: 1),
+            child: const Text('open'),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await settle(tester);
+    await tester.tap(find.text('Save'));
+    await settle(tester);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.tap(find.text('Cancel'), warnIfMissed: false);
+    await settle(tester);
+    expect(find.text('Edit folder'), findsOneWidget);
+
+    json.release('editChatFolder');
+    await settle(tester);
+    expect(find.text("Couldn't save the change."), findsOneWidget);
+  });
+
   testWidgets('the sheet opens and closes on Escape', (tester) async {
     await pump(
       tester,
@@ -313,12 +423,13 @@ Map<String, Object?> _folder(
   bool excludeMuted = false,
   bool excludeRead = false,
   String? icon,
+  bool shareable = false,
 }) => {
   '@type': 'chatFolder',
   'name': _name(title),
   if (icon != null) 'icon': {'@type': 'chatFolderIcon', 'name': icon},
   'color_id': -1,
-  'is_shareable': false,
+  'is_shareable': shareable,
   'pinned_chat_ids': pinned,
   'included_chat_ids': included,
   'excluded_chat_ids': <int>[],
@@ -350,6 +461,18 @@ final class _FakeTdJson implements td.TdJson {
   final _queue = Queue<String>();
   final sent = <Map<String, Object?>>[];
   final failing = <String>{};
+
+  /// Whether folder 1 is shared by an invite link.
+  var shareable = false;
+
+  /// More chats folder 1 takes in, after Flutter.
+  var extraIncluded = <int>[];
+
+  /// Replies to these requests wait for [release].
+  final held = <String>{};
+  final _waiting = <String, List<String>>{};
+
+  void release(String type) => _queue.addAll(_waiting.remove(type) ?? []);
   var _nextClientId = 0;
 
   Iterable<Object?> get types => sent.map((r) => r['@type']);
@@ -360,6 +483,11 @@ final class _FakeTdJson implements td.TdJson {
       '@type': 'chatTypeSupergroup',
       'supergroup_id': 3,
       'is_channel': false,
+    }),
+    30: _chat(30, 'Secret', {
+      '@type': 'chatTypeSecret',
+      'secret_chat_id': 1,
+      'user_id': 7,
     }),
     21: _chat(21, 'News', {
       '@type': 'chatTypeSupergroup',
@@ -414,8 +542,9 @@ final class _FakeTdJson implements td.TdJson {
               'Work',
               icon: 'Work',
               pinned: [10],
-              included: [20],
+              included: [20, ...extraIncluded],
               excludeMuted: true,
+              shareable: shareable,
             ),
             'createChatFolder' => {
               '@type': 'chatFolderInfo',
@@ -433,8 +562,8 @@ final class _FakeTdJson implements td.TdJson {
             },
             'getChats' => {
               '@type': 'chats',
-              'total_count': 3,
-              'chat_ids': [10, 20, 21],
+              'total_count': 4,
+              'chat_ids': [10, 20, 21, 30],
             },
             'searchChats' => {
               '@type': 'chats',
@@ -456,27 +585,32 @@ final class _FakeTdJson implements td.TdJson {
             'getRecommendedChatFolders' => {
               '@type': 'recommendedChatFolders',
               'chat_folders': [
-                {
-                  '@type': 'recommendedChatFolder',
-                  'folder': _folder(
-                    'Unread',
-                    contacts: true,
-                    nonContacts: true,
-                    excludeRead: true,
-                  ),
-                  'description': 'New messages from all chats',
-                },
+                // TDLib stops suggesting a folder once there is one like it.
+                if (!types.contains('createChatFolder'))
+                  {
+                    '@type': 'recommendedChatFolder',
+                    'folder': _folder(
+                      'Unread',
+                      contacts: true,
+                      nonContacts: true,
+                      excludeRead: true,
+                    ),
+                    'description': 'New messages from all chats',
+                  },
               ],
             },
             _ => {'@type': 'ok'},
           };
-    _queue.add(
-      jsonEncode({
-        ...response,
-        '@client_id': clientId,
-        '@extra': decoded['@extra'],
-      }),
-    );
+    final reply = jsonEncode({
+      ...response,
+      '@client_id': clientId,
+      '@extra': decoded['@extra'],
+    });
+    if (held.contains(type)) {
+      (_waiting[type] ??= []).add(reply);
+    } else {
+      _queue.add(reply);
+    }
     if (type == 'close') {
       _queue.add(
         jsonEncode({

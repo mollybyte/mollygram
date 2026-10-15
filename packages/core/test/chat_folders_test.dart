@@ -123,10 +123,92 @@ void main() {
     final request = sent('reorderChatFolders');
     expect(request['chat_folder_ids'], [2, 1]);
     expect(request['main_chat_list_position'], 1);
+    // TDLib confirms the new order with an update.
+    json.pushFolders([(2, 'B', 'Custom'), (1, 'A', 'Custom')], main: 1);
+    await folders.folder(1);
+    await drain();
 
     json.failing.add('reorderChatFolders');
     await expectLater(folders.reorder([1, 2]), throwsA(anything));
     expect([for (final f in folders.folders) f.id], [2, 1]);
+  });
+
+  test('a failed reorder goes back to the latest reported list', () async {
+    json.pushFolders([(1, 'A', 'Custom'), (2, 'B', 'Custom')]);
+    await folders.folder(1);
+    await drain();
+
+    // TDLib reports a new list while the request is out, then refuses it.
+    json
+      ..failing.add('reorderChatFolders')
+      ..beforeReply['reorderChatFolders'] = () => json.pushFolders([
+        (1, 'A', 'Custom'),
+        (2, 'B', 'Custom'),
+        (3, 'C', 'Custom'),
+      ]);
+    await expectLater(folders.reorder([2, 1]), throwsA(anything));
+    await drain();
+    expect([for (final f in folders.folders) f.id], [1, 2, 3]);
+  });
+
+  test('deleting a folder before "All chats" moves it up', () async {
+    json.pushFolders([(1, 'A', 'Custom'), (2, 'B', 'Custom')], main: 2);
+    await folders.folder(1);
+    await drain();
+    await folders.delete(1);
+    expect(folders.mainChatListPosition, 1);
+    await folders.delete(2);
+    expect(folders.mainChatListPosition, 0);
+  });
+
+  test('a draft round-trips everything it does not edit', () {
+    const name = td.ChatFolderName(
+      text: td.FormattedText(
+        text: 'Work 1',
+        entities: [
+          td.TextEntity(
+            offset: 5,
+            length: 1,
+            type: td.TextEntityTypeCustomEmoji(customEmojiId: 42),
+          ),
+        ],
+      ),
+      animateCustomEmoji: true,
+    );
+    const original = td.ChatFolder(
+      name: name,
+      icon: td.ChatFolderIcon(name: 'Work'),
+      colorId: 3,
+      isShareable: true,
+      pinnedChatIds: [1, 2],
+      includedChatIds: [3],
+      excludedChatIds: [4],
+      excludeMuted: true,
+      excludeRead: false,
+      excludeArchived: true,
+      includeContacts: false,
+      includeNonContacts: true,
+      includeBots: false,
+      includeGroups: true,
+      includeChannels: false,
+    );
+    final draft = ChatFolderDraft.fromTd(original);
+    expect(jsonEncode(draft.toTd().toJson()), jsonEncode(original.toJson()));
+    // A name that wasn't touched keeps its custom emoji.
+    expect(draft.copyWith(excludeRead: true).toTd().name, same(name));
+
+    final renamed = draft.copyWith(title: 'Job').toTd();
+    expect(renamed.name.text.text, 'Job');
+    expect(renamed.name.text.entities, isEmpty);
+    expect(renamed.colorId, 3);
+    expect(renamed.isShareable, isTrue);
+    expect(renamed.pinnedChatIds, [1, 2]);
+  });
+
+  test('marks secret chats', () async {
+    final chats = await folders.describe([30]);
+    expect(chats.single.isSecret, isTrue);
+    expect(chats.single.kind, FolderChatKind.user);
   });
 
   test('deletes a folder with the chats to leave', () async {
@@ -253,6 +335,9 @@ final class _FakeTdJson implements td.TdJson {
   final _queue = Queue<String>();
   final sent = <Map<String, Object?>>[];
   final failing = <String>{};
+
+  /// Runs before the reply to a request of that type is queued.
+  final beforeReply = <String, void Function()>{};
   var _nextClientId = 0;
 
   final _chats = {
@@ -262,6 +347,11 @@ final class _FakeTdJson implements td.TdJson {
       '@type': 'chatTypeSupergroup',
       'supergroup_id': 3,
       'is_channel': false,
+    }),
+    30: _chat(30, 'Secret', {
+      '@type': 'chatTypeSecret',
+      'secret_chat_id': 1,
+      'user_id': 7,
     }),
     21: _chat(21, 'News', {
       '@type': 'chatTypeSupergroup',
@@ -307,6 +397,7 @@ final class _FakeTdJson implements td.TdJson {
     final decoded = jsonDecode(request) as Map<String, Object?>;
     final type = decoded['@type']! as String;
     if (type != 'close') sent.add(decoded);
+    beforeReply.remove(type)?.call();
     final Map<String, Object?> response = failing.contains(type)
         ? {'@type': 'error', 'code': 400, 'message': 'Failed'}
         : switch (type) {

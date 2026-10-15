@@ -3229,6 +3229,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, one{Unpin {count} message?} other{Unpin all {count} messages?}}'**
   String unpinAllTitle(int count);
+
+  /// No description provided for @folderDeletedChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted chat'**
+  String get folderDeletedChat;
 }
 
 class _AppLocalizationsDelegate

@@ -75,10 +75,12 @@ final class ChatFolderDraft {
     this.excludeMuted = false,
     this.excludeRead = false,
     this.excludeArchived = false,
+    this.originalName,
   });
 
   factory ChatFolderDraft.fromTd(td.ChatFolder folder) => ChatFolderDraft(
     title: folder.name.text.text,
+    originalName: folder.name,
     iconName: folder.icon?.name ?? '',
     colorId: folder.colorId,
     isShareable: folder.isShareable,
@@ -97,6 +99,10 @@ final class ChatFolderDraft {
 
   /// The name; TDLib allows up to [maxTitleLength] characters.
   final String title;
+
+  /// The name as TDLib gave it, with any custom emoji in it; sent back
+  /// unchanged while [title] still matches its text.
+  final td.ChatFolderName? originalName;
 
   /// Empty lets TDLib choose the icon from the rules.
   final String iconName;
@@ -167,13 +173,20 @@ final class ChatFolderDraft {
     excludeMuted: excludeMuted ?? this.excludeMuted,
     excludeRead: excludeRead ?? this.excludeRead,
     excludeArchived: excludeArchived ?? this.excludeArchived,
+    originalName: originalName,
   );
 
-  td.ChatFolder toTd() => td.ChatFolder(
-    name: td.ChatFolderName(
+  td.ChatFolderName get _name {
+    final original = originalName;
+    if (original != null && original.text.text == title) return original;
+    return td.ChatFolderName(
       text: td.FormattedText(text: title.trim(), entities: const []),
       animateCustomEmoji: false,
-    ),
+    );
+  }
+
+  td.ChatFolder toTd() => td.ChatFolder(
+    name: _name,
     icon: iconName.isEmpty ? null : td.ChatFolderIcon(name: iconName),
     colorId: colorId,
     isShareable: isShareable,
@@ -217,6 +230,7 @@ final class FolderChat {
     required this.kind,
     this.photo,
     this.isSelf = false,
+    this.isSecret = false,
   });
 
   final int id;
@@ -226,6 +240,9 @@ final class FolderChat {
 
   /// Saved Messages.
   final bool isSelf;
+
+  /// A secret chat: TDLib counts these apart from the folder's chat limit.
+  final bool isSecret;
 }
 
 /// The account's chat folders: the list TDLib keeps up to date, and
@@ -240,6 +257,10 @@ final class ChatFoldersController {
   final _changes = StreamController<void>.broadcast(sync: true);
   StreamSubscription<td.TdObject>? _subscription;
   var _folders = const <ChatFolderSummary>[];
+
+  /// The list as TDLib last reported it, written only by updates: what a
+  /// failed reorder goes back to.
+  var _reported = const <ChatFolderSummary>[];
   var _mainPosition = 0;
   var _maxFolders = 10;
   var _maxChosenChats = 100;
@@ -254,7 +275,8 @@ final class ChatFoldersController {
   /// How many folders the account can have.
   int get maxFolders => _maxFolders;
 
-  /// How many chats a folder can take in by name.
+  /// How many chats a folder can take in by name, and, counted apart,
+  /// how many it can leave out by name; secret chats don't count.
   int get maxChosenChats => _maxChosenChats;
 
   bool get canCreate => _folders.length < _maxFolders;
@@ -284,6 +306,7 @@ final class ChatFoldersController {
               hasMyInviteLinks: folder.hasMyInviteLinks,
             ),
         ]);
+        _reported = _folders;
         _mainPosition = mainChatListPosition;
       case td.UpdateOption(
         name: 'chat_folder_count_max',
@@ -335,6 +358,10 @@ final class ChatFoldersController {
     await _client.send(
       td.DeleteChatFolder(chatFolderId: id, leaveChatIds: leaveChatIds),
     );
+    final index = _folders.indexWhere((f) => f.id == id);
+    if (index < 0) return;
+    // "All chats" keeps its place among the folders that are left.
+    if (index < _mainPosition) _mainPosition--;
     _folders = List.unmodifiable([
       for (final f in _folders)
         if (f.id != id) f,
@@ -343,10 +370,10 @@ final class ChatFoldersController {
   }
 
   /// Puts the folders in the order of [ids] at once, and asks TDLib to;
-  /// when it refuses, the order it last reported comes back.
+  /// when it refuses, the list it last reported comes back, even if that
+  /// came while the request was out.
   Future<void> reorder(List<int> ids) async {
-    final before = _folders;
-    final byId = {for (final f in before) f.id: f};
+    final byId = {for (final f in _folders) f.id: f};
     _folders = List.unmodifiable([for (final id in ids) ?byId[id]]);
     if (!_changes.isClosed) _changes.add(null);
     try {
@@ -357,7 +384,7 @@ final class ChatFoldersController {
         ),
       );
     } on Object {
-      _folders = before;
+      _folders = _reported;
       if (!_changes.isClosed) _changes.add(null);
       rethrow;
     }
@@ -418,6 +445,7 @@ final class ChatFoldersController {
       kind: kind,
       photo: chat.photo?.small,
       isSelf: userId != null && userId == _myId,
+      isSecret: chat.type is td.ChatTypeSecret,
     );
   }
 

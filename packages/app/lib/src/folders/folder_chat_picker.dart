@@ -10,6 +10,7 @@ import '../../l10n/app_localizations.dart';
 import '../chat/message_tile.dart' show SenderAvatar;
 import '../session/providers.dart';
 import 'folder_icons.dart';
+import 'folder_sheet.dart';
 
 /// A rule of a folder that takes in or leaves out a whole kind of chat.
 enum FolderRule {
@@ -95,38 +96,14 @@ Future<FolderChatChoice?> showFolderChatPicker(
   required Set<FolderRule> selectedRules,
   required List<int> selectedChats,
   int? maxChats,
-}) => showGeneralDialog<FolderChatChoice>(
-  context: context,
-  barrierDismissible: true,
-  barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-  barrierColor: const Color(0x14000000),
-  transitionDuration: MediaQuery.disableAnimationsOf(context)
-      ? Duration.zero
-      : const Duration(milliseconds: 200),
-  transitionBuilder: (context, animation, _, child) {
-    final curved = CurvedAnimation(
-      parent: animation,
-      curve: Curves.easeOutCubic,
-    );
-    return FadeTransition(
-      opacity: curved,
-      child: ScaleTransition(
-        scale: Tween(begin: 0.96, end: 1.0).animate(curved),
-        child: child,
-      ),
-    );
-  },
-  pageBuilder: (context, _, _) => Material(
-    type: MaterialType.transparency,
-    child: Center(
-      child: FolderChatPicker(
-        title: title,
-        rules: rules,
-        selectedRules: selectedRules,
-        selectedChats: selectedChats,
-        maxChats: maxChats,
-      ),
-    ),
+}) => showFolderSheet<FolderChatChoice>(
+  context,
+  FolderChatPicker(
+    title: title,
+    rules: rules,
+    selectedRules: selectedRules,
+    selectedChats: selectedChats,
+    maxChats: maxChats,
   ),
 );
 
@@ -164,7 +141,17 @@ class _FolderChatPickerState extends ConsumerState<FolderChatPicker> {
   /// The checked chats as they were when the sheet opened, then the main
   /// list; or the chats matching [_query].
   List<FolderChat>? _shown;
+
+  /// The query [_shown] was loaded for.
+  var _shownQuery = '';
+
+  /// Checked chats known to be secret: they don't count toward the limit.
+  final _secret = <int>{};
+
+  /// A click tried to check one chat too many.
   var _overLimit = false;
+
+  int get _counted => _chats.where((id) => !_secret.contains(id)).length;
 
   ChatFoldersController get _folders =>
       ref.read(telegramSessionProvider).requireValue.folders;
@@ -209,7 +196,13 @@ class _FolderChatPickerState extends ConsumerState<FolderChatPicker> {
       shown = const [];
     }
     if (!mounted || id != _searchId) return;
-    setState(() => _shown = shown);
+    setState(() {
+      _shown = shown;
+      _shownQuery = query;
+      for (final chat in shown) {
+        if (chat.isSecret) _secret.add(chat.id);
+      }
+    });
   }
 
   void _toggleChat(int id) {
@@ -217,7 +210,7 @@ class _FolderChatPickerState extends ConsumerState<FolderChatPicker> {
       _overLimit = false;
       if (_chats.remove(id)) return;
       final max = widget.maxChats;
-      if (max != null && _chats.length >= max) {
+      if (max != null && !_secret.contains(id) && _counted >= max) {
         _overLimit = true;
         return;
       }
@@ -233,7 +226,7 @@ class _FolderChatPickerState extends ConsumerState<FolderChatPicker> {
     final c = MgColors.of(context);
     final l10n = AppLocalizations.of(context);
     final shown = _shown;
-    final searching = _query.trim().isNotEmpty;
+    final searching = _shownQuery.isNotEmpty;
     final items = <Widget>[
       if (!searching && widget.rules.isNotEmpty) ...[
         _Caption(l10n.folderChatTypes),
@@ -270,6 +263,9 @@ class _FolderChatPickerState extends ConsumerState<FolderChatPicker> {
           ),
     ];
     final max = widget.maxChats;
+    // Already over, such as after the limit went down: Done waits.
+    final over = max != null && _counted > max;
+    final warn = _overLimit || over;
     return CallbackShortcuts(
       bindings: {
         const SingleActivator(LogicalKeyboardKey.escape): () =>
@@ -296,11 +292,11 @@ class _FolderChatPickerState extends ConsumerState<FolderChatPicker> {
                     ),
                     if (max != null)
                       Text(
-                        l10n.folderChatsCounter(_chats.length, max),
+                        l10n.folderChatsCounter(_counted, max),
                         style: mgTextStyle(
                           c,
                           size: MgType.caption,
-                          color: _overLimit ? MgDestructive.color : c.fg2,
+                          color: warn ? MgDestructive.color : c.fg2,
                         ),
                       ),
                   ],
@@ -327,7 +323,7 @@ class _FolderChatPickerState extends ConsumerState<FolderChatPicker> {
               AnimatedSize(
                 duration: const Duration(milliseconds: 160),
                 curve: Curves.easeOutCubic,
-                child: _overLimit && max != null
+                child: warn && max != null
                     ? Padding(
                         padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
                         child: Text(
@@ -350,7 +346,10 @@ class _FolderChatPickerState extends ConsumerState<FolderChatPicker> {
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                   const SizedBox(width: 8),
-                  MgPrimaryButton(label: l10n.done, onPressed: _done),
+                  MgPrimaryButton(
+                    label: l10n.done,
+                    onPressed: over ? null : _done,
+                  ),
                 ],
               ),
             ],
