@@ -1790,6 +1790,48 @@ abstract class AppLocalizations {
   /// **'Send contact'**
   String get sendContactTitle;
 
+  /// No description provided for @attachLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Location…'**
+  String get attachLocation;
+
+  /// No description provided for @sendLocationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send location'**
+  String get sendLocationTitle;
+
+  /// No description provided for @locationSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Place, address or coordinates'**
+  String get locationSearchHint;
+
+  /// No description provided for @locationStartHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter coordinates or paste a map link to pick a place, then search for venues around it'**
+  String get locationStartHint;
+
+  /// No description provided for @sendThisLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Send this location'**
+  String get sendThisLocation;
+
+  /// No description provided for @mapZoomIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom in'**
+  String get mapZoomIn;
+
+  /// No description provided for @mapZoomOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom out'**
+  String get mapZoomOut;
+
   /// No description provided for @newPollTitle.
   ///
   /// In en, this message translates to:

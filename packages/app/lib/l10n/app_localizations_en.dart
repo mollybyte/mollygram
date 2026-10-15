@@ -1016,6 +1016,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sendContactTitle => 'Send contact';
 
   @override
+  String get attachLocation => 'Location…';
+
+  @override
+  String get sendLocationTitle => 'Send location';
+
+  @override
+  String get locationSearchHint => 'Place, address or coordinates';
+
+  @override
+  String get locationStartHint =>
+      'Enter coordinates or paste a map link to pick a place, then search for venues around it';
+
+  @override
+  String get sendThisLocation => 'Send this location';
+
+  @override
+  String get mapZoomIn => 'Zoom in';
+
+  @override
+  String get mapZoomOut => 'Zoom out';
+
+  @override
   String get newPollTitle => 'New poll';
 
   @override
