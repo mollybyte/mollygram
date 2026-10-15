@@ -437,6 +437,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get menuReply => 'Reply';
 
   @override
+  String get menuQuote => 'Quote';
+
+  @override
   String get menuEdit => 'Edit';
 
   @override

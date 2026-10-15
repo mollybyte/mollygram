@@ -561,6 +561,52 @@ void main() {
     expect(forward['send_copy'], isFalse);
   });
 
+  testWidgets('selects text with the mouse and replies with it quoted', (
+    tester,
+  ) async {
+    await pump(tester);
+
+    // Drag across the whole of "From Vera".
+    final text = tester.getRect(find.text('From Vera'));
+    final gesture = await tester.startGesture(
+      Offset(text.left + 1, text.center.dy),
+      kind: PointerDeviceKind.mouse,
+    );
+    await tester.pump();
+    await gesture.moveTo(Offset(text.right + 30, text.center.dy));
+    await tester.pump();
+    await gesture.up();
+    await tester.pump();
+
+    await rightClick(tester, 'From Vera');
+    // The selection hands focus over before the menu shows.
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Quote'));
+    await tester.pumpAndSettle();
+    // The composer's reply bar carries the quote.
+    expect(find.byType(ComposerContextBar), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(ComposerContextBar),
+        matching: find.text('From Vera'),
+      ),
+      findsOneWidget,
+    );
+
+    await tester.enterText(find.byType(TextField), 'Noted');
+    await tester.pump();
+    await tester.tap(find.byType(MgSendButton));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+
+    final send = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    final replyTo = send['reply_to']! as Map;
+    expect(replyTo['message_id'], 12);
+    final quote = replyTo['quote']! as Map;
+    expect((quote['text']! as Map)['text'], 'From Vera');
+    expect(quote['position'], 0);
+  });
+
   testWidgets('forwards without the sender name when asked', (tester) async {
     await pump(tester);
 

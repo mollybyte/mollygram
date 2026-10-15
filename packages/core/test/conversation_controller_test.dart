@@ -282,6 +282,29 @@ void main() {
     expect(controller.store.message(7, 3)?.text, 'Quoted');
   });
 
+  test('quotes part of the original in a reply', () async {
+    await controller.start();
+
+    await controller.sendText(
+      7,
+      'Agreed',
+      replyTo: 10,
+      quote: 'the big one',
+      quotePosition: 17,
+    );
+
+    final send = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    final replyTo = send['reply_to']! as Map;
+    expect(replyTo['message_id'], 10);
+    final quote = replyTo['quote']! as Map;
+    expect((quote['text']! as Map)['text'], 'the big one');
+    expect(quote['position'], 17);
+
+    await controller.sendText(7, 'Plain', replyTo: 10);
+    final plain = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    expect((plain['reply_to']! as Map)['quote'], isNull);
+  });
+
   test('unpins every message of a chat', () async {
     await controller.start();
     controller.store.setPinned(7, [30, 20]);

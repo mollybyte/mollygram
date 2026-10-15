@@ -439,6 +439,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get menuReply => 'Ответить';
 
   @override
+  String get menuQuote => 'Цитировать';
+
+  @override
   String get menuEdit => 'Изменить';
 
   @override
