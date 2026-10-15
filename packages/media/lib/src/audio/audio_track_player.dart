@@ -54,6 +54,11 @@ class AudioTrackPlayer {
   /// The speeds a click on the speed button steps through.
   static const rates = [1.0, 1.5, 2.0];
 
+  /// Called with the key of a track that played to its end, after the
+  /// player unloaded it. The app uses it to go on to the next voice
+  /// message, as Telegram does.
+  void Function(Object key)? onCompleted;
+
   Future<void> setRate(double rate) async {
     _rate.value = rate;
     await _instance?.setRate(rate);
@@ -82,10 +87,16 @@ class AudioTrackPlayer {
   }
 
   void _onCompleted() {
+    final key = _track.value;
     _track.value = null;
     _position.value = Duration.zero;
     _playing.value = false;
+    if (key != null) onCompleted?.call(key);
   }
+
+  /// Acts as if the loaded track reached its end.
+  @visibleForTesting
+  void debugComplete() => _onCompleted();
 
   Future<void> dispose() async {
     for (final s in _subscriptions) {

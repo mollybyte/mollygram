@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mollygram_media/mollygram_media.dart';
 
+import 'voice_autoplay.dart';
+
 /// Video message players, reused between circles so scrolling never pays
 /// for creating a decoder twice.
 final circlePlayerPoolProvider = Provider<CirclePlayerPool>((ref) {
@@ -14,9 +16,11 @@ final circlePlayerPoolProvider = Provider<CirclePlayerPool>((ref) {
 });
 
 /// The one player for voice messages and music: starting a track stops
-/// the previous one, as in Telegram.
+/// the previous one, and a finished one goes on to the next, as in
+/// Telegram.
 final audioPlayerProvider = Provider<AudioTrackPlayer>((ref) {
   final player = AudioTrackPlayer();
+  continueAudioPlayback(ref, player);
   ref.onDispose(() => unawaited(player.dispose()));
   return player;
 });
