@@ -95,6 +95,14 @@ final class VideoNoteCaptureChannel: NSObject, FlutterTexture,
     ).devices
   }
 
+  /// An iPhone through Continuity Camera films with its back camera, but
+  /// reports no position.
+  private static func facesAway(_ device: AVCaptureDevice) -> Bool {
+    if device.position == .back { return true }
+    if #available(macOS 14.0, *) { return device.deviceType == .continuityCamera }
+    return false
+  }
+
   /// What Dart needs to show [device] in the round preview.
   private func previewInfo(_ device: AVCaptureDevice) -> [String: Any] {
     let dimensions = CMVideoFormatDescriptionGetDimensions(device.activeFormat.formatDescription)
@@ -105,7 +113,7 @@ final class VideoNoteCaptureChannel: NSObject, FlutterTexture,
       "camera": device.uniqueID,
       "cameras": Self.cameras().count,
       // A camera that looks away from the user is shown as it is.
-      "mirrored": device.position != .back,
+      "mirrored": !Self.facesAway(device),
     ]
   }
 
@@ -210,16 +218,21 @@ final class VideoNoteCaptureChannel: NSObject, FlutterTexture,
     }
     let all = Self.cameras()
     let index = all.firstIndex { $0.uniqueID == current.device.uniqueID } ?? -1
-    guard all.count > 1, let input = try? AVCaptureDeviceInput(device: all[(index + 1) % all.count])
-    else {
-      result(previewInfo(current.device))
-      return
-    }
+    // The others in order after the current one; a camera that cannot be
+    // opened is skipped, so it never hides the ones after it.
+    let candidates = (1..<max(all.count, 1)).map { all[(index + $0 + all.count) % all.count] }
+      .filter { $0.uniqueID != current.device.uniqueID }
     queue.async { [weak self] in
       session.beginConfiguration()
       session.removeInput(current)
-      let switched = session.canAddInput(input)
-      session.addInput(switched ? input : current)
+      var now = current
+      for device in candidates {
+        if let input = try? AVCaptureDeviceInput(device: device), session.canAddInput(input) {
+          now = input
+          break
+        }
+      }
+      session.addInput(now)
       session.sessionPreset = session.canSetSessionPreset(.hd1280x720) ? .hd1280x720 : .high
       session.commitConfiguration()
       DispatchQueue.main.async {
@@ -227,7 +240,6 @@ final class VideoNoteCaptureChannel: NSObject, FlutterTexture,
           result(nil)
           return
         }
-        let now = switched ? input : current
         self.cameraInput = now
         result(self.previewInfo(now.device))
       }

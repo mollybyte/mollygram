@@ -71,8 +71,12 @@ class VideoNoteRecorder {
   final CircleQuality quality;
   final MethodChannel channel;
 
-  /// The camera picked last, so the next recording starts with it.
-  String? _camera;
+  /// The camera picked last, so the next recording starts with it, in any
+  /// chat, until the app quits.
+  static String? _camera;
+
+  @visibleForTesting
+  static void debugForgetCamera() => _camera = null;
 
   /// Camera and microphone together.
   Future<MicrophonePermission> permission() async {

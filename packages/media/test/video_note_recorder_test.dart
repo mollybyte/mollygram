@@ -77,6 +77,7 @@ void main() {
             _ => null,
           };
         });
+    VideoNoteRecorder.debugForgetCamera();
     final recorder = VideoNoteRecorder(directory: () async => '/v');
     final first = await recorder.start();
     expect(first.cameras, 1);
@@ -86,7 +87,8 @@ void main() {
     expect(switched!.width, 1920);
     expect(switched.cameras, 2);
     expect(switched.mirrored, isFalse);
-    await recorder.start();
+    // Remembered by the next recorder too, as a new chat makes one.
+    await VideoNoteRecorder(directory: () async => '/v').start();
     expect(calls.last.arguments, containsPair('camera', 'iphone'));
   });
 }
