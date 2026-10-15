@@ -1965,6 +1965,44 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get keepDeletedMessages => 'Keep deleted messages';
+
+  @override
+  String get keepDeletedMessagesHint =>
+      'Save messages others delete for everyone';
+
+  @override
+  String get keepEditHistory => 'Keep edit history';
+
+  @override
+  String get keepEditHistoryHint => 'Save earlier versions of edited messages';
+
+  @override
+  String get storedMessagesAbout =>
+      'Saved encrypted on this computer only, for messages Mollygram saw while it was open. Nothing is sent anywhere. Showing them in chats comes later.';
+
+  @override
+  String get clearStoredData => 'Stored data';
+
+  @override
+  String get clearStoredDataTitle =>
+      'Clear the deleted messages and edit history saved on this computer?';
+
+  @override
+  String get storedDataUnreadable => 'Stored data can\'t be read';
+
+  @override
+  String get storedDataUnreadableHint =>
+      'Its key is missing from the keychain. Reset to start again.';
+
+  @override
+  String get resetStoredData => 'Reset';
+
+  @override
+  String get resetStoredDataTitle =>
+      'Delete the stored data that can\'t be read and start again?';
+
+  @override
   String get edit => 'Edit';
 
   @override

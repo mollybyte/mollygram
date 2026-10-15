@@ -2,6 +2,9 @@ import 'dart:async';
 
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 
+import 'store/message_capture.dart';
+import 'store/message_store.dart';
+
 /// The privacy extras: what the app keeps from other people. Each one is
 /// off by default; ghost mode is all of them at once.
 final class PrivacySettings {
@@ -12,6 +15,8 @@ final class PrivacySettings {
     this.hideContentOpened = false,
     this.silentReadChats = const {},
     this.beforeGhost,
+    this.keepDeletedMessages = false,
+    this.keepEditHistory = false,
   });
 
   /// All switches on.
@@ -38,6 +43,17 @@ final class PrivacySettings {
   /// Chats read without marking them as read, whatever [hideReadReceipts]
   /// says.
   final Set<int> silentReadChats;
+
+  /// Messages others delete for everyone stay readable here (see
+  /// [MessageCapture]). Not part of ghost mode.
+  final bool keepDeletedMessages;
+
+  /// Earlier versions of edited messages stay readable here. Not part of
+  /// ghost mode.
+  final bool keepEditHistory;
+
+  /// Whether anything is kept in the [MessageStore].
+  bool get keepsMessages => keepDeletedMessages || keepEditHistory;
 
   /// The switches as they were before ghost mode turned them all on, as a
   /// mask of [_switchBits]; ghost mode off puts them back.
@@ -75,6 +91,8 @@ final class PrivacySettings {
     hideContentOpened: bits & _openedBit != 0,
     silentReadChats: silentReadChats,
     beforeGhost: beforeGhost,
+    keepDeletedMessages: keepDeletedMessages,
+    keepEditHistory: keepEditHistory,
   );
 
   PrivacySettings copyWith({
@@ -83,6 +101,8 @@ final class PrivacySettings {
     bool? stayOffline,
     bool? hideContentOpened,
     Set<int>? silentReadChats,
+    bool? keepDeletedMessages,
+    bool? keepEditHistory,
   }) => PrivacySettings(
     hideReadReceipts: hideReadReceipts ?? this.hideReadReceipts,
     hideTyping: hideTyping ?? this.hideTyping,
@@ -90,6 +110,8 @@ final class PrivacySettings {
     hideContentOpened: hideContentOpened ?? this.hideContentOpened,
     silentReadChats: silentReadChats ?? this.silentReadChats,
     beforeGhost: beforeGhost,
+    keepDeletedMessages: keepDeletedMessages ?? this.keepDeletedMessages,
+    keepEditHistory: keepEditHistory ?? this.keepEditHistory,
   );
 
   /// The same settings with [chatId] read silently or not.
@@ -106,6 +128,8 @@ final class PrivacySettings {
     'hide_content_opened': hideContentOpened,
     'silent_read_chats': [...silentReadChats],
     'before_ghost': ?beforeGhost,
+    'keep_deleted_messages': keepDeletedMessages,
+    'keep_edit_history': keepEditHistory,
   };
 
   /// Reads what [toJson] wrote; anything unexpected reads as off.
@@ -125,6 +149,8 @@ final class PrivacySettings {
             if (id is int) id,
       },
       beforeGhost: before is int && before >= 0 && before <= 15 ? before : null,
+      keepDeletedMessages: flag('keep_deleted_messages'),
+      keepEditHistory: flag('keep_edit_history'),
     );
   }
 
@@ -136,6 +162,8 @@ final class PrivacySettings {
       other.stayOffline == stayOffline &&
       other.hideContentOpened == hideContentOpened &&
       other.beforeGhost == beforeGhost &&
+      other.keepDeletedMessages == keepDeletedMessages &&
+      other.keepEditHistory == keepEditHistory &&
       other.silentReadChats.length == silentReadChats.length &&
       other.silentReadChats.containsAll(silentReadChats);
 
@@ -146,6 +174,8 @@ final class PrivacySettings {
     stayOffline,
     hideContentOpened,
     beforeGhost,
+    keepDeletedMessages,
+    keepEditHistory,
     Object.hashAllUnordered(silentReadChats),
   );
 }

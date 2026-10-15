@@ -779,6 +779,17 @@
   "@unpinAllTitle": {
     "placeholders": { "count": { "type": "int" } }
   },
+  "keepDeletedMessages": "Keep deleted messages",
+  "keepDeletedMessagesHint": "Save messages others delete for everyone",
+  "keepEditHistory": "Keep edit history",
+  "keepEditHistoryHint": "Save earlier versions of edited messages",
+  "storedMessagesAbout": "Saved encrypted on this computer only, for messages Mollygram saw while it was open. Nothing is sent anywhere. Showing them in chats comes later.",
+  "clearStoredData": "Stored data",
+  "clearStoredDataTitle": "Clear the deleted messages and edit history saved on this computer?",
+  "storedDataUnreadable": "Stored data can't be read",
+  "storedDataUnreadableHint": "Its key is missing from the keychain. Reset to start again.",
+  "resetStoredData": "Reset",
+  "resetStoredDataTitle": "Delete the stored data that can't be read and start again?",
   "edit": "Edit",
   "save": "Save",
   "create": "Create",
