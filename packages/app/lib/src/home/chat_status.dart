@@ -49,6 +49,37 @@ final chatOnlineProvider = StreamProvider.family<bool, int>((ref, chatId) {
   ]).distinct();
 });
 
+/// What a chat-list row needs beyond the chat itself: the first name of
+/// whoever wrote the last message in a group (a chat's title when a chat
+/// posted it; empty when unknown or not a group), and whether Telegram
+/// verified the chat. Kept current.
+typedef ChatRowInfo = ({String sender, bool verified});
+
+final chatRowInfoProvider = StreamProvider.family<ChatRowInfo, int>((
+  ref,
+  chatId,
+) {
+  final session = ref.watch(telegramSessionProvider).requireValue;
+  final presence = session.presence;
+  final store = session.chatLists.store;
+  ChatRowInfo info() {
+    final chat = store.chat(chatId);
+    if (chat == null) return (sender: '', verified: false);
+    final last = chat.lastMessage;
+    final sender = !chat.isGroup || last == null || last.isOutgoing
+        ? ''
+        : last.senderUserId != 0
+        ? presence.firstNameOf(last.senderUserId)
+        : store.chat(last.senderChatId)?.title ?? '';
+    return (sender: sender, verified: presence.isVerified(chat));
+  }
+
+  return _current(info, [
+    presence.changes,
+    session.chatLists.changes,
+  ]).distinct();
+});
+
 /// Emits [read] now and again after every event of any of [changes].
 Stream<T> _current<T>(T Function() read, List<Stream<void>> changes) {
   late final StreamController<T> controller;

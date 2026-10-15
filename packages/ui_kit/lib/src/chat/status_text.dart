@@ -21,6 +21,8 @@ class MgStatusText extends StatelessWidget {
     this.accentColor,
     this.lead,
     this.leadColor,
+    this.leading,
+    this.maxLines = 1,
   });
 
   final String text;
@@ -37,6 +39,12 @@ class MgStatusText extends StatelessWidget {
   /// A word before [text] in its own color, such as "Draft:".
   final String? lead;
   final Color? leadColor;
+
+  /// A small widget inline before the text, such as a media thumbnail.
+  final Widget? leading;
+
+  /// The text wraps to this many lines before it is cut with an ellipsis.
+  final int maxLines;
 
   static const Duration duration = Duration(milliseconds: 220);
 
@@ -64,13 +72,21 @@ class MgStatusText extends StatelessWidget {
         ),
       ),
       child: Row(
-        key: ValueKey((text, accent, activity, lead)),
+        key: ValueKey((text, accent, activity, lead, leading?.key)),
         mainAxisSize: MainAxisSize.min,
         children: [
           Flexible(
             child: Text.rich(
               TextSpan(
                 children: [
+                  if (leading case final leading?)
+                    WidgetSpan(
+                      alignment: PlaceholderAlignment.middle,
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 5),
+                        child: leading,
+                      ),
+                    ),
                   if (lead case final lead?)
                     TextSpan(
                       text: '$lead ',
@@ -79,7 +95,7 @@ class MgStatusText extends StatelessWidget {
                   TextSpan(text: text),
                 ],
               ),
-              maxLines: 1,
+              maxLines: maxLines,
               overflow: TextOverflow.ellipsis,
               style: style,
             ),

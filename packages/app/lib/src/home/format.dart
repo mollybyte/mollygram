@@ -44,17 +44,26 @@ String kindLabel(AppLocalizations l10n, ChatPreviewKind kind) => switch (kind) {
   ChatPreviewKind.other => l10n.previewOther,
 };
 
-/// The second line of a chat-list row.
-String formatPreview(AppLocalizations l10n, ChatPreview? preview) {
+/// The last message as a chat-list row shows it. A message with a
+/// thumbnail drops the kind before its caption, the picture says it.
+/// [you] puts "You:" before the user's own message; a group's row names
+/// the sender on a line of its own instead.
+String formatPreview(
+  AppLocalizations l10n,
+  ChatPreview? preview, {
+  bool you = true,
+}) {
   if (preview == null) return '';
-  final label = kindLabel(l10n, preview.kind);
+  final label = preview.thumbnail != null && preview.text.isNotEmpty
+      ? ''
+      : kindLabel(l10n, preview.kind);
   final text = preview.text.replaceAll('\n', ' ');
   final body = switch ((label.isEmpty, text.isEmpty)) {
     (true, _) => text,
     (false, true) => label,
     (false, false) => '$label, $text',
   };
-  return preview.isOutgoing ? l10n.previewYou(body) : body;
+  return you && preview.isOutgoing ? l10n.previewYou(body) : body;
 }
 
 /// What a chat-list row shows for an unsent draft: its text, or the kind of

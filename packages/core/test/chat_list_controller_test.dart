@@ -53,6 +53,68 @@ void main() {
     await subscription.cancel();
   });
 
+  test('keeps the sender, the thumbnail and the read mark of the last '
+      'message', () async {
+    await controller.start();
+    Map<String, Object?> photo({required bool spoiler}) => {
+      '@type': 'message',
+      'id': 30,
+      'sender_id': {'@type': 'messageSenderUser', 'user_id': 9},
+      'chat_id': 6,
+      'is_outgoing': true,
+      'date': 100,
+      'content': {
+        '@type': 'messagePhoto',
+        'photo': {
+          '@type': 'photo',
+          'minithumbnail': {
+            '@type': 'minithumbnail',
+            'width': 8,
+            'height': 8,
+            'data': 'AAAA',
+          },
+          'sizes': <Object?>[],
+        },
+        'caption': {'@type': 'formattedText', 'text': 'lake'},
+        'has_spoiler': spoiler,
+        'is_secret': false,
+      },
+    };
+    json.push({
+      '@type': 'updateNewChat',
+      'chat': {
+        ..._chat(6, {'@type': 'chatTypeBasicGroup', 'basic_group_id': 2}),
+        'last_message': photo(spoiler: false),
+        'last_read_outbox_message_id': 20,
+      },
+    });
+    await _polled();
+
+    var chat = controller.store.chat(6)!;
+    expect(chat.lastMessage!.senderUserId, 9);
+    expect(chat.lastMessage!.thumbnail, isNotNull);
+    expect(chat.lastMessageRead, isFalse);
+
+    json
+      ..push({
+        '@type': 'updateChatReadOutbox',
+        'chat_id': 6,
+        'last_read_outbox_message_id': 30,
+      })
+      ..push({
+        '@type': 'updateChatLastMessage',
+        'chat_id': 6,
+        'last_message': photo(spoiler: true),
+        'positions': <Object?>[],
+      });
+    await _polled();
+
+    chat = controller.store.chat(6)!;
+    expect(chat.lastMessageRead, isTrue);
+    // A spoiler keeps its picture to itself.
+    expect(chat.lastMessage!.thumbnail, isNull);
+  });
+
   test('reports a chat TDLib no longer has', () async {
     json.missingChats.add(42);
     expect(await controller.loadChat(42), isFalse);

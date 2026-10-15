@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 
 /// A chat-list identity used by TDLib for the main list, archive, or a folder.
@@ -58,6 +60,10 @@ final class ChatPreview {
     required this.text,
     required this.date,
     required this.isOutgoing,
+    this.senderUserId = 0,
+    this.senderChatId = 0,
+    this.thumbnail,
+    this.sendState = PreviewSendState.sent,
   });
 
   /// The message, for reading the chat up to it; 0 when unknown.
@@ -70,7 +76,25 @@ final class ChatPreview {
   /// Unix time in seconds.
   final int date;
   final bool isOutgoing;
+
+  /// The user who sent it; 0 when a chat sent it (see [senderChatId]).
+  final int senderUserId;
+
+  /// The chat that sent it, such as a channel posting in its discussion
+  /// group or an anonymous admin; 0 when a user sent it.
+  final int senderChatId;
+
+  /// A tiny JPEG of the photo, video or GIF, for a thumbnail beside the
+  /// text; null for other messages and for media behind a spoiler.
+  final Uint8List? thumbnail;
+
+  /// Whether an outgoing message is still on its way or failed.
+  final PreviewSendState sendState;
 }
+
+/// Where an outgoing last message is: on its way, failed, or with the
+/// server (read or not is decided by the chat's read-outbox mark).
+enum PreviewSendState { sending, failed, sent }
 
 /// The unsent draft of a chat, as the chat list shows it.
 final class ChatDraft {
@@ -136,6 +160,7 @@ final class ChatListEntry {
     this.canDeleteForAll = false,
     this.canDeleteOnlyForSelf = false,
     this.photo,
+    this.lastReadOutboxMessageId = 0,
   }) : positions = List.unmodifiable(positions);
 
   final int id;
@@ -175,6 +200,16 @@ final class ChatListEntry {
   /// The unsent draft, shown in place of [lastMessage].
   final ChatDraft? draft;
 
+  /// The newest outgoing message the other side has read.
+  final int lastReadOutboxMessageId;
+
+  /// The user's own last message has been read: two ticks in the list.
+  bool get lastMessageRead => switch (lastMessage) {
+    final last? when last.isOutgoing && last.messageId != 0 =>
+      last.messageId <= lastReadOutboxMessageId,
+    _ => false,
+  };
+
   /// A basic group or a supergroup that is not a channel: incoming messages
   /// come from different people, so they show the sender's name.
   bool get isGroup => type.isGroup;
@@ -210,6 +245,7 @@ final class ChatListEntry {
     ChatPreview? Function()? lastMessage,
     td.ChatPhotoInfo? Function()? photo,
     ChatDraft? Function()? draft,
+    int? lastReadOutboxMessageId,
   }) => ChatListEntry(
     id: id,
     title: title ?? this.title,
@@ -228,6 +264,8 @@ final class ChatListEntry {
     positions: positions ?? this.positions,
     lastMessage: lastMessage == null ? this.lastMessage : lastMessage(),
     draft: draft == null ? this.draft : draft(),
+    lastReadOutboxMessageId:
+        lastReadOutboxMessageId ?? this.lastReadOutboxMessageId,
   );
 }
 

@@ -1,7 +1,10 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../avatar.dart';
 import '../badge.dart';
+import '../chat/bubbles.dart';
 import '../chat/status_text.dart';
 import '../icons.dart';
 import '../theme/colors.dart';
@@ -12,11 +15,14 @@ import '../theme/theme.dart';
 /// selected row is filled with the accent.
 ///
 /// Like the official client's dialog row: a lock before the title of a
-/// secret chat, a crossed-out speaker after the title of a muted one, the
-/// time on the right; the last message below, or what someone is doing
-/// right now in the accent color; then the reaction, mention and unread
-/// badges, or a pin when a pinned chat has nothing unread. An online user
-/// gets a dot on the avatar.
+/// secret chat, a verified mark and a crossed-out speaker after the title,
+/// the delivery ticks and the time on the right. Below, in a group, who
+/// wrote last with their small avatar, then the last message with a
+/// thumbnail of its photo or video; elsewhere the message takes both
+/// lines. What someone is doing right now replaces them in the accent
+/// color. The reaction, mention and unread badges sit at the bottom right,
+/// or a pin when a pinned chat has nothing unread. An online user gets a
+/// dot on the avatar.
 class ChatListTile extends StatefulWidget {
   const ChatListTile({
     super.key,
@@ -34,6 +40,11 @@ class ChatListTile extends StatefulWidget {
     this.online = false,
     this.activity,
     this.draftLabel,
+    this.sender,
+    this.senderAvatar,
+    this.thumbnail,
+    this.status = MessageStatus.none,
+    this.verified = false,
     this.selected = false,
     this.menuOpen = false,
     this.avatar,
@@ -74,23 +85,48 @@ class ChatListTile extends StatefulWidget {
   /// "Draft:" before [subtitle] when the chat has an unsent draft, drawn
   /// in red as the official client does.
   final String? draftLabel;
+
+  /// Who wrote the last message, in a group; null to give the message
+  /// both lines.
+  final String? sender;
+
+  /// A small avatar before [sender], [senderAvatarSize] across.
+  final Widget? senderAvatar;
+
+  /// A tiny picture of the last message's photo or video, drawn before the
+  /// text.
+  final ImageProvider? thumbnail;
+
+  /// The delivery ticks of the user's own last message, before the time.
+  final MessageStatus status;
+
+  /// Telegram verified the chat: a mark after the title.
+  final bool verified;
   final bool selected;
 
   /// The row's context menu is open: an accent outline, as on macOS.
   final bool menuOpen;
 
-  /// Defaults to a 42 px [MonogramAvatar] of [title].
+  /// Defaults to a [MonogramAvatar] of [title], [avatarSize] across.
   final Widget? avatar;
   final VoidCallback? onTap;
 
   /// A secondary click or a long press, with its global position.
   final ValueChanged<Offset>? onContextMenu;
 
-  static const double avatarSize = 42;
+  static const double avatarSize = 50;
+  static const double senderAvatarSize = 16;
+
+  /// The title line and the two lines under it.
+  static const double _content = 18 + 3 + 2 * _line;
+  static const double _line = 16;
 
   /// The height of every row, including the gap below it; the list lays
   /// rows out at this fixed extent.
-  static const double extent = avatarSize + 2 * 8 + 1;
+  static const double extent = _content + 2 * (8 + _ring) + 1;
+
+  /// The menu outline drawn inside the row, which pads its content.
+  static const double _ring = 1.5;
 
   @override
   State<ChatListTile> createState() => _ChatListTileState();
@@ -110,6 +146,78 @@ class _ChatListTileState extends State<ChatListTile> {
   }
 
   static const _badgeDuration = Duration(milliseconds: 260);
+
+  /// The two lines under the title: what someone is doing; or who wrote
+  /// last and the message on one line each; or the message on both.
+  Widget _preview(MgColors c, Color sub, bool on, String? activity) {
+    if (activity != null) {
+      return MgStatusText(
+        activity,
+        accent: true,
+        activity: true,
+        size: MgType.body,
+        accentColor: on ? c.onAccent : null,
+      );
+    }
+    final thumbnail = widget.thumbnail;
+    final text = MgStatusText(
+      widget.subtitle,
+      lead: widget.draftLabel,
+      leadColor: on ? c.onAccent : MgColors.draftRed,
+      size: MgType.body,
+      color: sub,
+      maxLines: widget.sender == null ? 2 : 1,
+      leading: thumbnail == null
+          ? null
+          : ClipRRect(
+              key: ValueKey(thumbnail),
+              borderRadius: BorderRadius.circular(3),
+              child: Image(
+                image: thumbnail,
+                width: 18,
+                height: 18,
+                fit: BoxFit.cover,
+                gaplessPlayback: true,
+              ),
+            ),
+    );
+    final sender = widget.sender;
+    if (sender == null || widget.draftLabel != null) return text;
+    final senderAvatar = widget.senderAvatar;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          height: ChatListTile._line,
+          child: Row(
+            children: [
+              if (senderAvatar != null) ...[
+                SizedBox.square(
+                  dimension: ChatListTile.senderAvatarSize,
+                  child: senderAvatar,
+                ),
+                const SizedBox(width: 5),
+              ],
+              Flexible(
+                child: Text(
+                  sender,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: mgTextStyle(
+                    c,
+                    size: MgType.body,
+                    color: on ? c.onAccent : c.fg,
+                    height: 1.2,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        text,
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -176,7 +284,7 @@ class _ChatListTileState extends State<ChatListTile> {
                 color: widget.menuOpen && !on
                     ? c.accent
                     : const Color(0x00000000),
-                width: 1.5,
+                width: ChatListTile._ring,
                 strokeAlign: BorderSide.strokeAlignInside,
               ),
             ),
@@ -225,6 +333,11 @@ class _ChatListTileState extends State<ChatListTile> {
                                     ),
                                   ),
                                 ),
+                                if (widget.verified)
+                                  Padding(
+                                    padding: const EdgeInsets.only(left: 3),
+                                    child: VerifiedMark(onAccent: on),
+                                  ),
                                 _Appear(
                                   visible: widget.muted,
                                   child: Padding(
@@ -241,6 +354,7 @@ class _ChatListTileState extends State<ChatListTile> {
                           ),
                           if (widget.time.isNotEmpty) ...[
                             const SizedBox(width: 6),
+                            _Ticks(status: widget.status, selected: on),
                             Text(
                               widget.time,
                               style: mgTextStyle(
@@ -255,25 +369,16 @@ class _ChatListTileState extends State<ChatListTile> {
                       ),
                       const SizedBox(height: 3),
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Expanded(
-                            child: activity != null
-                                ? MgStatusText(
-                                    activity,
-                                    accent: true,
-                                    activity: true,
-                                    size: MgType.body,
-                                    accentColor: on ? c.onAccent : null,
-                                  )
-                                : MgStatusText(
-                                    widget.subtitle,
-                                    lead: widget.draftLabel,
-                                    leadColor: on
-                                        ? c.onAccent
-                                        : MgColors.draftRed,
-                                    size: MgType.body,
-                                    color: sub,
-                                  ),
+                            child: SizedBox(
+                              height: 2 * ChatListTile._line,
+                              child: Align(
+                                alignment: Alignment.topLeft,
+                                child: _preview(c, sub, on, activity),
+                              ),
+                            ),
                           ),
                           AnimatedSize(
                             duration: _badgeDuration,
@@ -306,6 +411,102 @@ class _ChatListTileState extends State<ChatListTile> {
       ),
     );
   }
+}
+
+/// The delivery ticks before the time of a row whose last message is the
+/// user's own: one tick sent, two read, a clock on its way, red failed.
+class _Ticks extends StatelessWidget {
+  const _Ticks({required this.status, required this.selected});
+
+  final MessageStatus status;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    final (icon, color) = switch (status) {
+      MessageStatus.none => (null, null),
+      MessageStatus.sending => (
+        MgIcons.sending,
+        selected ? c.onAccentSecondary : c.fg2,
+      ),
+      MessageStatus.sent => (MgIcons.sent, selected ? c.onAccent : c.accent),
+      MessageStatus.read => (
+        MgIcons.readTicks,
+        selected ? c.onAccent : c.accent,
+      ),
+      MessageStatus.failed => (MgIcons.failed, MessageMeta.failedColor),
+    };
+    if (icon == null) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(right: 3),
+      child: MgIcon(icon, size: 15, color: color),
+    );
+  }
+}
+
+/// The blue rosette with a white tick after a verified chat's title.
+class VerifiedMark extends StatelessWidget {
+  const VerifiedMark({super.key, this.size = 14, this.onAccent = false});
+
+  final double size;
+
+  /// Inverted colors for a selected (accent-filled) row.
+  final bool onAccent;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    return SizedBox.square(
+      dimension: size,
+      child: CustomPaint(
+        painter: _VerifiedPainter(
+          fill: onAccent ? c.onAccent : c.accent,
+          tick: onAccent ? c.accent : c.onAccent,
+        ),
+      ),
+    );
+  }
+}
+
+class _VerifiedPainter extends CustomPainter {
+  _VerifiedPainter({required this.fill, required this.tick});
+
+  final Color fill;
+  final Color tick;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final s = size.width / 24;
+    final center = Offset(size.width / 2, size.height / 2);
+    // A twelve-point rosette: radii alternate between the points and the
+    // notches between them.
+    final rosette = Path();
+    for (var i = 0; i < 24; i++) {
+      final r = (i.isEven ? 11.0 : 9.4) * s;
+      final a = i * math.pi / 12 - math.pi / 2;
+      final p = center + Offset(math.cos(a) * r, math.sin(a) * r);
+      i == 0 ? rosette.moveTo(p.dx, p.dy) : rosette.lineTo(p.dx, p.dy);
+    }
+    rosette.close();
+    canvas.drawPath(rosette, Paint()..color = fill);
+    canvas.drawPath(
+      Path()
+        ..moveTo(7.6 * s, 12.2 * s)
+        ..lineTo(10.6 * s, 15.1 * s)
+        ..lineTo(16.4 * s, 9.2 * s),
+      Paint()
+        ..color = tick
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.2 * s
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_VerifiedPainter old) =>
+      old.fill != fill || old.tick != tick;
 }
 
 /// The avatar with the online dot at its lower right, cut out of the row

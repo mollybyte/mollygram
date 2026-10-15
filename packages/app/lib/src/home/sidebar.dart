@@ -675,6 +675,20 @@ class _ChatRowState extends ConsumerState<_ChatRow>
     final actors = ref.watch(chatActivityProvider(chat.id)).value ?? const [];
     final online = ref.watch(chatOnlineProvider(chat.id)).value ?? false;
     final draft = chat.draft;
+    final info =
+        ref.watch(chatRowInfoProvider(chat.id)).value ??
+        (sender: '', verified: false);
+    // In a group, who wrote last gets a line of their own with their
+    // small avatar; elsewhere the message takes both lines.
+    final named = chat.isGroup && last != null && draft == null;
+    final sender = !named
+        ? null
+        : last.isOutgoing
+        ? l10n.senderYou
+        : info.sender.isEmpty
+        ? null
+        : info.sender;
+    final thumbnail = draft == null ? last?.thumbnail : null;
     final tile = ChatListTile(
       title: chat.title,
       avatar: PeerAvatar.chat(
@@ -683,8 +697,22 @@ class _ChatRowState extends ConsumerState<_ChatRow>
         photo: chat.photo,
       ),
       subtitle: draft == null
-          ? formatPreview(l10n, last)
+          ? formatPreview(l10n, last, you: sender == null)
           : draftText(l10n, draft),
+      sender: sender,
+      senderAvatar: sender == null ? null : _senderAvatar(ref, sender, last!),
+      thumbnail: thumbnail == null ? null : MemoryImage(thumbnail),
+      status: switch (last) {
+        _ when draft != null => MessageStatus.none,
+        ChatPreview(isOutgoing: true, sendState: PreviewSendState.sending) =>
+          MessageStatus.sending,
+        ChatPreview(isOutgoing: true, sendState: PreviewSendState.failed) =>
+          MessageStatus.failed,
+        ChatPreview(isOutgoing: true) when chat.type != ChatType.channel =>
+          chat.lastMessageRead ? MessageStatus.read : MessageStatus.sent,
+        _ => MessageStatus.none,
+      },
+      verified: info.verified,
       draftLabel: draft == null ? null : l10n.draftLabel,
       time: switch ((draft, last)) {
         (final draft?, _) => formatChatTime(draft.date, locale),
@@ -764,6 +792,28 @@ class _PinnedTile extends ConsumerWidget {
       onContextMenu: onContextMenu,
     );
   }
+}
+
+/// The small avatar before the sender's name in a group's row: the user's
+/// profile photo, or the chat's when a chat posted.
+Widget _senderAvatar(WidgetRef ref, String name, ChatPreview last) {
+  final session = ref.read(telegramSessionProvider).requireValue;
+  const size = ChatListTile.senderAvatarSize;
+  if (last.senderChatId != 0) {
+    return PeerAvatar.chat(
+      name: name,
+      size: size,
+      photo: session.chatLists.store.chat(last.senderChatId)?.photo,
+    );
+  }
+  final userId = last.isOutgoing ? session.presence.myId : last.senderUserId;
+  final photo = session.presence.photoOf(userId);
+  return PeerAvatar(
+    name: name,
+    size: size,
+    photo: photo?.small,
+    minithumbnail: photo?.minithumbnail,
+  );
 }
 
 /// The first row of the main list: the archive, with the names of the

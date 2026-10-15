@@ -165,15 +165,20 @@ class _Window extends StatelessWidget {
                 children: const [
                   ChatListTile(
                     title: 'Anna Petrova',
-                    subtitle: 'Yes, it opens instantly now',
+                    subtitle:
+                        'You: yes, it opens instantly now, and the '
+                        'list keeps up while it scrolls',
                     time: '21:10',
+                    status: MessageStatus.read,
                     selected: true,
                     online: true,
                     pinned: true,
                   ),
                   ChatListTile(
                     title: 'Design',
-                    subtitle: 'Mark: pushed the new icons',
+                    subtitle: 'pushed the new icons',
+                    sender: 'Mark',
+                    senderAvatar: MonogramAvatar(name: 'Mark', size: 16),
                     time: '20:41',
                     unread: 12,
                     mentions: true,
@@ -190,6 +195,7 @@ class _Window extends StatelessWidget {
                   ChatListTile(
                     title: 'Flutter Desktop',
                     subtitle: 'Release notes are out',
+                    verified: true,
                     time: '18:02',
                     unread: 1234,
                     unreadLabel: '1.2K',
@@ -202,7 +208,12 @@ class _Window extends StatelessWidget {
                     secret: true,
                     markedUnread: true,
                   ),
-                  ChatListTile(title: 'Ilya', subtitle: 'ok', time: 'Mon'),
+                  ChatListTile(
+                    title: 'Ilya',
+                    subtitle: 'ok',
+                    time: 'Mon',
+                    status: MessageStatus.sent,
+                  ),
                 ],
               ),
             ),
