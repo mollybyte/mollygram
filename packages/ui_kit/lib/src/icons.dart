@@ -170,6 +170,58 @@ abstract final class MgIcons {
     '<path d="M7 3h7l5 5v13H7zM14 3v5h5"/>',
   );
 
+  // Emoji and sticker panel: one per section.
+  static const recent = MgIconData(
+    'recent',
+    '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  );
+  static const favorite = MgIconData(
+    'favorite',
+    '<path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8'
+        '-4.3-4.1 5.9-.9z"/>',
+  );
+  static const animals = MgIconData(
+    'animals',
+    '<circle cx="5.5" cy="10.5" r="1.8"/><circle cx="9.5" cy="6" r="1.8"/>'
+        '<circle cx="14.5" cy="6" r="1.8"/><circle cx="18.5" cy="10.5" r="1.8"/>'
+        '<path d="M12 11.5c-3 0-6 4.3-6 6.7a2.4 2.4 0 0 0 3.4 2.2'
+        'c1.7-.7 3.5-.7 5.2 0a2.4 2.4 0 0 0 3.4-2.2c0-2.4-3-6.7-6-6.7z"/>',
+  );
+  static const food = MgIconData(
+    'food',
+    '<path d="M5 9h12v4a6 6 0 0 1-12 0zM17 10h1a2.5 2.5 0 0 1 0 5h-1.4'
+        'M8.5 3v3M11 3v3M13.5 3v3"/>',
+  );
+  static const travel = MgIconData(
+    'travel',
+    '<path d="M4.5 17v-5l2-5.5h11l2 5.5v5zM4.5 12h15M6.5 17v2.5M17.5 17v2.5"/>'
+        '<path d="M8 14.5h.01M16 14.5h.01" stroke-width="2.4"/>',
+  );
+  static const activities = MgIconData(
+    'activities',
+    '<circle cx="12" cy="12" r="9"/>'
+        '<path d="M5.6 5.6a9 9 0 0 1 0 12.8M18.4 5.6a9 9 0 0 0 0 12.8"/>',
+  );
+  static const objects = MgIconData(
+    'objects',
+    '<path d="M9.5 18h5M10.5 21h3M12 3a6 6 0 0 0-3.6 10.8c.7.5 1.1 1.3 1.1'
+        ' 2.1V16h5v-.1c0-.8.4-1.6 1.1-2.1A6 6 0 0 0 12 3z"/>',
+  );
+  static const symbols = MgIconData(
+    'symbols',
+    '<path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1'
+        ' 7.5 2.6C19.5 15.4 12 20 12 20z"/>',
+  );
+  static const flag = MgIconData(
+    'flag',
+    '<path d="M5.5 21V4M5.5 4.5h12l-2.5 4 2.5 4h-12"/>',
+  );
+  static const sticker = MgIconData(
+    'sticker',
+    '<path d="M20 12.5V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6.5z'
+        'M20 12.5h-4.5a3 3 0 0 0-3 3V20"/>',
+  );
+
   static const List<MgIconData> all = [
     compose,
     search,
@@ -205,6 +257,16 @@ abstract final class MgIcons {
     notifications,
     lock,
     file,
+    recent,
+    favorite,
+    animals,
+    food,
+    travel,
+    activities,
+    objects,
+    symbols,
+    flag,
+    sticker,
   ];
 }
 

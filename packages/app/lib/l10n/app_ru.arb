@@ -169,5 +169,22 @@
   "durationWeeks": "{count, plural, one{{count} неделю} few{{count} недели} other{{count} недель}}",
   "durationMonths": "{count, plural, one{{count} месяц} few{{count} месяца} other{{count} месяцев}}",
   "plugins": "Плагины",
-  "settings": "Настройки"
+  "settings": "Настройки",
+  "emojiTab": "Эмодзи",
+  "stickersTab": "Стикеры",
+  "emojiSearch": "Поиск эмодзи",
+  "recentlyUsed": "Недавние",
+  "noEmojiFound": "Эмодзи не найдены",
+  "emojiSmileys": "Смайлы",
+  "emojiPeople": "Люди",
+  "emojiAnimals": "Животные и природа",
+  "emojiFood": "Еда и напитки",
+  "emojiTravel": "Путешествия и места",
+  "emojiActivities": "Занятия",
+  "emojiObjects": "Предметы",
+  "emojiSymbols": "Символы",
+  "emojiFlags": "Флаги",
+  "favoriteStickers": "Избранные",
+  "stickersFailed": "Не удалось загрузить стикеры",
+  "noStickerSets": "Пока нет стикеров"
 }

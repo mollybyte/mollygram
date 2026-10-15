@@ -18,6 +18,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../l10n/app_localizations.dart';
 import '../chat/attachment_preview.dart';
 import '../chat/describe.dart';
+import '../chat/emoji_sticker_panel.dart';
 import '../chat/forward_picker.dart';
 import '../chat/message_actions.dart';
 import '../chat/message_tile.dart';
@@ -58,6 +59,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
   /// What went wrong last, shown above the composer until the user types.
   _Failure? _failure;
 
+  /// Whether the emoji and sticker panel is open over the composer.
+  var _panelOpen = false;
+
   @override
   void initState() {
     super.initState();
@@ -83,6 +87,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _editing = null;
     _setAside = '';
     _replyAside = null;
+    _panelOpen = false;
     _open(widget.chatId);
   }
 
@@ -209,10 +214,61 @@ class _ChatViewState extends ConsumerState<ChatView> {
 
   /// Esc: stop editing first, then stop replying.
   void _cancel() {
-    if (_editing != null) {
+    if (_panelOpen) {
+      setState(() => _panelOpen = false);
+    } else if (_editing != null) {
       _stopEditing();
     } else if (_replyTo != null) {
       setState(() => _replyTo = null);
+    }
+  }
+
+  void _togglePanel() {
+    setState(() => _panelOpen = !_panelOpen);
+    _focus.requestFocus();
+  }
+
+  void _closePanel() {
+    if (!_panelOpen) return;
+    setState(() => _panelOpen = false);
+    _focus.requestFocus();
+  }
+
+  /// Puts [emoji] in place of the selection, or at the end when the field
+  /// has never had the caret, and leaves the caret after it.
+  void _insertEmoji(String emoji) {
+    final value = _draft.value;
+    final text = value.text;
+    final selection = value.selection.isValid
+        ? value.selection
+        : TextSelection.collapsed(offset: text.length);
+    _draft.value = TextEditingValue(
+      text: text.replaceRange(selection.start, selection.end, emoji),
+      selection: TextSelection.collapsed(
+        offset: selection.start + emoji.length,
+      ),
+    );
+    _focus.requestFocus();
+  }
+
+  /// Sends [sticker] at once and closes the panel, as the official apps do.
+  Future<void> _sendSticker(td.Sticker sticker) async {
+    final chatId = widget.chatId;
+    final replyTo = _replyTo;
+    setState(() {
+      _panelOpen = false;
+      _failure = null;
+      _replyTo = null;
+    });
+    _focus.requestFocus();
+    try {
+      await _conversations.sendSticker(chatId, sticker, replyTo: replyTo?.id);
+    } catch (_) {
+      if (!mounted || widget.chatId != chatId) return;
+      setState(() {
+        _failure = _Failure.send;
+        _replyTo ??= replyTo;
+      });
     }
   }
 
@@ -620,25 +676,48 @@ class _ChatViewState extends ConsumerState<ChatView> {
                       ),
                     ),
                   ),
-                Composer(
-                  controller: _draft,
-                  focusNode: _focus,
-                  header: _composerHeader(l10n),
-                  onCancel: _editing != null || _replyTo != null
-                      ? _cancel
-                      : null,
-                  onEditLast: () => unawaited(_editLast()),
-                  onAttach: () => unawaited(_chooseFiles()),
-                  onPaste: _paste,
-                  allowEmpty: _editing != null && _isCaption(_editing!),
-                  labels: ComposerLabels(
-                    hint: l10n.messageHint,
-                    attach: l10n.attach,
-                    emoji: l10n.emoji,
-                    record: l10n.record,
-                    send: l10n.send,
+                if (_panelOpen)
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: TapRegion(
+                        groupId: _EmojiPanelRegion,
+                        onTapOutside: (_) => _closePanel(),
+                        child: EmojiStickerPanel(
+                          height: (MediaQuery.sizeOf(context).height - 220)
+                              .clamp(220, 400),
+                          onEmoji: _insertEmoji,
+                          onSticker: (sticker) =>
+                              unawaited(_sendSticker(sticker)),
+                          onClose: _closePanel,
+                        ),
+                      ),
+                    ),
                   ),
-                  onSend: (text) => unawaited(_send(text)),
+                TapRegion(
+                  groupId: _EmojiPanelRegion,
+                  child: Composer(
+                    controller: _draft,
+                    focusNode: _focus,
+                    header: _composerHeader(l10n),
+                    onCancel: _panelOpen || _editing != null || _replyTo != null
+                        ? _cancel
+                        : null,
+                    onEditLast: () => unawaited(_editLast()),
+                    onAttach: () => unawaited(_chooseFiles()),
+                    onEmoji: _togglePanel,
+                    onPaste: _paste,
+                    allowEmpty: _editing != null && _isCaption(_editing!),
+                    labels: ComposerLabels(
+                      hint: l10n.messageHint,
+                      attach: l10n.attach,
+                      emoji: l10n.emoji,
+                      record: l10n.record,
+                      send: l10n.send,
+                    ),
+                    onSend: (text) => unawaited(_send(text)),
+                  ),
                 ),
               ],
             ),
@@ -665,6 +744,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
 }
 
 enum _Failure { send, edit, attach, forward }
+
+/// Clicks in the panel and the composer keep the emoji panel open.
+abstract final class _EmojiPanelRegion {}
 
 /// The timeline, newest at the bottom: rows of messages and albums with a
 /// date pill above the first message of each day.

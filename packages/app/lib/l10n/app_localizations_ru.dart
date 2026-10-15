@@ -678,4 +678,55 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get settings => 'Настройки';
+
+  @override
+  String get emojiTab => 'Эмодзи';
+
+  @override
+  String get stickersTab => 'Стикеры';
+
+  @override
+  String get emojiSearch => 'Поиск эмодзи';
+
+  @override
+  String get recentlyUsed => 'Недавние';
+
+  @override
+  String get noEmojiFound => 'Эмодзи не найдены';
+
+  @override
+  String get emojiSmileys => 'Смайлы';
+
+  @override
+  String get emojiPeople => 'Люди';
+
+  @override
+  String get emojiAnimals => 'Животные и природа';
+
+  @override
+  String get emojiFood => 'Еда и напитки';
+
+  @override
+  String get emojiTravel => 'Путешествия и места';
+
+  @override
+  String get emojiActivities => 'Занятия';
+
+  @override
+  String get emojiObjects => 'Предметы';
+
+  @override
+  String get emojiSymbols => 'Символы';
+
+  @override
+  String get emojiFlags => 'Флаги';
+
+  @override
+  String get favoriteStickers => 'Избранные';
+
+  @override
+  String get stickersFailed => 'Не удалось загрузить стикеры';
+
+  @override
+  String get noStickerSets => 'Пока нет стикеров';
 }

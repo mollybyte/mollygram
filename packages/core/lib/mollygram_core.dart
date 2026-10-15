@@ -11,6 +11,7 @@ export 'src/conversation_store.dart';
 export 'src/file_controller.dart';
 export 'src/outgoing_file.dart';
 export 'src/phone_country.dart';
+export 'src/sticker_library.dart';
 export 'src/tdlib_initializer.dart';
 export 'src/telegram_api_config.dart';
 export 'src/telegram_session.dart';

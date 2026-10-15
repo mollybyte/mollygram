@@ -675,4 +675,55 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settings => 'Settings';
+
+  @override
+  String get emojiTab => 'Emoji';
+
+  @override
+  String get stickersTab => 'Stickers';
+
+  @override
+  String get emojiSearch => 'Search emoji';
+
+  @override
+  String get recentlyUsed => 'Recently used';
+
+  @override
+  String get noEmojiFound => 'No emoji found';
+
+  @override
+  String get emojiSmileys => 'Smileys';
+
+  @override
+  String get emojiPeople => 'People';
+
+  @override
+  String get emojiAnimals => 'Animals and nature';
+
+  @override
+  String get emojiFood => 'Food and drink';
+
+  @override
+  String get emojiTravel => 'Travel and places';
+
+  @override
+  String get emojiActivities => 'Activities';
+
+  @override
+  String get emojiObjects => 'Objects';
+
+  @override
+  String get emojiSymbols => 'Symbols';
+
+  @override
+  String get emojiFlags => 'Flags';
+
+  @override
+  String get favoriteStickers => 'Favorites';
+
+  @override
+  String get stickersFailed => 'Couldn\'t load stickers';
+
+  @override
+  String get noStickerSets => 'No stickers yet';
 }
