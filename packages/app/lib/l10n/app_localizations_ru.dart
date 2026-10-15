@@ -1861,6 +1861,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get searchBySender => 'Поиск по отправителю';
 
   @override
+  String get searchFilter => 'Фильтр результатов';
+
+  @override
+  String get searchAllKinds => 'Все сообщения';
+
+  @override
   String searchCounter(int index, int count) {
     return '$index из $count';
   }

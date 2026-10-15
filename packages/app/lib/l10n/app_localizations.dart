@@ -3116,6 +3116,18 @@ abstract class AppLocalizations {
   /// **'Search by sender'**
   String get searchBySender;
 
+  /// No description provided for @searchFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter results'**
+  String get searchFilter;
+
+  /// No description provided for @searchAllKinds.
+  ///
+  /// In en, this message translates to:
+  /// **'All messages'**
+  String get searchAllKinds;
+
   /// No description provided for @searchCounter.
   ///
   /// In en, this message translates to:

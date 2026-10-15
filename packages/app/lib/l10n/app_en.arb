@@ -731,6 +731,8 @@
   "searchInChat": "Search in chat",
   "searchByDate": "Jump to date",
   "searchBySender": "Search by sender",
+  "searchFilter": "Filter results",
+  "searchAllKinds": "All messages",
   "searchCounter": "{index} of {count}",
   "@searchCounter": {
     "placeholders": { "index": { "type": "int" }, "count": { "type": "int" } }

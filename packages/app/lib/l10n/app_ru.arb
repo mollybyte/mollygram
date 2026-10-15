@@ -503,6 +503,8 @@
   "searchInChat": "Поиск в чате",
   "searchByDate": "Перейти к дате",
   "searchBySender": "Поиск по отправителю",
+  "searchFilter": "Фильтр результатов",
+  "searchAllKinds": "Все сообщения",
   "searchCounter": "{index} из {count}",
   "searchNoResults": "Ничего не найдено",
   "searchOlder": "Предыдущий результат",

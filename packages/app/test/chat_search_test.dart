@@ -83,8 +83,12 @@ void main() {
           child: SizedBox(
             width: 480,
             child: ChatSearchBar(
-              find: (query, sender) =>
-                  session.chatSearch.find(7, query, senderUserId: sender),
+              find: (query, sender, kind) => session.chatSearch.find(
+                7,
+                query,
+                senderUserId: sender,
+                kind: kind,
+              ),
               onResult: shown.add,
               onClose: () => closed++,
               onPickSender: (position) => pickSearchSender(
@@ -166,6 +170,27 @@ void main() {
       expect(find.text('Boris'), findsNothing);
       request = json.sent.lastWhere((r) => r['@type'] == 'searchChatMessages');
       expect(request['sender_id'], isNull);
+    });
+
+    testWidgets('narrows the search to one kind of message', (tester) async {
+      await open(tester);
+      await tester.tap(find.byTooltip('Filter results'));
+      await tester.pump();
+      await tester.tap(find.text('Links'));
+      await settle(tester);
+      expect(find.text('Links'), findsOneWidget);
+      final request = json.sent.lastWhere(
+        (r) => r['@type'] == 'searchChatMessages',
+      );
+      expect((request['filter']! as Map)['@type'], 'searchMessagesFilterUrl');
+      expect(shown, [40]);
+
+      await tester.tap(find.byTooltip('Filter results'));
+      await tester.pump();
+      await tester.tap(find.text('All messages'));
+      await settle(tester);
+      expect(find.text('Links'), findsNothing);
+      expect(find.text('1 of 1'), findsNothing);
     });
 
     testWidgets('says when nothing matches', (tester) async {

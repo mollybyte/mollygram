@@ -23,8 +23,13 @@ class ChatSearchBar extends StatefulWidget {
   });
 
   /// Starts a search for a query, among one member's messages when
-  /// [senderUserId] is set.
-  final ChatSearchResults Function(String query, int? senderUserId) find;
+  /// [senderUserId] is set and among messages of [kind] when that is.
+  final ChatSearchResults Function(
+    String query,
+    int? senderUserId,
+    SharedMediaKind? kind,
+  )
+  find;
   final ValueChanged<int> onResult;
   final VoidCallback onClose;
 
@@ -50,6 +55,7 @@ class _ChatSearchBarState extends State<ChatSearchBar> {
   ChatSearchResults? _results;
   var _searching = false;
   MentionCandidate? _sender;
+  SharedMediaKind? _kind;
 
   @override
   void initState() {
@@ -92,18 +98,60 @@ class _ChatSearchBarState extends State<ChatSearchBar> {
     unawaited(_run());
   }
 
+  /// The kinds to narrow to, from a menu under the filter button.
+  Future<void> _pickKind(Offset position) async {
+    final l10n = AppLocalizations.of(context);
+    SharedMediaKind? picked;
+    var chosen = false;
+    await showMgMenu(
+      context,
+      position: position,
+      items: [
+        MgMenuItem(label: l10n.searchAllKinds, onSelected: () => chosen = true),
+        for (final kind in SharedMediaKind.values)
+          MgMenuItem(
+            label: kindLabel(l10n, kind),
+            onSelected: () {
+              chosen = true;
+              picked = kind;
+            },
+          ),
+      ],
+    );
+    if (!chosen || !mounted || picked == _kind) return;
+    setState(() => _kind = picked);
+    _focus.requestFocus();
+    await _run();
+  }
+
+  void _clearKind() {
+    setState(() => _kind = null);
+    _focus.requestFocus();
+    unawaited(_run());
+  }
+
+  /// The tab names of the shared media panel, reused for the filter.
+  static String kindLabel(AppLocalizations l10n, SharedMediaKind kind) =>
+      switch (kind) {
+        SharedMediaKind.media => l10n.sharedMediaTab,
+        SharedMediaKind.files => l10n.sharedFilesTab,
+        SharedMediaKind.links => l10n.sharedLinksTab,
+        SharedMediaKind.voice => l10n.sharedVoiceTab,
+        SharedMediaKind.music => l10n.sharedMusicTab,
+      };
+
   Future<void> _run() async {
     _debounce?.cancel();
     final query = _text.text.trim();
-    // A member alone is a search too: everything they wrote.
-    if (query.isEmpty && _sender == null) {
+    // A member or a kind alone is a search too: everything that matches.
+    if (query.isEmpty && _sender == null && _kind == null) {
       setState(() {
         _results = null;
         _searching = false;
       });
       return;
     }
-    final results = widget.find(query, _sender?.userId);
+    final results = widget.find(query, _sender?.userId, _kind);
     setState(() {
       _results = results;
       _searching = true;
@@ -182,10 +230,18 @@ class _ChatSearchBarState extends State<ChatSearchBar> {
         padding: const EdgeInsets.fromLTRB(7, 7, 4, 7),
         child: Row(
           children: [
+            if (_kind case final kind?)
+              Padding(
+                padding: const EdgeInsets.only(right: 6),
+                child: _FilterChip(
+                  label: kindLabel(l10n, kind),
+                  onClear: _clearKind,
+                ),
+              ),
             if (_sender case final sender?)
               Padding(
                 padding: const EdgeInsets.only(right: 6),
-                child: _SenderChip(name: sender.name, onClear: _clearSender),
+                child: _FilterChip(label: sender.name, onClear: _clearSender),
               ),
             Expanded(
               child: MgSearchField(
@@ -224,6 +280,23 @@ class _ChatSearchBarState extends State<ChatSearchBar> {
               icon: MgIcons.arrowDown,
               tooltip: l10n.searchNewer,
               onPressed: results?.hasNewer ?? false ? newer : null,
+            ),
+            Builder(
+              builder: (context) => MgIconButton(
+                icon: MgIcons.file,
+                tooltip: l10n.searchFilter,
+                selected: _kind != null,
+                onPressed: () {
+                  final box = context.findRenderObject()! as RenderBox;
+                  unawaited(
+                    _pickKind(
+                      box.localToGlobal(
+                        Offset(box.size.width / 2, box.size.height),
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
             if (widget.onPickSender != null)
               Builder(
@@ -270,11 +343,12 @@ class _ChatSearchBarState extends State<ChatSearchBar> {
   }
 }
 
-/// The member whose messages are searched, shown before the field.
-class _SenderChip extends StatelessWidget {
-  const _SenderChip({required this.name, required this.onClear});
+/// A filter the search is narrowed to, a member or a kind of message,
+/// shown before the field with a way to drop it.
+class _FilterChip extends StatelessWidget {
+  const _FilterChip({required this.label, required this.onClear});
 
-  final String name;
+  final String label;
   final VoidCallback onClear;
 
   @override
@@ -294,7 +368,7 @@ class _SenderChip extends StatelessWidget {
         children: [
           Flexible(
             child: Text(
-              name,
+              label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: mgTextStyle(
