@@ -39,7 +39,7 @@ final class TimelineRow extends TimelineItem {
   final bool startsForwards;
 
   @override
-  Object get key => row.messages.first.id;
+  Object get key => row.messages.first.keyId;
 }
 
 /// Midnight, local time, of the day [message] was sent.

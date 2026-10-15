@@ -14,7 +14,8 @@ td.FormattedText formattedDraft(String text, List<FormatRange> ranges) {
     entities: [
       for (final range in formats)
         // A mention whose user is unknown would name nobody.
-        if (range.format != TextFormat.mention || range.userId != null)
+        if ((range.format != TextFormat.mention || range.userId != null) &&
+            (range.format != TextFormat.customEmoji || range.emojiId != null))
           td.TextEntity(
             offset: range.start,
             length: range.length,
@@ -33,6 +34,9 @@ td.FormattedText formattedDraft(String text, List<FormatRange> ranges) {
               TextFormat.link => td.TextEntityTypeTextUrl(url: range.url ?? ''),
               TextFormat.mention => td.TextEntityTypeMentionName(
                 userId: range.userId!,
+              ),
+              TextFormat.customEmoji => td.TextEntityTypeCustomEmoji(
+                customEmojiId: range.emojiId!,
               ),
             },
           ),
@@ -58,40 +62,59 @@ bool sameDraft(td.FormattedText a, td.FormattedText b) {
 /// hashtags) is left out; it is found again on save.
 List<FormatRange> draftRanges(td.FormattedText text) => normalizeRanges([
   for (final entity in text.entities)
-    if (_formatOf(entity.type) case (final format, final url, final userId))
+    if (_formatOf(entity.type) case (
+      final format,
+      final url,
+      final userId,
+      final emojiId,
+    ))
       FormatRange(
         entity.offset,
         entity.offset + entity.length,
         format,
         url: url,
         userId: userId,
+        emojiId: emojiId,
       ),
 ]);
 
-(TextFormat, String?, int?)? _formatOf(td.TextEntityType type) =>
-    switch (type) {
-      td.TextEntityTypeBold() => (TextFormat.bold, null, null),
-      td.TextEntityTypeItalic() => (TextFormat.italic, null, null),
-      td.TextEntityTypeUnderline() => (TextFormat.underline, null, null),
-      td.TextEntityTypeStrikethrough() => (
-        TextFormat.strikethrough,
-        null,
-        null,
-      ),
-      td.TextEntityTypeSpoiler() => (TextFormat.spoiler, null, null),
-      td.TextEntityTypeCode() ||
-      td.TextEntityTypePre() ||
-      td.TextEntityTypePreCode() => (TextFormat.monospace, null, null),
-      td.TextEntityTypeBlockQuote() ||
-      td.TextEntityTypeExpandableBlockQuote() => (TextFormat.quote, null, null),
-      td.TextEntityTypeTextUrl(:final url) => (TextFormat.link, url, null),
-      td.TextEntityTypeMentionName(:final userId) => (
-        TextFormat.mention,
-        null,
-        userId,
-      ),
-      _ => null,
-    };
+(TextFormat, String?, int?, int?)? _formatOf(
+  td.TextEntityType type,
+) => switch (type) {
+  td.TextEntityTypeBold() => (TextFormat.bold, null, null, null),
+  td.TextEntityTypeItalic() => (TextFormat.italic, null, null, null),
+  td.TextEntityTypeUnderline() => (TextFormat.underline, null, null, null),
+  td.TextEntityTypeStrikethrough() => (
+    TextFormat.strikethrough,
+    null,
+    null,
+    null,
+  ),
+  td.TextEntityTypeSpoiler() => (TextFormat.spoiler, null, null, null),
+  td.TextEntityTypeCode() ||
+  td.TextEntityTypePre() ||
+  td.TextEntityTypePreCode() => (TextFormat.monospace, null, null, null),
+  td.TextEntityTypeBlockQuote() || td.TextEntityTypeExpandableBlockQuote() => (
+    TextFormat.quote,
+    null,
+    null,
+    null,
+  ),
+  td.TextEntityTypeTextUrl(:final url) => (TextFormat.link, url, null, null),
+  td.TextEntityTypeMentionName(:final userId) => (
+    TextFormat.mention,
+    null,
+    userId,
+    null,
+  ),
+  td.TextEntityTypeCustomEmoji(:final customEmojiId) => (
+    TextFormat.customEmoji,
+    null,
+    null,
+    customEmojiId,
+  ),
+  _ => null,
+};
 
 /// The composer's formatting menu and link sheet in the user's language.
 FormatLabels formatLabelsOf(AppLocalizations l10n) => FormatLabels(

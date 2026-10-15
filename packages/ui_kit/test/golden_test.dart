@@ -616,6 +616,85 @@ void main() {
       );
     });
 
+    testWidgets('selection menu $theme', skip: _skip, (tester) async {
+      tester.view.physicalSize = const Size(420, 300);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      Widget letter(BuildContext context, String v, Color c) =>
+          selectionLetter(context, v, c, weight: FontWeight.w800);
+      await tester.pumpWidget(
+        themed(
+          Stack(
+            children: [
+              const Positioned.fill(child: Wallpaper()),
+              Builder(
+                builder: (context) => SelectionMenu(
+                  anchors: const TextSelectionToolbarAnchors(
+                    primaryAnchor: Offset(80, 40),
+                    secondaryAnchor: Offset(80, 60),
+                  ),
+                  formats: [
+                    SelectionFormatButton(
+                      glyph: (c) => letter(context, 'B', c),
+                      tooltip: 'Bold',
+                      active: true,
+                      onPressed: () {},
+                    ),
+                    for (final icon in [
+                      MgIcons.quote,
+                      MgIcons.link,
+                      MgIcons.edit,
+                      MgIcons.copy,
+                      MgIcons.reply,
+                      MgIcons.select,
+                      MgIcons.forward,
+                    ])
+                      SelectionFormatButton(
+                        glyph: (c) => selectionIcon(icon, c),
+                        tooltip: 'Format',
+                        active: false,
+                        onPressed: () {},
+                      ),
+                  ],
+                  commands: [
+                    SelectionCommand(
+                      label: 'Cut',
+                      shortcut: '\u2318X',
+                      onPressed: () {},
+                    ),
+                    SelectionCommand(
+                      label: 'Copy',
+                      shortcut: '\u2318C',
+                      onPressed: () {},
+                    ),
+                    SelectionCommand(
+                      label: 'Paste',
+                      shortcut: '\u2318V',
+                      onPressed: () {},
+                    ),
+                    SelectionCommand(
+                      label: 'Select all',
+                      shortcut: '\u2318A',
+                      onPressed: () {},
+                    ),
+                  ],
+                  extra: [
+                    SelectionCommand(label: 'Plain text', onPressed: () {}),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          colors: colors,
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 300));
+      await expectLater(
+        find.byType(MaterialApp),
+        matchesGoldenFile('goldens/selection_menu_$theme.png'),
+      );
+    });
+
     testWidgets('message menu $theme', skip: _skip, (tester) async {
       tester.view.physicalSize = const Size(640, 420);
       tester.view.devicePixelRatio = 1;

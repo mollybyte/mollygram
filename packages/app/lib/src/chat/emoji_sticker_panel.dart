@@ -21,6 +21,7 @@ class EmojiStickerPanel extends ConsumerWidget {
     required this.onEmoji,
     required this.onSticker,
     this.onGif,
+    this.onCustomEmoji,
     required this.onClose,
     this.height = 400,
   });
@@ -31,6 +32,10 @@ class EmojiStickerPanel extends ConsumerWidget {
   /// A saved GIF picked in the GIF tab; sent at once, like a sticker. Without
   /// it the panel has no GIF tab, as when it picks a sticker for the editor.
   final ValueChanged<td.Animation>? onGif;
+
+  /// A custom emoji picked in the Custom tab, which goes into the text.
+  /// Without it the panel has no such tab.
+  final ValueChanged<td.Sticker>? onCustomEmoji;
   final VoidCallback onClose;
   final double height;
 
@@ -42,7 +47,12 @@ class EmojiStickerPanel extends ConsumerWidget {
     return EmojiPanel(
       height: height,
       onClose: onClose,
-      tabs: [l10n.emojiTab, l10n.stickersTab, if (onGif != null) l10n.gifsTab],
+      tabs: [
+        l10n.emojiTab,
+        l10n.stickersTab,
+        if (onCustomEmoji != null) l10n.customEmojiTab,
+        if (onGif != null) l10n.gifsTab,
+      ],
       children: [
         EmojiTab(
           labels: EmojiTabLabels(
@@ -76,6 +86,13 @@ class EmojiStickerPanel extends ConsumerWidget {
           languages: {language, 'en'}.toList(),
           onPick: onSticker,
         ),
+        if (onCustomEmoji case final onCustomEmoji?)
+          _StickerTab(
+            library: session.stickers,
+            languages: const [],
+            onPick: onCustomEmoji,
+            emojiSets: true,
+          ),
         if (onGif case final onGif?)
           _GifTab(library: session.stickers, onPick: onGif),
       ],
@@ -109,7 +126,12 @@ class _StickerTab extends StatefulWidget {
     required this.library,
     required this.languages,
     required this.onPick,
+    this.emojiSets = false,
   });
+
+  /// Shows the custom emoji sets, with no recent or favorite rows and no
+  /// search, instead of the sticker sets.
+  final bool emojiSets;
 
   final StickerLibrary library;
 
@@ -182,11 +204,17 @@ class _StickerTabState extends State<_StickerTab> {
     final l10n = AppLocalizations.of(context);
     final library = widget.library;
     try {
-      final (recent, favorites, sets) = await (
-        library.recent(),
-        library.favorites(),
-        library.installedSets(),
-      ).wait;
+      final (recent, favorites, sets) = widget.emojiSets
+          ? (
+              const <td.Sticker>[],
+              const <td.Sticker>[],
+              await library.installedEmojiSets(),
+            )
+          : await (
+              library.recent(),
+              library.favorites(),
+              library.installedSets(),
+            ).wait;
       if (!mounted) return;
       final sections = [
         if (recent.isNotEmpty)
@@ -313,13 +341,14 @@ class _StickerTabState extends State<_StickerTab> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(10, 8, 10, 4),
-          child: MgSearchField(
-            hintText: l10n.stickerSearch,
-            onChanged: _onQuery,
+        if (!widget.emojiSets)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(10, 8, 10, 4),
+            child: MgSearchField(
+              hintText: l10n.stickerSearch,
+              onChanged: _onQuery,
+            ),
           ),
-        ),
         Expanded(child: body),
         if (!searching && sections.isNotEmpty)
           PanelSectionBar(

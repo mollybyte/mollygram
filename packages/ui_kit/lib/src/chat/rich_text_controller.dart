@@ -145,7 +145,11 @@ class RichTextEditingController extends TextEditingController {
     final selection = value.selection;
     if (!selection.isValid) return;
     if (selection.isCollapsed) {
-      if (format == TextFormat.link || format == TextFormat.mention) return;
+      if (format == TextFormat.link ||
+          format == TextFormat.mention ||
+          format == TextFormat.customEmoji) {
+        return;
+      }
       if (_typingAt != selection.baseOffset) _typing.clear();
       _typingAt = selection.baseOffset;
       if (!_typing.remove(format)) _typing.add(format);
@@ -179,6 +183,8 @@ class RichTextEditingController extends TextEditingController {
     if (!selection.isValid || selection.isCollapsed) return;
     var ranges = _ranges;
     for (final format in TextFormat.values) {
+      // A custom emoji is content, not styling.
+      if (format == TextFormat.customEmoji) continue;
       ranges = removeFormat(ranges, format, selection.start, selection.end);
     }
     _remember(text, _ranges);
@@ -289,6 +295,29 @@ class RichTextEditingController extends TextEditingController {
     }
   }
 
+  /// Puts custom emoji [id], standing on [emoji] (its fallback), at the
+  /// caret or over the selection.
+  void insertCustomEmoji(String emoji, int id) {
+    final selection = value.selection.isValid
+        ? value.selection
+        : TextSelection.collapsed(offset: text.length);
+    final start = selection.start;
+    value = TextEditingValue(
+      text: text.replaceRange(start, selection.end, emoji),
+      selection: TextSelection.collapsed(offset: start + emoji.length),
+    );
+    _ranges = normalizeRanges([
+      ..._ranges,
+      FormatRange(
+        start,
+        start + emoji.length,
+        TextFormat.customEmoji,
+        emojiId: id,
+      ),
+    ]);
+    notifyListeners();
+  }
+
   static bool _isSpace(int unit) =>
       unit == 0x20 || unit == 0x0A || unit == 0x09 || unit == 0xA0;
 
@@ -382,6 +411,8 @@ class RichTextEditingController extends TextEditingController {
           );
         case TextFormat.link || TextFormat.mention:
           style = style.copyWith(color: colors.accent);
+        case TextFormat.customEmoji:
+          break;
       }
     }
     if (decorations.isNotEmpty) {

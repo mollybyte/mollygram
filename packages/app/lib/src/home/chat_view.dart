@@ -614,8 +614,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
   /// The bar under the header, when the chat has pinned messages and the
   /// user hasn't closed it.
   /// The room the translation bar takes under the header.
-  double get _translateInset =>
-      _translateShown ? ChatTranslateBar.height + 8 : 0;
+  double get _translateInset => _translateShown ? ChatTranslateBar.height : 0;
 
   void _translateFailed() {
     if (mounted) {
@@ -1188,6 +1187,22 @@ class _ChatViewState extends ConsumerState<ChatView> {
     }
   }
 
+  /// Opens the profile of [sender], or the info of the channel it is.
+  Future<void> _openSender(MessageSenderId sender) async {
+    if (sender.isChat) {
+      openPeerInfo(ref, sender.id);
+      return;
+    }
+    final peers = ref.read(telegramSessionProvider).requireValue.peers;
+    final int chatId;
+    try {
+      chatId = await peers.privateChatOf(sender.id);
+    } on Object {
+      return;
+    }
+    if (mounted) openPeerInfo(ref, chatId);
+  }
+
   /// Opens the comments under [message], a channel post: its thread in
   /// the discussion group takes the timeline's place.
   Future<void> _openComments(ConversationMessage message) async {
@@ -1254,6 +1269,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
         onQuote: (message, quote) => _replyInThread(message, quote: quote),
         onEdit: _editInThread,
         onForward: (messages) => unawaited(_forward(messages)),
+        recentChats: _recentForwardTargets,
+        onForwardTo: (messages, chatId) =>
+            unawaited(_forward(messages, toChat: chatId)),
       ),
     );
   }
@@ -1632,6 +1650,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
         unawaited(_pressInlineButton(message, button)),
     onComments: (message) => unawaited(_openComments(message)),
     onOpenForwardSource: (origin) => unawaited(_openForwardSource(origin)),
+    onOpenSender: (sender) => unawaited(_openSender(sender)),
     onMenu: (row, position) => unawaited(_showMenu(row, position)),
     onViewMedia: (message) => unawaited(
       showChatMediaViewer(
@@ -1657,8 +1676,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
   double get _topInset =>
       TimelineView.headerInset +
       _translateInset +
-      (_tagsShown ? SavedTagBar.height + 8 : 0) +
-      (_pinnedShown && !_pinnedListOpen ? PinnedBar.height + 8 : 0);
+      (_tagsShown ? SavedTagBar.height : 0) +
+      (_pinnedShown && !_pinnedListOpen ? PinnedBar.height : 0);
 
   /// Keeps [_scroll.pinned] and the down button in step with where the
   /// user leaves the view.
@@ -1834,6 +1853,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
         onQuote: (message, quote) => _reply(message, quote: quote),
         onEdit: _edit,
         onForward: (messages) => unawaited(_forward(messages)),
+        recentChats: _recentForwardTargets,
+        onForwardTo: (messages, chatId) =>
+            unawaited(_forward(messages, toChat: chatId)),
         onSelect: _select,
         onEditHistory: _session.capture.keepEdits ? _showEditHistory : null,
       ),
@@ -2488,6 +2510,16 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _focus.requestFocus();
   }
 
+  /// Puts a custom emoji picked in the panel into the draft.
+  void _insertCustomEmoji(td.Sticker sticker) {
+    if (sticker.fullType case td.StickerFullTypeCustomEmoji(
+      :final customEmojiId,
+    )) {
+      _draft.insertCustomEmoji(sticker.emoji, customEmojiId);
+      _focus.requestFocus();
+    }
+  }
+
   /// Sends [sticker] at once and closes the panel, as the official apps do.
   Future<void> _sendSticker(td.Sticker sticker) async {
     final chatId = widget.chatId;
@@ -2621,12 +2653,26 @@ class _ChatViewState extends ConsumerState<ChatView> {
     }
   }
 
-  Future<void> _forward(List<ConversationMessage> messages) async {
+  /// The chats the message menu offers under Forward: the latest ones,
+  /// the open chat left out.
+  List<ChatListEntry> _recentForwardTargets() => [
+    for (final chat
+        in ref.read(chatListProvider(const ChatListLocation.main())).value ??
+            const <ChatListEntry>[])
+      if (chat.id != widget.chatId) chat,
+  ].take(6).toList();
+
+  Future<void> _forward(
+    List<ConversationMessage> messages, {
+    int? toChat,
+  }) async {
     final hasCaptions = messages.any(
       (message) =>
           message.content is! td.MessageText && message.text.isNotEmpty,
     );
-    final choice = await pickForwardTarget(context, hasCaptions: hasCaptions);
+    final choice = toChat != null
+        ? ForwardChoice(chatId: toChat, hideSender: false, hideCaptions: false)
+        : await pickForwardTarget(context, hasCaptions: hasCaptions);
     if (choice == null || messages.isEmpty) return;
     try {
       await _conversations.forwardMessages(
@@ -3659,16 +3705,16 @@ class _ChatViewState extends ConsumerState<ChatView> {
           ),
           if (translateBar != null)
             Positioned(
-              top: ChatHeaderBar.height + 8,
-              left: 14,
-              right: 14,
+              top: ChatHeaderBar.height,
+              left: 0,
+              right: 0,
               child: translateBar,
             ),
           if (_tagBar(l10n) case final bar?)
             Positioned(
-              top: 10 + ChatHeaderBar.height + 8 + _translateInset,
-              left: 14,
-              right: 14,
+              top: ChatHeaderBar.height + _translateInset,
+              left: 0,
+              right: 0,
               child: bar,
             ),
           if (!_listOpen)
@@ -3678,7 +3724,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
                     ChatHeaderBar.height +
                     8 +
                     _translateInset +
-                    (_tagsShown ? SavedTagBar.height + 8 : 0),
+                    (_tagsShown ? SavedTagBar.height : 0),
                 left: 14,
                 right: 14,
                 child: bar,
@@ -3866,6 +3912,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
                                     (MediaQuery.sizeOf(context).height - 220)
                                         .clamp(220, 400),
                                 onEmoji: _insertEmoji,
+                                onCustomEmoji: _insertCustomEmoji,
                                 onSticker: (sticker) =>
                                     unawaited(_sendSticker(sticker)),
                                 onGif: (gif) => unawaited(_sendAnimation(gif)),

@@ -2069,8 +2069,11 @@ final class ConversationController {
       // message comes back the same way, marked as failed.
       case td.UpdateMessageSendSucceeded(:final message, :final oldMessageId):
       case td.UpdateMessageSendFailed(:final message, :final oldMessageId):
+        // The row keeps the key of the temporary message, so the timeline
+        // swaps the ids under the same widgets instead of redrawing it.
+        final pending = store.message(message.chatId, oldMessageId);
         store.remove(message.chatId, [oldMessageId]);
-        _add(message);
+        _add(message, stableId: pending?.keyId ?? oldMessageId);
       case td.UpdateMessageContent(
         :final chatId,
         :final messageId,
@@ -2149,7 +2152,7 @@ final class ConversationController {
     }
   }
 
-  void _add(td.Message message) {
+  void _add(td.Message message, {int? stableId}) {
     final chatId = message.chatId;
     // A scheduled message waits in the chat's scheduled list, not here.
     if (message.schedulingState != null) {
@@ -2164,7 +2167,7 @@ final class ConversationController {
     if (!store.reachedEnd(chatId) && newest != null && message.id > newest) {
       return;
     }
-    store.upsert(ConversationMessage(message));
+    store.upsert(ConversationMessage(message, stableId: stableId));
     _notify();
   }
 

@@ -1,10 +1,10 @@
 import 'package:flutter/widgets.dart';
 
-import '../glass/glass.dart';
 import '../icon_button.dart';
 import '../icons.dart';
 import '../theme/colors.dart';
 import '../theme/theme.dart';
+import 'bar_strip.dart';
 
 /// The pinned message under the chat header, as in Telegram for macOS: a
 /// glass capsule with a segmented indicator on the left that shows which
@@ -47,9 +47,8 @@ class PinnedBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = MgColors.of(context);
-    return Glass(
-      radius: height / 2,
-      padding: const EdgeInsets.fromLTRB(12, 0, 4, 0),
+    return BarStrip(
+      padding: const EdgeInsets.fromLTRB(16, 0, 8, 0),
       child: SizedBox(
         height: height,
         child: Row(

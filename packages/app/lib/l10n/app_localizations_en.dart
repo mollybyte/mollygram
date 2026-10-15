@@ -547,6 +547,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get menuForward => 'Forward';
 
   @override
+  String get menuChooseChat => 'Choose chat…';
+
+  @override
   String get menuSaveAs => 'Save as…';
 
   @override
@@ -2009,6 +2012,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gifsTab => 'GIFs';
+
+  @override
+  String get customEmojiTab => 'Custom';
 
   @override
   String get emojiSearch => 'Search emoji';

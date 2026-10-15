@@ -247,6 +247,30 @@ void main() {
       expect(c.ranges, isEmpty);
     });
 
+    test('custom emoji stay apart and drop out when edited into', () {
+      final c = RichTextEditingController(text: 'ab')
+        ..selection = const TextSelection.collapsed(offset: 1);
+      c.insertCustomEmoji('😀', 5);
+      c.insertCustomEmoji('😀', 5);
+      expect(c.text, 'a😀😀b');
+      expect(c.ranges, [
+        const FormatRange(1, 3, TextFormat.customEmoji, emojiId: 5),
+        const FormatRange(3, 5, TextFormat.customEmoji, emojiId: 5),
+      ]);
+      // Typing in front moves both along.
+      c.value = const TextEditingValue(
+        text: 'xa😀😀b',
+        selection: TextSelection.collapsed(offset: 1),
+      );
+      expect(c.ranges.first.start, 2);
+      // Deleting one code unit of the second emoji drops its range.
+      c.value = const TextEditingValue(
+        text: 'xa😀\ud83dc',
+        selection: TextSelection.collapsed(offset: 5),
+      );
+      expect(c.ranges.length, 1);
+    });
+
     test('a format toggled at the caret applies to what is typed next', () {
       final c = RichTextEditingController(text: 'ab')
         ..selection = const TextSelection.collapsed(offset: 2);
@@ -463,6 +487,20 @@ void main() {
       await press(tester, LogicalKeyboardKey.keyB);
       expect(c.isActive(_b), isFalse);
       expect(c.text, 'hello world');
+    });
+
+    testWidgets('the selection menu formats and copies', (tester) async {
+      final c = await pump(tester);
+      final state = tester.state<EditableTextState>(find.byType(EditableText));
+      expect(state.showToolbar(), isTrue);
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(find.byType(SelectionMenu), findsOneWidget);
+      expect(find.text('Copy'), findsOneWidget);
+      expect(find.text('Plain text'), findsOneWidget);
+      await tester.tap(find.text('B'));
+      await tester.pump();
+      expect(c.isActive(_b), isTrue);
+      expect(find.byType(SelectionMenu), findsNothing);
     });
 
     testWidgets('⌘K asks for a link', (tester) async {

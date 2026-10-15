@@ -550,6 +550,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get menuForward => 'Переслать';
 
   @override
+  String get menuChooseChat => 'Выбрать чат…';
+
+  @override
   String get menuSaveAs => 'Сохранить как…';
 
   @override
@@ -2024,6 +2027,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get gifsTab => 'GIF';
+
+  @override
+  String get customEmojiTab => 'Свои';
 
   @override
   String get emojiSearch => 'Поиск эмодзи';

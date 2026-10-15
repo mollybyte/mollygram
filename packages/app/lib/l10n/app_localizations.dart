@@ -1058,6 +1058,12 @@ abstract class AppLocalizations {
   /// **'Forward'**
   String get menuForward;
 
+  /// No description provided for @menuChooseChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose chat…'**
+  String get menuChooseChat;
+
   /// No description provided for @menuSaveAs.
   ///
   /// In en, this message translates to:
@@ -3367,6 +3373,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'GIFs'**
   String get gifsTab;
+
+  /// No description provided for @customEmojiTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get customEmojiTab;
 
   /// No description provided for @emojiSearch.
   ///
