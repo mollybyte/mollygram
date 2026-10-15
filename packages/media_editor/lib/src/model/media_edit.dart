@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 
+import 'overlay.dart';
 import 'stroke.dart';
 
 /// The whole rectangle in normalized coordinates.
@@ -42,6 +43,7 @@ final class MediaEdit {
     this.aspect = AspectPreset.free,
     this.portrait = false,
     this.strokes = const [],
+    this.overlays = const [],
   }) : assert(quarterTurns >= 0 && quarterTurns < 4);
 
   /// Clockwise quarter turns of the source, 0 to 3.
@@ -63,9 +65,16 @@ final class MediaEdit {
   /// Drawn lines in the oriented picture, oldest first.
   final List<Stroke> strokes;
 
+  /// Text, emoji and shapes over the strokes, bottom first.
+  final List<MediaOverlay> overlays;
+
   /// Nothing to apply: the original file can be sent as is.
   bool get isIdentity =>
-      quarterTurns == 0 && !flipped && _nearlyUnit(crop) && strokes.isEmpty;
+      quarterTurns == 0 &&
+      !flipped &&
+      _nearlyUnit(crop) &&
+      strokes.isEmpty &&
+      overlays.isEmpty;
 
   /// Size of the oriented picture for a source of [source] pixels.
   Size orientedSize(Size source) =>
@@ -103,6 +112,7 @@ final class MediaEdit {
     strokes: [
       for (final s in strokes) s.mapPoints((p) => Offset(p.dy, 1 - p.dx)),
     ],
+    overlays: [for (final o in overlays) o.rotatedLeft()],
   );
 
   /// Mirrored left to right, crop included.
@@ -115,6 +125,7 @@ final class MediaEdit {
     strokes: [
       for (final s in strokes) s.mapPoints((p) => Offset(1 - p.dx, p.dy)),
     ],
+    overlays: [for (final o in overlays) o.flippedHorizontally()],
   );
 
   MediaEdit copyWith({
@@ -122,6 +133,7 @@ final class MediaEdit {
     AspectPreset? aspect,
     bool? portrait,
     List<Stroke>? strokes,
+    List<MediaOverlay>? overlays,
   }) => MediaEdit(
     quarterTurns: quarterTurns,
     flipped: flipped,
@@ -129,11 +141,40 @@ final class MediaEdit {
     aspect: aspect ?? this.aspect,
     portrait: portrait ?? this.portrait,
     strokes: strokes ?? this.strokes,
+    overlays: overlays ?? this.overlays,
   );
 
   /// With [stroke] drawn on top.
   MediaEdit withStroke(Stroke stroke) =>
       copyWith(strokes: [...strokes, stroke]);
+
+  /// With [overlay] added on top, or replacing the one with its id.
+  MediaEdit withOverlay(MediaOverlay overlay) {
+    final i = overlays.indexWhere((o) => o.id == overlay.id);
+    if (i < 0) return copyWith(overlays: [...overlays, overlay]);
+    final next = [...overlays];
+    next[i] = overlay;
+    return copyWith(overlays: next);
+  }
+
+  /// Without the overlay with [id].
+  MediaEdit withoutOverlay(int id) => copyWith(
+    overlays: [
+      for (final o in overlays)
+        if (o.id != id) o,
+    ],
+  );
+
+  /// The overlay with [id], or null.
+  MediaOverlay? overlay(int? id) {
+    for (final o in overlays) {
+      if (o.id == id) return o;
+    }
+    return null;
+  }
+
+  /// An id no overlay uses.
+  int get nextOverlayId => overlays.fold(0, (m, o) => math.max(m, o.id)) + 1;
 
   /// Locks the crop to [preset], fitting the largest rectangle of that ratio
   /// around the current crop's center. [portrait] defaults to the shape of
@@ -160,7 +201,8 @@ final class MediaEdit {
       other.crop == crop &&
       other.aspect == aspect &&
       other.portrait == portrait &&
-      listEquals(other.strokes, strokes);
+      listEquals(other.strokes, strokes) &&
+      listEquals(other.overlays, overlays);
 
   @override
   int get hashCode => Object.hash(
@@ -170,13 +212,14 @@ final class MediaEdit {
     aspect,
     portrait,
     Object.hashAll(strokes),
+    Object.hashAll(overlays),
   );
 
   @override
   String toString() =>
       'MediaEdit(turns: $quarterTurns, flipped: $flipped, crop: $crop, '
       'aspect: ${aspect.name}${portrait ? ' portrait' : ''}, '
-      '${strokes.length} strokes)';
+      '${strokes.length} strokes, ${overlays.length} overlays)';
 }
 
 bool _nearlyUnit(Rect r) =>
