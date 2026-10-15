@@ -1628,6 +1628,18 @@ abstract class AppLocalizations {
   /// **'Nobody will be able to vote in it any more.'**
   String get stopPollMessage;
 
+  /// No description provided for @botKeyboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Bot keyboard'**
+  String get botKeyboard;
+
+  /// No description provided for @botNoAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'The bot did not answer'**
+  String get botNoAnswer;
+
   /// No description provided for @contentGame.
   ///
   /// In en, this message translates to:

@@ -339,6 +339,8 @@
   "menuStopPoll": "Stop poll",
   "stopPollTitle": "Stop this poll?",
   "stopPollMessage": "Nobody will be able to vote in it any more.",
+  "botKeyboard": "Bot keyboard",
+  "botNoAnswer": "The bot did not answer",
   "contentGame": "Game",
   "contentInvoice": "Invoice",
   "contentStory": "Story",

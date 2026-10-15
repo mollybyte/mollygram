@@ -167,6 +167,7 @@ final class ConversationStore {
   final _permissions = <int, td.ChatPermissions>{};
   final _drafts = <int, td.DraftMessage>{};
   final _slowMode = <int, ({int delay, DateTime until})>{};
+  final _replyMarkup = <int, int>{};
   final _hasScheduled = <int>{};
   final _scheduledVersion = <int, int>{};
 
@@ -498,6 +499,20 @@ final class ConversationStore {
   bool hasScheduledMessages(int chatId) => _hasScheduled.contains(chatId);
 
   /// Remembers whether [chatId] has scheduled messages; true when changed.
+  /// The message whose reply markup (a bot's keyboard) the composer shows
+  /// in [chatId]; 0 for none.
+  int replyMarkupMessageId(int chatId) => _replyMarkup[chatId] ?? 0;
+
+  bool setReplyMarkupMessageId(int chatId, int messageId) {
+    if ((_replyMarkup[chatId] ?? 0) == messageId) return false;
+    if (messageId == 0) {
+      _replyMarkup.remove(chatId);
+    } else {
+      _replyMarkup[chatId] = messageId;
+    }
+    return true;
+  }
+
   bool setHasScheduled(int chatId, bool has) {
     final changed = has
         ? _hasScheduled.add(chatId)

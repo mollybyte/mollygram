@@ -18,6 +18,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../chat/attachment_preview.dart';
+import '../chat/bot_keyboard.dart';
 import '../chat/describe.dart';
 import '../chat/emoji_sticker_panel.dart';
 import '../chat/formatted_text.dart';
@@ -34,6 +35,7 @@ import '../chat/timeline_view.dart';
 import '../chat_search/chat_search_bar.dart';
 import '../compose/mention_suggester.dart';
 import '../compose/rich_text_bridge.dart';
+import '../links/link_router.dart';
 import '../profile/peer_info_state.dart';
 import '../secret/secret_chat.dart';
 import '../session/providers.dart';
@@ -616,6 +618,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
     onPollVote: (message, optionIds) => unawaited(
       _quiet(_conversations.votePoll(message.chatId, message.id, optionIds)),
     ),
+    onInlineButton: (message, button) =>
+        unawaited(_pressInlineButton(message, button)),
     onMenu: (row, position) => unawaited(_showMenu(row, position)),
     onViewMedia: (message) => unawaited(
       showChatMediaViewer(
@@ -1020,6 +1024,114 @@ class _ChatViewState extends ConsumerState<ChatView> {
         _replyQuote = null;
       });
     }
+  }
+
+  /// What a bot's inline button does: open its link, copy its text, or
+  /// ask the bot and show what it answers.
+  Future<void> _pressInlineButton(
+    ConversationMessage message,
+    td.InlineKeyboardButton button,
+  ) async {
+    final l10n = AppLocalizations.of(context);
+    switch (button.type) {
+      case td.InlineKeyboardButtonTypeUrl(:final url):
+      case td.InlineKeyboardButtonTypeLoginUrl(:final url):
+      case td.InlineKeyboardButtonTypeWebApp(:final url):
+        openLinkFrom(context, url);
+      case td.InlineKeyboardButtonTypeUser(:final userId):
+        openLinkFrom(context, 'tg://user?id=$userId');
+      case td.InlineKeyboardButtonTypeCopyText(:final text):
+        await Clipboard.setData(ClipboardData(text: text));
+        if (mounted) showMgToast(context, l10n.copied);
+      case td.InlineKeyboardButtonTypeCallback(:final data):
+        final td.CallbackQueryAnswer answer;
+        try {
+          answer = await _conversations.callbackQuery(
+            message.chatId,
+            message.id,
+            data,
+          );
+        } on td.TdException {
+          if (mounted) showMgToast(context, l10n.botNoAnswer);
+          return;
+        }
+        if (!mounted) return;
+        if (answer.url.isNotEmpty) openLinkFrom(context, answer.url);
+        if (answer.text.isNotEmpty) showMgToast(context, answer.text);
+      default:
+        break;
+    }
+  }
+
+  /// The id of the message whose keyboard the user hid; 0 for none.
+  var _keyboardHiddenFor = 0;
+
+  /// The bot keyboard the chat shows in place of its own, loaded when the
+  /// message carrying it isn't at hand yet.
+  (int, td.ReplyMarkupShowKeyboard)? _replyKeyboard(ConversationStore store) {
+    final chatId = widget.chatId;
+    final id = store.replyMarkupMessageId(chatId);
+    if (id == 0) return null;
+    final message = store.message(chatId, id);
+    if (message == null) {
+      scheduleMicrotask(
+        () => unawaited(_quiet(_conversations.loadMessage(chatId, id))),
+      );
+      return null;
+    }
+    return switch (message.message.replyMarkup) {
+      final td.ReplyMarkupShowKeyboard keyboard => (id, keyboard),
+      _ => null,
+    };
+  }
+
+  /// The buttons the composer gets besides its own: the bot keyboard
+  /// toggle and the scheduled list.
+  Widget? _composerExtras(AppLocalizations l10n, ConversationStore store) {
+    final keyboard = _replyKeyboard(store);
+    final buttons = [
+      if (keyboard != null)
+        MgIconButton(
+          icon: MgIcons.list,
+          tooltip: l10n.botKeyboard,
+          iconSize: 18,
+          selected: _keyboardHiddenFor != keyboard.$1,
+          onPressed: () => setState(
+            () => _keyboardHiddenFor = _keyboardHiddenFor == keyboard.$1
+                ? 0
+                : keyboard.$1,
+          ),
+        ),
+      if (store.hasScheduledMessages(widget.chatId))
+        MgIconButton(
+          icon: MgIcons.recent,
+          tooltip: l10n.scheduledList,
+          iconSize: 18,
+          onPressed: _openScheduled,
+        ),
+    ];
+    return switch (buttons.length) {
+      0 => null,
+      1 => buttons.single,
+      _ => Row(mainAxisSize: MainAxisSize.min, children: buttons),
+    };
+  }
+
+  /// The bot keyboard above the composer, unless hidden or replaced by
+  /// the emoji panel. A one-time keyboard goes away after a press.
+  Widget? _replyKeyboardPanel(ConversationStore store) {
+    final keyboard = _replyKeyboard(store);
+    if (keyboard == null || keyboard.$1 == _keyboardHiddenFor || _panelOpen) {
+      return null;
+    }
+    final (id, markup) = keyboard;
+    return ReplyKeyboard(
+      rows: markup.rows,
+      onPressed: (text) {
+        unawaited(_send(text));
+        if (markup.oneTime) setState(() => _keyboardHiddenFor = id);
+      },
+    );
   }
 
   void _togglePanel() {
@@ -1960,6 +2072,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
                       ),
                     ),
                   ),
+                if (_selected == null && !_listOpen)
+                  ?_replyKeyboardPanel(store),
                 if (_panelOpen)
                   Align(
                     alignment: Alignment.centerRight,
@@ -2012,15 +2126,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
                             onEditLast: () => unawaited(_editLast()),
                             onAttach: () => unawaited(_chooseFiles()),
                             onEmoji: _togglePanel,
-                            extraButton:
-                                store.hasScheduledMessages(widget.chatId)
-                                ? MgIconButton(
-                                    icon: MgIcons.recent,
-                                    tooltip: l10n.scheduledList,
-                                    iconSize: 18,
-                                    onPressed: _openScheduled,
-                                  )
-                                : null,
+                            extraButton: _composerExtras(l10n, store),
                             onPaste: _paste,
                             allowEmpty:
                                 _editing != null && _isCaption(_editing!),
