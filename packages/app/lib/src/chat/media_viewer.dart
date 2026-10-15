@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:file_selector/file_selector.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -145,6 +146,21 @@ class _MediaViewerState extends State<_MediaViewer> {
   String? _notice;
   Timer? _noticeTimer;
 
+  /// Quarter turns clockwise of the page on screen; back to 0 on a page
+  /// turn.
+  var _quarterTurns = 0;
+
+  /// Whether the photo on screen is zoomed in: a two-finger swipe then
+  /// pans it instead of turning the page.
+  var _zoomed = false;
+
+  /// The two-finger swipe in progress, and whether it turned the page.
+  var _swipe = Offset.zero;
+  var _swiped = false;
+
+  /// How far two fingers travel sideways to turn the page.
+  static const double _swipeDistance = 48;
+
   MediaGallery get _gallery => widget.gallery;
 
   @override
@@ -171,9 +187,38 @@ class _MediaViewerState extends State<_MediaViewer> {
     setState(() {
       _direction = delta.sign;
       _playback = null;
+      _quarterTurns = 0;
+      _zoomed = false;
     });
     _gallery.go(delta);
     _wake();
+  }
+
+  void _rotate() {
+    setState(() => _quarterTurns++);
+    _wake();
+  }
+
+  void _swipeStart(PointerPanZoomStartEvent event) {
+    _swipe = Offset.zero;
+    _swiped = false;
+  }
+
+  void _swipeUpdate(PointerPanZoomUpdateEvent event) {
+    if (_swiped || _zoomed) return;
+    _swipe += event.panDelta;
+    if (_swipe.dx.abs() < _swipeDistance || _swipe.dx.abs() < _swipe.dy.abs()) {
+      return;
+    }
+    _swiped = true;
+    // Natural scrolling: the content follows the fingers, so a swipe to
+    // the left brings the next page.
+    _go(_swipe.dx < 0 ? 1 : -1);
+  }
+
+  void _swipeEnd(PointerPanZoomEndEvent event) {
+    _swipe = Offset.zero;
+    _swiped = false;
   }
 
   void _close() => Navigator.of(context).maybePop();
@@ -260,6 +305,8 @@ class _MediaViewerState extends State<_MediaViewer> {
       _go(-1);
     } else if (key == LogicalKeyboardKey.arrowRight) {
       _go(1);
+    } else if (!command && key == LogicalKeyboardKey.keyR && _rotatable) {
+      _rotate();
     } else if (key == LogicalKeyboardKey.space && _playback != null) {
       unawaited(_playback!.playOrPause());
     } else if (command && key == LogicalKeyboardKey.keyS) {
@@ -274,6 +321,8 @@ class _MediaViewerState extends State<_MediaViewer> {
     }
     return KeyEventResult.handled;
   }
+
+  bool get _rotatable => _gallery.current.item is! AnimationItem;
 
   @override
   Widget build(BuildContext context) {
@@ -298,6 +347,7 @@ class _MediaViewerState extends State<_MediaViewer> {
         _playback = playback;
         playback?.state.addListener(_wakeOnPause);
       },
+      onZoom: (zoomed) => _zoomed = zoomed,
     );
 
     return Focus(
@@ -305,196 +355,210 @@ class _MediaViewerState extends State<_MediaViewer> {
       onKeyEvent: _onKey,
       child: MouseRegion(
         onHover: (_) => _wake(),
-        child: Stack(
-          children: [
-            // The backdrop: a click on it closes the viewer.
-            Positioned.fill(
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: _close,
-                child: FadeTransition(
-                  opacity: curved,
-                  child: const ColoredBox(color: Color(0xF0080809)),
-                ),
-              ),
-            ),
-            Positioned.fill(
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(
-                  72,
-                  68,
-                  72,
-                  (isVideo ? 76 : 24) +
-                      (hasCaption ? 56 : 0) +
-                      (entries.length > 1 ? _Thumbnails.height + 12 : 0),
-                ),
-                child: ScaleTransition(
-                  scale: Tween(begin: 0.94, end: 1.0).animate(curved),
+        child: Listener(
+          onPointerPanZoomStart: _swipeStart,
+          onPointerPanZoomUpdate: _swipeUpdate,
+          onPointerPanZoomEnd: _swipeEnd,
+          child: Stack(
+            children: [
+              // The backdrop: a click on it closes the viewer.
+              Positioned.fill(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: _close,
                   child: FadeTransition(
                     opacity: curved,
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 220),
-                      switchInCurve: Curves.easeOutCubic,
-                      switchOutCurve: Curves.easeInCubic,
-                      transitionBuilder: (child, animation) {
-                        final incoming = child.key == ValueKey(key);
-                        final offset = Tween(
-                          begin: Offset(
-                            0.06 * _direction * (incoming ? 1 : -1),
-                            0,
-                          ),
-                          end: Offset.zero,
-                        ).animate(animation);
-                        return FadeTransition(
-                          opacity: animation,
-                          child: SlideTransition(
-                            position: offset,
-                            child: child,
-                          ),
-                        );
-                      },
-                      child: page,
+                    child: const ColoredBox(color: Color(0xF0080809)),
+                  ),
+                ),
+              ),
+              Positioned.fill(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    72,
+                    68,
+                    72,
+                    (isVideo ? 76 : 24) +
+                        (hasCaption ? 56 : 0) +
+                        (entries.length > 1 ? _Thumbnails.height + 12 : 0),
+                  ),
+                  child: ScaleTransition(
+                    scale: Tween(begin: 0.94, end: 1.0).animate(curved),
+                    child: FadeTransition(
+                      opacity: curved,
+                      child: _Rotated(
+                        quarterTurns: _quarterTurns,
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 220),
+                          switchInCurve: Curves.easeOutCubic,
+                          switchOutCurve: Curves.easeInCubic,
+                          transitionBuilder: (child, animation) {
+                            final incoming = child.key == ValueKey(key);
+                            final offset = Tween(
+                              begin: Offset(
+                                0.06 * _direction * (incoming ? 1 : -1),
+                                0,
+                              ),
+                              end: Offset.zero,
+                            ).animate(animation);
+                            return FadeTransition(
+                              opacity: animation,
+                              child: SlideTransition(
+                                position: offset,
+                                child: child,
+                              ),
+                            );
+                          },
+                          child: page,
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-            _Chrome(
-              visible: _chrome,
-              animation: curved,
-              child: Stack(
-                children: [
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    child: _TopBar(
-                      message: message,
-                      store: widget.store,
-                      counter: entries.length > 1
-                          ? l10n.mediaCounter(
-                              _gallery.index + 1,
-                              entries.length,
-                            )
-                          : null,
-                      actions: [
-                        if (_canSave && entry.item is PhotoItem)
-                          _BarButton(
-                            icon: MgIcons.copy,
-                            label: l10n.mediaCopy,
-                            onTap: () => unawaited(_copy()),
-                          ),
-                        if (_canSave)
-                          _BarButton(
-                            icon: MgIcons.download,
-                            label: l10n.mediaSave,
-                            onTap: () => unawaited(_save()),
-                          ),
-                        if (_canSave &&
-                            message != null &&
-                            widget.onForward != null)
-                          _BarButton(
-                            icon: MgIcons.forward,
-                            label: l10n.menuForward,
-                            onTap: () => widget.onForward!(message),
-                          ),
-                        if (message != null && widget.onShowInChat != null)
-                          _BarButton(
-                            icon: MgIcons.chat,
-                            label: l10n.showInChat,
-                            onTap: () => widget.onShowInChat!(message),
-                          ),
-                        if (message != null && widget.onDelete != null)
-                          _BarButton(
-                            icon: MgIcons.trash,
-                            label: l10n.menuDelete,
-                            onTap: () => unawaited(_delete()),
-                          ),
-                        _BarButton(
-                          icon: MgIcons.close,
-                          label: l10n.close,
-                          onTap: _close,
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (_gallery.hasPrevious)
+              _Chrome(
+                visible: _chrome,
+                animation: curved,
+                child: Stack(
+                  children: [
                     Positioned(
-                      left: 16,
                       top: 0,
-                      bottom: 0,
-                      child: Center(
-                        child: _Arrow(
-                          icon: MgIcons.back,
-                          label: l10n.mediaPrevious,
-                          onTap: () => _go(-1),
-                        ),
+                      left: 0,
+                      right: 0,
+                      child: _TopBar(
+                        message: message,
+                        store: widget.store,
+                        counter: entries.length > 1
+                            ? l10n.mediaCounter(
+                                _gallery.index + 1,
+                                entries.length,
+                              )
+                            : null,
+                        actions: [
+                          if (_rotatable)
+                            _BarButton(
+                              icon: _rotateIcon,
+                              label: l10n.mediaRotate,
+                              onTap: _rotate,
+                            ),
+                          if (_canSave && entry.item is PhotoItem)
+                            _BarButton(
+                              icon: MgIcons.copy,
+                              label: l10n.mediaCopy,
+                              onTap: () => unawaited(_copy()),
+                            ),
+                          if (_canSave)
+                            _BarButton(
+                              icon: MgIcons.download,
+                              label: l10n.mediaSave,
+                              onTap: () => unawaited(_save()),
+                            ),
+                          if (_canSave &&
+                              message != null &&
+                              widget.onForward != null)
+                            _BarButton(
+                              icon: MgIcons.forward,
+                              label: l10n.menuForward,
+                              onTap: () => widget.onForward!(message),
+                            ),
+                          if (message != null && widget.onShowInChat != null)
+                            _BarButton(
+                              icon: MgIcons.chat,
+                              label: l10n.showInChat,
+                              onTap: () => widget.onShowInChat!(message),
+                            ),
+                          if (message != null && widget.onDelete != null)
+                            _BarButton(
+                              icon: MgIcons.trash,
+                              label: l10n.menuDelete,
+                              onTap: () => unawaited(_delete()),
+                            ),
+                          _BarButton(
+                            icon: MgIcons.close,
+                            label: l10n.close,
+                            onTap: _close,
+                          ),
+                        ],
                       ),
                     ),
-                  if (_gallery.hasNext)
-                    Positioned(
-                      right: 16,
-                      top: 0,
-                      bottom: 0,
-                      child: Center(
-                        child: _Arrow(
-                          icon: MgIcons.chevron,
-                          label: l10n.mediaNext,
-                          onTap: () => _go(1),
+                    if (_gallery.hasPrevious)
+                      Positioned(
+                        left: 16,
+                        top: 0,
+                        bottom: 0,
+                        child: Center(
+                          child: _Arrow(
+                            icon: MgIcons.back,
+                            label: l10n.mediaPrevious,
+                            onTap: () => _go(-1),
+                          ),
                         ),
                       ),
-                    ),
-                  Positioned(
-                    left: 72,
-                    right: 72,
-                    bottom: 18,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (hasCaption)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: ConstrainedBox(
-                              constraints: const BoxConstraints(
-                                maxWidth: 640,
-                                maxHeight: 48,
-                              ),
-                              child: DefaultTextStyle.merge(
-                                style: const TextStyle(
-                                  color: Color(0xFFF2F2F5),
+                    if (_gallery.hasNext)
+                      Positioned(
+                        right: 16,
+                        top: 0,
+                        bottom: 0,
+                        child: Center(
+                          child: _Arrow(
+                            icon: MgIcons.chevron,
+                            label: l10n.mediaNext,
+                            onTap: () => _go(1),
+                          ),
+                        ),
+                      ),
+                    Positioned(
+                      left: 72,
+                      right: 72,
+                      bottom: 18,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (hasCaption)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                  maxWidth: 640,
+                                  maxHeight: 48,
                                 ),
-                                textAlign: TextAlign.center,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                child: FormattedTextView(text: caption),
+                                child: DefaultTextStyle.merge(
+                                  style: const TextStyle(
+                                    color: Color(0xFFF2F2F5),
+                                  ),
+                                  textAlign: TextAlign.center,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  child: FormattedTextView(text: caption),
+                                ),
                               ),
                             ),
-                          ),
-                        if (_playback case final playback? when isVideo)
-                          _VideoControls(playback: playback),
-                        if (entries.length > 1)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 12),
-                            child: _Thumbnails(
-                              key: const ValueKey('viewer-thumbnails'),
-                              gallery: _gallery,
-                              onPick: (index) => _go(index - _gallery.index),
+                          if (_playback case final playback? when isVideo)
+                            _VideoControls(playback: playback),
+                          if (entries.length > 1)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 12),
+                              child: _Thumbnails(
+                                key: const ValueKey('viewer-thumbnails'),
+                                gallery: _gallery,
+                                onPick: (index) => _go(index - _gallery.index),
+                              ),
                             ),
-                          ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            if (_notice case final notice?)
-              Positioned(
-                top: 72,
-                left: 0,
-                right: 0,
-                child: Center(child: _Notice(notice)),
-              ),
-          ],
+              if (_notice case final notice?)
+                Positioned(
+                  top: 72,
+                  left: 0,
+                  right: 0,
+                  child: Center(child: _Notice(notice)),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -962,9 +1026,54 @@ class _Notice extends StatelessWidget {
   );
 }
 
+/// A circular arrow, for the rotate button.
+const _rotateIcon = MgIconData(
+  'rotate',
+  '<path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/>',
+);
+
+/// Turns [child] by [quarterTurns] clockwise, gliding between turns, and
+/// shrinks it so a sideways page still fits the box it was laid out for.
+class _Rotated extends StatelessWidget {
+  const _Rotated({required this.quarterTurns, required this.child});
+
+  final int quarterTurns;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final size = constraints.biggest;
+      final sideways = quarterTurns.isOdd;
+      final fit = size.isEmpty || !sideways
+          ? 1.0
+          : math.min(size.width / size.height, size.height / size.width);
+      final duration = MediaQuery.disableAnimationsOf(context)
+          ? Duration.zero
+          : const Duration(milliseconds: 260);
+      return AnimatedScale(
+        scale: fit,
+        duration: duration,
+        curve: Curves.easeOutCubic,
+        child: AnimatedRotation(
+          turns: quarterTurns / 4,
+          duration: duration,
+          curve: Curves.easeOutCubic,
+          child: child,
+        ),
+      );
+    },
+  );
+}
+
 /// One page: a zoomable photo, a video or a looping GIF.
 class _Page extends StatelessWidget {
-  const _Page({super.key, required this.entry, required this.onPlayback});
+  const _Page({
+    super.key,
+    required this.entry,
+    required this.onPlayback,
+    required this.onZoom,
+  });
 
   final GalleryEntry entry;
 
@@ -972,9 +1081,12 @@ class _Page extends StatelessWidget {
   /// photos and GIFs.
   final ValueChanged<VideoPlayback?> onPlayback;
 
+  /// Whether the photo is zoomed in, as it changes.
+  final ValueChanged<bool> onZoom;
+
   @override
   Widget build(BuildContext context) => switch (entry.item) {
-    PhotoItem(:final photo) => _Photo(photo),
+    PhotoItem(:final photo) => _Photo(photo, onZoom: onZoom),
     VideoItem(:final video) => _Video(
       file: video.video,
       width: video.width,
@@ -1007,9 +1119,10 @@ class _Page extends StatelessWidget {
 /// A photo that zooms with a pinch, the scroll wheel or a double click,
 /// and pans while zoomed.
 class _Photo extends StatefulWidget {
-  const _Photo(this.photo);
+  const _Photo(this.photo, {required this.onZoom});
 
   final td.Photo photo;
+  final ValueChanged<bool> onZoom;
 
   @override
   State<_Photo> createState() => _PhotoState();
@@ -1023,11 +1136,19 @@ class _PhotoState extends State<_Photo> with SingleTickerProviderStateMixin {
 
   static const double _doubleTapScale = 2.5;
 
+  var _zoomed = false;
+
   @override
   void initState() {
     super.initState();
     _zoom.addListener(() {
       if (_tween case final tween?) _transform.value = tween.value;
+    });
+    _transform.addListener(() {
+      final zoomed = _transform.value.getMaxScaleOnAxis() > 1.01;
+      if (zoomed == _zoomed) return;
+      _zoomed = zoomed;
+      widget.onZoom(zoomed);
     });
   }
 

@@ -712,6 +712,7 @@
   "@mediaCounter": {
     "placeholders": { "index": { "type": "int" }, "count": { "type": "int" } }
   },
+  "mediaRotate": "Rotate",
   "mediaCopy": "Copy",
   "mediaSave": "Save",
   "mediaPrevious": "Previous",

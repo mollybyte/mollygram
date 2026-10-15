@@ -1956,6 +1956,49 @@ void main() {
     expect(find.text('2 of 2'), findsNothing);
   });
 
+  testWidgets('swipes between the chat media and rotates a photo', (
+    tester,
+  ) async {
+    json.history = [td.Message.fromJson(_photo(15)), ..._history];
+    await pump(tester);
+    await tester.tap(find.byType(PhotoContent));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+    expect(find.text('2 of 2'), findsOneWidget);
+
+    // Two fingers to the right bring the previous page, once per swipe.
+    final center = tester.getCenter(find.byType(InteractiveViewer));
+    final swipe = await tester.createGesture(kind: PointerDeviceKind.trackpad);
+    await swipe.panZoomStart(center);
+    await swipe.panZoomUpdate(center, pan: const Offset(30, 4));
+    await tester.pump();
+    expect(find.text('2 of 2'), findsOneWidget);
+    await swipe.panZoomUpdate(center, pan: const Offset(70, 6));
+    await swipe.panZoomUpdate(center, pan: const Offset(140, 6));
+    await swipe.panZoomEnd();
+    await tester.pumpAndSettle();
+    expect(find.text('1 of 2'), findsOneWidget);
+
+    // R turns the photo a quarter clockwise.
+    AnimatedRotation rotation() =>
+        tester.widget<AnimatedRotation>(find.byType(AnimatedRotation));
+    expect(rotation().turns, 0);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyR);
+    await tester.pumpAndSettle();
+    expect(rotation().turns, 0.25);
+    await tester.tap(find.bySemanticsLabel('Rotate'));
+    await tester.pumpAndSettle();
+    expect(rotation().turns, 0.5);
+
+    // A page turn starts the next page upright.
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+    expect(rotation().turns, 0);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('deletes the photo on screen from the viewer', (tester) async {
     json.history = [td.Message.fromJson(_photo(15)), ..._history];
     await pump(tester);

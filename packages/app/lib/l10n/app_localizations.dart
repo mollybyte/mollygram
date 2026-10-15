@@ -3020,6 +3020,12 @@ abstract class AppLocalizations {
   /// **'{index} of {count}'**
   String mediaCounter(int index, int count);
 
+  /// No description provided for @mediaRotate.
+  ///
+  /// In en, this message translates to:
+  /// **'Rotate'**
+  String get mediaRotate;
+
   /// No description provided for @mediaCopy.
   ///
   /// In en, this message translates to:
