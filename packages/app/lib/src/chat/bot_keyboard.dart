@@ -58,7 +58,9 @@ class ReplyKeyboard extends StatelessWidget {
     td.KeyboardButtonTypeText() ||
     td.KeyboardButtonTypeRequestPhoneNumber() ||
     td.KeyboardButtonTypeRequestPoll() ||
-    td.KeyboardButtonTypeRequestUsers() => true,
+    td.KeyboardButtonTypeRequestUsers() ||
+    td.KeyboardButtonTypeRequestChat() ||
+    td.KeyboardButtonTypeRequestLocation() => true,
     _ => false,
   };
 

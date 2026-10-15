@@ -1349,6 +1349,45 @@ void main() {
     expect(contact['user_id'], 7);
   });
 
+  testWidgets('sends a place and shares a chat from a bot\'s keyboard', (
+    tester,
+  ) async {
+    json.history = [_replyKeyboardMessage(), ..._history];
+    json.push(_chat(lastRead: 13, unread: 0, last: 13, replyMarkup: 17));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await pump(tester);
+
+    await tester.tap(find.text('Where'));
+    await tester.pumpAndSettle();
+    expect(find.text('Send location'), findsOneWidget);
+    await tester.enterText(find.byType(TextField).last, '55.7558, 37.6173');
+    await tester.pump();
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('send-this-location')));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+    final sent = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    final content = sent['input_message_content']! as Map;
+    expect(content['@type'], 'inputMessageLocation');
+    expect((content['location']! as Map)['latitude'], closeTo(55.7558, 1e-6));
+
+    // The one-time keyboard folded away; bring it back for the next button.
+    await tester.tap(find.byTooltip('Bot keyboard'));
+    await tester.pump();
+    await tester.tap(find.text('Pick chat'));
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('Forward to chat'), findsOneWidget);
+    await tester.tap(find.text('Saved'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    final share = json.sent.lastWhere((r) => r['@type'] == 'shareChatWithBot');
+    expect(share['shared_chat_id'], 9);
+    expect(share['button_id'], 3);
+    expect((share['source']! as Map)['message_id'], 17);
+  });
+
   testWidgets('shows a bot\'s reply keyboard and sends a button', (
     tester,
   ) async {
@@ -1540,9 +1579,9 @@ void main() {
     await tester.tap(find.text('Location…'));
     await tester.pump();
     expect(find.text('Send location'), findsOneWidget);
-    // Nothing to send until the map has a point.
-    expect(find.text('Send this location'), findsNothing);
 
+    // Coordinates in the field move the pin there, whatever the sheet
+    // remembered from an earlier opening.
     await tester.enterText(find.byType(TextField).last, '48.8566, 2.3522');
     await tester.pump();
     await tester.runAsync(() => Future<void>.delayed(_tick));
@@ -3565,6 +3604,26 @@ td.Message _replyKeyboardMessage() => td.Message.fromJson({
           'icon_custom_emoji_id': 0,
           'style': {'@type': 'buttonStyleDefault'},
           'type': {'@type': 'keyboardButtonTypeRequestPhoneNumber'},
+        },
+      ],
+      [
+        {
+          '@type': 'keyboardButton',
+          'text': 'Where',
+          'icon_custom_emoji_id': 0,
+          'style': {'@type': 'buttonStyleDefault'},
+          'type': {'@type': 'keyboardButtonTypeRequestLocation'},
+        },
+        {
+          '@type': 'keyboardButton',
+          'text': 'Pick chat',
+          'icon_custom_emoji_id': 0,
+          'style': {'@type': 'buttonStyleDefault'},
+          'type': {
+            '@type': 'keyboardButtonTypeRequestChat',
+            'id': 3,
+            'chat_is_channel': false,
+          },
         },
       ],
     ],

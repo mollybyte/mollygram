@@ -964,6 +964,25 @@ final class ConversationController {
     ),
   );
 
+  /// Answers a bot's request for a chat, from the button [buttonId] of
+  /// [messageId] in [chatId], with [sharedChatId].
+  Future<void> shareChatWithBot(
+    int chatId,
+    int messageId,
+    int buttonId,
+    int sharedChatId,
+  ) => _client.send(
+    td.ShareChatWithBot(
+      source: td.KeyboardButtonSourceMessage(
+        chatId: chatId,
+        messageId: messageId,
+      ),
+      buttonId: buttonId,
+      sharedChatId: sharedChatId,
+      onlyCheck: false,
+    ),
+  );
+
   /// Asks inline bot [botUserId] for its results to [query], as the
   /// composer shows them while the user types `@bot query`; [offset] is
   /// the previous answer's `nextOffset` for the following page.
