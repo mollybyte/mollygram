@@ -30,6 +30,14 @@ final class PluginWorker {
   PluginStatus _status = PluginStatus.stopped;
   String? _disabledReason;
   final _statusChanges = StreamController<PluginStatus>.broadcast();
+  final _logs = <String>[];
+  final _logLines = StreamController<String>.broadcast();
+
+  /// The plugin's last [PluginInstance.maxLogLines] log lines.
+  List<String> get logs => List.unmodifiable(_logs);
+
+  /// Each line as the plugin logs it.
+  Stream<String> get logLines => _logLines.stream;
 
   PluginStatus get status => _status;
   String? get disabledReason => _disabledReason;
@@ -99,6 +107,7 @@ final class PluginWorker {
     _failPending('plugin stopped');
     _setStatus(PluginStatus.stopped, null);
     unawaited(_statusChanges.close());
+    unawaited(_logLines.close());
   }
 
   void _failPending(String why) {
@@ -140,6 +149,10 @@ final class PluginWorker {
         error == null ? c.complete(value) : c.completeError(error);
       case ('status', final PluginStatus s, final String? reason):
         _setStatus(s, reason);
+      case ('log', final String line):
+        _logs.add(line);
+        if (_logs.length > PluginInstance.maxLogLines) _logs.removeAt(0);
+        if (!_logLines.isClosed) _logLines.add(line);
       case (
         'service',
         final int id,
@@ -208,6 +221,7 @@ void _workerMain(_WorkerArgs args) {
     policy: args.policy,
     locale: args.locale,
     settings: args.settings,
+    onLog: (line) => port.send(('log', line)),
   );
   var lastStatus = plugin.status;
   Isolate.current.addErrorListener(port);

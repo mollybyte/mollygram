@@ -141,6 +141,7 @@ final class PluginInstance {
     this.grants = const PluginGrants(),
     this.policy = const PluginPolicy(),
     this.locale = 'en',
+    this.onLog,
     Map<String, Object?> settings = const {},
   }) : _settings = {
          for (final s in manifest.settings) s.key: s.defaultValue,
@@ -153,6 +154,9 @@ final class PluginInstance {
 
   /// The app's UI language, for example `en` or `ru`: `mg.app.locale()`.
   final String locale;
+
+  /// Called with every line added to [logs], for a log kept elsewhere.
+  final void Function(String line)? onLog;
   final PluginServices _services;
   final Map<String, Object?> _settings;
 
@@ -172,6 +176,17 @@ final class PluginInstance {
   int? _commandChat;
 
   final _logs = <String>[];
+
+  /// The plugin's log keeps its last [maxLogLines] lines.
+  static const maxLogLines = 200;
+
+  void _log(String line) {
+    _logs.add(line);
+    if (_logs.length > maxLogLines) {
+      _logs.removeRange(0, _logs.length - maxLogLines);
+    }
+    onLog?.call(line);
+  }
 
   PluginStatus get status => _status;
   String? get disabledReason => _disabledReason;
@@ -422,7 +437,7 @@ final class PluginInstance {
   }
 
   void _strike(String reason) {
-    _logs.add('error: $reason');
+    _log('error: $reason');
     if (++_strikes >= policy.maxStrikes) {
       _disable('$_strikes failures in a row, last: $reason', null);
     }
@@ -434,7 +449,7 @@ final class PluginInstance {
     if (_status == PluginStatus.disabled) return;
     _status = PluginStatus.disabled;
     _disabledReason = reason;
-    _logs.add('disabled: $reason');
+    _log('disabled: $reason');
     // Deferred: _disable may be called from inside a callback of this VM.
     final vm = _vm;
     _vm = null;
@@ -503,8 +518,7 @@ final class PluginInstance {
           }
           return _ok(_settings[args['key']]);
         case 'log':
-          _logs.add('${args['level']}: ${args['text']}');
-          if (_logs.length > 200) _logs.removeRange(0, _logs.length - 200);
+          _log('${args['level']}: ${args['text']}');
           return null;
       }
       _authorize(method, args);
