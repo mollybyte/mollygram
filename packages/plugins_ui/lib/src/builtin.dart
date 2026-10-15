@@ -14,11 +14,12 @@ final class BuiltinPlugin {
 }
 
 /// Our own plugins: shown first, can be turned off but not uninstalled.
-const builtinPluginDirs = ['filters', 'translate'];
+const builtinPluginDirs = ['filters', 'translate', 'code_highlight'];
 
 const _looks = {
   'filters': (glyph: 'F', color: Color(0xFFFF9F0A)),
   'translate': (glyph: 'A', color: Color(0xFF0A84FF)),
+  'code_highlight': (glyph: '{', color: Color(0xFF30A46C)),
 };
 
 Future<List<BuiltinPlugin>> loadBuiltinPlugins([AssetBundle? bundle]) async {

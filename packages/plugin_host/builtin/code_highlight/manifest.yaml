@@ -1,0 +1,12 @@
+id: dev.mollygram.codehighlight
+name: Code highlight
+version: 1.0.0
+author: Mollygram
+description: >-
+  Colors code blocks in messages by syntax. Works on the device and needs
+  no access to your messages, network or storage.
+runtime: js
+sdk: ^1.0
+main: index.js
+hooks:
+  - message.render.code

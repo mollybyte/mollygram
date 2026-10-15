@@ -86,6 +86,8 @@ void main() {
       await Future<void>.delayed(
         PreferencesNotifier.saveDelay + const Duration(milliseconds: 50),
       );
+      // The timed write is under way; this waits for it without adding one.
+      await notifier.flush();
       expect(storage.writes, 1);
       expect((storage.saved! as Map)['textSize'], 16);
     });

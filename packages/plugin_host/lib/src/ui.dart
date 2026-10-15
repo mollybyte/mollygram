@@ -16,6 +16,9 @@ const _maxNodes = 200;
 const _maxDepth = 8;
 const _maxText = 4000;
 
+/// Spans in one `code` node: enough for a long block, bounded for memory.
+const maxCodeSpans = 8000;
+
 /// Colors come only from the app theme, never arbitrary hex values.
 const codeTokens = {
   'plain',
@@ -87,6 +90,10 @@ List<Map<String, Object?>> validateUi(Object? raw) {
       },
       'row' ||
       'column' => {'type': type, 'children': nodes(n['children'], depth + 1)},
+      'code' when n['spans'] != null && n['spans'] is! List =>
+        throw UiException('"spans" must be a list'),
+      'code' when (n['spans'] as List? ?? const []).length > maxCodeSpans =>
+        throw UiException('more than $maxCodeSpans code spans'),
       'code' => {
         'type': 'code',
         'language': text(n, 'language', required: false),
@@ -103,4 +110,21 @@ List<Map<String, Object?>> validateUi(Object? raw) {
   };
 
   return nodes(raw, 0);
+}
+
+/// A piece of a highlighted code block.
+typedef CodeSpan = ({String text, String token});
+
+/// The spans of the first `code` node in [ui], when they spell exactly
+/// [code]: a plugin colors a block, it cannot change what it says.
+List<CodeSpan>? codeSpansFor(List<Map<String, Object?>> ui, String code) {
+  for (final node in ui) {
+    if (node['type'] != 'code') continue;
+    final spans = [
+      for (final s in node['spans']! as List)
+        (text: (s as Map)['text'] as String, token: s['token'] as String),
+    ];
+    return spans.map((s) => s.text).join() == code ? spans : null;
+  }
+  return null;
 }

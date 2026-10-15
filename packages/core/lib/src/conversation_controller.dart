@@ -229,6 +229,54 @@ final class ConversationController {
     _notify();
   }
 
+  /// Who saw [messageId] of [chatId], in a small group; TDLib keeps the
+  /// list only for recent messages.
+  Future<List<td.MessageViewer>> viewers(int chatId, int messageId) async {
+    final viewers = await _client.send(
+      td.GetMessageViewers(chatId: chatId, messageId: messageId),
+    );
+    return viewers.viewers;
+  }
+
+  /// Who reacted to [messageId] of [chatId], newest first, up to [limit].
+  Future<List<td.AddedReaction>> addedReactions(
+    int chatId,
+    int messageId, {
+    int limit = 100,
+  }) async {
+    final added = await _client.send(
+      td.GetMessageAddedReactions(
+        chatId: chatId,
+        messageId: messageId,
+        offset: '',
+        limit: limit,
+      ),
+    );
+    return added.reactions;
+  }
+
+  /// When the other side read [messageId] of [chatId], in a private chat.
+  Future<td.MessageReadDate> readDate(int chatId, int messageId) =>
+      _client.send(td.GetMessageReadDate(chatId: chatId, messageId: messageId));
+
+  /// Reports [messageIds] of [chatId] to the moderators. The first call
+  /// goes out with no option and comes back with the reasons to choose
+  /// from; each later call carries the chosen [optionId], and [text] once
+  /// the server asks for details.
+  Future<td.ReportChatResult> report(
+    int chatId,
+    List<int> messageIds, {
+    Uint8List? optionId,
+    String text = '',
+  }) => _client.send(
+    td.ReportChat(
+      chatId: chatId,
+      optionId: optionId ?? Uint8List(0),
+      messageIds: messageIds,
+      text: text,
+    ),
+  );
+
   /// Unpins every message of [chatId].
   Future<void> unpinAll(int chatId) async {
     await _client.send(td.UnpinAllChatMessages(chatId: chatId));
@@ -731,13 +779,24 @@ final class ConversationController {
     int chatId,
     int messageId, {
     int limit = 8,
+  }) => _emojiReactions(chatId, messageId, limit: limit);
+
+  /// Every emoji reaction the user may put on a message, the ones offered
+  /// first coming first, for the full picker.
+  Future<List<String>> allReactions(int chatId, int messageId) =>
+      _emojiReactions(chatId, messageId, limit: null);
+
+  Future<List<String>> _emojiReactions(
+    int chatId,
+    int messageId, {
+    required int? limit,
   }) async {
     final available = await _client.send(
       td.GetMessageAvailableReactions(
         chatId: chatId,
         messageId: messageId,
         // TDLib accepts rows of 5 to 25.
-        rowSize: limit.clamp(5, 25),
+        rowSize: (limit ?? 25).clamp(5, 25),
       ),
     );
     // The user can't react here, for example without Premium in a chat

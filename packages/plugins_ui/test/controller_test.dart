@@ -6,8 +6,14 @@ final class RecordingDelegate implements PluginsDelegate {
   final calls = <String>[];
   PluginEntry? file;
 
+  var failInstall = false;
+
   @override
-  Future<void> install(PluginEntry e) async => calls.add('install ${e.id}');
+  Future<void> install(PluginEntry e) async {
+    if (failInstall) throw 'disk full';
+    calls.add('install ${e.id}');
+  }
+
   @override
   Future<void> uninstall(PluginEntry e) async => calls.add('uninstall ${e.id}');
   @override
@@ -20,7 +26,14 @@ final class RecordingDelegate implements PluginsDelegate {
   Future<void> applyUpdate(PluginEntry e, PluginUpdate u) async =>
       calls.add('update ${e.id} ${u.manifest.version}');
   @override
-  Future<PluginEntry?> pickFile() async => file;
+  void discard(PluginEntry e) => calls.add('discard ${e.id}');
+  @override
+  Future<PluginEntry?> pickFile() async {
+    if (invalid != null) throw ManifestException(invalid!);
+    return file;
+  }
+
+  List<String>? invalid;
 }
 
 PluginEntry plugin(
@@ -83,12 +96,12 @@ void main() {
 
     c.cancelConsent();
     expect(c.consent, isNull);
-    expect(delegate.calls, isEmpty);
+    expect(delegate.calls, ['discard dev.a.net']);
 
     c.requestInstall('dev.a.net');
     await c.allowConsent();
     expect(c.entry('dev.a.net')!.installed, isTrue);
-    expect(delegate.calls, ['install dev.a.net']);
+    expect(delegate.calls.last, 'install dev.a.net');
   });
 
   test('a plugin that asks for nothing installs at once', () async {
@@ -183,6 +196,82 @@ void main() {
     await c.installFromFile();
     expect(c.consent?.isUpdate, isTrue);
     expect(c.consent?.permissions.net, {'x.example.com'});
+  });
+
+  test('an update keeps the old version until its access is allowed', () async {
+    final c = PluginsController([
+      plugin('dev.a.b', installed: true),
+    ], delegate: delegate);
+    delegate.file = plugin(
+      'dev.a.b',
+      version: '2.0.0',
+      permissions: '  net: [api.example.com]',
+    );
+    await c.installFromFile();
+    expect(c.entry('dev.a.b')!.manifest.version, '1.0.0');
+    expect(c.entry('dev.a.b')!.update?.manifest.version, '2.0.0');
+    expect(c.consent?.permissions.net, {'api.example.com'});
+
+    // Declined: the update waits on the plugin's page.
+    c.cancelConsent();
+    expect(delegate.calls, isEmpty);
+    c.requestUpdate('dev.a.b');
+    await c.allowConsent();
+    expect(c.entry('dev.a.b')!.manifest.version, '2.0.0');
+    expect(c.entry('dev.a.b')!.update, isNull);
+    expect(delegate.calls, ['update dev.a.b 2.0.0']);
+  });
+
+  test('refuses an older version, a built-in id and a broken bundle', () async {
+    final c = PluginsController([
+      plugin('dev.a.b', installed: true, version: '1.2.0'),
+      PluginEntry.parse(
+        'id: dev.mollygram.filters\nname: Filters\nversion: 1.0.0\n'
+        'runtime: js\nsdk: ^1.0',
+        builtIn: true,
+      ),
+    ], delegate: delegate);
+    delegate.file = plugin('dev.a.b', version: '1.1.0');
+    await c.installFromFile();
+    expect(c.installFailure?.problem, InstallProblem.older);
+    expect(c.entry('dev.a.b')!.manifest.version, '1.2.0');
+
+    delegate.file = plugin('dev.mollygram.filters', version: '9.0.0');
+    await c.installFromFile();
+    expect(c.installFailure?.problem, InstallProblem.builtIn);
+
+    delegate.invalid = ['unknown permission "camera"'];
+    await c.installFromFile();
+    expect(c.installFailure?.problem, InstallProblem.invalid);
+    expect(c.installFailure?.details, ['unknown permission "camera"']);
+    c.dismissInstallFailure();
+    expect(c.installFailure, isNull);
+    // Refused files are forgotten.
+    expect(delegate.calls, [
+      'discard dev.a.b',
+      'discard dev.mollygram.filters',
+    ]);
+
+    delegate
+      ..invalid = null
+      ..file = plugin('dev.a.b', version: '1.2.0');
+    await c.installFromFile();
+    expect(c.installFailure?.problem, InstallProblem.sameVersion);
+  });
+
+  test('a declined install is forgotten, a failed one undone', () async {
+    final c = PluginsController([], delegate: delegate);
+    delegate.file = plugin('dev.new.one', permissions: '  storage: 1mb');
+    await c.installFromFile();
+    c.cancelConsent();
+    expect(delegate.calls, ['discard dev.new.one']);
+
+    delegate.failInstall = true;
+    c.requestInstall('dev.new.one');
+    await c.allowConsent();
+    expect(c.entry('dev.new.one')!.installed, isFalse);
+    expect(c.installFailure?.problem, InstallProblem.notSaved);
+    expect(c.installFailure?.details, ['disk full']);
   });
 
   test('escalation matches the host rule', () {

@@ -442,6 +442,61 @@ class AppLocalizationsRu extends AppLocalizations {
   String get menuQuote => 'Цитировать';
 
   @override
+  String get menuReport => 'Пожаловаться';
+
+  @override
+  String get moreReactions => 'Ещё реакции';
+
+  @override
+  String get reportDetailsTitle => 'Добавить подробности';
+
+  @override
+  String get reportDetailsOptional =>
+      'Можно добавить подробности или отправить жалобу как есть.';
+
+  @override
+  String get reportDetailsHint => 'Что не так с этим сообщением?';
+
+  @override
+  String get reportSent => 'Спасибо, жалоба отправлена.';
+
+  @override
+  String seenBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Просмотрели: $count',
+      one: 'Просмотрели: $count',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String reactedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count реакций',
+      few: '$count реакции',
+      one: '$count реакция',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String readAt(String time) {
+    return 'Прочитано $time';
+  }
+
+  @override
+  String get notReadYet => 'Ещё не прочитано';
+
+  @override
+  String editedAt(String time) {
+    return 'Изменено $time';
+  }
+
+  @override
   String get menuEdit => 'Изменить';
 
   @override
@@ -1931,9 +1986,6 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get folderDeletedChat => 'Удалённый чат';
-
-  @override
   String get privacyTitle => 'Конфиденциальность';
 
   @override
@@ -2091,4 +2143,313 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get blockedShowMore => 'Показать ещё';
+
+  @override
+  String get edit => 'Изменить';
+
+  @override
+  String get create => 'Создать';
+
+  @override
+  String get remove => 'Удалить';
+
+  @override
+  String get leave => 'Выйти';
+
+  @override
+  String get newGroup => 'Новая группа';
+
+  @override
+  String get newChannel => 'Новый канал';
+
+  @override
+  String get groupName => 'Название группы';
+
+  @override
+  String get channelName => 'Название канала';
+
+  @override
+  String get descriptionHint => 'Описание (необязательно)';
+
+  @override
+  String get descriptionNote => 'Показывается в профиле под названием.';
+
+  @override
+  String get chatTitleRequired => 'Введите название';
+
+  @override
+  String get addMembersHint => 'Добавить участников';
+
+  @override
+  String get createFailed => 'Не удалось создать. Попробуйте ещё раз.';
+
+  @override
+  String get editGroup => 'Изменить группу';
+
+  @override
+  String get editChannel => 'Изменить канал';
+
+  @override
+  String get setPhoto => 'Выбрать фото';
+
+  @override
+  String get changePhoto => 'Изменить фото';
+
+  @override
+  String get removePhoto => 'Удалить фото';
+
+  @override
+  String get inviteLinks => 'Пригласительные ссылки';
+
+  @override
+  String get primaryLink => 'Основная ссылка';
+
+  @override
+  String get createPrimaryLink => 'Создать ссылку';
+
+  @override
+  String get additionalLinks => 'Дополнительные ссылки';
+
+  @override
+  String get copyLink => 'Копировать ссылку';
+
+  @override
+  String get revokeLink => 'Отозвать';
+
+  @override
+  String get revokeLinkTitle => 'Отозвать ссылку?';
+
+  @override
+  String get revokeLinkMessage => 'По ней больше никто не сможет вступить.';
+
+  @override
+  String get revokePrimaryMessage =>
+      'По ней больше никто не сможет вступить. Её заменит новая основная ссылка.';
+
+  @override
+  String get createLink => 'Создать новую ссылку';
+
+  @override
+  String get newLink => 'Новая ссылка';
+
+  @override
+  String get linkNameHint => 'Название ссылки (видят только админы)';
+
+  @override
+  String get linkDuration => 'Срок действия';
+
+  @override
+  String get linkMemberLimit => 'Число вступлений';
+
+  @override
+  String get linkRequestApproval => 'Одобрять новых участников';
+
+  @override
+  String get noLimit => 'Без ограничений';
+
+  @override
+  String get oneDay => '1 день';
+
+  @override
+  String get oneWeek => '1 неделя';
+
+  @override
+  String get oneMonth => '1 месяц';
+
+  @override
+  String linkJoined(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'вступили $count',
+      many: 'вступили $count',
+      few: 'вступили $count',
+      one: 'вступил $count',
+      zero: 'никто не вступил',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String linkJoinedOf(int count, int limit) {
+    return 'Вступили $count из $limit';
+  }
+
+  @override
+  String get linkApproval => 'с одобрением';
+
+  @override
+  String get linkExpired => 'истекла';
+
+  @override
+  String linkExpires(String date) {
+    return 'до $date';
+  }
+
+  @override
+  String get searchMembers => 'Поиск участников';
+
+  @override
+  String get showMoreMembers => 'Показать ещё';
+
+  @override
+  String get promoteToAdmin => 'Назначить админом';
+
+  @override
+  String get editAdminRights => 'Изменить права админа';
+
+  @override
+  String get dismissAdmin => 'Снять с должности админа';
+
+  @override
+  String get restrictMember => 'Ограничить';
+
+  @override
+  String get removeFromGroup => 'Удалить из группы';
+
+  @override
+  String get removeFromChannel => 'Удалить из канала';
+
+  @override
+  String removeMemberTitle(String name) {
+    return 'Удалить $name?';
+  }
+
+  @override
+  String get addAdmin => 'Новый админ';
+
+  @override
+  String get adminRights => 'Права админа';
+
+  @override
+  String adminRightsOf(String name) {
+    return 'Что может $name';
+  }
+
+  @override
+  String restrictWhatCan(String name) {
+    return 'Что $name ещё может';
+  }
+
+  @override
+  String get rightChangeInfo => 'Изменять профиль группы';
+
+  @override
+  String get rightChangeChannelInfo => 'Изменять профиль канала';
+
+  @override
+  String get rightPostMessages => 'Публиковать сообщения';
+
+  @override
+  String get rightEditMessages => 'Изменять чужие сообщения';
+
+  @override
+  String get rightDeleteMessages => 'Удалять сообщения';
+
+  @override
+  String get rightBanUsers => 'Блокировать участников';
+
+  @override
+  String get rightInviteUsers => 'Добавлять участников';
+
+  @override
+  String get rightAddSubscribers => 'Добавлять подписчиков';
+
+  @override
+  String get rightPinMessages => 'Закреплять сообщения';
+
+  @override
+  String get rightManageVideoChats => 'Управлять видеочатами';
+
+  @override
+  String get rightAddAdmins => 'Назначать админов';
+
+  @override
+  String get rightAnonymous => 'Оставаться анонимным';
+
+  @override
+  String get permSendMessages => 'Отправлять сообщения';
+
+  @override
+  String get permSendMedia => 'Отправлять медиа';
+
+  @override
+  String get permSendStickers => 'Отправлять стикеры и GIF';
+
+  @override
+  String get permSendPolls => 'Отправлять опросы';
+
+  @override
+  String get permEmbedLinks => 'Предпросмотр ссылок';
+
+  @override
+  String get leaveGroup => 'Выйти из группы';
+
+  @override
+  String get leaveChannel => 'Покинуть канал';
+
+  @override
+  String get deleteGroup => 'Удалить группу';
+
+  @override
+  String get deleteChannel => 'Удалить канал';
+
+  @override
+  String get leaveGroupTitle => 'Выйти из группы?';
+
+  @override
+  String get leaveChannelTitle => 'Покинуть канал?';
+
+  @override
+  String get deleteGroupTitle => 'Удалить группу?';
+
+  @override
+  String get deleteChannelTitle => 'Удалить канал?';
+
+  @override
+  String get membersFailed => 'Не удалось загрузить участников.';
+
+  @override
+  String get memberChangeFailed =>
+      'Не удалось внести изменение. Возможно, у вас нет на это прав.';
+
+  @override
+  String get removeRestrictions => 'Снять ограничения';
+
+  @override
+  String get rightManageTopics => 'Управлять темами';
+
+  @override
+  String notAddedMembers(int count, String names) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Группа создана, но $names нельзя добавить из-за их настроек приватности.',
+      one:
+          'Группа создана, но $names нельзя добавить из-за настроек приватности.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get leaveOwnerNote =>
+      'Вы останетесь владельцем и сможете вернуться по ссылке.';
+
+  @override
+  String get deleteGroupMessage =>
+      'Группа и все её сообщения пропадут у всех участников. Это нельзя отменить.';
+
+  @override
+  String get deleteChannelMessage =>
+      'Канал и все его публикации пропадут у всех подписчиков. Это нельзя отменить.';
+
+  @override
+  String get leaveFailed => 'Не удалось выйти. Попробуйте ещё раз.';
+
+  @override
+  String get deleteFailed => 'Не удалось удалить. Попробуйте ещё раз.';
+
+  @override
+  String get folderDeletedChat => 'Удалённый чат';
 }

@@ -51,6 +51,29 @@ void main() {
     expect(w.disabledReason, contains('Error: x'));
   });
 
+  test('a load error is known as soon as the worker starts', () async {
+    final w = await PluginWorker.start(
+      manifest: manifest(),
+      source: 'throw new Error("broken")',
+      services: FakeServices(),
+    );
+    addTearDown(w.stop);
+    expect(w.status, PluginStatus.disabled);
+    expect(w.disabledReason, contains('broken'));
+  });
+
+  test('stopping closes the status stream and refuses requests', () async {
+    final w = await PluginWorker.start(
+      manifest: manifest(),
+      source: '',
+      services: FakeServices(),
+    );
+    final done = w.statusChanges.toList();
+    w.stop();
+    expect(await done, [PluginStatus.stopped]);
+    await expectLater(w.runCommand('/x'), throwsStateError);
+  });
+
   test('a hung plugin does not block the main isolate', () async {
     final w = await PluginWorker.start(
       manifest: manifest(),
