@@ -1074,6 +1074,40 @@ void main() {
     expect(find.text('Add'), findsOneWidget);
   });
 
+  testWidgets('asks for a voice message transcript and shows it', (
+    tester,
+  ) async {
+    json.history = [td.Message.fromJson(_voiceMessage(7, 3)), ..._history];
+    await pump(tester);
+    await tester.tap(find.byTooltip('Transcribe'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    final request = json.sent.lastWhere((r) => r['@type'] == 'recognizeSpeech');
+    expect(request['message_id'], 7);
+    expect(find.text('Transcribing…'), findsOneWidget);
+
+    json.push({
+      '@type': 'updateMessageContent',
+      'chat_id': 7,
+      'message_id': 7,
+      'new_content': _voiceMessage(
+        7,
+        3,
+        transcript: {
+          '@type': 'speechRecognitionResultText',
+          'text': 'Hello there',
+        },
+      )['content'],
+    });
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+    expect(find.text('Hello there'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Hide transcript'));
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(find.text('Hello there'), findsNothing);
+  });
+
   testWidgets('draws a dice as its result sticker and a slot machine as its '
       'parts', (tester) async {
     json.history = [_diceMessage(), _slotMachineMessage(), ..._history];
@@ -3038,7 +3072,11 @@ Map<String, Object?> _photo(int id) => {
   },
 };
 
-Map<String, Object?> _voiceMessage(int id, int senderId) => {
+Map<String, Object?> _voiceMessage(
+  int id,
+  int senderId, {
+  Map<String, Object?>? transcript,
+}) => {
   ..._message(id: id, senderId: senderId, text: '').toJson(),
   'content': {
     '@type': 'messageVoiceNote',
@@ -3047,6 +3085,7 @@ Map<String, Object?> _voiceMessage(int id, int senderId) => {
       'duration': 3,
       'waveform': '',
       'mime_type': 'audio/ogg',
+      'speech_recognition_result': ?transcript,
       'voice': _stickerFile(500 + id),
     },
     'caption': {'@type': 'formattedText', 'text': '', 'entities': <Object?>[]},

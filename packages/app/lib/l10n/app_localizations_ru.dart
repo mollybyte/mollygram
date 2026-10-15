@@ -317,6 +317,18 @@ class AppLocalizationsRu extends AppLocalizations {
   String get previewVoiceNote => 'Голосовое сообщение';
 
   @override
+  String get transcribe => 'Расшифровать';
+
+  @override
+  String get hideTranscript => 'Скрыть расшифровку';
+
+  @override
+  String get transcribing => 'Расшифровка…';
+
+  @override
+  String get transcriptionFailed => 'Не удалось расшифровать сообщение';
+
+  @override
   String get previewAudio => 'Аудио';
 
   @override

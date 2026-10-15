@@ -426,6 +426,12 @@ final class ConversationController {
   Future<void> setMessageSender(int chatId, td.MessageSender sender) => _client
       .send(td.SetChatMessageSender(chatId: chatId, messageSenderId: sender));
 
+  /// Asks Telegram to transcribe a voice message; the text arrives in the
+  /// message's content as `speechRecognitionResult` (Premium, with a few
+  /// free trials).
+  Future<void> recognizeSpeech(int chatId, int messageId) =>
+      _client.send(td.RecognizeSpeech(chatId: chatId, messageId: messageId));
+
   /// Presses a bot's inline button that carries [data]: the bot's answer,
   /// a notification or a URL to open, or nothing.
   Future<td.CallbackQueryAnswer> callbackQuery(

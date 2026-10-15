@@ -80,7 +80,7 @@ M8 calls and macOS release, M9 after release.
 | Dice and slot animations | done | A dice message draws the sticker of its thrown value (the rolling one until the server picks it); the slot machine stacks its background, reels and lever | S | M9 |
 | Live location view | missing | | M | M2 |
 | Auto-translate and "Translate" in the menu | missing | Built-in Translate plugin planned | M | M5 |
-| Voice message transcription | missing | `RecognizeSpeech` (Premium) | S | M9 |
+| Voice message transcription | done | A button next to a voice message's time asks TDLib (`RecognizeSpeech`, Premium with free trials) and shows the transcript under the waveform, partial text while it runs, a quiet note on failure; a second click folds it | S | M9 |
 | Message effects and reaction animations | missing | | M | M9 |
 | Sponsored messages in channels | missing | Required by Telegram API terms | S | M2 |
 
