@@ -14,9 +14,13 @@ final class OutgoingFile {
     this.duration = 0,
     this.forceFile = false,
     this.spoiler = false,
+    this.selfDestruct = 0,
     this.thumbnail,
     this.cover,
   });
+
+  /// [selfDestruct] for a photo or video that goes away once viewed.
+  static const viewOnce = -1;
 
   final String path;
   final OutgoingKind kind;
@@ -36,6 +40,10 @@ final class OutgoingFile {
   /// A photo, video or animation hidden behind a spoiler until tapped.
   final bool spoiler;
 
+  /// Seconds after which a photo or video disappears once seen, in a
+  /// private chat; 0 keeps it, [viewOnce] removes it after one viewing.
+  final int selfDestruct;
+
   /// A small JPEG shown for a video before it downloads, at most 320 px
   /// a side; null lets TDLib make one.
   final String? thumbnail;
@@ -52,6 +60,7 @@ final class OutgoingFile {
     int? duration,
     bool? forceFile,
     bool? spoiler,
+    int? selfDestruct,
     String? thumbnail,
     String? cover,
   }) => OutgoingFile(
@@ -62,6 +71,7 @@ final class OutgoingFile {
     duration: duration ?? this.duration,
     forceFile: forceFile ?? this.forceFile,
     spoiler: spoiler ?? this.spoiler,
+    selfDestruct: selfDestruct ?? this.selfDestruct,
     thumbnail: thumbnail ?? this.thumbnail,
     cover: cover ?? this.cover,
   );
@@ -115,7 +125,10 @@ List<List<OutgoingFile>> groupForSending(List<OutgoingFile> files) {
   final groups = <List<OutgoingFile>>[];
   String? lastFamily;
   for (final file in files) {
+    // Self-destructing media goes alone, as TDLib wants it.
     final family = switch (file.kind) {
+      OutgoingKind.photo ||
+      OutgoingKind.video when file.selfDestruct != 0 => null,
       OutgoingKind.photo || OutgoingKind.video => 'media',
       OutgoingKind.document => 'document',
       OutgoingKind.audio => 'audio',
@@ -150,6 +163,7 @@ td.InputMessageContent inputContentOf(
       ),
       caption: caption,
       showCaptionAboveMedia: false,
+      selfDestructType: _selfDestructOf(file),
       hasSpoiler: file.spoiler,
     ),
     OutgoingKind.video => td.InputMessageVideo(
@@ -172,6 +186,7 @@ td.InputMessageContent inputContentOf(
       ),
       caption: caption,
       showCaptionAboveMedia: false,
+      selfDestructType: _selfDestructOf(file),
       hasSpoiler: file.spoiler,
     ),
     OutgoingKind.animation => td.InputMessageAnimation(
@@ -204,3 +219,12 @@ td.InputMessageContent inputContentOf(
     ),
   };
 }
+
+td.MessageSelfDestructType? _selfDestructOf(OutgoingFile file) =>
+    switch (file.selfDestruct) {
+      0 => null,
+      OutgoingFile.viewOnce => const td.MessageSelfDestructTypeImmediately(),
+      final seconds => td.MessageSelfDestructTypeTimer(
+        selfDestructTime: seconds,
+      ),
+    };

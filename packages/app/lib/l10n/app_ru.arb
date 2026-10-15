@@ -194,6 +194,7 @@
   "attachPhotosTitle": "{count, plural, one{Отправить {count} фото} few{Отправить {count} фото} other{Отправить {count} фото}}",
   "sendAsFiles": "Отправить как файлы",
   "hideWithSpoiler": "Скрыть спойлером",
+  "viewOnce": "Один раз",
   "captionHint": "Добавить подпись",
   "dropFiles": "Перетащите файлы сюда, чтобы отправить",
   "attachFailed": "Не удалось отправить файлы",

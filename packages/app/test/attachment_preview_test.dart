@@ -24,7 +24,11 @@ void main() {
 
   tearDown(() => directory.deleteSync(recursive: true));
 
-  Future<void> open(WidgetTester tester, List<String> names) async {
+  Future<void> open(
+    WidgetTester tester,
+    List<String> names, {
+    bool private = false,
+  }) async {
     await tester.pumpWidget(
       MaterialApp(
         theme: buildMgTheme(MgColors.light),
@@ -37,6 +41,7 @@ void main() {
                 context,
                 paths: [for (final name in names) '${directory.path}/$name'],
                 caption: 'Draft',
+                allowSelfDestruct: private,
               );
               closed = true;
             },
@@ -96,6 +101,24 @@ void main() {
     await tester.tap(find.text('Send as files'));
     await tester.pump();
     expect(find.text('Hide with a spoiler'), findsNothing);
+  });
+
+  testWidgets('sets a self-destruct timer in a private chat', (tester) async {
+    await open(tester, ['sea.jpg']);
+    expect(find.text('Self-destruct timer'), findsNothing);
+    await tester.tap(find.text('Cancel'));
+    await tester.pump();
+
+    await open(tester, ['sea.jpg', 'notes.pdf'], private: true);
+    await tester.tap(find.text('Off'));
+    await tester.pump();
+    await tester.tap(find.text('10 seconds'));
+    await tester.pump();
+    expect(find.text('10 seconds'), findsOneWidget);
+    await tester.tap(find.text('Send'));
+    await tester.pump();
+
+    expect([for (final file in choice!.files) file.selfDestruct], [10, 0]);
   });
 
   testWidgets('cancel sends nothing', (tester) async {

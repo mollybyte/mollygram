@@ -236,6 +236,7 @@
   },
   "sendAsFiles": "Send as files",
   "hideWithSpoiler": "Hide with a spoiler",
+  "viewOnce": "View once",
   "captionHint": "Add a caption",
   "dropFiles": "Drop files here to send them",
   "attachFailed": "Couldn't send the files",
