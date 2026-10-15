@@ -980,6 +980,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get botNoAnswer => 'The bot did not answer';
 
   @override
+  String get sharePhoneTitle => 'Share your phone number?';
+
+  @override
+  String sharePhoneMessage(String bot) {
+    return '$bot will receive the phone number of your account.';
+  }
+
+  @override
+  String get share => 'Share';
+
+  @override
   String get attachFile => 'File…';
 
   @override

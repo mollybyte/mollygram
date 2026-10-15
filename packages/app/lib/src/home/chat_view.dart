@@ -1561,6 +1561,11 @@ class _ChatViewState extends ConsumerState<ChatView> {
       case td.InlineKeyboardButtonTypeCopyText(:final text):
         await Clipboard.setData(ClipboardData(text: text));
         if (mounted) showMgToast(context, l10n.copied);
+      case td.InlineKeyboardButtonTypeSwitchInline(
+        :final query,
+        :final targetChat,
+      ):
+        await _switchInline(message, query, targetChat);
       case td.InlineKeyboardButtonTypeCallback(:final data):
         final td.CallbackQueryAnswer answer;
         try {
@@ -1576,6 +1581,128 @@ class _ChatViewState extends ConsumerState<ChatView> {
         if (!mounted) return;
         if (answer.url.isNotEmpty) openLinkFrom(context, answer.url);
         if (answer.text.isNotEmpty) showMgToast(context, answer.text);
+      default:
+        break;
+    }
+  }
+
+  /// Starts an inline query to the bot behind [message] with [query]: in
+  /// the composer here, in a chat the user picks, or where an internal
+  /// link leads, as [target] says.
+  Future<void> _switchInline(
+    ConversationMessage message,
+    String query,
+    td.TargetChat target,
+  ) async {
+    if (target case td.TargetChatInternalLink(:final link)) {
+      if (link case td.InternalLinkTypeBotStart(:final botUsername)) {
+        openLinkFrom(context, 'https://t.me/$botUsername');
+      }
+      return;
+    }
+    final viaBot = message.message.viaBotUserId;
+    final botId = viaBot != 0
+        ? viaBot
+        : message.sender.isChat
+        ? null
+        : message.sender.id;
+    if (botId == null) return;
+    final text = await _conversations.switchInlineText(botId, query);
+    if (text == null || !mounted) return;
+    switch (target) {
+      case td.TargetChatCurrent():
+        _draft.value = TextEditingValue(
+          text: text,
+          selection: TextSelection.collapsed(offset: text.length),
+        );
+        _focus.requestFocus();
+      case td.TargetChatChosen():
+        final choice = await pickForwardTarget(context);
+        if (choice == null || !mounted) return;
+        await _quiet(
+          _conversations.saveDraft(
+            choice.chatId,
+            text: td.FormattedText(text: text, entities: const []),
+          ),
+        );
+        if (mounted) openChatFrom(context, choice.chatId);
+      case td.TargetChatInternalLink():
+        break;
+    }
+  }
+
+  /// Does what a button of the bot's keyboard under [messageId] asks:
+  /// sends its text, shares the phone number after a confirmation, makes
+  /// a poll or picks a user to share.
+  Future<void> _pressKeyboardButton(
+    int messageId,
+    td.KeyboardButton button,
+  ) async {
+    final l10n = AppLocalizations.of(context);
+    final chatId = widget.chatId;
+    switch (button.type) {
+      case td.KeyboardButtonTypeText():
+        await _send(button.text);
+      case td.KeyboardButtonTypeRequestPhoneNumber():
+        final store = _conversations.store;
+        final bot =
+            store.nameOf(
+              MessageSenderId.user(store.botUserIdOf(chatId) ?? 0),
+            ) ??
+            store.nameOf(MessageSenderId.chat(chatId)) ??
+            '';
+        final confirmed = await showMgConfirm(
+          context,
+          title: l10n.sharePhoneTitle,
+          message: l10n.sharePhoneMessage(bot),
+          confirmLabel: l10n.share,
+          cancelLabel: l10n.cancel,
+        );
+        // Null when dismissed; the option's value, false here, otherwise.
+        if (confirmed == null || !mounted) return;
+        try {
+          final me = await _conversations.me();
+          await _conversations.sendContact(
+            chatId,
+            td.Contact(
+              phoneNumber: me.phoneNumber,
+              firstName: me.firstName,
+              lastName: me.lastName,
+              vcard: '',
+              userId: me.id,
+            ),
+          );
+        } on td.TdException {
+          if (mounted) setState(() => _failure = _Failure.send);
+        }
+      case td.KeyboardButtonTypeRequestPoll(
+        :final forceQuiz,
+        :final forceRegular,
+      ):
+        final poll = await composePoll(
+          context,
+          quiz: forceQuiz
+              ? true
+              : forceRegular
+              ? false
+              : null,
+        );
+        if (poll == null || !mounted || widget.chatId != chatId) return;
+        try {
+          await _conversations.sendPoll(chatId, poll);
+        } on td.TdException {
+          if (mounted) setState(() => _failure = _Failure.send);
+        }
+      case td.KeyboardButtonTypeRequestUsers(:final id):
+        final user = await pickContact(context);
+        if (user == null || !mounted || widget.chatId != chatId) return;
+        try {
+          await _conversations.shareUsersWithBot(chatId, messageId, id, [
+            user.id,
+          ]);
+        } on td.TdException {
+          if (mounted) showMgToast(context, l10n.botNoAnswer);
+        }
       default:
         break;
     }
@@ -1700,8 +1827,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
     final (id, markup) = keyboard;
     return ReplyKeyboard(
       rows: markup.rows,
-      onPressed: (text) {
-        unawaited(_send(text));
+      onPressed: (button) {
+        unawaited(_pressKeyboardButton(id, button));
         if (markup.oneTime) setState(() => _keyboardHiddenFor = id);
       },
     );

@@ -95,6 +95,9 @@ class LinkRouter {
   int _generation = 0;
 
   /// Opens [raw]: a URL, a scheme-less link or an `@username`.
+  /// Opens [chatId], revealing it where it is already open.
+  void openChat(int chatId) => _openChat(chatId);
+
   Future<void> open(String raw) async {
     final generation = ++_generation;
     LinkTarget? target;
@@ -265,6 +268,11 @@ LinkRouter? _routerOf(BuildContext context) {
 /// Searches messages for a hashtag tapped in [context].
 void searchHashtagFrom(BuildContext context, String hashtag) =>
     _routerOf(context)?.searchHashtag(hashtag);
+
+/// Opens [chatId] in the window of [context], such as the chat a bot's
+/// switch-to-inline button chose.
+void openChatFrom(BuildContext context, int chatId) =>
+    _routerOf(context)?.openChat(chatId);
 
 /// Sends a bot command tapped in a message of [chatId] from
 /// [senderUserId].

@@ -993,6 +993,17 @@ class AppLocalizationsRu extends AppLocalizations {
   String get botNoAnswer => 'Бот не ответил';
 
   @override
+  String get sharePhoneTitle => 'Поделиться номером телефона?';
+
+  @override
+  String sharePhoneMessage(String bot) {
+    return '$bot получит номер телефона вашего аккаунта.';
+  }
+
+  @override
+  String get share => 'Поделиться';
+
+  @override
   String get attachFile => 'Файл…';
 
   @override

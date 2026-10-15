@@ -1204,6 +1204,41 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
   });
 
+  testWidgets('puts a switch-to-inline button\'s query in the composer', (
+    tester,
+  ) async {
+    json.history = [_inlineKeyboardMessage(), ..._history];
+    await pump(tester);
+    await tester.tap(find.text('Search'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    final field = tester.widget<TextField>(find.byType(TextField));
+    expect(field.controller!.text, '@gif cats');
+    expect(field.controller!.selection.baseOffset, '@gif cats'.length);
+  });
+
+  testWidgets('shares the phone number from a bot\'s keyboard after asking', (
+    tester,
+  ) async {
+    json.history = [_replyKeyboardMessage(), ..._history];
+    json.push(_chat(lastRead: 13, unread: 0, last: 13, replyMarkup: 17));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await pump(tester);
+    await tester.tap(find.text('Share phone'));
+    await tester.pumpAndSettle();
+    expect(find.text('Share your phone number?'), findsOneWidget);
+    await tester.tap(find.text('Share'));
+    await tester.pumpAndSettle();
+    for (var i = 0; i < 2; i++) {
+      await tester.runAsync(() => Future<void>.delayed(_tick));
+      await tester.pump();
+    }
+    final sent = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    final contact = (sent['input_message_content']! as Map)['contact']! as Map;
+    expect(contact['phone_number'], '79990000000');
+    expect(contact['user_id'], 7);
+  });
+
   testWidgets('shows a bot\'s reply keyboard and sends a button', (
     tester,
   ) async {
@@ -3118,8 +3153,15 @@ final class _FakeTdJson implements td.TdJson {
         ],
       },
       'getUser' when decoded['user_id'] == 2 => _user(2, 'Boris'),
+      'getMe' => _user(7, 'Me', '79990000000'),
       'getUser' when decoded['user_id'] == 50 => {
         ..._user(50, 'GIF Search'),
+        'usernames': {
+          '@type': 'usernames',
+          'active_usernames': ['gif'],
+          'disabled_usernames': <String>[],
+          'editable_username': 'gif',
+        },
         'type': {
           '@type': 'userTypeBot',
           'is_inline': true,
@@ -3197,9 +3239,23 @@ final class _FakeTdJson implements td.TdJson {
 /// A downloaded PDF from Boris, kept at [path].
 td.Message _inlineKeyboardMessage() => td.Message.fromJson({
   ..._message(id: 16, senderId: 2, text: 'Pick one').toJson(),
+  'via_bot_user_id': 50,
   'reply_markup': {
     '@type': 'replyMarkupInlineKeyboard',
     'rows': [
+      [
+        {
+          '@type': 'inlineKeyboardButton',
+          'text': 'Search',
+          'icon_custom_emoji_id': 0,
+          'style': {'@type': 'buttonStyleDefault'},
+          'type': {
+            '@type': 'inlineKeyboardButtonTypeSwitchInline',
+            'query': 'cats',
+            'target_chat': {'@type': 'targetChatCurrent'},
+          },
+        },
+      ],
       [
         {
           '@type': 'inlineKeyboardButton',
@@ -3240,6 +3296,15 @@ td.Message _replyKeyboardMessage() => td.Message.fromJson({
             'style': {'@type': 'buttonStyleDefault'},
             'type': {'@type': 'keyboardButtonTypeText'},
           },
+      ],
+      [
+        {
+          '@type': 'keyboardButton',
+          'text': 'Share phone',
+          'icon_custom_emoji_id': 0,
+          'style': {'@type': 'buttonStyleDefault'},
+          'type': {'@type': 'keyboardButtonTypeRequestPhoneNumber'},
+        },
       ],
     ],
     'is_persistent': false,

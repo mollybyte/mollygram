@@ -9,10 +9,13 @@ import '../../l10n/app_localizations.dart';
 /// ten options, and the switches for anonymous voting, several answers
 /// and quiz mode with its right answer and explanation. Completes with
 /// the poll to send, or null when cancelled. [inChannel] hides the
-/// anonymity switch, since channel polls are always anonymous.
+/// anonymity switch, since channel polls are always anonymous. [quiz]
+/// fixes the mode, as a bot's request for a poll may, and hides its
+/// switch.
 Future<td.InputMessagePoll?> composePoll(
   BuildContext context, {
   bool inChannel = false,
+  bool? quiz,
 }) => showGeneralDialog<td.InputMessagePoll>(
   context: context,
   barrierDismissible: true,
@@ -22,15 +25,16 @@ Future<td.InputMessagePoll?> composePoll(
   pageBuilder: (context, _, _) => Center(
     child: Material(
       type: MaterialType.transparency,
-      child: _PollComposer(inChannel: inChannel),
+      child: _PollComposer(inChannel: inChannel, quiz: quiz),
     ),
   ),
 );
 
 class _PollComposer extends StatefulWidget {
-  const _PollComposer({required this.inChannel});
+  const _PollComposer({required this.inChannel, required this.quiz});
 
   final bool inChannel;
+  final bool? quiz;
 
   @override
   State<_PollComposer> createState() => _PollComposerState();
@@ -47,7 +51,7 @@ class _PollComposerState extends State<_PollComposer> {
   ];
   var _anonymous = true;
   var _multiple = false;
-  var _quiz = false;
+  late var _quiz = widget.quiz ?? false;
   int? _correct;
 
   @override
@@ -221,11 +225,12 @@ class _PollComposerState extends State<_PollComposer> {
                 enabled: !_quiz,
                 onChanged: (v) => setState(() => _multiple = v),
               ),
-              _SwitchRow(
-                label: l10n.pollQuizMode,
-                value: _quiz,
-                onChanged: (v) => setState(() => _quiz = v),
-              ),
+              if (widget.quiz == null)
+                _SwitchRow(
+                  label: l10n.pollQuizMode,
+                  value: _quiz,
+                  onChanged: (v) => setState(() => _quiz = v),
+                ),
               if (_quiz) ...[
                 const SizedBox(height: 6),
                 MgUnderlineField(

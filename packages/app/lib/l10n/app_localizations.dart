@@ -1730,6 +1730,24 @@ abstract class AppLocalizations {
   /// **'The bot did not answer'**
   String get botNoAnswer;
 
+  /// No description provided for @sharePhoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Share your phone number?'**
+  String get sharePhoneTitle;
+
+  /// No description provided for @sharePhoneMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'{bot} will receive the phone number of your account.'**
+  String sharePhoneMessage(String bot);
+
+  /// No description provided for @share.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get share;
+
   /// No description provided for @attachFile.
   ///
   /// In en, this message translates to:
