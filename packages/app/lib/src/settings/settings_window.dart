@@ -10,8 +10,8 @@ import 'account_page.dart';
 import 'appearance_page.dart';
 import 'folders_page.dart';
 import 'plugins_page.dart';
+import 'privacy/privacy_page.dart';
 import 'privacy_extras_page.dart';
-import 'sessions_page.dart';
 import 'settings_style.dart';
 import 'storage_page.dart';
 
@@ -76,8 +76,10 @@ final settingsSections = <SettingsSection>[
       l10n.activeSessions,
       l10n.thisDevice,
       l10n.terminateOthers,
+      l10n.blockedUsers,
+      for (final rule in privacyPageRules) rule.title(l10n),
     ],
-    builder: (context) => const PrivacyPage(),
+    builder: (context) => const PrivacySecurityPage(),
   ),
   SettingsSection(
     id: privacyExtrasSectionId,
