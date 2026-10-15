@@ -1621,6 +1621,47 @@ void main() {
     expect(find.text('Menu'), findsOneWidget);
   });
 
+  testWidgets('opens the channel a message was forwarded from', (tester) async {
+    json.history = [
+      td.Message.fromJson({
+        ..._message(id: 14, senderId: 2, text: 'Fresh pizza today').toJson(),
+        'forward_info': {
+          '@type': 'messageForwardInfo',
+          'origin': {
+            '@type': 'messageOriginChannel',
+            'chat_id': 55,
+            'message_id': 77,
+            'author_signature': '',
+          },
+          'date': 1760000000,
+        },
+      }),
+      ..._history,
+    ];
+    json.push(_chat(lastRead: 14, unread: 0, last: 14));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await pump(tester);
+    await tester.pump();
+
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(ChatView)),
+    );
+    expect(container.read(messageJumpProvider), isEmpty);
+    // The name of the source is a link; the message itself is not.
+    // Both the sender and the source are unknown here; the link is the
+    // one that comes first in the tree.
+    final names = find
+        .text(
+          AppLocalizations.of(tester.element(find.byType(ChatView)))
+              .unknownSender,
+        )
+        .first;
+    await tester.tap(names);
+    await tester.pump();
+    expect(container.read(messageJumpProvider)[55]?.messageId, 77);
+    await tester.pump(const Duration(seconds: 1));
+  });
+
   /// A chat whose incoming messages are in Russian.
   List<td.Message> russianHistory() => [
     _message(id: 13, senderId: 2, text: 'Привет, как дела у вас сегодня?'),

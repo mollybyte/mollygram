@@ -134,6 +134,7 @@ class MessageRowActions {
     this.onChecklistToggle,
     this.onInlineButton,
     this.onComments,
+    this.onOpenForwardSource,
   });
 
   /// Adds the reaction, or takes it back when the user had chosen it.
@@ -196,6 +197,10 @@ class MessageRowActions {
 
   /// A click on the comments row under a channel post, which opens them.
   final void Function(ConversationMessage message)? onComments;
+
+  /// A click on the name a forward came from, which opens that channel, at
+  /// the original post when it is known, or that person's profile.
+  final void Function(td.MessageOrigin origin)? onOpenForwardSource;
 }
 
 /// A message, or an album, in Telegram's flat layout: no bubbles, the
@@ -384,6 +389,11 @@ class MessageTile extends StatelessWidget {
         source: forwardOriginName(l10n, store, forward.origin),
         date: formatChatTime(forward.date, locale),
         color: source == null ? null : peerNameColor(c, store.colorOf(source)),
+        onSourceTap:
+            actions.onOpenForwardSource == null ||
+                forward.origin is td.MessageOriginHiddenUser
+            ? null
+            : () => actions.onOpenForwardSource!(forward.origin),
         child: content,
       );
     }
