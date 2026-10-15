@@ -78,7 +78,7 @@ void main() {
                   title: 'Weekend trip',
                   unreadCount: 0,
                   positions: const [],
-                  isGroup: true,
+                  type: ChatType.supergroup,
                 ),
               ),
             ),

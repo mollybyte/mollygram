@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -19,6 +20,62 @@ void main() {
       themed(Wrap(children: [for (final icon in MgIcons.all) MgIcon(icon)])),
     );
     expect(find.byType(MgIcon), findsNWidgets(MgIcons.all.length));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('avatar shows letters only without a photo or preview', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      themed(
+        const Center(child: MonogramAvatar(name: 'Ada Lovelace', size: 42)),
+      ),
+    );
+    expect(find.text('AL'), findsOneWidget);
+
+    await tester.pumpWidget(
+      themed(
+        Center(
+          child: MonogramAvatar(
+            name: 'Ada Lovelace',
+            size: 42,
+            placeholder: MemoryImage(_pixel),
+          ),
+        ),
+      ),
+    );
+    expect(find.text('AL'), findsNothing);
+    expect(find.byType(ImageFiltered), findsOneWidget);
+  });
+
+  testWidgets('a photo decoded now fades in over the preview', (tester) async {
+    final opacity = find.byType(AnimatedOpacity);
+    // A photo the image cache already holds draws at once, so the one
+    // under test must be new to it: fresh bytes, and nothing left over
+    // from an earlier test.
+    imageCache.clear();
+    final photo = MemoryImage(Uint8List.fromList(_pixel));
+    // Decoding runs on a real event loop; the first frame has no image
+    // yet, so the photo starts transparent rather than popping in.
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        themed(
+          Center(
+            child: MonogramAvatar(
+              name: 'Ada',
+              size: 42,
+              placeholder: MemoryImage(_pixel),
+              image: photo,
+            ),
+          ),
+        ),
+      );
+      expect(tester.widget<AnimatedOpacity>(opacity).opacity, 0);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    });
+    await tester.pump();
+    expect(tester.widget<AnimatedOpacity>(opacity).opacity, 1);
+    await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
   });
 
@@ -245,10 +302,11 @@ void main() {
   testWidgets('folder tab hides a zero counter', (tester) async {
     await tester.pumpWidget(
       themed(
-        const FolderTabBar(
-          children: [
-            FolderTab(label: 'All', selected: true),
-            FolderTab(label: 'Work', count: 4),
+        const FolderSegments(
+          selected: 0,
+          segments: [
+            FolderSegment(label: 'All'),
+            FolderSegment(label: 'Work', count: 4),
           ],
         ),
       ),
@@ -465,14 +523,22 @@ void main() {
     expect(find.byType(MgSendButton), findsOneWidget);
   });
 
-  testWidgets('composer stays within its max width', (tester) async {
+  testWidgets('composer spans the whole card as its bottom edge', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1400, 300);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
-      themed(const SizedBox.expand(child: Composer(labels: _labels))),
+      themed(
+        const Align(
+          alignment: Alignment.bottomCenter,
+          child: Composer(labels: _labels),
+        ),
+      ),
     );
-    expect(tester.getSize(find.byType(Glass)).width, Composer.maxWidth);
+    expect(tester.getSize(find.byType(Composer)).width, 1400);
+    expect(find.byType(Glass), findsNothing);
   });
 
   testWidgets('header keeps the title left and the actions at the right '
@@ -496,9 +562,10 @@ void main() {
     final title = tester.getRect(find.byKey(const Key('title')));
     final fill = tester.getRect(find.byKey(const Key('fill')));
     expect(bar.width, 1000);
-    expect(title.left, 0);
-    expect(fill.left, 0);
-    expect(fill.right, 1000 - 80);
+    // The bar keeps 8 px of air at the left and 6 at the right.
+    expect(title.left, 20);
+    expect(fill.left, 20);
+    expect(fill.right, 1000 - 12 - 80);
   });
 
   testWidgets('a wide header title stays clear of the actions', (tester) async {
@@ -518,34 +585,27 @@ void main() {
     );
     final title = tester.getRect(find.byKey(const Key('title')));
     final actions = tester.getRect(find.byKey(const Key('actions')));
-    expect(title.left, 0);
+    expect(title.left, 20);
     expect(title.right, lessThanOrEqualTo(actions.left - 8));
   });
 
-  testWidgets('folder rail item marks the selected folder', (tester) async {
+  testWidgets('pinned chat tile shows the name and opens the chat', (
+    tester,
+  ) async {
     var taps = 0;
     await tester.pumpWidget(
       themed(
-        FolderRail(
+        PinnedChatGrid(
           children: [
-            const FolderRailItem(
-              icon: MgIcons.chat,
-              label: 'All',
-              selected: true,
-            ),
-            FolderRailItem(
-              icon: MgIcons.file,
-              label: 'Work',
-              count: 4,
-              onTap: () => taps++,
-            ),
+            const PinnedChatTile(title: 'Anna Petrova', selected: true),
+            PinnedChatTile(title: 'Design', unread: 4, onTap: () => taps++),
           ],
         ),
       ),
     );
-    expect(find.text('All'), findsOneWidget);
-    expect(find.text('Work'), findsOneWidget);
-    await tester.tap(find.text('Work'));
+    expect(find.text('Anna Petrova'), findsOneWidget);
+    expect(find.text('4'), findsOneWidget);
+    await tester.tap(find.text('Design'));
     expect(taps, 1);
   });
 
@@ -761,4 +821,50 @@ void main() {
     expect(find.textContaining('Dodo Pizza'), findsOneWidget);
     expect(find.text('New secret'), findsOneWidget);
   });
+
+  testWidgets('a forward\'s source name is a link with a hover underline', (
+    tester,
+  ) async {
+    var opened = 0;
+    await tester.pumpWidget(
+      themed(
+        ForwardedBlock(
+          source: 'Dodo Pizza',
+          date: '12.10.26',
+          onSourceTap: () => opened++,
+          child: const Text('New secret'),
+        ),
+      ),
+    );
+    TextDecoration? decoration() =>
+        tester.widget<Text>(find.text('Dodo Pizza')).style?.decoration;
+    expect(decoration(), TextDecoration.none);
+    expect(find.text('12.10.26'), findsOneWidget);
+
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    addTearDown(mouse.removePointer);
+    await mouse.addPointer(location: Offset.zero);
+    await mouse.moveTo(tester.getCenter(find.text('Dodo Pizza')));
+    await tester.pump();
+    expect(decoration(), TextDecoration.underline);
+    await mouse.moveTo(tester.getCenter(find.text('New secret')));
+    await tester.pump();
+    expect(decoration(), TextDecoration.none);
+
+    await tester.tap(find.text('Dodo Pizza'));
+    expect(opened, 1);
+    // The date beside it is not part of the link.
+    await tester.tap(find.text('12.10.26'));
+    expect(opened, 1);
+  });
 }
+
+/// A 1x1 gray PNG.
+final _pixel = Uint8List.fromList(const [
+  0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, //
+  0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, //
+  0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4, 0x89, 0x00, 0x00, 0x00, //
+  0x0D, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9C, 0x63, 0x68, 0x68, 0x68, 0xF8, //
+  0x0F, 0x00, 0x05, 0x84, 0x02, 0x80, 0x8C, 0xCD, 0x66, 0x26, 0x00, 0x00, //
+  0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82, //
+]);

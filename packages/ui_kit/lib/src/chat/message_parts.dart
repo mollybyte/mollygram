@@ -139,23 +139,38 @@ class ForwardedBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = MgColors.of(context);
     final tint = color ?? c.accent;
-    final title = Text.rich(
-      TextSpan(
-        children: [
-          TextSpan(
-            text: source,
-            style: mgTextStyle(c, weight: FontWeight.w500, color: tint),
-          ),
-          if (date case final date?)
+    final nameStyle = mgTextStyle(c, weight: FontWeight.w500, color: tint);
+    final dateStyle = mgTextStyle(c, size: MgType.small, color: c.fg2);
+    final title = onSourceTap == null
+        ? Text.rich(
             TextSpan(
-              text: '  $date',
-              style: mgTextStyle(c, size: MgType.small, color: c.fg2),
+              children: [
+                TextSpan(text: source, style: nameStyle),
+                if (date case final date?)
+                  TextSpan(text: '  $date', style: dateStyle),
+              ],
             ),
-        ],
-      ),
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-    );
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          )
+        // A name that opens its source: the date stays plain beside it.
+        : Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: _SourceName(
+                  text: source,
+                  style: nameStyle,
+                  onTap: onSourceTap!,
+                ),
+              ),
+              if (date case final date?)
+                Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: Text(date, style: dateStyle, maxLines: 1),
+                ),
+            ],
+          );
     return CustomPaint(
       painter: _BarPainter(tint),
       child: Padding(
@@ -164,17 +179,54 @@ class ForwardedBlock extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.only(bottom: 2),
-              child: onSourceTap == null
-                  ? title
-                  : MouseRegion(
-                      cursor: SystemMouseCursors.click,
-                      child: GestureDetector(onTap: onSourceTap, child: title),
-                    ),
-            ),
+            Padding(padding: const EdgeInsets.only(bottom: 2), child: title),
             child,
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The forward's source name as a link: a hand cursor, and a thin
+/// underline that fades in under the pointer.
+class _SourceName extends StatefulWidget {
+  const _SourceName({
+    required this.text,
+    required this.style,
+    required this.onTap,
+  });
+
+  final String text;
+  final TextStyle style;
+  final VoidCallback onTap;
+
+  @override
+  State<_SourceName> createState() => _SourceNameState();
+}
+
+class _SourceNameState extends State<_SourceName> {
+  var _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = widget.style.color ?? const Color(0xFF000000);
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onTap,
+        child: Text(
+          widget.text,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: widget.style.copyWith(
+            decoration: _hover ? TextDecoration.underline : TextDecoration.none,
+            decorationColor: color.withValues(alpha: 0.55),
+            decorationThickness: 1,
+          ),
         ),
       ),
     );

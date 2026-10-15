@@ -6,6 +6,7 @@ import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../avatar/peer_avatar.dart';
 import '../chat/message_tile.dart' show SenderAvatar;
 import '../session/providers.dart';
 import 'manage_sheet.dart';
@@ -82,6 +83,7 @@ class _DiscussionSheetState extends ConsumerState<DiscussionSheet> {
     final c = MgColors.of(context);
     final settings = widget.settings;
     final groups = _groups;
+    final chatLists = ref.read(telegramSessionProvider).requireValue.chatLists;
     final hasLinked = settings.linkedChatId != 0;
     return ManageSheetFrame(
       title: settings.isChannel ? l10n.discussionGroup : l10n.linkedChannel,
@@ -125,7 +127,11 @@ class _DiscussionSheetState extends ConsumerState<DiscussionSheet> {
                             for (final (id, title) in groups)
                               PersonRow(
                                 name: title,
-                                avatar: SenderAvatar(name: title, size: 30),
+                                avatar: PeerAvatar.chat(
+                                  name: title,
+                                  size: 30,
+                                  photo: chatLists.store.chat(id)?.photo,
+                                ),
                                 onTap: () => unawaited(_link(id)),
                               ),
                           ],

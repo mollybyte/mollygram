@@ -288,6 +288,8 @@ void main() {
       expect(find.text('1 of 1'), findsOneWidget);
       expect(find.text('A folder can have up to 1 chats.'), findsOneWidget);
 
+      await tester.ensureVisible(find.text('Secret'));
+      await tester.pump();
       await tester.tap(find.text('Secret'));
       await tester.pump();
       expect(find.text('1 of 1'), findsOneWidget);

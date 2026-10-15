@@ -4,7 +4,7 @@ import '../icons.dart';
 import '../theme/colors.dart';
 import '../theme/theme.dart';
 
-/// The 30 px search field at the top of the sidebar.
+/// The 32 px search field at the top of the sidebar.
 class MgSearchField extends StatelessWidget {
   const MgSearchField({
     super.key,
@@ -27,16 +27,16 @@ class MgSearchField extends StatelessWidget {
     final c = MgColors.of(context);
     final style = mgTextStyle(c);
     return Container(
-      height: 30,
-      padding: const EdgeInsets.symmetric(horizontal: 9),
+      height: 32,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
         color: c.field,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(9),
       ),
       child: Row(
         children: [
-          MgIcon(MgIcons.search, size: 14, color: c.fg2),
-          const SizedBox(width: 6),
+          MgIcon(MgIcons.search, size: 13, stroke: 2.2, color: c.muted),
+          const SizedBox(width: 7),
           Expanded(
             child: TextField(
               controller: controller,
@@ -47,7 +47,7 @@ class MgSearchField extends StatelessWidget {
               cursorHeight: 15,
               decoration: InputDecoration.collapsed(
                 hintText: hintText,
-                hintStyle: style.copyWith(color: c.fg2),
+                hintStyle: style.copyWith(color: c.muted),
               ),
             ),
           ),

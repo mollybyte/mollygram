@@ -14,13 +14,15 @@ class CloseBeforeExit extends StatefulWidget {
     super.key,
     required this.close,
     required this.child,
-    this.timeout = const Duration(seconds: 5),
+    this.timeout = const Duration(seconds: 30),
   });
 
   final Future<void> Function() close;
   final Widget child;
 
-  /// How long to wait for [close] before quitting anyway.
+  /// How long to wait for [close] before quitting anyway. TDLib needs a few
+  /// seconds to flush its database on a large account; quitting earlier is
+  /// the abort this widget exists to prevent, so the wait is generous.
   final Duration timeout;
 
   @override

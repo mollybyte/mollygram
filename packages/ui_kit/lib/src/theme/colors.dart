@@ -34,6 +34,9 @@ class MgColors extends ThemeExtension<MgColors> {
     required this.shadow,
     required this.wallpaperBase,
     required this.wallpaper,
+    required this.frame,
+    required this.card,
+    this.selection,
   });
 
   final Brightness brightness;
@@ -113,7 +116,24 @@ class MgColors extends ThemeExtension<MgColors> {
   /// top left, top right, bottom right, bottom left.
   final List<Color> wallpaper;
 
+  /// The window frame: the tinted surface the sidebar sits on and the chat
+  /// cards float over.
+  final Color frame;
+
+  /// The chat card: the solid surface of a conversation pane.
+  final Color card;
+
+  /// The fill of the selected chat row, when it differs from [accent] (a
+  /// light accent of the dark theme needs a deeper fill under white text).
+  final Color? selection;
+
+  /// The fill of the selected chat row.
+  Color get selected => selection ?? accent;
+
   bool get isDark => brightness == Brightness.dark;
+
+  /// The "Draft:" lead in the chat list, the system red of both themes.
+  static const draftRed = Color(0xFFFF453A);
 
   static const light = MgColors(
     brightness: Brightness.light,
@@ -148,6 +168,8 @@ class MgColors extends ThemeExtension<MgColors> {
       Color(0xFFD5D88D),
       Color(0xFF88B884),
     ],
+    frame: Color(0xFFE6E8EC),
+    card: Color(0xFFFFFFFF),
   );
 
   static const dark = MgColors(
@@ -183,6 +205,8 @@ class MgColors extends ThemeExtension<MgColors> {
       Color(0xFF3B5465),
       Color(0xFF203845),
     ],
+    frame: Color(0xFF1C1D20),
+    card: Color(0xFF26272B),
   );
 
   /// The tokens of the nearest theme. Falls back to [light] when the theme
@@ -223,6 +247,9 @@ class MgColors extends ThemeExtension<MgColors> {
     Color? shadow,
     Color? wallpaperBase,
     List<Color>? wallpaper,
+    Color? frame,
+    Color? card,
+    Object? selection = _keep,
   }) {
     return MgColors(
       brightness: brightness ?? this.brightness,
@@ -254,6 +281,11 @@ class MgColors extends ThemeExtension<MgColors> {
       shadow: shadow ?? this.shadow,
       wallpaperBase: wallpaperBase ?? this.wallpaperBase,
       wallpaper: wallpaper ?? this.wallpaper,
+      frame: frame ?? this.frame,
+      card: card ?? this.card,
+      selection: identical(selection, _keep)
+          ? this.selection
+          : selection as Color?,
     );
   }
 
@@ -292,6 +324,9 @@ class MgColors extends ThemeExtension<MgColors> {
         for (var i = 0; i < wallpaper.length; i++)
           c(wallpaper[i], other.wallpaper[i]),
       ],
+      frame: c(frame, other.frame),
+      card: c(card, other.card),
+      selection: Color.lerp(selection, other.selection, t),
     );
   }
 }

@@ -148,6 +148,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nothingFound => 'Nothing found';
 
   @override
+  String get draftLabel => 'Draft:';
+
+  @override
   String get newMessage => 'New message';
 
   @override
@@ -298,7 +301,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get videoCameraDenied => 'Mollygram has no access to the camera.';
 
   @override
+<<<<<<< HEAD
   String get videoSwitchCamera => 'Switch camera';
+=======
+  String get senderYou => 'You';
+>>>>>>> origin/main
 
   @override
   String previewYou(String text) {
@@ -696,6 +703,252 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noChatsFound => 'No chats found';
 
   @override
+  String get statusOnline => 'online';
+
+  @override
+  String get statusJustNow => 'last seen just now';
+
+  @override
+  String statusMinutesAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'last seen $count minutes ago',
+      one: 'last seen $count minute ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String statusToday(String time) {
+    return 'last seen today at $time';
+  }
+
+  @override
+  String statusYesterday(String time) {
+    return 'last seen yesterday at $time';
+  }
+
+  @override
+  String statusOnDate(String date) {
+    return 'last seen $date';
+  }
+
+  @override
+  String get statusRecently => 'last seen recently';
+
+  @override
+  String get statusLastWeek => 'last seen within a week';
+
+  @override
+  String get statusLastMonth => 'last seen within a month';
+
+  @override
+  String get statusLongAgo => 'last seen a long time ago';
+
+  @override
+  String get statusBot => 'bot';
+
+  @override
+  String get statusService => 'service notifications';
+
+  @override
+  String get statusGroup => 'group';
+
+  @override
+  String get statusChannel => 'channel';
+
+  @override
+  String statusMembers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count members',
+      one: '$count member',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String statusMembersOnline(String members, String online) {
+    return '$members, $online online';
+  }
+
+  @override
+  String statusSubscribers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count subscribers',
+      one: '$count subscriber',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get activityTyping => 'typing';
+
+  @override
+  String get activityRecordingVoice => 'recording a voice message';
+
+  @override
+  String get activityRecordingVideoNote => 'recording a video message';
+
+  @override
+  String get activityRecordingVideo => 'recording a video';
+
+  @override
+  String get activitySendingPhoto => 'sending a photo';
+
+  @override
+  String get activitySendingVideo => 'sending a video';
+
+  @override
+  String get activitySendingVoice => 'sending a voice message';
+
+  @override
+  String get activitySendingVideoNote => 'sending a video message';
+
+  @override
+  String get activitySendingFile => 'sending a file';
+
+  @override
+  String get activityChoosingSticker => 'choosing a sticker';
+
+  @override
+  String get activityChoosingLocation => 'choosing a location';
+
+  @override
+  String get activityChoosingContact => 'choosing a contact';
+
+  @override
+  String get activityPlayingGame => 'playing a game';
+
+  @override
+  String get activityWatchingAnimations => 'watching an animation';
+
+  @override
+  String activityByOne(String name, String activity) {
+    return '$name is $activity';
+  }
+
+  @override
+  String activityByTwo(String first, String second) {
+    return '$first and $second are typing';
+  }
+
+  @override
+  String activityByMany(String name, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$name and $count others are typing',
+      one: '$name and $count other are typing',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get archivedChats => 'Archived chats';
+
+  @override
+  String get noArchivedChats => 'No archived chats';
+
+  @override
+  String get menuPin => 'Pin';
+
+  @override
+  String get menuUnpin => 'Unpin';
+
+  @override
+  String get menuMute => 'Mute';
+
+  @override
+  String get menuUnmute => 'Unmute';
+
+  @override
+  String get muteFor1Hour => 'For 1 hour';
+
+  @override
+  String get muteFor8Hours => 'For 8 hours';
+
+  @override
+  String get muteFor3Days => 'For 3 days';
+
+  @override
+  String get muteForever => 'Forever';
+
+  @override
+  String get menuArchive => 'Archive';
+
+  @override
+  String get menuUnarchive => 'Unarchive';
+
+  @override
+  String get menuMarkRead => 'Mark as read';
+
+  @override
+  String get menuMarkUnread => 'Mark as unread';
+
+  @override
+  String get menuMarkAllRead => 'Mark all as read';
+
+  @override
+  String get menuClearHistory => 'Clear history';
+
+  @override
+  String get menuDeleteChat => 'Delete chat';
+
+  @override
+  String get menuDeleteAndLeave => 'Delete and leave';
+
+  @override
+  String get menuLeaveGroup => 'Leave group';
+
+  @override
+  String get menuLeaveChannel => 'Leave channel';
+
+  @override
+  String get clearHistoryTitle => 'Clear history?';
+
+  @override
+  String clearHistoryMessage(String name) {
+    return 'Messages in $name will be deleted for you.';
+  }
+
+  @override
+  String clearAlsoFor(String name) {
+    return 'Also clear for $name';
+  }
+
+  @override
+  String get clear => 'Clear';
+
+  @override
+  String get deleteChatTitle => 'Delete chat?';
+
+  @override
+  String deleteChatMessage(String name) {
+    return 'The chat with $name will be deleted for you.';
+  }
+
+  @override
+  String leaveTitle(String name) {
+    return 'Leave $name?';
+  }
+
+  @override
+  String get leave => 'Leave';
+
+  @override
+  String deleteAndLeaveTitle(String name) {
+    return 'Delete and leave $name?';
+  }
+
+  @override
+  String get chatActionFailed => 'Couldn\'t do that, try again';
+
+  @override
   String get editFailed => 'Couldn\'t save the changes';
 
   @override
@@ -760,9 +1013,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get peerInfo => 'Info';
 
   @override
-  String get statusOnline => 'online';
-
-  @override
   String get lastSeenJustNow => 'last seen just now';
 
   @override
@@ -802,9 +1052,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lastSeenLongAgo => 'last seen a long time ago';
-
-  @override
-  String get statusBot => 'bot';
 
   @override
   String get deletedAccount => 'Deleted account';
@@ -1590,6 +1837,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accentColor => 'Accent color';
 
   @override
+  String get accentViolet => 'Violet';
+
+  @override
   String get accentBlue => 'Blue';
 
   @override
@@ -1690,9 +1940,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get clearCacheMessage =>
       'Media stays in the Telegram cloud and downloads again when you open it.';
-
-  @override
-  String get clear => 'Clear';
 
   @override
   String get clearCacheFailed => 'Couldn\'t clear the cache.';
@@ -1994,12 +2241,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get linkCannotSend => 'Couldn\'t send the command.';
 
   @override
-  String get menuPin => 'Pin';
-
-  @override
-  String get menuUnpin => 'Unpin';
-
-  @override
   String get pinnedMessage => 'Pinned message';
 
   @override
@@ -2140,9 +2381,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String slowModeWait(String time) {
     return 'Slowmode is on, next message in $time';
   }
-
-  @override
-  String get chatActionFailed => 'Couldn\'t do that, try again';
 
   @override
   String get privacyExtras => 'Privacy extras';
@@ -2680,9 +2918,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get remove => 'Remove';
-
-  @override
-  String get leave => 'Leave';
 
   @override
   String get newGroup => 'New group';
@@ -4372,4 +4607,40 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String translateTo(String language) {
+    return 'Translate to $language';
+  }
+
+  @override
+  String translatedFrom(String language) {
+    return 'Translated from $language';
+  }
+
+  @override
+  String get translated => 'Translated';
+
+  @override
+  String get translating => 'Translating…';
+
+  @override
+  String get translateShowOriginal => 'Show original';
+
+  @override
+  String get translateOptions => 'Translation options';
+
+  @override
+  String get translateChooseLanguage => 'Translate to…';
+
+  @override
+  String translateSkipLanguage(String language) {
+    return 'Don\'t translate $language';
+  }
+
+  @override
+  String get translateHideBar => 'Hide';
+
+  @override
+  String get translateFailed => 'Couldn\'t translate some messages';
 }

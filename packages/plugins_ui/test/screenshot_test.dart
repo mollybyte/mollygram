@@ -40,7 +40,7 @@ void main() {
       name: 'light',
       dark: false,
       locale: 'en',
-      sel: 'dev.mollygram.translate',
+      sel: 'dev.mollygram.codehighlight',
       consent: false,
     ),
     (

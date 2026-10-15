@@ -7,6 +7,7 @@ import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../avatar/peer_avatar.dart';
 import '../home/workspace.dart';
 import '../session/providers.dart';
 import 'add_contact_form.dart';
@@ -569,7 +570,19 @@ class _PersonRow extends StatelessWidget {
             ),
             child: Row(
               children: [
-                MonogramAvatar(name: name, size: 32),
+                switch (row) {
+                  _Person(:final user) => PeerAvatar(
+                    name: name,
+                    size: 32,
+                    photo: user.photo,
+                  ),
+                  _PublicChat(:final chat) => PeerAvatar.chat(
+                    name: name,
+                    size: 32,
+                    photo: chat.photo,
+                  ),
+                  _Section() => MonogramAvatar(name: name, size: 32),
+                },
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(

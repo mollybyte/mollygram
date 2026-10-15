@@ -22,11 +22,6 @@ const _labels = ComposerLabels(
   send: 'Send',
 );
 
-const _folderAll = MgIconData(
-  'folderAll',
-  '<path d="M4 6h16M4 12h16M4 18h16"/>',
-);
-
 /// The main window from design/Main.dc.html, built from the kit.
 class _Window extends StatelessWidget {
   const _Window({this.blur = true});
@@ -39,133 +34,104 @@ class _Window extends StatelessWidget {
       blur: blur,
       child: Stack(
         children: [
-          const Positioned.fill(child: Wallpaper()),
+          Positioned.fill(child: ColoredBox(color: MgColors.of(context).frame)),
           Positioned(
-            left: SidebarIsland.width + 16,
-            right: 0,
-            top: 0,
-            bottom: 0,
-            child: Stack(
-              children: [
-                Positioned.fill(
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(24, 72, 24, 88),
-                    children: const [
-                      DatePill('Today'),
-                      _Row(
-                        out: false,
-                        child: TextMessageBubble(
-                          text: 'Did the new build land on your Mac?',
+            left: SidebarIsland.width,
+            right: SidebarIsland.topInset,
+            top: SidebarIsland.topInset,
+            bottom: SidebarIsland.topInset,
+            child: ChatCard(
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: ListView(
+                      padding: const EdgeInsets.fromLTRB(28, 70, 28, 64),
+                      children: const [
+                        DatePill('Today'),
+                        _Flat(
+                          name: 'Anna Petrova',
                           time: '21:04',
-                          outgoing: false,
+                          lines: ['Did the new build land on your Mac?'],
                         ),
-                      ),
-                      _Row(
-                        out: true,
-                        child: TextMessageBubble(
-                          text: 'Yes, it opens instantly now',
+                        _Flat(
+                          name: 'You',
                           time: '21:10',
-                          outgoing: true,
-                          status: MessageStatus.read,
+                          lines: [
+                            'Yes, it opens instantly now',
+                            'and the list keeps up while it scrolls',
+                          ],
                         ),
-                      ),
-                      _Row(
-                        out: true,
-                        child: TextMessageBubble(
-                          text: 'wrong chat',
-                          time: '21:11',
-                          outgoing: true,
-                          status: MessageStatus.sent,
-                          label: 'deleted',
-                          dimmed: true,
-                        ),
-                      ),
-                      _Row(
-                        out: false,
-                        child: TextMessageBubble(
-                          text:
-                              'A longer message that wraps onto a second line '
-                              'so the time has to sit next to its last word.',
+                        _Flat(
+                          name: 'Anna Petrova',
                           time: '21:12',
-                          outgoing: false,
-                          label: 'edited',
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Positioned(
-                  top: 10,
-                  left: 14,
-                  right: 14,
-                  child: ChatHeaderBar(
-                    title: const ChatTitleCapsule(
-                      title: 'Anna Petrova',
-                      subtitle: 'online',
-                    ),
-                    actions: ChatActionsCapsule(
-                      children: [
-                        MgIconButton(
-                          icon: MgIcons.search,
-                          tooltip: 'Search in chat',
-                          onPressed: () {},
-                        ),
-                        MgIconButton(
-                          icon: MgIcons.call,
-                          tooltip: 'Call',
-                          onPressed: () {},
-                        ),
-                        MgIconButton(
-                          icon: MgIcons.ghost,
-                          tooltip: 'Ghost mode',
-                          selected: true,
-                          onPressed: () {},
-                        ),
-                        MgIconButton(
-                          icon: MgIcons.panel,
-                          tooltip: 'Chat info',
-                          onPressed: () {},
+                          lines: [
+                            'A longer message that wraps onto a second line '
+                                'so the reader sees how text flows in the card.',
+                          ],
                         ),
                       ],
                     ),
                   ),
-                ),
-                const Positioned(
-                  left: 24,
-                  right: 24,
-                  bottom: 12,
-                  child: Composer(labels: _labels),
-                ),
-              ],
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: ChatHeaderBar(
+                      title: const ChatTitleCapsule(
+                        title: 'Anna Petrova',
+                        subtitle: 'online',
+                        subtitleAccent: true,
+                      ),
+                      actions: ChatActionsCapsule(
+                        children: [
+                          MgIconButton(
+                            icon: MgIcons.search,
+                            tooltip: 'Search in chat',
+                            onPressed: () {},
+                          ),
+                          MgIconButton(
+                            icon: MgIcons.call,
+                            tooltip: 'Call',
+                            onPressed: () {},
+                          ),
+                          MgIconButton(
+                            icon: MgIcons.ghost,
+                            tooltip: 'Ghost mode',
+                            selected: true,
+                            onPressed: () {},
+                          ),
+                          MgIconButton(
+                            icon: MgIcons.panel,
+                            tooltip: 'Chat info',
+                            onPressed: () {},
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: Composer(labels: _labels),
+                  ),
+                ],
+              ),
             ),
           ),
           Positioned(
-            left: 8,
-            top: 8,
-            bottom: 8,
+            left: 0,
+            top: 0,
+            bottom: 0,
             width: SidebarIsland.width,
             child: SidebarIsland(
-              rail: FolderRail(
-                trailing: [
-                  MgIconButton(
-                    icon: MgIcons.settings,
-                    tooltip: 'Settings',
-                    onPressed: () {},
-                  ),
-                ],
-                children: const [
-                  FolderRailItem(
-                    icon: _folderAll,
-                    label: 'All',
-                    selected: true,
-                  ),
-                  FolderRailItem(
-                    icon: MgIcons.chat,
-                    label: 'Personal',
-                    count: 2,
-                  ),
-                  FolderRailItem(icon: MgIcons.file, label: 'Work', count: 3),
-                  FolderRailItem(icon: MgIcons.volume, label: 'Channels'),
+              folders: const FolderSegments(
+                selected: 0,
+                segments: [
+                  FolderSegment(label: 'All'),
+                  FolderSegment(label: 'Personal', count: 2),
+                  FolderSegment(label: 'Work', count: 3),
+                  FolderSegment(label: 'Channels'),
                 ],
               ),
               actions: [
@@ -181,26 +147,60 @@ class _Window extends StatelessWidget {
                 children: const [
                   ChatListTile(
                     title: 'Anna Petrova',
-                    subtitle: 'Yes, it opens instantly now',
+                    sender: 'You',
+                    subtitle:
+                        'yes, it opens instantly now, and the '
+                        'list keeps up while it scrolls',
                     time: '21:10',
+                    status: MessageStatus.read,
                     selected: true,
-                    unread: 1,
+                    online: true,
+                    pinned: true,
                   ),
                   ChatListTile(
                     title: 'Design',
-                    subtitle: 'Mark: pushed the new icons',
+                    subtitle: 'pushed the new icons',
+                    kind: ChatRowKind.group,
+                    sender: 'Mark',
+                    senderAvatar: MonogramAvatar(name: 'Mark', size: 15),
                     time: '20:41',
                     unread: 12,
+                    mentions: true,
+                    pinned: true,
+                  ),
+                  ChatListTile(
+                    title: 'Mark',
+                    subtitle: '',
+                    activity: 'typing',
+                    time: '20:30',
+                    online: true,
+                    reactions: true,
                   ),
                   ChatListTile(
                     title: 'Flutter Desktop',
-                    subtitle: 'Release notes are out',
+                    kind: ChatRowKind.channel,
+                    subtitle:
+                        'Release notes are out: what is new in the desktop '
+                        'embedder this month',
+                    verified: true,
                     time: '18:02',
                     unread: 1234,
                     unreadLabel: '1.2K',
                     muted: true,
                   ),
-                  ChatListTile(title: 'Ilya', subtitle: 'ok', time: 'Mon'),
+                  ChatListTile(
+                    title: 'Vera',
+                    subtitle: 'Photo',
+                    time: 'Tue',
+                    secret: true,
+                    markedUnread: true,
+                  ),
+                  ChatListTile(
+                    title: 'Ilya',
+                    subtitle: 'ok',
+                    time: 'Mon',
+                    status: MessageStatus.sent,
+                  ),
                 ],
               ),
             ),
@@ -211,20 +211,46 @@ class _Window extends StatelessWidget {
   }
 }
 
-class _Row extends StatelessWidget {
-  const _Row({required this.out, required this.child});
+/// A flat message run as the app's timeline draws it.
+class _Flat extends StatelessWidget {
+  const _Flat({required this.name, required this.time, required this.lines});
 
-  final bool out;
-  final Widget child;
+  final String name;
+  final String time;
+  final List<String> lines;
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(top: 6, bottom: 4),
-    child: Align(
-      alignment: out ? Alignment.centerRight : Alignment.centerLeft,
-      child: child,
-    ),
-  );
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          MonogramAvatar(name: name, size: 32),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: mgTextStyle(c, weight: FontWeight.w600, height: 1.35),
+                ),
+                for (final line in lines)
+                  Text(line, style: mgTextStyle(c, size: 14, height: 1.5)),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Padding(
+            padding: const EdgeInsets.only(top: 1),
+            child: Text(time, style: MessageMeta.styleOf(c)),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 Future<void> _shoot(

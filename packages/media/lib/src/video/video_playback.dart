@@ -84,20 +84,34 @@ final class VideoPlayback {
   final _subscriptions = <StreamSubscription<Object?>>[];
   var _disposed = false;
 
+  /// The command in flight, so that [dispose] waits for it: libmpv crashes
+  /// in its core thread when the player is destroyed while `open` is still
+  /// setting up the file and its property observers.
+  Future<void> _busy = Future<void>.value();
+
   ValueListenable<VideoPlaybackState> get state => _state;
 
   void _update(VideoPlaybackState value) {
     if (!_disposed) _state.value = value;
   }
 
-  Future<void> open(String path, {bool autoplay = true}) async {
+  /// Runs [command] after the previous one; errors stay with the caller.
+  Future<void> _run(Future<void> Function() command) {
+    if (_disposed) return Future<void>.value();
+    final next = _busy.catchError((Object _) {}).then((_) => command());
+    _busy = next.catchError((Object _) {});
+    return next;
+  }
+
+  Future<void> open(String path, {bool autoplay = true}) => _run(() async {
     final current = _state.value;
     await _player.setPlaylistMode(
       current.loop ? PlaylistMode.single : PlaylistMode.none,
     );
     await _player.setVolume(current.volume * 100);
+    if (_disposed) return;
     await _player.open(Media(Uri.file(path).toString()), play: autoplay);
-  }
+  });
 
   Future<void> playOrPause() async {
     final current = _state.value;
@@ -140,11 +154,15 @@ final class VideoPlayback {
   }
 
   Future<void> dispose() async {
+    if (_disposed) return;
     _disposed = true;
     for (final subscription in _subscriptions) {
       await subscription.cancel();
     }
     _state.dispose();
+    // An `open` still running must finish before the player goes away; a
+    // timeout would not cancel it, only bring the crash back.
+    await _busy;
     await _player.dispose();
   }
 }

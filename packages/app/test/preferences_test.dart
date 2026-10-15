@@ -119,6 +119,32 @@ void main() {
       );
     });
 
+    test('keeps the translation choices', () {
+      final preferences = const Preferences().copyWith(
+        translateTo: 'de',
+        translateSkip: {'uk', 'be'},
+        translateChats: {7, 9},
+        translateHidden: {11},
+      );
+      final restored = Preferences.fromJson(preferences.toJson());
+      expect(restored.translateTo, 'de');
+      expect(restored.translateSkip, {'uk', 'be'});
+      expect(restored.translateChats, {7, 9});
+      expect(restored.translateHidden, {11});
+
+      final defaults = Preferences.fromJson(const Preferences().toJson());
+      expect(defaults.translateTo, isNull);
+      expect(defaults.translateSkip, isEmpty);
+      expect(defaults.translateChats, isEmpty);
+      expect(
+        Preferences.fromJson({
+          'translateTo': 3,
+          'translateChats': ['x', 5],
+        }).translateChats,
+        {5},
+      );
+    });
+
     test('falls back to defaults for missing or unknown values', () {
       final restored = Preferences.fromJson({
         'theme': 'sepia',
@@ -129,7 +155,7 @@ void main() {
         },
       });
       expect(restored.theme, ThemeMode.system);
-      expect(restored.accent, AccentChoice.blue);
+      expect(restored.accent, AccentChoice.violet);
       expect(restored.wallpaper, isTrue);
       expect(restored.textSize, Preferences.maxTextSize);
       expect(
@@ -137,7 +163,21 @@ void main() {
         const AutoDownload(wifi: false, other: true),
       );
       expect(Preferences.fromJson(null).textSize, 13);
-      expect(Preferences.fromJson('broken').accent, AccentChoice.blue);
+      expect(Preferences.fromJson('broken').accent, AccentChoice.violet);
+    });
+
+    test('moves the old default blue to violet once, then keeps a '
+        'chosen blue', () {
+      expect(
+        Preferences.fromJson({'accent': 'blue'}).accent,
+        AccentChoice.violet,
+      );
+      final chosen = const Preferences().copyWith(accent: AccentChoice.blue);
+      expect(Preferences.fromJson(chosen.toJson()).accent, AccentChoice.blue);
+      expect(
+        Preferences.fromJson({'accent': 'teal'}).accent,
+        AccentChoice.teal,
+      );
     });
 
     test('keeps the text size within 12 to 17', () {

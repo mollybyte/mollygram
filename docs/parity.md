@@ -37,10 +37,10 @@ M8 calls and macOS release, M9 after release.
 | Chat list with last message, time, unread count, muted state | done | `ChatListTile`, `ChatListStore` | | |
 | Folder tabs | done | Read-only tabs from `UpdateChatFolders` | | |
 | Paging the chat list | done | `loadMore` | | |
-| Chat list context menu: pin, mute, archive, mark read/unread, clear, delete, leave | missing | `ToggleChatIsPinned`, `SetChatNotificationSettings`, `AddChatToList`, `ToggleChatIsMarkedAsUnread` | M | M1 |
-| Archive folder entry and archive view | partial | `ChatListLocation.archive` exists, no UI entry | S | M1 |
-| Unread mention and reaction badges in the list | missing | `unreadMentionCount`, `unreadReactionCount` | S | M1 |
-| Typing and online dot in the list | missing | `UpdateChatAction`, `UpdateUserStatus` | S | M1 |
+| Chat list context menu: pin, mute, archive, mark read/unread, clear, delete, leave | done | `chat_menu.dart`; mute for 1 h, 8 h, 3 days or forever. Missing: mute until a date, sound picker, add to folder, preview | | |
+| Archive folder entry and archive view | done | Archive row on top of All, "Mark all as read". Missing: collapsing or hiding the row | | |
+| Unread mention and reaction badges in the list | done | Plus marked-as-unread, muted gray badge, pin icon, secret chat lock | | |
+| Typing and online dot in the list | done | `PresenceController` | | |
 | Draft preview in the list ("Draft: …") | partial | `UpdateChatDraftMessage` is stored, not shown | S | M1 |
 | Pinned chats order with drag | missing | `SetPinnedChats` | S | M6 |
 | Folder editor: create, edit, delete, reorder, include/exclude, recommended | done | Settings > Chat folders: drag reorder, editor sheet with icon, chat types and a chat picker, delete with chats to leave, recommended folders; `ChatFoldersController` in core. No pinning inside a folder or "All chats" position yet | | M6 |
@@ -63,7 +63,7 @@ M8 calls and macOS release, M9 after release.
 | Jump to a replied message and back | done | Jump with a highlight; the down button returns to where the user was | | |
 | Date headers and sticky date | done | Date pills, and the top row's date floats while scrolling | | |
 | Jump to date (calendar) | done | Click a date pill: calendar, `getChatMessageByDate`; no media calendar | M | M2 |
-| Header status: online, last seen, members, typing | done (#40) | | S | M1 |
+| Header status: online, last seen, members, typing | done | `chat_status.dart`; online count shows for open groups | | |
 | Join and mute buttons for channels and groups you are not in | done | Join in place of the composer; Mute and Unmute in channels you only read | | |
 | Open `t.me` and `tg://` links, usernames, hashtags, bot commands | done | `links/`: links, mentions and mentions by name, invites, `tg://user?id=`, `t.me/s/` previews, message links jump to the message; hashtags open the ⌘K message search, bot commands are sent to the chat | | |
 | Link previews in messages | done | Site name, title, description and picture, large or as a thumbnail, opening the link; the draft's preview above the composer can go above the text or be dropped | M | M1 |
@@ -79,7 +79,7 @@ M8 calls and macOS release, M9 after release.
 | Checklists (todo messages) | done | Title, tasks with accent boxes, struck-through done tasks with the avatar of who did them, a done count; a click marks a task done or not done when allowed | S | M9 |
 | Dice and slot animations | done | A dice message draws the sticker of its thrown value (the rolling one until the server picks it); the slot machine stacks its background, reels and lever | S | M9 |
 | Live location view | partial | Locations, venues and live locations show a map from `getMapThumbnailFile` with a pin (the sharer's avatar for a live one), the venue's name and address or the time left; a click opens Maps. No live map of several sharers | M | M2 |
-| Auto-translate and "Translate" in the menu | missing | Built-in Translate plugin planned | M | M5 |
+| Auto-translate and "Translate" in the menu | partial | A bar under the chat header offers "Translate to English" when the chat is in another language (detected on the device); a click translates the whole chat in place, a few messages at a time with Telegram's free per-message translation, and the bar becomes "Translated from Russian · Show original". The three dots choose the language, skip a language or hide the bar. No "Translate" item in the message menu or on selected text yet | M | M5 |
 | Voice message transcription | done | A button next to a voice message's time asks TDLib (`RecognizeSpeech`, Premium with free trials) and shows the transcript under the waveform, partial text while it runs, a quiet note on failure; a second click folds it | S | M9 |
 | Message effects and reaction animations | missing | | M | M9 |
 | Sponsored messages in channels | done | A channel's sponsored message (`getChatSponsoredMessages`) sits under the timeline as a flat card: sponsor photo and title, a "Sponsored" tag that explains itself, the text and the sponsor's button; shown once per visit, counted with `viewMessages` and `clickChatSponsoredMessage`. Required by Telegram's API terms | S | M2 |

@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mollygram/l10n/app_localizations.dart';
 import 'package:mollygram/src/chat/bot_keyboard.dart';
+import 'package:mollygram/src/chat/load_spinner.dart';
 import 'package:mollygram/src/chat/location_content.dart';
 import 'package:mollygram/src/chat/media_content.dart';
 import 'package:mollygram/src/chat/media_providers.dart';
@@ -94,7 +95,7 @@ void main() {
                 title: 'Team',
                 unreadCount: 0,
                 positions: const [],
-                isGroup: group,
+                type: group ? ChatType.supergroup : ChatType.private,
               ),
             ),
           ),
@@ -224,7 +225,7 @@ void main() {
     );
 
     // A little way up from the bottom, so there is somewhere to return.
-    await tester.drag(find.byType(TimelineView), const Offset(0, 120));
+    await tester.drag(find.byType(TimelineView), const Offset(0, 70));
     await tester.pumpAndSettle();
     await tester.tap(find.byType(ReplyHeader));
     await tester.runAsync(() => Future<void>.delayed(_tick));
@@ -1620,6 +1621,168 @@ void main() {
     expect(find.text('Menu'), findsOneWidget);
   });
 
+  testWidgets('opens the channel a message was forwarded from', (tester) async {
+    json.history = [
+      td.Message.fromJson({
+        ..._message(id: 14, senderId: 2, text: 'Fresh pizza today').toJson(),
+        'forward_info': {
+          '@type': 'messageForwardInfo',
+          'origin': {
+            '@type': 'messageOriginChannel',
+            'chat_id': 55,
+            'message_id': 77,
+            'author_signature': '',
+          },
+          'date': 1760000000,
+        },
+      }),
+      ..._history,
+    ];
+    json.push(_chat(lastRead: 14, unread: 0, last: 14));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await pump(tester);
+    await tester.pump();
+
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(ChatView)),
+    );
+    expect(container.read(messageJumpProvider), isEmpty);
+    // The name of the source is a link; the message itself is not.
+    // Both the sender and the source are unknown here; the link is the
+    // one that comes first in the tree.
+    final names = find
+        .text(
+          AppLocalizations.of(tester.element(find.byType(ChatView)))
+              .unknownSender,
+        )
+        .first;
+    await tester.tap(names);
+    await tester.pump();
+    expect(container.read(messageJumpProvider)[55]?.messageId, 77);
+    await tester.pump(const Duration(seconds: 1));
+  });
+
+  /// A chat whose incoming messages are in Russian.
+  List<td.Message> russianHistory() => [
+    _message(id: 13, senderId: 2, text: 'Привет, как дела у вас сегодня?'),
+    _message(id: 12, senderId: 2, text: 'Мы собираемся встретиться завтра'),
+    _message(id: 11, senderId: 2, text: 'Не забудьте взять с собой ключи'),
+    _message(
+      id: 10,
+      senderId: 1,
+      text: 'Спасибо большое за напоминание',
+      outgoing: true,
+    ),
+  ];
+
+  Future<void> openRussianChat(WidgetTester tester) async {
+    json.history = russianHistory();
+    json.push(_chat(lastRead: 13, unread: 0, last: 13));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await pump(tester);
+    await tester.pump();
+  }
+
+  Future<void> settleTranslation(WidgetTester tester) async {
+    for (var i = 0; i < 4; i++) {
+      await tester.runAsync(() => Future<void>.delayed(_tick));
+      await tester.pump();
+    }
+    await tester.pump(const Duration(seconds: 1));
+  }
+
+  testWidgets('translates the whole chat from the bar under the header', (
+    tester,
+  ) async {
+    await openRussianChat(tester);
+    expect(find.text('Translate to English'), findsOneWidget);
+    // Nothing is translated until asked, and no message offers a link.
+    expect(find.textContaining('Привет', findRichText: true), findsOneWidget);
+    expect(find.textContaining('Translate from'), findsNothing);
+    expect(
+      json.sent.where((r) => r['@type'] == 'translateMessageText'),
+      isEmpty,
+    );
+
+    await tester.tap(find.text('Translate to English'));
+    await settleTranslation(tester);
+    expect(find.text('Translated from Russian'), findsOneWidget);
+    expect(find.text('Show original'), findsOneWidget);
+    expect(
+      find.textContaining('Translated 13', findRichText: true),
+      findsOneWidget,
+    );
+    expect(find.textContaining('Привет', findRichText: true), findsNothing);
+    // The user's own message is left as written.
+    expect(find.textContaining('Спасибо', findRichText: true), findsOneWidget);
+    final asked = {
+      for (final r in json.sent.where(
+        (r) => r['@type'] == 'translateMessageText',
+      ))
+        r['message_id']: r['to_language_code'],
+    };
+    expect(asked, {13: 'en', 12: 'en', 11: 'en'});
+
+    await tester.tap(find.text('Show original'));
+    await settleTranslation(tester);
+    expect(find.textContaining('Привет', findRichText: true), findsOneWidget);
+    expect(find.text('Translate to English'), findsOneWidget);
+  });
+
+  testWidgets('hides the translation bar from its menu', (tester) async {
+    await openRussianChat(tester);
+    await tester.tap(find.byTooltip('Translation options'));
+    await tester.pumpAndSettle();
+    expect(find.text('Translate to…'), findsOneWidget);
+    expect(find.text("Don't translate Russian"), findsOneWidget);
+    await tester.tap(find.text('Hide'));
+    await tester.pumpAndSettle();
+    expect(find.text('Translate to English'), findsNothing);
+    await tester.pump(const Duration(seconds: 1));
+  });
+
+  testWidgets('stops offering a language the user does not want translated', (
+    tester,
+  ) async {
+    await openRussianChat(tester);
+    await tester.tap(find.byTooltip('Translation options'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text("Don't translate Russian"));
+    await tester.pumpAndSettle();
+    expect(find.text('Translate to English'), findsNothing);
+    await tester.pump(const Duration(seconds: 1));
+  });
+
+  testWidgets('makes room under the messages for a bot\'s keyboard', (
+    tester,
+  ) async {
+    json.history = [_replyKeyboardMessage(), ..._history];
+    json.push(_chat(lastRead: 13, unread: 0, last: 13, replyMarkup: 17));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await pump(tester);
+    await tester.pump();
+    TimelineView timeline() =>
+        tester.widget<TimelineView>(find.byType(TimelineView));
+    final keyboard = tester.getSize(find.byType(ReplyKeyboard));
+    expect(keyboard.height, greaterThan(60));
+    expect(
+      timeline().bottomInset,
+      TimelineView.composerInset + keyboard.height,
+    );
+    // The newest message sits above the keyboard, not under it.
+    final newest = tester.getBottomLeft(find.text('Mine'));
+    expect(
+      newest.dy,
+      lessThan(tester.getTopLeft(find.byType(ReplyKeyboard)).dy),
+    );
+
+    // Hidden, the keyboard gives the space back.
+    await tester.tap(find.byTooltip('Bot keyboard'));
+    await tester.pump();
+    expect(find.byType(ReplyKeyboard), findsNothing);
+    expect(timeline().bottomInset, TimelineView.composerInset);
+  });
+
   testWidgets('offers emoji for a :word and stickers for an emoji', (
     tester,
   ) async {
@@ -2900,6 +3063,43 @@ void main() {
     expect(find.text('Repro steps'), findsNothing);
   });
 
+  testWidgets('asks for the topics again when the first load fails', (
+    tester,
+  ) async {
+    json.failTopics = 1;
+    json.push(
+      _supergroup(98, {'@type': 'chatMemberStatusMember'}, forum: true),
+    );
+    json.push(
+      _chat(
+        lastRead: 60,
+        unread: 0,
+        last: 60,
+        type: {
+          '@type': 'chatTypeSupergroup',
+          'supergroup_id': 98,
+          'is_channel': false,
+        },
+      ),
+    );
+    await pump(tester);
+    for (var i = 0; i < 3; i++) {
+      await tester.runAsync(() => Future<void>.delayed(_tick));
+      await tester.pump();
+    }
+    expect(find.text('General'), findsNothing);
+    expect(find.byType(LoadSpinner), findsOneWidget);
+
+    await tester.pump(const Duration(seconds: 2));
+    for (var i = 0; i < 3; i++) {
+      await tester.runAsync(() => Future<void>.delayed(_tick));
+      await tester.pump();
+    }
+    expect(find.text('General'), findsOneWidget);
+    expect(find.text('Bugs'), findsOneWidget);
+    expect(json.sent.where((r) => r['@type'] == 'getForumTopics').length, 2);
+  });
+
   testWidgets('manages forum topics: closes one and starts a new one', (
     tester,
   ) async {
@@ -3248,6 +3448,9 @@ final class _FakeTdJson implements td.TdJson {
   final _queue = Queue<String>();
   final sent = <Map<String, Object?>>[];
   var failSend = false;
+
+  /// How many getForumTopics requests still fail before one succeeds.
+  var failTopics = 0;
   var history = _history;
 
   /// A whole chat from Boris with these ids, paged as TDLib does with
@@ -3542,6 +3745,11 @@ final class _FakeTdJson implements td.TdJson {
           'show_above_text': false,
           'instant_view_version': 0,
         },
+      'translateMessageText' => {
+        '@type': 'formattedText',
+        'text': 'Translated ${decoded['message_id']}',
+        'entities': <Object?>[],
+      },
       'getLinkPreview' => {
         '@type': 'error',
         'code': 404,
@@ -3656,6 +3864,11 @@ final class _FakeTdJson implements td.TdJson {
       'getWebAppUrl' => {
         '@type': 'webAppUrl',
         'url': 'https://shop.example/app',
+      },
+      'getForumTopics' when failTopics-- > 0 => {
+        '@type': 'error',
+        'code': 400,
+        'message': 'Chat not found',
       },
       'getForumTopics' => {
         '@type': 'forumTopics',

@@ -13,6 +13,10 @@ import 'preferences.dart';
 /// toned down where the system one is loud.
 ({Color light, Color dark}) accentColors(AccentChoice choice) =>
     switch (choice) {
+      AccentChoice.violet => (
+        light: const Color(0xFF6A4FD8),
+        dark: const Color(0xFFA792FF),
+      ),
       AccentChoice.blue => (
         light: MgColors.light.accent,
         dark: MgColors.dark.accent,
@@ -56,13 +60,23 @@ import 'preferences.dart';
   final dark = tint?.dark(MgColors.dark) ?? MgColors.dark;
   return (
     light: buildMgTheme(light.copyWith(accent: accent.light), metrics: metrics),
-    dark: buildMgTheme(dark.copyWith(accent: accent.dark), metrics: metrics),
+    dark: buildMgTheme(
+      dark.copyWith(
+        accent: accent.dark,
+        // The light violet of the dark theme is too pale under the white
+        // text of the selected row.
+        selection: preferences.accent == AccentChoice.violet
+            ? const Color(0xFF6E57D6)
+            : null,
+      ),
+      metrics: metrics,
+    ),
   );
 }
 
-/// One wallpaper's tint of the floating layer and the text: the glass fill
-/// and rim, the secondary and muted text, so they sit on that wallpaper
-/// instead of on the classic one.
+/// One wallpaper's tint of the window and the text: the window frame and
+/// the chat card, the glass fill and rim, the secondary and muted text, so
+/// they carry that wallpaper's hue instead of the classic one.
 typedef SurfaceTint = ({
   MgColors Function(MgColors) light,
   MgColors Function(MgColors) dark,
@@ -71,27 +85,42 @@ typedef SurfaceTint = ({
 /// How [preset] tints the surfaces, or null for the gradients that keep
 /// the classic tokens.
 ///
-/// The three tinted presets come from the colours canvas: Mist is a cool
-/// grey-blue with whitish glass, Sage the Telegram gradient at about half
-/// its saturation, Linen a warm paper neutral.
+/// The three tinted presets come from the colours canvas: Mist is the
+/// Stage window's own soft lavender (frame, text and avatars as on the
+/// fresh-directions canvas), Sage the Telegram gradient at about half its
+/// saturation, Linen a warm paper neutral.
 SurfaceTint? surfaceTint(WallpaperPreset preset) => switch (preset) {
   WallpaperPreset.mist => (
     light: (c) => c.copyWith(
-      fg2: const Color(0xFF5F6B7A),
-      muted: const Color(0xFF8E99A8),
-      glass: const Color(0x80FAFCFF),
-      glassSolid: const Color(0xF0F4F7FA),
+      fg: const Color(0xFF1C1A22),
+      fg2: const Color(0xFF6B6676),
+      muted: const Color(0xFFA39EAD),
+      separator: const Color(0x141C1A22),
+      hover: const Color(0x0F1C1A22),
+      field: const Color(0x0F1C1A22),
+      avatarTop: const Color(0xFFCFC8DC),
+      avatarBottom: const Color(0xFFA79EB8),
+      glass: const Color(0x80FBFAFD),
+      glassSolid: const Color(0xF0F6F4F9),
       rim: const Color(0xD9FFFFFF),
-      field: const Color(0x0F142846),
-      shadow: const Color(0x261E2A3A),
+      shadow: const Color(0x1A281450),
+      frame: const Color(0xFFE7E3EE),
     ),
     dark: (c) => c.copyWith(
-      fg2: const Color(0xFF97A3B0),
-      muted: const Color(0xFF687482),
-      glass: const Color(0x801E242C),
-      glassSolid: const Color(0xF0222830),
+      fg: const Color(0xFFEEEAF5),
+      fg2: const Color(0xFFA49FB0),
+      muted: const Color(0xFF6C6778),
+      separator: const Color(0x14EEEAF5),
+      hover: const Color(0x0FEEEAF5),
+      field: const Color(0x0FEEEAF5),
+      avatarTop: const Color(0xFF5B5468),
+      avatarBottom: const Color(0xFF433D4F),
+      glass: const Color(0x80262330),
+      glassSolid: const Color(0xF0262330),
       rim: const Color(0x1AFFFFFF),
       highlight: const Color(0x24FFFFFF),
+      frame: const Color(0xFF1E1B25),
+      card: const Color(0xFF2A2733),
     ),
   ),
   WallpaperPreset.sage => (
@@ -102,6 +131,7 @@ SurfaceTint? surfaceTint(WallpaperPreset preset) => switch (preset) {
       glassSolid: const Color(0xF0F5F7F2),
       rim: const Color(0xCCFFFFFF),
       shadow: const Color(0x26202A1A),
+      frame: const Color(0xFFE1E6DE),
     ),
     dark: (c) => c.copyWith(
       fg2: const Color(0xFF9AA6A8),
@@ -110,6 +140,8 @@ SurfaceTint? surfaceTint(WallpaperPreset preset) => switch (preset) {
       glassSolid: const Color(0xF0222A2E),
       rim: const Color(0x1CFFFFFF),
       highlight: const Color(0x26FFFFFF),
+      frame: const Color(0xFF192023),
+      card: const Color(0xFF22292D),
     ),
   ),
   WallpaperPreset.linen => (
@@ -121,6 +153,8 @@ SurfaceTint? surfaceTint(WallpaperPreset preset) => switch (preset) {
       rim: const Color(0xD9FFFFFF),
       field: const Color(0x0F3C2D14),
       shadow: const Color(0x262A2014),
+      frame: const Color(0xFFECE7E0),
+      card: const Color(0xFFFFFEFB),
     ),
     dark: (c) => c.copyWith(
       fg2: const Color(0xFFA39C92),
@@ -129,6 +163,8 @@ SurfaceTint? surfaceTint(WallpaperPreset preset) => switch (preset) {
       glassSolid: const Color(0xF02A2622),
       rim: const Color(0x1AFFFFFF),
       highlight: const Color(0x21FFFFFF),
+      frame: const Color(0xFF201D1A),
+      card: const Color(0xFF2A2623),
     ),
   ),
   _ => null,
@@ -340,10 +376,11 @@ class ReduceMotionScope extends ConsumerWidget {
 Color plainChatBackground(MgColors c) =>
     c.isDark ? const Color(0xFF17181A) : const Color(0xFFECEDEF);
 
-/// Behind the chats: the chosen gradient, a plain color or the user's
-/// picture, cross-faded when the choice changes.
-class ChatBackground extends ConsumerWidget {
-  const ChatBackground({super.key});
+/// Under a chat on its card: the user's own picture when they chose one;
+/// otherwise nothing, and the card's solid colour shows. Gradients tint
+/// the window frame instead (see [surfaceTint]).
+class ChatCardBackground extends ConsumerWidget {
+  const ChatCardBackground({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -351,34 +388,23 @@ class ChatBackground extends ConsumerWidget {
       preferencesProvider.select(
         (p) => (
           kind: p.wallpaperKind,
-          preset: p.wallpaperPreset,
           image: p.wallpaperImage,
           blur: p.wallpaperBlur,
         ),
       ),
     );
-    final c = MgColors.of(context);
-    final child = switch (p.kind) {
-      WallpaperKind.plain => ColoredBox(
-        key: const ValueKey('plain'),
-        color: plainChatBackground(c),
-        child: const SizedBox.expand(),
-      ),
-      WallpaperKind.image when p.image != null => WallpaperImage(
-        key: ValueKey('image:${p.image}:${p.blur}'),
-        path: p.image!,
-        blur: p.blur,
-      ),
-      _ => GradientWallpaper(
-        key: ValueKey('gradient:${p.preset.name}'),
-        preset: p.preset,
-      ),
-    };
+    final image = p.image;
     return AnimatedSwitcher(
       duration: MediaQuery.disableAnimationsOf(context)
           ? Duration.zero
           : const Duration(milliseconds: 260),
-      child: child,
+      child: p.kind == WallpaperKind.image && image != null
+          ? WallpaperImage(
+              key: ValueKey('image:$image:${p.blur}'),
+              path: image,
+              blur: p.blur,
+            )
+          : const SizedBox.expand(key: ValueKey('none')),
     );
   }
 }

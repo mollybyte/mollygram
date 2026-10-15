@@ -16,6 +16,7 @@ import '../plugins/message_hooks.dart';
 import '../settings/stickers/sticker_options.dart';
 import '../settings/stickers/sticker_set_sheet.dart';
 import 'bot_keyboard.dart';
+import 'chat_translation.dart';
 import 'concealed.dart';
 import 'custom_emoji.dart';
 import 'describe.dart';
@@ -133,6 +134,7 @@ class MessageRowActions {
     this.onChecklistToggle,
     this.onInlineButton,
     this.onComments,
+    this.onOpenForwardSource,
   });
 
   /// Adds the reaction, or takes it back when the user had chosen it.
@@ -195,6 +197,10 @@ class MessageRowActions {
 
   /// A click on the comments row under a channel post, which opens them.
   final void Function(ConversationMessage message)? onComments;
+
+  /// A click on the name a forward came from, which opens that channel, at
+  /// the original post when it is known, or that person's profile.
+  final void Function(td.MessageOrigin origin)? onOpenForwardSource;
 }
 
 /// A message, or an album, in Telegram's flat layout: no bubbles, the
@@ -215,8 +221,8 @@ class MessageTile extends StatelessWidget {
   final MessageRowActions actions;
 
   /// The avatar column and the gap after it.
-  static const double avatarSize = 36;
-  static const double contentIndent = avatarSize + 10;
+  static const double avatarSize = 32;
+  static const double contentIndent = avatarSize + 12;
 
   MessageStatus get _status {
     final message = row.primary;
@@ -383,6 +389,11 @@ class MessageTile extends StatelessWidget {
         source: forwardOriginName(l10n, store, forward.origin),
         date: formatChatTime(forward.date, locale),
         color: source == null ? null : peerNameColor(c, store.colorOf(source)),
+        onSourceTap:
+            actions.onOpenForwardSource == null ||
+                forward.origin is td.MessageOriginHiddenUser
+            ? null
+            : () => actions.onOpenForwardSource!(forward.origin),
         child: content,
       );
     }
@@ -408,7 +419,7 @@ class MessageTile extends StatelessWidget {
                   )
                 : null,
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -422,8 +433,7 @@ class MessageTile extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: mgTextStyle(
                         c,
-                        weight: MgWeight.medium,
-                        color: peerNameColor(c, store.colorOf(message.sender)),
+                        weight: FontWeight.w600,
                         height: 1.35,
                       ),
                     ),
@@ -438,7 +448,11 @@ class MessageTile extends StatelessWidget {
                       ),
                     ),
                   ),
-                content,
+                // Message text reads at 14 on 21 px lines.
+                DefaultTextStyle.merge(
+                  style: const TextStyle(fontSize: 14, height: 1.5),
+                  child: content,
+                ),
               ],
             ),
           ),
@@ -588,17 +602,22 @@ class _MessageBody extends StatelessWidget {
   ConversationMessage get message => row.primary;
 
   /// The text of [of] reports its selection for a quote.
-  FormattedTextView _text(td.FormattedText text, {ConversationMessage? of}) {
+  Widget _text(td.FormattedText text, {ConversationMessage? of}) {
     final onTextSelected = actions.onTextSelected;
     final owner = of ?? message;
-    // Bot commands in it go to this chat, meant for the bot that sent it.
-    return FormattedTextView(
+    // The chat may be shown translated; the text is then the translation.
+    return TranslatedText(
+      message: owner,
       text: text,
-      chatId: owner.chatId,
-      senderUserId: owner.sender.isChat ? null : owner.sender.id,
-      onSelection: onTextSelected == null
-          ? null
-          : (quote) => onTextSelected(owner, quote),
+      // Bot commands in it go to this chat, meant for the bot that sent it.
+      builder: (shown) => FormattedTextView(
+        text: shown,
+        chatId: owner.chatId,
+        senderUserId: owner.sender.isChat ? null : owner.sender.id,
+        onSelection: onTextSelected == null
+            ? null
+            : (quote) => onTextSelected(owner, quote),
+      ),
     );
   }
 

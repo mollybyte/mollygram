@@ -71,16 +71,17 @@ class _EmojiPanelState extends State<EmojiPanel> {
               children: [
                 Padding(
                   padding: const EdgeInsets.only(top: 8, bottom: 4),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      for (final (i, label) in widget.tabs.indexed)
-                        FolderTab(
-                          label: label,
-                          selected: i == _tab,
-                          onTap: () => setState(() => _tab = i),
-                        ),
-                    ],
+                  child: Center(
+                    child: FolderSegments(
+                      selected: _tab,
+                      segments: [
+                        for (final (i, label) in widget.tabs.indexed)
+                          FolderSegment(
+                            label: label,
+                            onTap: () => setState(() => _tab = i),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
                 Expanded(

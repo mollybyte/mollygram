@@ -43,19 +43,18 @@ void main() {
     expect(find.text('Available'), findsOneWidget);
     // The selected plugin's name also shows as the pane title.
     expect(find.text('Filters'), findsNWidgets(2));
-    expect(find.text('Translate'), findsOneWidget);
+    expect(find.text('Code highlighting'), findsOneWidget);
     expect(find.text('Link cards'), findsOneWidget);
     // Quiet hours is installed but turned off.
     expect(find.text('off'), findsOneWidget);
   });
 
   testWidgets('built-in plugin: access, options, no uninstall', (tester) async {
-    await pumpScreen(tester, selected: 'dev.mollygram.translate');
+    await pumpScreen(tester, selected: 'dev.mollygram.filters');
     expect(find.text('Built-in plugin · 1.0.0'), findsOneWidget);
     expect(find.text('All messages'), findsOneWidget);
-    expect(find.text('Up to 2 MB'), findsOneWidget);
-    expect(find.text('Translate automatically'), findsOneWidget);
-    expect(find.text('App language'), findsOneWidget);
+    expect(find.text('Filter advertising'), findsOneWidget);
+    expect(find.text('Collapse'), findsOneWidget);
     expect(find.text('Uninstall plugin…'), findsNothing);
   });
 
@@ -170,7 +169,7 @@ void main() {
     await pumpScreen(tester, locale: 'ru', selected: 'dev.mollygram.filters');
     expect(find.text('Установленные'), findsOneWidget);
     expect(find.text('Фильтры'), findsNWidgets(2));
-    expect(find.text('Перевод'), findsOneWidget);
+    expect(find.text('Подсветка кода'), findsOneWidget);
     expect(find.text('Встроенный плагин · 1.0.0'), findsOneWidget);
     expect(find.text('Все сообщения'), findsOneWidget);
     expect(find.text('Фильтровать рекламу'), findsOneWidget);

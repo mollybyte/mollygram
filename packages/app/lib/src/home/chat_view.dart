@@ -17,9 +17,11 @@ import 'package:pasteboard/pasteboard.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../avatar/peer_avatar.dart';
 import '../chat/attachment_preview.dart';
 import '../chat/audio_player_bar.dart';
 import '../chat/bot_keyboard.dart';
+import '../chat/chat_translation.dart';
 import '../chat/contact_picker.dart';
 import '../chat/custom_emoji.dart';
 import '../chat/describe.dart';
@@ -30,7 +32,9 @@ import '../chat/forum_topics.dart';
 import '../chat/forward_picker.dart';
 import '../chat/inline_results.dart';
 import '../chat/link_preview_bar.dart';
+import '../chat/load_spinner.dart';
 import '../chat/location_picker.dart';
+import '../chat/measured.dart';
 import '../chat/media_viewer.dart';
 import '../chat/message_actions.dart';
 import '../chat/message_tile.dart';
@@ -47,6 +51,7 @@ import '../chat/timeline.dart';
 import '../chat/timeline_scroll.dart';
 import '../chat/timeline_view.dart';
 import '../chat/topic_sheet.dart';
+import '../chat/translate_bar.dart';
 import '../chat_search/chat_search_bar.dart';
 import '../chat_search/sender_picker.dart';
 import '../compose/command_suggester.dart';
@@ -59,10 +64,13 @@ import '../links/link_router.dart';
 import '../profile/peer_info_state.dart';
 import '../secret/secret_chat.dart';
 import '../session/providers.dart';
+import '../settings/preferences.dart';
 import '../shared_media/message_jump.dart';
 import '../voice/voice_record_composer.dart';
 import '../window_drag_area.dart';
+import 'chat_status.dart';
 import 'format.dart';
+import 'workspace.dart';
 
 /// One conversation: messages scroll under the floating header and
 /// composer.
@@ -169,6 +177,14 @@ class _ChatViewState extends ConsumerState<ChatView> {
   static final _pinnedHidden = <int>{};
   var _pinnedShown = false;
 
+  /// The chat's translation, shown in place of its messages' text while
+  /// the user has it on, and whether its bar is under the header.
+  late final _translation = ChatTranslation(
+    (chatId, messageId, to) =>
+        _conversations.translateFormatted(chatId, messageId, to),
+  )..onFailure = _translateFailed;
+  var _translateShown = false;
+
   /// The timeline shows only the pinned messages, from the bar's button.
   var _pinnedListOpen = false;
 
@@ -191,6 +207,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
   ForumTopicList? _topics;
   StreamSubscription<void>? _topicsSub;
   var _topicsOpening = false;
+
+  /// Set after a failed load of the topics, to try again shortly.
+  Timer? _topicsRetry;
 
   /// Saved Messages shown as the chats they came from, while the list
   /// button in the capsule is on.
@@ -276,6 +295,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _close(old.chatId);
     _dropTopics();
     _dropSavedTopics();
+    _translation.reset();
     _sponsored = null;
     _sponsoredAsked = false;
     _viewed.clear();
@@ -330,6 +350,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _close(widget.chatId);
     _dropTopics();
     _dropSavedTopics();
+    _translation.dispose();
     _deletedSub?.cancel();
     _mentions.dispose();
     _emojiHints.dispose();
@@ -378,10 +399,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
       return;
     }
     final viewport = _scroll.position.viewportDimension;
-    final hit = TimelineView.rowAt(
-      _timelineKey,
-      viewport - TimelineView.bottomInset - 4,
-    );
+    final hit = TimelineView.rowAt(_timelineKey, viewport - _bottomInset - 4);
     if (hit == null) return;
     _positions[chatId] = hit.messageId;
   }
@@ -401,7 +419,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     }
     _scroll
       ..pinned = false
-      ..request((_) => -(TimelineView.bottomInset + 4));
+      ..request((_) => -(_bottomInset + 4));
     setState(() => _anchor = id);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && widget.chatId == chatId) _followScroll();
@@ -593,6 +611,133 @@ class _ChatViewState extends ConsumerState<ChatView> {
 
   /// The bar under the header, when the chat has pinned messages and the
   /// user hasn't closed it.
+  /// The room the translation bar takes under the header.
+  double get _translateInset =>
+      _translateShown ? ChatTranslateBar.height + 8 : 0;
+
+  void _translateFailed() {
+    if (mounted) {
+      showMgToast(context, AppLocalizations.of(context).translateFailed);
+    }
+  }
+
+  /// The bar that translates the whole chat: offered when the chat is in
+  /// another language than the one the user reads, and, once it is on,
+  /// the way back to the original. Sets [_translateShown], which the
+  /// timeline's inset follows.
+  Widget? _translateBar(
+    AppLocalizations l10n,
+    List<ConversationMessage>? list,
+  ) {
+    final chatId = widget.chatId;
+    final choice = ref.watch(
+      preferencesProvider.select(
+        (p) => (
+          p.translateTo,
+          p.translateSkip,
+          p.translateChats.contains(chatId),
+          p.translateHidden.contains(chatId),
+        ),
+      ),
+    );
+    final locale = Localizations.localeOf(context).languageCode;
+    final to = choice.$1 ?? locale;
+    final (_, skip, active, hidden) = choice;
+    _translation.configure(to: to, skip: skip, active: active);
+    _translateShown = false;
+    if (list == null || _listOpen) return null;
+    final detected = _translation.chatLanguage(list);
+    final source = active ? _translation.language : detected;
+    if (!active &&
+        (hidden || source == null || source == to || skip.contains(source))) {
+      return null;
+    }
+    _translateShown = true;
+    final state = !active
+        ? TranslateBarState.offer
+        : _translation.working
+        ? TranslateBarState.working
+        : TranslateBarState.shown;
+    return ChatTranslateBar(
+      key: const ValueKey('translateBar'),
+      state: state,
+      primary: switch (state) {
+        TranslateBarState.offer => l10n.translateTo(languageName(to, locale)),
+        TranslateBarState.working => l10n.translating,
+        TranslateBarState.shown => l10n.translateShowOriginal,
+      },
+      secondary: state == TranslateBarState.shown
+          ? source == null
+                ? l10n.translated
+                : l10n.translatedFrom(languageName(source, locale, from: true))
+          : null,
+      optionsTooltip: l10n.translateOptions,
+      onPrimary: () => _setTranslating(!active),
+      onOptions: (position) => _translateMenu(position, source, active),
+    );
+  }
+
+  void _updateTranslation(Preferences Function(Preferences p) change) =>
+      ref.read(preferencesProvider.notifier).update(change);
+
+  void _setTranslating(bool on) {
+    final chatId = widget.chatId;
+    _updateTranslation(
+      (p) => p.copyWith(
+        translateChats: on
+            ? {...p.translateChats, chatId}
+            : ({...p.translateChats}..remove(chatId)),
+      ),
+    );
+  }
+
+  void _translateMenu(Offset position, String? source, bool active) {
+    final l10n = AppLocalizations.of(context);
+    final locale = Localizations.localeOf(context).languageCode;
+    final chatId = widget.chatId;
+    unawaited(
+      showMgMenu(
+        context,
+        position: position,
+        items: [
+          MgMenuItem(
+            label: l10n.translateChooseLanguage,
+            submenu: [
+              for (final code in translateTargets)
+                MgMenuItem(
+                  label: languageName(code, locale),
+                  onSelected: () => _updateTranslation(
+                    (p) => p.copyWith(
+                      translateTo: code,
+                      translateChats: {...p.translateChats, chatId},
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          if (source != null)
+            MgMenuItem(
+              label: l10n.translateSkipLanguage(languageName(source, locale)),
+              onSelected: () => _updateTranslation(
+                (p) => p.copyWith(
+                  translateSkip: {...p.translateSkip, source},
+                  translateChats: {...p.translateChats}..remove(chatId),
+                ),
+              ),
+            ),
+          if (!active)
+            MgMenuItem(
+              label: l10n.translateHideBar,
+              onSelected: () => _updateTranslation(
+                (p) =>
+                    p.copyWith(translateHidden: {...p.translateHidden, chatId}),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget? _pinnedBar(AppLocalizations l10n, ConversationStore store) {
     final chatId = widget.chatId;
     final ids = store.pinnedIds(chatId);
@@ -892,7 +1037,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
         _topicsOpening = true;
         scheduleMicrotask(() => unawaited(_openTopics()));
       }
-      return const SizedBox.shrink();
+      return const Center(child: LoadSpinner());
     }
     return ForumTopicListView(
       key: const ValueKey('forumTopics'),
@@ -921,9 +1066,17 @@ class _ChatViewState extends ConsumerState<ChatView> {
     final list = _conversations.openTopics(chatId);
     try {
       await list.load();
-    } on td.TdException {
+    } on Object {
       list.dispose();
-      if (mounted && widget.chatId == chatId) _topicsOpening = false;
+      // A chat restored at launch can ask before the session is ready;
+      // the list is asked for again after a moment rather than left blank.
+      if (mounted && widget.chatId == chatId) {
+        _topicsRetry?.cancel();
+        _topicsRetry = Timer(const Duration(seconds: 2), () {
+          if (!mounted || widget.chatId != chatId) return;
+          setState(() => _topicsOpening = false);
+        });
+      }
       return;
     }
     if (!mounted || widget.chatId != chatId) {
@@ -998,11 +1151,39 @@ class _ChatViewState extends ConsumerState<ChatView> {
   }
 
   void _dropTopics() {
+    _topicsRetry?.cancel();
+    _topicsRetry = null;
     _topicsSub?.cancel();
     _topicsSub = null;
     _topics?.dispose();
     _topics = null;
     _topicsOpening = false;
+  }
+
+  /// The source of a forward: a channel opens at the original post when
+  /// Telegram says which it was, a group or channel posting for itself
+  /// opens as it is, and a person opens as their profile.
+  Future<void> _openForwardSource(td.MessageOrigin origin) async {
+    final workspace = ref.read(workspaceControllerProvider);
+    switch (origin) {
+      case td.MessageOriginChannel(:final chatId, :final messageId):
+        if (messageId != 0) {
+          ref.read(messageJumpProvider.notifier).request(chatId, messageId);
+        }
+        workspace.open(chatId);
+      case td.MessageOriginChat(:final senderChatId):
+        workspace.open(senderChatId);
+      case td.MessageOriginUser(:final senderUserId):
+        final peers = ref.read(telegramSessionProvider).requireValue.peers;
+        final int chatId;
+        try {
+          chatId = await peers.privateChatOf(senderUserId);
+        } on Object {
+          return;
+        }
+        if (mounted) openPeerInfo(ref, chatId);
+      case td.MessageOriginHiddenUser():
+    }
   }
 
   /// Opens the comments under [message], a channel post: its thread in
@@ -1448,6 +1629,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     onInlineButton: (message, button) =>
         unawaited(_pressInlineButton(message, button)),
     onComments: (message) => unawaited(_openComments(message)),
+    onOpenForwardSource: (origin) => unawaited(_openForwardSource(origin)),
     onMenu: (row, position) => unawaited(_showMenu(row, position)),
     onViewMedia: (message) => unawaited(
       showChatMediaViewer(
@@ -1472,6 +1654,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
   /// Where the timeline starts under the header and the pinned bar.
   double get _topInset =>
       TimelineView.headerInset +
+      _translateInset +
       (_tagsShown ? SavedTagBar.height + 8 : 0) +
       (_pinnedShown && !_pinnedListOpen ? PinnedBar.height + 8 : 0);
 
@@ -1506,7 +1689,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
       final viewport = _scroll.position.viewportDimension;
       _returnTo = TimelineView.rowAt(
         _timelineKey,
-        viewport - TimelineView.bottomInset - 4,
+        viewport - _bottomInset - 4,
       )?.messageId;
     }
     if (!store.contains(chatId, messageId)) {
@@ -2115,6 +2298,14 @@ class _ChatViewState extends ConsumerState<ChatView> {
   /// The id of the message whose keyboard the user hid; 0 for none.
   var _keyboardHiddenFor = 0;
 
+  /// The height of the bot keyboard on screen, which the timeline makes
+  /// room for; 0 without one.
+  var _keyboardHeight = 0.0;
+
+  /// The space the timeline leaves under its newest message: the composer
+  /// and the bot keyboard above it.
+  double get _bottomInset => TimelineView.composerInset + _keyboardHeight;
+
   /// The bot keyboard the chat shows in place of its own, loaded when the
   /// message carrying it isn't at hand yet.
   (int, td.ReplyMarkupShowKeyboard)? _replyKeyboard(ConversationStore store) {
@@ -2229,12 +2420,19 @@ class _ChatViewState extends ConsumerState<ChatView> {
       return null;
     }
     final (id, markup) = keyboard;
-    return ReplyKeyboard(
-      rows: markup.rows,
-      onPressed: (button) {
-        unawaited(_pressKeyboardButton(id, button));
-        if (markup.oneTime) setState(() => _keyboardHiddenFor = id);
+    return Measured(
+      onSize: (size) {
+        if (mounted && size.height != _keyboardHeight) {
+          setState(() => _keyboardHeight = size.height);
+        }
       },
+      child: ReplyKeyboard(
+        rows: markup.rows,
+        onPressed: (button) {
+          unawaited(_pressKeyboardButton(id, button));
+          if (markup.oneTime) setState(() => _keyboardHiddenFor = id);
+        },
+      ),
     );
   }
 
@@ -3347,6 +3545,10 @@ class _ChatViewState extends ConsumerState<ChatView> {
       });
     }
 
+    final keyboardPanel = _selected == null && !_listOpen
+        ? _replyKeyboardPanel(store)
+        : null;
+    final translateBar = _translateBar(l10n, messages.value);
     final view = DropTarget(
       onDragEntered: (_) => setState(() => _dragging = true),
       onDragExited: (_) => setState(() => _dragging = false),
@@ -3423,6 +3625,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
                   flashId: _flashId,
                   flash: _flash,
                   topInset: _topInset,
+                  bottomInset: keyboardPanel == null
+                      ? TimelineView.composerInset
+                      : _bottomInset,
                   selection: _selected,
                   onDateTap: (day, position) =>
                       unawaited(_openCalendar(day, position)),
@@ -3435,9 +3640,16 @@ class _ChatViewState extends ConsumerState<ChatView> {
               _ => const SizedBox.shrink(),
             },
           ),
+          if (translateBar != null)
+            Positioned(
+              top: ChatHeaderBar.height + 8,
+              left: 14,
+              right: 14,
+              child: translateBar,
+            ),
           if (_tagBar(l10n) case final bar?)
             Positioned(
-              top: 10 + ChatHeaderBar.height + 8,
+              top: 10 + ChatHeaderBar.height + 8 + _translateInset,
               left: 14,
               right: 14,
               child: bar,
@@ -3446,18 +3658,18 @@ class _ChatViewState extends ConsumerState<ChatView> {
             if (_pinnedBar(l10n, store) case final bar?)
               Positioned(
                 top:
-                    10 +
                     ChatHeaderBar.height +
                     8 +
+                    _translateInset +
                     (_tagsShown ? SavedTagBar.height + 8 : 0),
                 left: 14,
                 right: 14,
                 child: bar,
               ),
           Positioned(
-            top: 10,
-            left: 14,
-            right: 14,
+            top: 0,
+            left: 0,
+            right: 0,
             child: ChatHeaderBar(
               title: _searching
                   ? SizedBox(
@@ -3531,8 +3743,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
                       ),
                       onTap: _closePinnedList,
                     )
-                  : ChatTitleCapsule(
-                      title: chat?.title ?? '',
+                  : ChatHeaderTitle(
+                      chatId: widget.chatId,
                       titleIcon: secret == null ? null : const SecretChatLock(),
                       avatar: _saved
                           ? MgIconButton(
@@ -3542,7 +3754,11 @@ class _ChatViewState extends ConsumerState<ChatView> {
                                   : l10n.savedShowAsChats,
                               onPressed: _toggleSaved,
                             )
-                          : null,
+                          : PeerAvatar.chat(
+                              name: chat?.title ?? '',
+                              size: 32,
+                              photo: chat?.photo,
+                            ),
                       subtitle: secret == null
                           ? ''
                           : secretChatStatusText(
@@ -3558,98 +3774,113 @@ class _ChatViewState extends ConsumerState<ChatView> {
             ),
           ),
           Positioned(
-            left: 24,
-            right: 24,
-            bottom: 12,
+            left: 0,
+            right: 0,
+            bottom: 0,
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (!_panelOpen && !_listOpen) _jumpButtons(l10n, store),
-                if (store.slowModeUntil(widget.chatId) case final until?)
-                  SlowModeNotice(
-                    key: ValueKey(until),
-                    until: until,
-                    label: l10n.slowModeWait,
-                  ),
-                if (_failure case final failure?)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 6),
-                    child: Text(
-                      switch (failure) {
-                        _Failure.send => l10n.sendFailed,
-                        _Failure.edit => l10n.editFailed,
-                        _Failure.attach => l10n.attachFailed,
-                        _Failure.forward => l10n.forwardFailed,
-                        _Failure.chatAction => l10n.chatActionFailed,
-                      },
-                      textAlign: TextAlign.center,
-                      style: mgTextStyle(
-                        c,
-                        size: MgType.small,
-                        color: MessageMeta.failedColor,
-                      ),
-                    ),
-                  ),
-                if (_selected == null &&
-                    !_listOpen &&
-                    !_panelOpen &&
-                    _editing == null &&
-                    _stickerHints.stickers.isNotEmpty)
-                  StickerSuggestionStrip(
-                    stickers: _stickerHints.stickers,
-                    onPick: (sticker) =>
-                        unawaited(_sendSuggestedSticker(sticker)),
-                  ),
-                if (_selected == null &&
-                    !_listOpen &&
-                    !_panelOpen &&
-                    _editing == null &&
-                    _inline.active)
-                  InlineResultsPanel(
-                    results: _inline.results,
-                    loading: _inline.loading,
-                    onPick: (result) => unawaited(_sendInlineResult(result)),
-                    onMore: _inline.hasMore
-                        ? () => unawaited(_inline.loadMore())
-                        : null,
-                  ),
-                if (_selected == null && !_listOpen)
-                  ?_replyKeyboardPanel(store),
-                if (_panelOpen)
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: TapRegion(
-                        groupId: _EmojiPanelRegion,
-                        onTapOutside: (_) => _closePanel(),
-                        child: EmojiStickerPanel(
-                          height: (MediaQuery.sizeOf(context).height - 220)
-                              .clamp(220, 400),
-                          onEmoji: _insertEmoji,
-                          onSticker: (sticker) =>
-                              unawaited(_sendSticker(sticker)),
-                          onGif: (gif) => unawaited(_sendAnimation(gif)),
-                          onClose: _closePanel,
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (!_panelOpen && !_listOpen) _jumpButtons(l10n, store),
+                      if (store.slowModeUntil(widget.chatId) case final until?)
+                        SlowModeNotice(
+                          key: ValueKey(until),
+                          until: until,
+                          label: l10n.slowModeWait,
                         ),
-                      ),
-                    ),
+                      if (_failure case final failure?)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Text(
+                            switch (failure) {
+                              _Failure.send => l10n.sendFailed,
+                              _Failure.edit => l10n.editFailed,
+                              _Failure.attach => l10n.attachFailed,
+                              _Failure.forward => l10n.forwardFailed,
+                              _Failure.chatAction => l10n.chatActionFailed,
+                            },
+                            textAlign: TextAlign.center,
+                            style: mgTextStyle(
+                              c,
+                              size: MgType.small,
+                              color: MessageMeta.failedColor,
+                            ),
+                          ),
+                        ),
+                      if (_selected == null &&
+                          !_listOpen &&
+                          !_panelOpen &&
+                          _editing == null &&
+                          _stickerHints.stickers.isNotEmpty)
+                        StickerSuggestionStrip(
+                          stickers: _stickerHints.stickers,
+                          onPick: (sticker) =>
+                              unawaited(_sendSuggestedSticker(sticker)),
+                        ),
+                      if (_selected == null &&
+                          !_listOpen &&
+                          !_panelOpen &&
+                          _editing == null &&
+                          _inline.active)
+                        InlineResultsPanel(
+                          results: _inline.results,
+                          loading: _inline.loading,
+                          onPick: (result) =>
+                              unawaited(_sendInlineResult(result)),
+                          onMore: _inline.hasMore
+                              ? () => unawaited(_inline.loadMore())
+                              : null,
+                        ),
+                      ?keyboardPanel,
+                      if (_panelOpen)
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: TapRegion(
+                              groupId: _EmojiPanelRegion,
+                              onTapOutside: (_) => _closePanel(),
+                              child: EmojiStickerPanel(
+                                height:
+                                    (MediaQuery.sizeOf(context).height - 220)
+                                        .clamp(220, 400),
+                                onEmoji: _insertEmoji,
+                                onSticker: (sticker) =>
+                                    unawaited(_sendSticker(sticker)),
+                                onGif: (gif) => unawaited(_sendAnimation(gif)),
+                                onClose: _closePanel,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ?_sponsoredCard(store),
+                    ],
                   ),
-                ?_sponsoredCard(store),
+                ),
+                // The composer is the card's own bottom edge; the other
+                // bars still float over the messages.
                 if (_thread case final thread?)
                   _threadComposer(l10n, thread)
                 else if (_forum || _savedOpen)
                   const SizedBox.shrink()
-                else if (_scheduledOpen)
-                  _scheduledBar(l10n)
-                else if (_pinnedListOpen)
-                  _unpinAllBar(l10n, store)
-                else if (_selected != null)
-                  _selectionBar(l10n)
-                else if (secret?.status == SecretChatStatus.closed)
-                  SecretChatClosedBar(chatId: widget.chatId)
-                else if (_actionBar(l10n, store) case final bar?)
-                  bar
+                else if (switch (null) {
+                      _ when _scheduledOpen => _scheduledBar(l10n),
+                      _ when _pinnedListOpen => _unpinAllBar(l10n, store),
+                      _ when _selected != null => _selectionBar(l10n),
+                      _ when secret?.status == SecretChatStatus.closed =>
+                        SecretChatClosedBar(chatId: widget.chatId),
+                      _ => _actionBar(l10n, store),
+                    }
+                    case final bar?)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+                    child: bar,
+                  )
                 else
                   TapRegion(
                     groupId: _EmojiPanelRegion,
@@ -3720,7 +3951,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     );
     return CallbackShortcuts(
       bindings: {primaryShortcut(LogicalKeyboardKey.keyF): _openSearch},
-      child: view,
+      child: ChatTranslationScope(translation: _translation, child: view),
     );
   }
 }
