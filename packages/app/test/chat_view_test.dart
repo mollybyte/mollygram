@@ -212,9 +212,11 @@ void main() {
 
   testWidgets('scrolls to the message a reply answers', (tester) async {
     json.chat = [for (var id = 1; id <= 60; id++) id];
-    // The newest message answers the oldest, far above the screen.
-    json.repliesTo = {60: 1};
-    json.texts = {60: 'Answer'};
+    // A recent message answers the oldest, far above the screen. It is a few
+    // messages up so that scrolling back a little leaves it clear of the
+    // composer, which now spans the whole width.
+    json.repliesTo = {55: 1};
+    json.texts = {55: 'Answer'};
     json.push(_chat(lastRead: 60, unread: 0, last: 60));
     await tester.runAsync(() => Future<void>.delayed(_tick));
     await pump(tester);

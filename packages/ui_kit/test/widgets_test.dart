@@ -465,14 +465,32 @@ void main() {
     expect(find.byType(MgSendButton), findsOneWidget);
   });
 
-  testWidgets('composer stays within its max width', (tester) async {
+  testWidgets('composer spans the whole chat column', (tester) async {
     tester.view.physicalSize = const Size(1400, 300);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       themed(const SizedBox.expand(child: Composer(labels: _labels))),
     );
-    expect(tester.getSize(find.byType(Glass)).width, Composer.maxWidth);
+    expect(tester.getSize(find.byType(Glass)).width, 1400);
+  });
+
+  testWidgets('composer keeps the emoji and mic buttons in a narrow window', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(340, 300);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      themed(const SizedBox.expand(child: Composer(labels: _labels))),
+    );
+    expect(tester.takeException(), isNull);
+    expect(find.byTooltip(_labels.emoji), findsOneWidget);
+    expect(find.byTooltip(_labels.record), findsOneWidget);
+    expect(
+      tester.getTopRight(find.byTooltip(_labels.record)).dx,
+      lessThanOrEqualTo(340),
+    );
   });
 
   testWidgets('header keeps the title left and the actions at the right '

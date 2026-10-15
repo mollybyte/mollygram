@@ -132,9 +132,6 @@ class Composer extends StatefulWidget {
   final ValueChanged<int>? onSuggestion;
   final VoidCallback? onDismissSuggestions;
 
-  /// The composer is at most 712 px wide, centered in the chat.
-  static const double maxWidth = 712;
-
   @override
   State<Composer> createState() => _ComposerState();
 }
@@ -551,56 +548,54 @@ class _ComposerState extends State<Composer> {
       ),
     );
     final suggestions = widget.suggestions;
-    return Center(
-      heightFactor: 1,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: Composer.maxWidth),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // The list grows in over the composer rather than popping up.
-            AnimatedSize(
+    // As wide as the chat column, like the header capsules above.
+    return SizedBox(
+      width: double.infinity,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // The list grows in over the composer rather than popping up.
+          AnimatedSize(
+            duration: const Duration(milliseconds: 160),
+            curve: Curves.easeOutCubic,
+            alignment: Alignment.bottomLeft,
+            child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 160),
-              curve: Curves.easeOutCubic,
-              alignment: Alignment.bottomLeft,
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 160),
-                switchInCurve: Curves.easeOutCubic,
-                switchOutCurve: Curves.easeInCubic,
-                transitionBuilder: (child, animation) => FadeTransition(
-                  opacity: animation,
-                  child: SlideTransition(
-                    position: Tween(
-                      begin: const Offset(0, 0.06),
-                      end: Offset.zero,
-                    ).animate(animation),
-                    child: child,
-                  ),
+              switchInCurve: Curves.easeOutCubic,
+              switchOutCurve: Curves.easeInCubic,
+              transitionBuilder: (child, animation) => FadeTransition(
+                opacity: animation,
+                child: SlideTransition(
+                  position: Tween(
+                    begin: const Offset(0, 0.06),
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: child,
                 ),
-                child: suggestions.isEmpty
-                    ? const SizedBox(key: ValueKey('none'), width: 0)
-                    : Padding(
-                        key: const ValueKey('suggestions'),
-                        padding: const EdgeInsets.only(bottom: 6),
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 320),
-                          child: ComposerSuggestionList(
-                            suggestions: suggestions,
-                            highlighted: _highlighted.clamp(
-                              0,
-                              suggestions.length - 1,
-                            ),
-                            onPick: (i) => widget.onSuggestion?.call(i),
-                            onHover: (i) => setState(() => _highlighted = i),
+              ),
+              child: suggestions.isEmpty
+                  ? const SizedBox(key: ValueKey('none'), width: 0)
+                  : Padding(
+                      key: const ValueKey('suggestions'),
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 320),
+                        child: ComposerSuggestionList(
+                          suggestions: suggestions,
+                          highlighted: _highlighted.clamp(
+                            0,
+                            suggestions.length - 1,
                           ),
+                          onPick: (i) => widget.onSuggestion?.call(i),
+                          onHover: (i) => setState(() => _highlighted = i),
                         ),
                       ),
-              ),
+                    ),
             ),
-            composer,
-          ],
-        ),
+          ),
+          composer,
+        ],
       ),
     );
   }

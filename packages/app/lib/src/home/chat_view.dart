@@ -3592,8 +3592,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
             ),
           ),
           Positioned(
-            left: 24,
-            right: 24,
+            left: 14,
+            right: 14,
             bottom: 12,
             child: Column(
               mainAxisSize: MainAxisSize.min,
