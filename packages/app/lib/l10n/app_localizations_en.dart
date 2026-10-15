@@ -536,6 +536,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get scheduleAction => 'Schedule';
 
   @override
+  String get scheduledList => 'Scheduled messages';
+
+  @override
+  String scheduledCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count scheduled messages',
+      one: '$count scheduled message',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get menuSendNow => 'Send now';
+
+  @override
+  String get menuReschedule => 'Reschedule…';
+
+  @override
   String scheduledFor(String date) {
     return 'Scheduled for $date';
   }

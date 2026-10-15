@@ -575,6 +575,44 @@ void main() {
     },
   );
 
+  test('follows and manages the scheduled messages of a chat', () async {
+    await controller.start();
+    final store = controller.store;
+    expect(store.hasScheduledMessages(7), isFalse);
+
+    json.push({
+      '@type': 'updateChatHasScheduledMessages',
+      'chat_id': 7,
+      'has_scheduled_messages': true,
+    });
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    expect(store.hasScheduledMessages(7), isTrue);
+    final version = store.scheduledVersion(7);
+
+    final scheduled = await controller.scheduledMessages(7);
+    expect(scheduled.map((m) => m.text), ['First', 'Second']);
+
+    await controller.sendScheduledNow(7, 30);
+    var sent = json.sent.last;
+    expect(sent['@type'], 'editMessageSchedulingState');
+    expect(sent['message_id'], 30);
+    expect(sent.containsKey('scheduling_state'), isFalse);
+
+    await controller.reschedule(7, 31, DateTime.utc(2030, 1, 1));
+    sent = json.sent.last;
+    expect(
+      (sent['scheduling_state']! as Map)['send_date'],
+      DateTime.utc(2030, 1, 1).millisecondsSinceEpoch ~/ 1000,
+    );
+
+    await controller.deleteScheduled(7, [31]);
+    sent = json.sent.last;
+    expect(sent['@type'], 'deleteMessages');
+    expect(sent['revoke'], isTrue);
+    // Each change counts, so a view knows to load the list again.
+    expect(store.scheduledVersion(7), greaterThan(version));
+  });
+
   test('reports messages step by step as the server asks', () async {
     await controller.start();
 
@@ -1510,6 +1548,20 @@ final class _FakeTdJson implements td.TdJson {
         '@type': 'error',
         'code': 404,
         'message': 'Not Found',
+      },
+      'getChatScheduledMessages' => {
+        '@type': 'messages',
+        'total_count': 2,
+        'messages': [
+          {
+            ..._message(id: 31, chatId: 7, text: 'Second').toJson(),
+            'date': 1900000600,
+          },
+          {
+            ..._message(id: 30, chatId: 7, text: 'First').toJson(),
+            'date': 1900000000,
+          },
+        ],
       },
       _ => {'@type': 'ok'},
     };
