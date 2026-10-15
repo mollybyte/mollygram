@@ -2540,4 +2540,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get switchAccount => 'Switch';
+
+  @override
+  String get pluginShowMessage => 'Show';
+
+  @override
+  String get pluginFilteredMessage => 'Filtered by a plugin';
 }

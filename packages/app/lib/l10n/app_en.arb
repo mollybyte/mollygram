@@ -989,5 +989,7 @@
     "placeholders": { "name": { "type": "String" } }
   },
   "duplicateAccountMessage": "Switch to it and log out of this copy?",
-  "switchAccount": "Switch"
+  "switchAccount": "Switch",
+  "pluginShowMessage": "Show",
+  "pluginFilteredMessage": "Filtered by a plugin"
 }

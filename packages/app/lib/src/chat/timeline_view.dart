@@ -6,6 +6,7 @@ import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../plugins/message_hooks.dart';
 import '../settings/appearance.dart';
 import 'message_tile.dart';
 import 'timeline.dart';
@@ -187,7 +188,7 @@ class _TimelineViewState extends State<TimelineView> {
     return Stack(
       key: _key,
       children: [
-        Positioned.fill(child: _TimelineList(widget)),
+        Positioned.fill(child: PluginVerdicts(child: _TimelineList(widget))),
         if (day != null)
           Positioned(
             top: widget.topInset - 34,
@@ -243,7 +244,7 @@ class _TimelineList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final messages = view.messages;
+    final messages = PluginVerdicts.visible(context, view.messages);
     final store = view.store;
     final chatId = view.chatId;
     final isGroup = view.isGroup;

@@ -77,13 +77,38 @@ function shown(c) {
 const offer = (from) => [
     { type: "button", label: strings.translate(from), action: "translate", payload: { from } },
 ];
+// The cache keeps the newest translations: their keys, oldest first, are
+// listed under "index", and the oldest go when there are too many or the
+// storage is full.
+const maxCached = 400;
+const indexKey = "index";
+async function remember(key, c) {
+    const index = ((await mg.storage.get(indexKey)) ?? []).filter((k) => k !== key);
+    index.push(key);
+    for (let attempt = 0;; attempt++) {
+        const drop = Math.max(index.length - maxCached, attempt === 0 ? 0 : Math.ceil(index.length / 4));
+        for (const old of index.splice(0, drop))
+            await mg.storage.delete(old);
+        try {
+            await mg.storage.set(indexKey, index);
+            await mg.storage.set(key, c);
+            return;
+        }
+        catch (e) {
+            if (e.code !== "quota_exceeded" || attempt > 0 || index.length <= 1)
+                throw e;
+        }
+    }
+}
+// The longest text the app shows in one node.
+const maxText = 16384;
 async function translate(message, from) {
     const to = target();
     try {
         const { text } = await mg.messages.translate(message.chatId, message.id, { to });
-        const c = { from, text };
+        const c = { from, text: text.length > maxText ? text.slice(0, maxText - 1) + "…" : text };
         try {
-            await mg.storage.set(cacheKey(message, to), c);
+            await remember(cacheKey(message, to), c);
         }
         catch (e) {
             // A full cache only costs a repeated request later.
@@ -104,7 +129,7 @@ mg.on("message.render.text", async ({ message }) => {
     const cached = await mg.storage.get(cacheKey(message, to));
     if (cached)
         return shown(cached);
-    const detected = await mg.text.detectLanguage(text);
+    const detected = await mg.text.detectLanguage(text.slice(0, 4000));
     if (!detected || detected.confidence < minConfidence)
         return [];
     const from = detected.language.toLowerCase();

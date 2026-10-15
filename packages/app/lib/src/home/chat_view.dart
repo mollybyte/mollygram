@@ -58,6 +58,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
 
   /// The message the next one answers, shown above the composer.
   ConversationMessage? _replyTo;
+  Timer? _draftTimer;
 
   /// The part of [_replyTo]'s text the reply quotes, if any.
   QuoteSelection? _replyQuote;
@@ -143,6 +144,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
         .requireValue
         .conversations;
     _draft.addListener(_clearSendError);
+    _draft.addListener(_draftChanged);
     _mentions
       ..search = _mentionSearch()
       ..addListener(_mentionsChanged);
@@ -162,11 +164,14 @@ class _ChatViewState extends ConsumerState<ChatView> {
   void didUpdateWidget(ChatView old) {
     super.didUpdateWidget(old);
     if (old.chatId == widget.chatId) return;
+    // An edit belongs to the old chat: give back the draft it set aside.
+    if (_editing != null) _draft.setFormatted(_setAside, _setAsideRanges);
+    _editing = null;
+    _saveDraft(old.chatId);
     _close(old.chatId);
     _viewed.clear();
     _toView.clear();
-    // An edit belongs to the old chat: give back the draft it set aside.
-    if (_editing != null) _draft.setFormatted(_setAside, _setAsideRanges);
+    _draft.clear();
     _mentions
       ..search = _mentionSearch()
       ..reset();
@@ -195,6 +200,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
 
   @override
   void dispose() {
+    _draftTimer?.cancel();
+    if (_editing == null) _saveDraft(widget.chatId);
     _close(widget.chatId);
     _mentions.dispose();
     _draft.dispose();
@@ -216,6 +223,47 @@ class _ChatViewState extends ConsumerState<ChatView> {
     if (!store.hasPinned(chatId)) {
       unawaited(_quiet(_conversations.loadPinned(chatId)));
     }
+    _loadDraft(chatId);
+  }
+
+  /// Puts the draft TDLib keeps for [chatId] into the empty composer: its
+  /// text with formatting, and the message it answers when that is loaded.
+  void _loadDraft(int chatId) {
+    if (_draft.text.isNotEmpty) return;
+    final draft = _conversations.store.draft(chatId);
+    if (draft == null) return;
+    if (draft.content case td.DraftMessageContentText(:final text)) {
+      _draft.setFormatted(text.text, draftRanges(text));
+    }
+    if (draft.replyTo case td.InputMessageReplyToMessage(:final messageId)) {
+      _replyTo = _conversations.store.message(chatId, messageId);
+    }
+  }
+
+  /// Saves the draft a while after the last keystroke, so a chat left or
+  /// an app quit loses nothing and the other devices catch up.
+  void _draftChanged() {
+    if (_editing != null) return;
+    _draftTimer?.cancel();
+    _draftTimer = Timer(const Duration(milliseconds: 1200), () {
+      if (mounted) _saveDraft(widget.chatId);
+    });
+  }
+
+  void _saveDraft(int chatId) {
+    _draftTimer?.cancel();
+    final text = _draft.text;
+    unawaited(
+      _quiet(
+        _conversations.saveDraft(
+          chatId,
+          text: text.trim().isEmpty
+              ? null
+              : formattedDraft(text, _draft.ranges),
+          replyTo: _replyTo?.id,
+        ),
+      ),
+    );
   }
 
   /// The bar's click: to the pinned message it shows, then on to the

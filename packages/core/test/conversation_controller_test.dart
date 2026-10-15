@@ -424,6 +424,60 @@ void main() {
     expect(store.slowModeUntil(7), isNotNull);
   });
 
+  test('keeps the server draft and saves the user\'s own', () async {
+    await controller.start();
+    json.push({
+      '@type': 'updateChatDraftMessage',
+      'chat_id': 7,
+      'draft_message': {
+        '@type': 'draftMessage',
+        'date': 1700000000,
+        'content': {
+          '@type': 'draftMessageContentText',
+          'text': {
+            '@type': 'formattedText',
+            'text': 'Unsent',
+            'entities': <Object?>[],
+          },
+        },
+        'effect_id': 0,
+      },
+      'positions': <Object?>[],
+    });
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    final store = controller.store;
+    expect(
+      (store.draft(7)!.content as td.DraftMessageContentText).text.text,
+      'Unsent',
+    );
+
+    await controller.saveDraft(
+      7,
+      text: const td.FormattedText(text: 'Hi there', entities: []),
+      replyTo: 10,
+    );
+    var sent = json.sent.last;
+    expect(sent['@type'], 'setChatDraftMessage');
+    final draft = sent['draft_message']! as Map;
+    expect(((draft['content']! as Map)['text']! as Map)['text'], 'Hi there');
+    expect((draft['reply_to']! as Map)['message_id'], 10);
+
+    // The same draft again is not sent twice.
+    final before = json.sent.length;
+    await controller.saveDraft(
+      7,
+      text: const td.FormattedText(text: 'Hi there', entities: []),
+      replyTo: 10,
+    );
+    expect(json.sent.length, before);
+
+    await controller.saveDraft(7);
+    sent = json.sent.last;
+    expect(sent['@type'], 'setChatDraftMessage');
+    expect(sent.containsKey('draft_message'), isFalse);
+    expect(store.draft(7), isNull);
+  });
+
   test('reports messages step by step as the server asks', () async {
     await controller.start();
 
@@ -916,6 +970,14 @@ void main() {
     expect(await controller.quickReactions(7, 1), isEmpty);
   });
 
+  test('translates a message with Telegram', () async {
+    expect(await controller.translate(7, 1, 'en'), 'Hello (en)');
+    final request = json.sent.last;
+    expect(request['@type'], 'translateMessageText');
+    expect(request['chat_id'], 7);
+    expect(request['message_id'], 1);
+  });
+
   test('announces a new avatar or colour of a sender', () async {
     await controller.start();
     var changes = 0;
@@ -1220,6 +1282,11 @@ final class _FakeTdJson implements td.TdJson {
         'next_from_message_id': 18,
       },
       'joinChat' => {'@type': 'chatJoinResultSuccess'},
+      'translateMessageText' => {
+        '@type': 'formattedText',
+        'text': 'Hello (${decoded['to_language_code']})',
+        'entities': <Object?>[],
+      },
       'forwardMessages' => {
         '@type': 'messages',
         'total_count': 0,

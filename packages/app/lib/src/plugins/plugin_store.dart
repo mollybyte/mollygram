@@ -67,6 +67,9 @@ abstract interface class PluginStore {
   Future<List<StoredBundle>> readBundles();
   Future<void> writeBundle(StoredBundle bundle);
   Future<void> deleteBundle(String id);
+
+  /// Where plugins' `storage` lives: `<id>.json` each.
+  Future<Directory> dataFolder();
 }
 
 /// `plugins/` in the app support folder: `state.json` and a folder per
@@ -182,6 +185,10 @@ final class FilePluginStore implements PluginStore {
     final dir = await _bundleDir(id);
     if (await dir.exists()) await dir.delete(recursive: true);
   }
+
+  @override
+  Future<Directory> dataFolder() async =>
+      Directory('${(await _dir()).path}/data');
 }
 
 /// A [PluginStore] in memory, for tests.
@@ -189,11 +196,15 @@ final class MemoryPluginStore implements PluginStore {
   MemoryPluginStore({
     Map<String, PluginState>? states,
     List<StoredBundle>? bundles,
+    this.data,
   }) : states = {...?states},
        bundles = {for (final b in bundles ?? <StoredBundle>[]) b.id: b};
 
   final Map<String, PluginState> states;
   final Map<String, StoredBundle> bundles;
+
+  /// The folder for plugins' `storage`; a new temporary one when null.
+  Directory? data;
 
   /// Makes [writeBundle] fail, as a full disk would.
   var failWrites = false;
@@ -219,4 +230,8 @@ final class MemoryPluginStore implements PluginStore {
 
   @override
   Future<void> deleteBundle(String id) async => bundles.remove(id);
+
+  @override
+  Future<Directory> dataFolder() async =>
+      data ??= await Directory.systemTemp.createTemp('plugin_data');
 }

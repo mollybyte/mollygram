@@ -10,6 +10,7 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 import '../../l10n/app_localizations.dart';
 import '../home/format.dart';
 import '../links/link_router.dart';
+import '../plugins/message_hooks.dart';
 import 'concealed.dart';
 import 'describe.dart';
 import 'file_content.dart';
@@ -172,7 +173,10 @@ class MessageTile extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext buildContext) {
+  Widget build(BuildContext buildContext) =>
+      PluginFilteredMessage(message: row.primary, child: _build(buildContext));
+
+  Widget _build(BuildContext buildContext) {
     final l10n = AppLocalizations.of(buildContext);
     final c = MgColors.of(buildContext);
     final message = row.primary;
@@ -487,7 +491,11 @@ class _MessageBody extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [..._headers(l10n), _content(context, l10n)],
+      children: [
+        ..._headers(l10n),
+        _content(context, l10n),
+        PluginMessageExtras(message: message),
+      ],
     );
   }
 

@@ -30,6 +30,12 @@ final class PluginsStrings {
   String get options => _t('Options', 'Параметры');
   String get commands => _t('Commands', 'Команды');
   String get manifest => _t('Manifest', 'Манифест');
+  String get log => _t('Log', 'Журнал');
+  String get logEmpty => _t(
+    'Nothing logged since the app started.',
+    'С запуска приложения записей нет.',
+  );
+  String get copyLog => _t('Copy', 'Скопировать');
   String get uninstall => _t('Uninstall plugin…', 'Удалить плагин…');
   String get off => _t('off', 'выкл');
   String get installedGroup => _t('Installed', 'Установленные');
