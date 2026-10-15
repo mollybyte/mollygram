@@ -440,6 +440,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get menuQuote => 'Quote';
 
   @override
+  String get menuReport => 'Report';
+
+  @override
+  String get reportDetailsTitle => 'Add details';
+
+  @override
+  String get reportDetailsOptional =>
+      'You can add details, or send the report as it is.';
+
+  @override
+  String get reportDetailsHint => 'What is wrong with this message?';
+
+  @override
+  String get reportSent => 'Thank you, the report is on its way.';
+
+  @override
   String seenBy(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

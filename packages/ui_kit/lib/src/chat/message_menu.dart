@@ -484,12 +484,12 @@ class _ConfirmState extends State<_Confirm> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      _DialogButton(
+                      MgDialogButton(
                         label: widget.cancelLabel,
                         onTap: () => Navigator.of(context).pop(),
                       ),
                       const SizedBox(width: 8),
-                      _DialogButton(
+                      MgDialogButton(
                         label: widget.confirmLabel,
                         filled: true,
                         color: widget.destructive
@@ -509,8 +509,11 @@ class _ConfirmState extends State<_Confirm> {
   }
 }
 
-class _DialogButton extends StatelessWidget {
-  const _DialogButton({
+/// A button of an alert: filled with [color] for the main action, grey
+/// otherwise.
+class MgDialogButton extends StatelessWidget {
+  const MgDialogButton({
+    super.key,
     required this.label,
     required this.onTap,
     this.filled = false,

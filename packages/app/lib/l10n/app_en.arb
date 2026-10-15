@@ -144,6 +144,11 @@
   "pause": "Pause",
   "menuReply": "Reply",
   "menuQuote": "Quote",
+  "menuReport": "Report",
+  "reportDetailsTitle": "Add details",
+  "reportDetailsOptional": "You can add details, or send the report as it is.",
+  "reportDetailsHint": "What is wrong with this message?",
+  "reportSent": "Thank you, the report is on its way.",
   "seenBy": "{count, plural, one{Seen by {count}} other{Seen by {count}}}",
   "@seenBy": {
     "placeholders": { "count": { "type": "int" } }
