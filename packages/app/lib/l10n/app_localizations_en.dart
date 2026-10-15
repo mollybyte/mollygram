@@ -929,6 +929,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get stopPollMessage => 'Nobody will be able to vote in it any more.';
 
   @override
+  String get botKeyboard => 'Bot keyboard';
+
+  @override
+  String get botNoAnswer => 'The bot did not answer';
+
+  @override
   String get contentGame => 'Game';
 
   @override

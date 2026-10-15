@@ -395,6 +395,36 @@ final class ConversationController {
         ),
       );
 
+  /// Presses a bot's inline button that carries [data]: the bot's answer,
+  /// a notification or a URL to open, or nothing.
+  Future<td.CallbackQueryAnswer> callbackQuery(
+    int chatId,
+    int messageId,
+    Uint8List data,
+  ) => _client.send(
+    td.GetCallbackQueryAnswer(
+      chatId: chatId,
+      messageId: messageId,
+      payload: td.CallbackQueryPayloadData(data: data),
+    ),
+  );
+
+  /// Loads message [messageId] of [chatId] when it isn't in the store
+  /// yet, such as the one whose keyboard the chat shows.
+  Future<void> loadMessage(int chatId, int messageId) async {
+    if (store.message(chatId, messageId) != null) return;
+    if (!_requested.add((chatId, messageId))) return;
+    try {
+      final message = await _client.send(
+        td.GetMessage(chatId: chatId, messageId: messageId),
+      );
+      store.addReferenced(ConversationMessage(message));
+      _notify();
+    } on td.TdException {
+      _requested.remove((chatId, messageId));
+    }
+  }
+
   /// Closes the poll of message [messageId] for good.
   Future<void> stopPoll(int chatId, int messageId) =>
       _client.send(td.StopPoll(chatId: chatId, messageId: messageId));
@@ -1089,6 +1119,7 @@ final class ConversationController {
           ..setUnreadMentionCount(chat.id, chat.unreadMentionCount)
           ..setUnreadReactionCount(chat.id, chat.unreadReactionCount)
           ..setHasScheduled(chat.id, chat.hasScheduledMessages)
+          ..setReplyMarkupMessageId(chat.id, chat.replyMarkupMessageId)
           ..setChannel(chat.id, switch (chat.type) {
             td.ChatTypeSupergroup(:final isChannel) => isChannel,
             _ => false,
@@ -1237,6 +1268,12 @@ final class ConversationController {
           return;
         }
         if (store.markPinned(chatId, messageId, pinned: isPinned)) _notify();
+      case td.UpdateChatReplyMarkup(:final chatId, :final replyMarkupMessage):
+        if (replyMarkupMessage != null) {
+          store.addReferenced(ConversationMessage(replyMarkupMessage));
+        }
+        store.setReplyMarkupMessageId(chatId, replyMarkupMessage?.id ?? 0);
+        _notify();
       case td.UpdatePoll(:final poll):
         if (store.patchPoll(poll)) _notify();
       case td.UpdateMessageContentOpened(:final chatId, :final messageId):

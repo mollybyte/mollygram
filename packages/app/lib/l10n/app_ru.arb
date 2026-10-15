@@ -255,6 +255,8 @@
   "menuStopPoll": "Остановить опрос",
   "stopPollTitle": "Остановить опрос?",
   "stopPollMessage": "Больше никто не сможет в нём проголосовать.",
+  "botKeyboard": "Клавиатура бота",
+  "botNoAnswer": "Бот не ответил",
   "contentGame": "Игра",
   "contentInvoice": "Счёт",
   "contentStory": "История",

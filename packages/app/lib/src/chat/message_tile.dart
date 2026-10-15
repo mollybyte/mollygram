@@ -12,6 +12,7 @@ import '../home/format.dart';
 import '../links/link_router.dart';
 import '../plugins/message_hooks.dart';
 import '../settings/stickers/sticker_options.dart';
+import 'bot_keyboard.dart';
 import 'concealed.dart';
 import 'describe.dart';
 import 'file_content.dart';
@@ -95,6 +96,7 @@ class MessageRowActions {
     this.onSelectToggle,
     this.onTextSelected,
     this.onPollVote,
+    this.onInlineButton,
   });
 
   /// Adds the reaction, or takes it back when the user had chosen it.
@@ -133,6 +135,13 @@ class MessageRowActions {
   /// takes the vote back.
   final void Function(ConversationMessage message, List<int> optionIds)?
   onPollVote;
+
+  /// A press on one of a bot's buttons under [message].
+  final void Function(
+    ConversationMessage message,
+    td.InlineKeyboardButton button,
+  )?
+  onInlineButton;
 }
 
 /// A message, or an album, in Telegram's flat layout: no bubbles, the
@@ -224,6 +233,24 @@ class MessageTile extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _MessageBody(row: row, store: store, actions: actions),
+        if (message.message.replyMarkup case td.ReplyMarkupInlineKeyboard(
+          :final rows,
+        ))
+          SelectionContainer.disabled(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: InlineKeyboard(
+                  rows: rows,
+                  onPressed: switch (actions.onInlineButton) {
+                    null => null,
+                    final press => (button) => press(message, button),
+                  },
+                ),
+              ),
+            ),
+          ),
         if (reactions != null && reactions.isNotEmpty)
           SelectionContainer.disabled(
             child: Padding(

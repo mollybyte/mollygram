@@ -855,6 +855,50 @@ void main() {
     expect(sent['option_ids'], [0, 1]);
   });
 
+  testWidgets('presses a bot\'s inline button and shows its answer', (
+    tester,
+  ) async {
+    json.history = [_inlineKeyboardMessage(), ..._history];
+    await pump(tester);
+    expect(find.text('Open'), findsOneWidget);
+
+    await tester.tap(find.text('Ping'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    final sent = json.sent.lastWhere(
+      (r) => r['@type'] == 'getCallbackQueryAnswer',
+    );
+    expect(sent['message_id'], 16);
+    expect((sent['payload']! as Map)['data'], base64.encode([1, 2, 3]));
+    expect(find.text('Pong'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 3));
+  });
+
+  testWidgets('shows a bot\'s reply keyboard and sends a button', (
+    tester,
+  ) async {
+    json.history = [_replyKeyboardMessage(), ..._history];
+    json.push(_chat(lastRead: 13, unread: 0, last: 13, replyMarkup: 17));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await pump(tester);
+    expect(find.text('Menu'), findsOneWidget);
+    expect(find.text('Help'), findsOneWidget);
+
+    await tester.tap(find.text('Help'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    final sent = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    expect(
+      ((sent['input_message_content']! as Map)['text']! as Map)['text'],
+      'Help',
+    );
+    // A one-time keyboard folds away; the toggle brings it back.
+    expect(find.text('Menu'), findsNothing);
+    await tester.tap(find.byTooltip('Bot keyboard'));
+    await tester.pump();
+    expect(find.text('Menu'), findsOneWidget);
+  });
+
   testWidgets('lists the scheduled messages and acts on one', (tester) async {
     json.chat = [for (var id = 1; id <= 10; id++) id];
     json.push(_chat(lastRead: 10, unread: 0, last: 10, scheduled: true));
@@ -1416,12 +1460,14 @@ Map<String, Object?> _chat({
   bool canSendText = true,
   String? draft,
   bool scheduled = false,
+  int replyMarkup = 0,
 }) => {
   '@type': 'updateNewChat',
   'chat': {
     '@type': 'chat',
     'id': 7,
     'has_scheduled_messages': scheduled,
+    'reply_markup_message_id': replyMarkup,
     'type': type,
     'title': 'Boris',
     'last_message': _message(
@@ -1754,6 +1800,12 @@ final class _FakeTdJson implements td.TdJson {
           },
         ],
       },
+      'getCallbackQueryAnswer' => {
+        '@type': 'callbackQueryAnswer',
+        'text': 'Pong',
+        'show_alert': false,
+        'url': '',
+      },
       _ => {'@type': 'ok'},
     };
     _queue.add(
@@ -1776,6 +1828,62 @@ final class _FakeTdJson implements td.TdJson {
 }
 
 /// A downloaded PDF from Boris, kept at [path].
+td.Message _inlineKeyboardMessage() => td.Message.fromJson({
+  ..._message(id: 16, senderId: 2, text: 'Pick one').toJson(),
+  'reply_markup': {
+    '@type': 'replyMarkupInlineKeyboard',
+    'rows': [
+      [
+        {
+          '@type': 'inlineKeyboardButton',
+          'text': 'Open',
+          'icon_custom_emoji_id': 0,
+          'style': {'@type': 'buttonStyleDefault'},
+          'type': {
+            '@type': 'inlineKeyboardButtonTypeUrl',
+            'url': 'https://example.com',
+          },
+        },
+        {
+          '@type': 'inlineKeyboardButton',
+          'text': 'Ping',
+          'icon_custom_emoji_id': 0,
+          'style': {'@type': 'buttonStylePrimary'},
+          'type': {
+            '@type': 'inlineKeyboardButtonTypeCallback',
+            'data': base64.encode([1, 2, 3]),
+          },
+        },
+      ],
+    ],
+  },
+});
+
+td.Message _replyKeyboardMessage() => td.Message.fromJson({
+  ..._message(id: 17, senderId: 2, text: 'What now?').toJson(),
+  'reply_markup': {
+    '@type': 'replyMarkupShowKeyboard',
+    'rows': [
+      [
+        for (final text in ['Menu', 'Help'])
+          {
+            '@type': 'keyboardButton',
+            'text': text,
+            'icon_custom_emoji_id': 0,
+            'style': {'@type': 'buttonStyleDefault'},
+            'type': {'@type': 'keyboardButtonTypeText'},
+          },
+      ],
+    ],
+    'is_persistent': false,
+    'resize_keyboard': false,
+    'one_time': true,
+    'is_personal': false,
+    'force_reply': false,
+    'input_field_placeholder': '',
+  },
+});
+
 td.Message _pollMessage({required int? chosen, bool multiple = false}) =>
     td.Message.fromJson({
       ..._message(id: 16, senderId: 1, text: '', outgoing: true).toJson(),

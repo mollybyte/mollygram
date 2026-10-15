@@ -941,6 +941,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get stopPollMessage => 'Больше никто не сможет в нём проголосовать.';
 
   @override
+  String get botKeyboard => 'Клавиатура бота';
+
+  @override
+  String get botNoAnswer => 'Бот не ответил';
+
+  @override
   String get contentGame => 'Игра';
 
   @override

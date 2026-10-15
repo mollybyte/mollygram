@@ -966,6 +966,39 @@ void main() {
     expect(mention?.id, 30);
   });
 
+  test('keeps the bot keyboard of a chat and asks a bot button', () async {
+    await controller.start();
+    expect(controller.store.replyMarkupMessageId(7), 0);
+
+    json.push({
+      '@type': 'updateChatReplyMarkup',
+      'chat_id': 7,
+      'reply_markup_message': _message(
+        id: 17,
+        chatId: 7,
+        text: 'Keyboard',
+      ).toJson(),
+    });
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    expect(controller.store.replyMarkupMessageId(7), 17);
+    expect(controller.store.message(7, 17)?.text, 'Keyboard');
+
+    json.push({
+      '@type': 'updateChatReplyMarkup',
+      'chat_id': 7,
+      'reply_markup_message': null,
+    });
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    expect(controller.store.replyMarkupMessageId(7), 0);
+
+    await controller.callbackQuery(7, 16, Uint8List.fromList([1, 2]));
+    final query = json.sent.lastWhere(
+      (r) => r['@type'] == 'getCallbackQueryAnswer',
+    );
+    expect(query['message_id'], 16);
+    expect((query['payload']! as Map)['data'], base64.encode([1, 2]));
+  });
+
   test('follows a poll and votes in it', () async {
     json.history = (_) => [
       td.Message.fromJson({
@@ -1623,6 +1656,12 @@ final class _FakeTdJson implements td.TdJson {
             'date': 1900000000,
           },
         ],
+      },
+      'getCallbackQueryAnswer' => {
+        '@type': 'callbackQueryAnswer',
+        'text': '',
+        'show_alert': false,
+        'url': '',
       },
       _ => {'@type': 'ok'},
     };
