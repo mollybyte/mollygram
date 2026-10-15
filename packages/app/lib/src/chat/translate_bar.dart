@@ -49,9 +49,8 @@ class ChatTranslateBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = MgColors.of(context);
-    return Glass(
-      radius: height / 2,
-      padding: const EdgeInsets.only(left: 14, right: 4),
+    return BarStrip(
+      padding: const EdgeInsets.only(left: 16, right: 8),
       child: SizedBox(
         height: height,
         child: Row(

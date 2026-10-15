@@ -614,8 +614,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
   /// The bar under the header, when the chat has pinned messages and the
   /// user hasn't closed it.
   /// The room the translation bar takes under the header.
-  double get _translateInset =>
-      _translateShown ? ChatTranslateBar.height + 8 : 0;
+  double get _translateInset => _translateShown ? ChatTranslateBar.height : 0;
 
   void _translateFailed() {
     if (mounted) {
@@ -1660,8 +1659,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
   double get _topInset =>
       TimelineView.headerInset +
       _translateInset +
-      (_tagsShown ? SavedTagBar.height + 8 : 0) +
-      (_pinnedShown && !_pinnedListOpen ? PinnedBar.height + 8 : 0);
+      (_tagsShown ? SavedTagBar.height : 0) +
+      (_pinnedShown && !_pinnedListOpen ? PinnedBar.height : 0);
 
   /// Keeps [_scroll.pinned] and the down button in step with where the
   /// user leaves the view.
@@ -3679,16 +3678,16 @@ class _ChatViewState extends ConsumerState<ChatView> {
           ),
           if (translateBar != null)
             Positioned(
-              top: ChatHeaderBar.height + 8,
-              left: 14,
-              right: 14,
+              top: ChatHeaderBar.height,
+              left: 0,
+              right: 0,
               child: translateBar,
             ),
           if (_tagBar(l10n) case final bar?)
             Positioned(
-              top: 10 + ChatHeaderBar.height + 8 + _translateInset,
-              left: 14,
-              right: 14,
+              top: ChatHeaderBar.height + _translateInset,
+              left: 0,
+              right: 0,
               child: bar,
             ),
           if (!_listOpen)
@@ -3698,7 +3697,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
                     ChatHeaderBar.height +
                     8 +
                     _translateInset +
-                    (_tagsShown ? SavedTagBar.height + 8 : 0),
+                    (_tagsShown ? SavedTagBar.height : 0),
                 left: 14,
                 right: 14,
                 child: bar,
