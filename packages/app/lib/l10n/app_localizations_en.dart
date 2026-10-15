@@ -683,6 +683,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get hideWithSpoiler => 'Hide with a spoiler';
 
   @override
+  String get viewOnce => 'View once';
+
+  @override
   String get captionHint => 'Add a caption';
 
   @override

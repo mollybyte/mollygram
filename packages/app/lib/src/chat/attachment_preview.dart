@@ -8,6 +8,7 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../media/native_video_engine.dart';
+import '../secret/secret_chat.dart' show selfDestructLabel;
 import 'describe.dart';
 import 'sticker_picker.dart';
 
@@ -16,12 +17,13 @@ typedef AttachmentChoice = ({List<OutgoingFile> files, String caption});
 
 /// Shows the files about to be sent, with a caption field and, for photos
 /// and videos, the choice to send them untouched as files or hidden
-/// behind a spoiler. [caption]
+/// behind a spoiler, and in a private chat a self-destruct timer. [caption]
 /// starts with the composer's draft. Completes with null when cancelled.
 Future<AttachmentChoice?> showAttachmentPreview(
   BuildContext context, {
   required List<String> paths,
   String caption = '',
+  bool allowSelfDestruct = false,
 }) => showGeneralDialog<AttachmentChoice>(
   context: context,
   barrierDismissible: true,
@@ -37,16 +39,24 @@ Future<AttachmentChoice?> showAttachmentPreview(
             OutgoingFile(path: path, kind: outgoingKindOf(path)),
         ],
         caption: caption,
+        allowSelfDestruct: allowSelfDestruct,
       ),
     ),
   ),
 );
 
 class _Preview extends StatefulWidget {
-  const _Preview({required this.files, required this.caption});
+  const _Preview({
+    required this.files,
+    required this.caption,
+    required this.allowSelfDestruct,
+  });
 
   final List<OutgoingFile> files;
   final String caption;
+
+  /// Whether a self-destruct timer is offered: in private chats only.
+  final bool allowSelfDestruct;
 
   @override
   State<_Preview> createState() => _PreviewState();
@@ -57,6 +67,10 @@ class _PreviewState extends State<_Preview> {
   final _focus = FocusNode();
   var _asFiles = false;
   var _spoiler = false;
+  var _selfDestruct = 0;
+
+  /// The timers offered, in seconds; view once first after Off.
+  static const _timers = [0, OutgoingFile.viewOnce, 3, 5, 10, 30, 60];
 
   /// Photos and videos the user edited, by their original path.
   final _edited = <String, MediaEditResult>{};
@@ -80,8 +94,32 @@ class _PreviewState extends State<_Preview> {
     for (final file in widget.files)
       _asFiles && file.isMedia
           ? file.asDocument()
-          : _withEdit(file).copyWith(spoiler: _spoiler && file.isMedia),
+          : _withEdit(file).copyWith(
+              spoiler: _spoiler && file.isMedia,
+              selfDestruct: file.isMedia ? _selfDestruct : 0,
+            ),
   ];
+
+  String _timerLabel(AppLocalizations l10n, int seconds) => switch (seconds) {
+    OutgoingFile.viewOnce => l10n.viewOnce,
+    _ => selfDestructLabel(seconds, l10n),
+  };
+
+  Future<void> _pickTimer(BuildContext anchor) async {
+    final l10n = AppLocalizations.of(context);
+    final box = anchor.findRenderObject()! as RenderBox;
+    await showMgMenu(
+      context,
+      position: box.localToGlobal(Offset(0, box.size.height)),
+      items: [
+        for (final seconds in _timers)
+          MgMenuItem(
+            label: _timerLabel(l10n, seconds),
+            onSelected: () => setState(() => _selfDestruct = seconds),
+          ),
+      ],
+    );
+  }
 
   OutgoingFile _withEdit(OutgoingFile file) {
     final video = _editedVideos[file.path];
@@ -207,7 +245,7 @@ class _PreviewState extends State<_Preview> {
                 value: _asFiles,
                 onChanged: (value) => setState(() => _asFiles = value),
               ),
-              // A file can't hide behind a spoiler; only media can.
+              // A file can't hide behind a spoiler or burn; only media can.
               if (!_asFiles) ...[
                 const SizedBox(height: 6),
                 _CheckRow(
@@ -215,6 +253,21 @@ class _PreviewState extends State<_Preview> {
                   value: _spoiler,
                   onChanged: (value) => setState(() => _spoiler = value),
                 ),
+                if (widget.allowSelfDestruct) ...[
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Text(l10n.selfDestructTitle, style: mgTextStyle(c)),
+                      const Spacer(),
+                      Builder(
+                        builder: (anchor) => MgTextButton(
+                          label: _timerLabel(l10n, _selfDestruct),
+                          onPressed: () => _pickTimer(anchor),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ],
             const SizedBox(height: 12),

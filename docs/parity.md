@@ -124,7 +124,7 @@ M8 calls and macOS release, M9 after release.
 | Location and venue sending | missing | | M | M2 |
 | Contact sending | done | Contact… under the attach button opens a searchable list of contacts; the message shows the monogram, name and number and opens the person | S | M2 |
 | Send preview: caption, send as files, albums | done | #31 | | |
-| Send preview: spoiler, self-destruct timer, compression choice | partial | Hide with a spoiler and Send as files in the preview; self-destruct timer and a quality choice pending | S | M2 |
+| Send preview: spoiler, self-destruct timer, compression choice | partial | Hide with a spoiler, Send as files and, in private chats, a self-destruct timer (view once, 3 s to 1 min) in the preview; a quality choice pending | S | M2 |
 | Media editor: crop, rotate, flip, aspect presets | done | `packages/media_editor` | | |
 | Media editor: drawing (pen, marker, arrow, eraser, colours, thickness) | done | `packages/media_editor` | | |
 | Media editor: text, stickers and emoji placed on the image | done | `packages/media_editor`; stickers from the user’s packs through the app’s picker (animated ones as stills) | | |

@@ -1262,6 +1262,12 @@ abstract class AppLocalizations {
   /// **'Hide with a spoiler'**
   String get hideWithSpoiler;
 
+  /// No description provided for @viewOnce.
+  ///
+  /// In en, this message translates to:
+  /// **'View once'**
+  String get viewOnce;
+
   /// No description provided for @captionHint.
   ///
   /// In en, this message translates to:

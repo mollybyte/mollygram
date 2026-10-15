@@ -690,6 +690,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get hideWithSpoiler => 'Скрыть спойлером';
 
   @override
+  String get viewOnce => 'Один раз';
+
+  @override
   String get captionHint => 'Добавить подпись';
 
   @override

@@ -62,6 +62,27 @@ void main() {
     expect(document, isA<td.InputMessageDocument>());
   });
 
+  test('sets a self-destruct timer and sends such media alone', () {
+    final timed = inputContentOf(_file('/a.jpg').copyWith(selfDestruct: 10));
+    expect(
+      (timed as td.InputMessagePhoto).selfDestructType?.toJson(),
+      const td.MessageSelfDestructTypeTimer(selfDestructTime: 10).toJson(),
+    );
+    final once = inputContentOf(
+      _file('/a.jpg').copyWith(selfDestruct: OutgoingFile.viewOnce),
+    );
+    expect(
+      (once as td.InputMessagePhoto).selfDestructType,
+      isA<td.MessageSelfDestructTypeImmediately>(),
+    );
+    final groups = groupForSending([
+      _file('/a.jpg').copyWith(selfDestruct: 10),
+      _file('/b.jpg'),
+      _file('/c.jpg'),
+    ]);
+    expect([for (final g in groups) g.length], [1, 2]);
+  });
+
   test('sends an edited video with its thumbnail and cover', () {
     final video = inputContentOf(
       const OutgoingFile(

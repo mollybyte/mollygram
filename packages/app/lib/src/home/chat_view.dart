@@ -1769,10 +1769,15 @@ class _ChatViewState extends ConsumerState<ChatView> {
     final useDraft = _editing == null;
     final draft = useDraft ? _draft.text : '';
     final draftFormats = useDraft ? _draft.ranges : const <FormatRange>[];
+    final store = _conversations.store;
     final choice = await showAttachmentPreview(
       context,
       paths: paths,
       caption: draft,
+      // Only a person can get self-destructing media, not a bot.
+      allowSelfDestruct:
+          store.privateUserIdOf(chatId) != null &&
+          store.botUserIdOf(chatId) == null,
     );
     if (choice == null && temporary) {
       for (final path in paths) {
