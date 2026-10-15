@@ -8,6 +8,7 @@ import 'conversation_store.dart';
 import 'forum_topics.dart';
 import 'message_thread.dart';
 import 'outgoing_file.dart';
+import 'peer_info.dart';
 import 'saved_topics.dart';
 import 'text_edit.dart';
 
@@ -1308,6 +1309,42 @@ final class ConversationController {
       ),
     );
   }
+
+  /// The photos of a profile, newest first: a user's profile photos, or
+  /// the photos a group or channel has had, from its photo-change
+  /// messages. [userId] names the user of a private chat.
+  Future<List<ProfilePhoto>> profilePhotos(int chatId, {int userId = 0}) async {
+    if (userId != 0) {
+      final photos = await _client.send(
+        td.GetUserProfilePhotos(userId: userId, offset: 0, limit: 100),
+      );
+      return [
+        for (final photo in photos.photos)
+          (photo: _photoOf(photo), date: photo.addedDate),
+      ];
+    }
+    final found = await _client.send(
+      td.SearchChatMessages(
+        chatId: chatId,
+        query: '',
+        fromMessageId: 0,
+        offset: 0,
+        limit: 100,
+        filter: const td.SearchMessagesFilterChatPhoto(),
+      ),
+    );
+    return [
+      for (final message in found.messages)
+        if (message.content case td.MessageChatChangePhoto(:final photo))
+          (photo: _photoOf(photo), date: message.date),
+    ];
+  }
+
+  static td.Photo _photoOf(td.ChatPhoto photo) => td.Photo(
+    hasStickers: false,
+    minithumbnail: photo.minithumbnail,
+    sizes: photo.sizes,
+  );
 
   /// Sends a place as a message, as a reply to [replyTo] when given.
   Future<void> sendLocation(int chatId, td.Location location, {int? replyTo}) =>

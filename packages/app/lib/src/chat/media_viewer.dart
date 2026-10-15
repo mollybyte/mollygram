@@ -27,6 +27,23 @@ export 'media_gallery.dart' show MediaViewerItem;
 Future<void> showMediaViewer(BuildContext context, MediaViewerItem item) =>
     _open(context, MediaGallery.single(item), store: null);
 
+/// Opens a profile's [photos], newest first, at [index]: the viewer pages
+/// through them with [title] and when each was set on top.
+Future<void> showProfilePhotos(
+  BuildContext context, {
+  required List<ProfilePhoto> photos,
+  required String title,
+  int index = 0,
+}) => _open(
+  context,
+  MediaGallery.list([
+    for (final photo in photos)
+      GalleryEntry(PhotoItem(photo.photo), date: photo.date),
+  ], index: index),
+  store: null,
+  title: title,
+);
+
 /// Opens the media of [message] in the viewer, which pages through the
 /// rest of the chat's photos and videos with the arrows. [onForward]
 /// forwards the one on screen and [onShowInChat] scrolls to it, both once
@@ -71,6 +88,7 @@ Future<void> _open(
   BuildContext context,
   MediaGallery gallery, {
   required ConversationStore? store,
+  String? title,
   void Function(ConversationMessage message)? onForward,
   void Function(ConversationMessage message)? onShowInChat,
   MediaDeleteHandler? onDelete,
@@ -86,6 +104,7 @@ Future<void> _open(
       pageBuilder: (context, animation, secondary) => _MediaViewer(
         gallery: gallery,
         store: store,
+        title: title,
         animation: animation,
         onForward: onForward == null
             ? null
@@ -116,6 +135,7 @@ class _MediaViewer extends StatefulWidget {
     required this.gallery,
     required this.store,
     required this.animation,
+    this.title,
     this.onForward,
     this.onShowInChat,
     this.onDelete,
@@ -123,6 +143,9 @@ class _MediaViewer extends StatefulWidget {
 
   final MediaGallery gallery;
   final ConversationStore? store;
+
+  /// Whose media this is, shown on top when the entries have no message.
+  final String? title;
   final Animation<double> animation;
   final void Function(ConversationMessage message)? onForward;
   final void Function(ConversationMessage message)? onShowInChat;
@@ -338,7 +361,7 @@ class _MediaViewerState extends State<_MediaViewer> {
       curve: Curves.easeOutCubic,
       reverseCurve: Curves.easeInCubic,
     );
-    final key = message?.id ?? 0;
+    final key = message?.id ?? -1 - _gallery.index;
 
     final page = _Page(
       key: ValueKey(key),
@@ -428,6 +451,8 @@ class _MediaViewerState extends State<_MediaViewer> {
                       child: _TopBar(
                         message: message,
                         store: widget.store,
+                        title: widget.title,
+                        date: entry.date,
                         counter: entries.length > 1
                             ? l10n.mediaCounter(
                                 _gallery.index + 1,
@@ -650,7 +675,7 @@ class _ThumbnailsState extends State<_Thumbnails> {
     final gallery = widget.gallery;
     final index = gallery.index;
     final id = gallery.current.message?.id;
-    final samePage = id != null && id == _messageId;
+    final samePage = id == null ? index == _index : id == _messageId;
     if (index == _index && samePage) return;
     _index = index;
     _messageId = id;
@@ -812,11 +837,17 @@ class _TopBar extends StatelessWidget {
     required this.message,
     required this.store,
     required this.actions,
+    this.title,
+    this.date,
     this.counter,
   });
 
   final ConversationMessage? message;
   final ConversationStore? store;
+
+  /// For an entry with no message: whose photo it is and when it was set.
+  final String? title;
+  final int? date;
   final String? counter;
   final List<Widget> actions;
 
@@ -827,21 +858,28 @@ class _TopBar extends StatelessWidget {
     final message = this.message;
     final store = this.store;
     Widget? who;
-    if (message != null && store != null) {
-      final name = nameOfSender(l10n, store, message.sender);
-      final date = DateTime.fromMillisecondsSinceEpoch(message.date * 1000);
-      final when =
-          '${DateFormat.yMMMMd(locale).format(date)}, '
-          '${DateFormat.Hm(locale).format(date)}';
+    final (String? name, int? seconds, td.File? photo) = switch ((
+      message,
+      store,
+    )) {
+      (final message?, final store?) => (
+        nameOfSender(l10n, store, message.sender),
+        message.date,
+        store.photoOf(message.sender),
+      ),
+      _ => (title, date, null),
+    };
+    if (name != null) {
+      final when = seconds == null
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(seconds * 1000);
       who = Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          SenderAvatar(
-            name: name,
-            photo: store.photoOf(message.sender),
-            size: 32,
-          ),
-          const SizedBox(width: 10),
+          if (message != null) ...[
+            SenderAvatar(name: name, photo: photo, size: 32),
+            const SizedBox(width: 10),
+          ],
           Flexible(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -857,14 +895,16 @@ class _TopBar extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                Text(
-                  when,
-                  maxLines: 1,
-                  style: const TextStyle(
-                    color: _onDarkSecondary,
-                    fontSize: 11.5,
+                if (when != null)
+                  Text(
+                    '${DateFormat.yMMMMd(locale).format(when)}, '
+                    '${DateFormat.Hm(locale).format(when)}',
+                    maxLines: 1,
+                    style: const TextStyle(
+                      color: _onDarkSecondary,
+                      fontSize: 11.5,
+                    ),
                   ),
-                ),
               ],
             ),
           ),

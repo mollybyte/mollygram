@@ -174,7 +174,7 @@ M8 calls and macOS release, M9 after release.
 | Group and channel info: description, link, members count | done | First 50 members, most recently active first | | |
 | Shared media tabs: media, files, links, voice, music, GIFs, groups in common | partial | `SharedMediaView` has media, files, links, voice, music; GIFs and groups in common missing; in the info panel | M | M2 |
 | Members list with search | done | Info panel (`profile/`): owner and admins first, then online; search and Show more pages through `getSupergroupMembers` | | |
-| Profile photo gallery | missing | | S | M2 |
+| Profile photo gallery | done | The big photo in the info panel opens the viewer with the profile's photos newest first (`getUserProfilePhotos`; for a group or channel its photo-change messages), the name and when each was set on top, arrows and thumbnails to page | S | M2 |
 | Per-chat notifications and auto-delete timer | partial | Mute and unmute in the info panel; no mute-for durations, no auto-delete | S | M1 |
 | Block, report, share contact | partial | Block and unblock in the info panel | S | M6 |
 
