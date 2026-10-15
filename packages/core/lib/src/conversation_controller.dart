@@ -891,6 +891,7 @@ final class ConversationController {
       roots: info.messages,
       replyCount: info.replyInfo?.replyCount ?? 0,
       onDispose: _threads.remove,
+      sendFiles: sendFiles,
     );
     _threads.add(thread);
     return thread;
@@ -1028,22 +1029,41 @@ final class ConversationController {
   /// Sends local files, grouped into albums as [groupForSending] does.
   /// [caption], formatted by [captionEntities], goes under the first
   /// file, and the first message answers [replyTo] when it is set.
-  Future<void> sendFiles(
+  Future<List<td.Message>> sendFiles(
     int chatId,
     List<OutgoingFile> files, {
     String caption = '',
     List<td.TextEntity> captionEntities = const [],
     int? replyTo,
+    int? threadId,
   }) async {
+    final topic = threadId == null
+        ? null
+        : td.MessageTopicThread(messageThreadId: threadId);
+    final sent = <td.Message>[];
     // A caption longer than the server takes goes first as its own
     // message, as the official apps do.
     if (caption.trim().isNotEmpty && caption.length > await _captionLimit()) {
-      await sendText(
-        chatId,
-        caption,
-        replyTo: replyTo,
-        entities: captionEntities,
+      sent.add(
+        await _client.send(
+          td.SendMessage(
+            chatId: chatId,
+            topicId: topic,
+            replyTo: replyTo == null
+                ? null
+                : td.InputMessageReplyToMessage(
+                    messageId: replyTo,
+                    checklistTaskId: 0,
+                    pollOptionId: '',
+                  ),
+            inputMessageContent: td.InputMessageText(
+              text: td.FormattedText(text: caption, entities: captionEntities),
+              clearDraft: false,
+            ),
+          ),
+        ),
       );
+      _add(sent.last);
       caption = '';
       replyTo = null;
     }
@@ -1067,26 +1087,31 @@ final class ConversationController {
       ];
       first = false;
       if (contents.length == 1) {
-        _add(
+        sent.add(
           await _client.send(
             td.SendMessage(
               chatId: chatId,
+              topicId: topic,
               replyTo: reply,
               inputMessageContent: contents.single,
             ),
           ),
         );
+        _add(sent.last);
       } else {
-        final sent = await _client.send(
+        final album = await _client.send(
           td.SendMessageAlbum(
             chatId: chatId,
+            topicId: topic,
             replyTo: reply,
             inputMessageContents: contents,
           ),
         );
-        sent.messages.forEach(_add);
+        album.messages.forEach(_add);
+        sent.addAll(album.messages);
       }
     }
+    return sent;
   }
 
   /// Replaces the text of a text message, or the caption of a media one,

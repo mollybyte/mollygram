@@ -4,6 +4,17 @@ import 'dart:collection';
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 
 import 'conversation_store.dart';
+import 'outgoing_file.dart';
+
+/// Sends [files] into [chatId], the way the conversation controller does.
+typedef FileSender = Future<List<td.Message>> Function(
+  int chatId,
+  List<OutgoingFile> files, {
+  String caption,
+  List<td.TextEntity> captionEntities,
+  int? replyTo,
+  int? threadId,
+});
 
 /// The comments under a channel post, or the replies to a message in a
 /// group: the discussion chat, the thread's root and the messages under
@@ -20,6 +31,7 @@ final class MessageThread {
     required List<td.Message> roots,
     required this._replyCount,
     required this._onDispose,
+    required this._sendFiles,
   }) {
     for (final root in roots) {
       final message = ConversationMessage(root);
@@ -39,6 +51,7 @@ final class MessageThread {
   final int threadId;
 
   final void Function(MessageThread) _onDispose;
+  final FileSender _sendFiles;
   final _changes = StreamController<void>.broadcast(sync: true);
 
   /// Newest first, the root included.
@@ -135,6 +148,27 @@ final class MessageThread {
     );
     if (_disposed) return;
     _add(message);
+    _notify();
+  }
+
+  /// Sends [files] into the thread, with [caption] on the first one, as
+  /// a reply to the comment [replyTo] or to the root.
+  Future<void> sendFiles(
+    List<OutgoingFile> files, {
+    String caption = '',
+    List<td.TextEntity> captionEntities = const [],
+    int? replyTo,
+  }) async {
+    final sent = await _sendFiles(
+      chatId,
+      files,
+      caption: caption,
+      captionEntities: captionEntities,
+      replyTo: replyTo ?? threadId,
+      threadId: threadId,
+    );
+    if (_disposed) return;
+    sent.forEach(_add);
     _notify();
   }
 
