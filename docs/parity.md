@@ -153,7 +153,7 @@ M8 calls and macOS release, M9 after release.
 | Voice playback speed and continuous play | done | Speed 1×, 1.5×, 2× and waveform scrubbing; a finished voice message goes on to the next newer one of the chat (music to the next music file), downloading it first | S | M1 |
 | Downloads manager (list, pause, show in Finder) | missing | `DownloadsController` | M | M7 |
 | Autodownload rules | missing | Data and storage | M | M7 |
-| Quick Look for documents | missing | | S | M2 |
+| Quick Look for documents | done | Quick Look in the menu of a downloaded file on macOS (`qlmanage -p`) | S | M2 |
 
 ### Search
 

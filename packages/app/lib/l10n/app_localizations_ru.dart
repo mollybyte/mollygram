@@ -521,6 +521,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get menuShowInFolder => 'Показать в папке';
 
   @override
+  String get menuQuickLook => 'Быстрый просмотр';
+
+  @override
   String get sendWithoutSound => 'Отправить без звука';
 
   @override

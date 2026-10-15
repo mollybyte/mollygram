@@ -518,6 +518,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get menuShowInFolder => 'Show in folder';
 
   @override
+  String get menuQuickLook => 'Quick Look';
+
+  @override
   String get sendWithoutSound => 'Send without sound';
 
   @override

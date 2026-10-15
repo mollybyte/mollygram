@@ -1774,6 +1774,17 @@ void main() {
     );
     await tester.pump();
     expect(revealed, source.path);
+
+    if (Platform.isMacOS) {
+      String? previewed;
+      final look = quickLookFile;
+      quickLookFile = (path) async => previewed = path;
+      addTearDown(() => quickLookFile = look);
+      await rightClick(tester, 'route_saturday.pdf');
+      await tester.tap(find.text('Quick Look'));
+      await tester.pump();
+      expect(previewed, source.path);
+    }
   });
 
   testWidgets('copies the text of a message', (tester) async {

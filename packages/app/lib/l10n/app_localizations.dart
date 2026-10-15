@@ -1004,6 +1004,12 @@ abstract class AppLocalizations {
   /// **'Show in folder'**
   String get menuShowInFolder;
 
+  /// No description provided for @menuQuickLook.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Look'**
+  String get menuQuickLook;
+
   /// No description provided for @sendWithoutSound.
   ///
   /// In en, this message translates to:
