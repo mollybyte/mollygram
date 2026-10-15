@@ -1623,6 +1623,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noEmojiFound => 'No emoji found';
 
   @override
+  String get stickerSearch => 'Search stickers';
+
+  @override
+  String get noStickersFound => 'No stickers found';
+
+  @override
+  String get stickerSearchResults => 'Found';
+
+  @override
   String get emojiSmileys => 'Smileys';
 
   @override

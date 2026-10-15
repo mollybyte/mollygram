@@ -2756,6 +2756,24 @@ abstract class AppLocalizations {
   /// **'No emoji found'**
   String get noEmojiFound;
 
+  /// No description provided for @stickerSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search stickers'**
+  String get stickerSearch;
+
+  /// No description provided for @noStickersFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No stickers found'**
+  String get noStickersFound;
+
+  /// No description provided for @stickerSearchResults.
+  ///
+  /// In en, this message translates to:
+  /// **'Found'**
+  String get stickerSearchResults;
+
   /// No description provided for @emojiSmileys.
   ///
   /// In en, this message translates to:

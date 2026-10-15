@@ -59,6 +59,29 @@ final class StickerLibrary {
         ),
       )).stickers;
 
+  /// Stickers matching [query], an emoji or a word in the given
+  /// languages: from the installed and recent ones first, then the rest
+  /// Telegram knows, as the panel's search shows them.
+  Future<List<td.Sticker>> searchStickers(
+    String query, {
+    List<String> languages = const ['en'],
+    int limit = 60,
+  }) async {
+    final text = query.trim();
+    if (text.isEmpty) return const [];
+    final found = await _client.send(
+      td.SearchStickers(
+        stickerType: const td.StickerTypeRegular(),
+        emojis: '',
+        query: text,
+        inputLanguageCodes: languages,
+        offset: 0,
+        limit: limit,
+      ),
+    );
+    return found.stickers;
+  }
+
   /// Emoji whose Telegram keywords start with [query], in the given
   /// languages (IETF codes such as `ru`), best matches first.
   Future<List<String>> searchEmoji(
