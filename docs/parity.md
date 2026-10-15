@@ -159,13 +159,13 @@ M8 calls and macOS release, M9 after release.
 
 | Feature | Status | Notes | Size | M |
 |---|---|---|---|---|
-| User profile: photo, bio, username, phone, birthday, actions | missing | `PeerInfoController` | M | M1 |
-| Group and channel info: description, link, members count | missing | | M | M1 |
+| User profile: photo, bio, username, phone, birthday, actions | done | `PeerInfoController` in core, inspector panel in `app/lib/src/profile` | | |
+| Group and channel info: description, link, members count | done | First 50 members, most recently active first | | |
 | Shared media tabs: media, files, links, voice, music, GIFs, groups in common | missing | `PeerMediaController` | L | M2 |
-| Members list with search | missing | | M | M6 |
+| Members list with search | partial | First page in the info panel, no search or paging | M | M6 |
 | Profile photo gallery | missing | | S | M2 |
-| Per-chat notifications and auto-delete timer | missing | | S | M1 |
-| Block, report, share contact | missing | | S | M6 |
+| Per-chat notifications and auto-delete timer | partial | Mute and unmute in the info panel; no mute-for durations, no auto-delete | S | M1 |
+| Block, report, share contact | partial | Block and unblock in the info panel | S | M6 |
 
 ### Groups, channels and admin tools
 

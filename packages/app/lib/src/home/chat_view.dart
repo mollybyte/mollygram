@@ -23,6 +23,7 @@ import '../chat/forward_picker.dart';
 import '../chat/message_actions.dart';
 import '../chat/message_tile.dart';
 import '../chat/timeline.dart';
+import '../profile/peer_info_state.dart';
 import '../session/providers.dart';
 import '../window_drag_area.dart';
 
@@ -646,7 +647,10 @@ class _ChatViewState extends ConsumerState<ChatView> {
             left: 14,
             right: 14,
             child: ChatHeaderBar(
-              title: ChatTitleCapsule(title: chat?.title ?? ''),
+              title: ChatTitleCapsule(
+                title: chat?.title ?? '',
+                onTap: () => togglePeerInfo(ref, widget.chatId),
+              ),
               actions: const SizedBox.shrink(),
               fill: const WindowDragArea(),
             ),

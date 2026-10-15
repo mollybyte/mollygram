@@ -10,6 +10,7 @@ export 'src/conversation_controller.dart';
 export 'src/conversation_store.dart';
 export 'src/file_controller.dart';
 export 'src/outgoing_file.dart';
+export 'src/peer_info.dart';
 export 'src/phone_country.dart';
 export 'src/sticker_library.dart';
 export 'src/tdlib_initializer.dart';

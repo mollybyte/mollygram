@@ -5,6 +5,7 @@ import 'package:mollygram_shell/mollygram_shell.dart';
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../profile/peer_info_host.dart';
 import '../settings/plugins_page.dart';
 import '../window_drag_area.dart';
 import 'chat_view.dart';
@@ -70,7 +71,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 sidebarWidth: SidebarIsland.width + 16,
                 paneBuilder: (context, chat, focused) => chat == null
                     ? const _NoChat()
-                    : ChatView(key: ValueKey(chat), chatId: chat),
+                    : PeerInfoHost(
+                        key: ValueKey(chat),
+                        chatId: chat,
+                        child: ChatView(chatId: chat),
+                      ),
                 // Jumping to the message itself comes with the chat view's
                 // history navigation; for now the chat opens.
                 onOpenMessage: (message, target) =>
