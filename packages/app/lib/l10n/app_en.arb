@@ -151,6 +151,60 @@
   "sensitiveMedia": "18+",
   "forwardFailed": "Couldn't forward the message",
   "close": "Close",
+  "peerInfo": "Info",
+  "statusOnline": "online",
+  "lastSeenJustNow": "last seen just now",
+  "lastSeenMinutesAgo": "{count, plural, =1{last seen 1 minute ago} other{last seen {count} minutes ago}}",
+  "@lastSeenMinutesAgo": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "lastSeenToday": "last seen today at {time}",
+  "@lastSeenToday": {
+    "placeholders": { "time": { "type": "String" } }
+  },
+  "lastSeenYesterday": "last seen yesterday at {time}",
+  "@lastSeenYesterday": {
+    "placeholders": { "time": { "type": "String" } }
+  },
+  "lastSeenDate": "last seen {date}",
+  "@lastSeenDate": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "lastSeenRecently": "last seen recently",
+  "lastSeenWeek": "last seen within a week",
+  "lastSeenMonth": "last seen within a month",
+  "lastSeenLongAgo": "last seen a long time ago",
+  "statusBot": "bot",
+  "deletedAccount": "Deleted account",
+  "membersCount": "{count, plural, =0{no members} =1{1 member} other{{count} members}}",
+  "@membersCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "subscribersCount": "{count, plural, =0{no subscribers} =1{1 subscriber} other{{count} subscribers}}",
+  "@subscribersCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "infoBio": "Bio",
+  "infoUsername": "Username",
+  "infoPhone": "Mobile",
+  "infoBirthday": "Birthday",
+  "infoDescription": "Description",
+  "infoLink": "Link",
+  "copied": "Copied",
+  "infoMessage": "Message",
+  "infoMute": "Mute",
+  "infoUnmute": "Unmute",
+  "blockUser": "Block user",
+  "unblockUser": "Unblock user",
+  "blockConfirmTitle": "Block {name}?",
+  "@blockConfirmTitle": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "blockConfirmMessage": "They won't be able to send you messages or call you.",
+  "block": "Block",
+  "memberOwner": "owner",
+  "memberAdmin": "admin",
+  "infoFailed": "Couldn't load the info",
   "fileSizeBytes": "{size} B",
   "@fileSizeBytes": {
     "placeholders": { "size": { "type": "String" } }
@@ -518,5 +572,11 @@
     "placeholders": { "number": { "type": "int" } }
   },
   "hidePinned": "Hide pinned messages",
-  "backToPrevious": "Back to where you were"
+  "backToPrevious": "Back to where you were",
+  "joinChannel": "Join channel",
+  "joinGroup": "Join group",
+  "muteChat": "Mute",
+  "unmuteChat": "Unmute",
+  "chatUnavailable": "You can't take part in this chat",
+  "chatActionFailed": "Couldn't do that, try again"
 }

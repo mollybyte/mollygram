@@ -174,6 +174,40 @@ final class ConversationController {
     }
   }
 
+  /// Joins the group or channel [chatId]. The chat may need approval, in
+  /// which case the request is sent and the user stays out for now.
+  Future<void> joinChat(int chatId) async {
+    await _client.send(td.JoinChat(chatId: chatId));
+  }
+
+  /// Mutes the notifications of [chatId] for good, or unmutes them.
+  Future<void> setMuted(int chatId, {required bool muted}) async {
+    await _client.send(
+      td.SetChatNotificationSettings(
+        chatId: chatId,
+        notificationSettings: td.ChatNotificationSettings(
+          useDefaultMuteFor: !muted,
+          // TDLib's "forever".
+          muteFor: muted ? 2147483647 : 0,
+          useDefaultSound: true,
+          soundId: 0,
+          useDefaultShowPreview: true,
+          showPreview: true,
+          useDefaultMuteStories: true,
+          muteStories: false,
+          useDefaultStorySound: true,
+          storySoundId: 0,
+          useDefaultShowStoryPoster: true,
+          showStoryPoster: true,
+          useDefaultDisablePinnedMessageNotifications: true,
+          disablePinnedMessageNotifications: false,
+          useDefaultDisableMentionNotifications: true,
+          disableMentionNotifications: false,
+        ),
+      ),
+    );
+  }
+
   /// Loads the pinned messages of [chatId] for the bar under the header.
   Future<void> loadPinned(int chatId) async {
     final found = await _client.send(
@@ -685,7 +719,26 @@ final class ConversationController {
           ..setChannel(chat.id, switch (chat.type) {
             td.ChatTypeSupergroup(:final isChannel) => isChannel,
             _ => false,
-          });
+          })
+          ..setChatType(chat.id, chat.type)
+          ..setMuteFor(chat.id, chat.notificationSettings.muteFor);
+      case td.UpdateSupergroup(:final supergroup):
+        if (store.setSupergroupStatus(supergroup.id, supergroup.status) !=
+            null) {
+          _notify();
+        }
+      case td.UpdateBasicGroup(:final basicGroup):
+        if (store.setBasicGroupStatus(basicGroup.id, basicGroup.status) !=
+            null) {
+          _notify();
+        }
+      case td.UpdateChatNotificationSettings(
+        :final chatId,
+        :final notificationSettings,
+      ):
+        if (store.setMuteFor(chatId, notificationSettings.muteFor)) {
+          _notify();
+        }
       case td.UpdateChatReadInbox(
         :final chatId,
         :final lastReadInboxMessageId,

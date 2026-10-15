@@ -25,6 +25,7 @@ import '../chat/message_actions.dart';
 import '../chat/message_tile.dart';
 import '../chat/timeline_scroll.dart';
 import '../chat/timeline_view.dart';
+import '../profile/peer_info_state.dart';
 import '../session/providers.dart';
 import '../voice/voice_record_composer.dart';
 import '../window_drag_area.dart';
@@ -97,6 +98,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
   var _pinnedIndex = 0;
   static final _pinnedHidden = <int>{};
   var _pinnedShown = false;
+
+  /// A join or mute request on its way.
+  var _actionPending = false;
 
   @override
   void initState() {
@@ -937,6 +941,55 @@ class _ChatViewState extends ConsumerState<ChatView> {
     );
   }
 
+  /// The bar in place of the composer when the user can't write here:
+  /// Join when they are not in the chat, Mute or Unmute in a channel they
+  /// only read. Null when the composer belongs.
+  Widget? _actionBar(AppLocalizations l10n, ConversationStore store) {
+    final chatId = widget.chatId;
+    if (store.canPost(chatId)) return null;
+    final isChannel = store.isChannel(chatId);
+    switch (store.membership(chatId)) {
+      case ChatMembership.member:
+        if (!isChannel) return null;
+        final muted = store.isMuted(chatId);
+        return ComposerActionBar(
+          label: muted ? l10n.unmuteChat : l10n.muteChat,
+          loading: _actionPending,
+          onPressed: () => unawaited(
+            _chatAction(() => _conversations.setMuted(chatId, muted: !muted)),
+          ),
+        );
+      case ChatMembership.left:
+        return ComposerActionBar(
+          label: isChannel ? l10n.joinChannel : l10n.joinGroup,
+          loading: _actionPending,
+          onPressed: () =>
+              unawaited(_chatAction(() => _conversations.joinChat(chatId))),
+        );
+      case ChatMembership.banned:
+        return ComposerActionBar(label: l10n.chatUnavailable, onPressed: null);
+      case ChatMembership.unknown:
+        return const SizedBox(height: 44);
+    }
+  }
+
+  Future<void> _chatAction(Future<void> Function() action) async {
+    final chatId = widget.chatId;
+    setState(() {
+      _actionPending = true;
+      _failure = null;
+    });
+    try {
+      await action();
+    } catch (_) {
+      if (mounted && widget.chatId == chatId) {
+        setState(() => _failure = _Failure.chatAction);
+      }
+    } finally {
+      if (mounted) setState(() => _actionPending = false);
+    }
+  }
+
   /// Files are being dragged over the chat.
   var _dragging = false;
 
@@ -1011,7 +1064,10 @@ class _ChatViewState extends ConsumerState<ChatView> {
             left: 14,
             right: 14,
             child: ChatHeaderBar(
-              title: ChatTitleCapsule(title: chat?.title ?? ''),
+              title: ChatTitleCapsule(
+                title: chat?.title ?? '',
+                onTap: () => togglePeerInfo(ref, widget.chatId),
+              ),
               actions: const SizedBox.shrink(),
               fill: const WindowDragArea(),
             ),
@@ -1033,6 +1089,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
                         _Failure.edit => l10n.editFailed,
                         _Failure.attach => l10n.attachFailed,
                         _Failure.forward => l10n.forwardFailed,
+                        _Failure.chatAction => l10n.chatActionFailed,
                       },
                       textAlign: TextAlign.center,
                       style: mgTextStyle(
@@ -1061,36 +1118,43 @@ class _ChatViewState extends ConsumerState<ChatView> {
                       ),
                     ),
                   ),
-                TapRegion(
-                  groupId: _EmojiPanelRegion,
-                  child: VoiceRecordComposer(
-                    onRecorded: _sendVoice,
-                    builder: (context, recordButton, recordingBar) => Composer(
-                      controller: _draft,
-                      focusNode: _focus,
-                      header: _composerHeader(l10n),
-                      onCancel:
-                          _panelOpen || _editing != null || _replyTo != null
-                          ? _cancel
-                          : null,
-                      onEditLast: () => unawaited(_editLast()),
-                      onAttach: () => unawaited(_chooseFiles()),
-                      onEmoji: _togglePanel,
-                      onPaste: _paste,
-                      allowEmpty: _editing != null && _isCaption(_editing!),
-                      labels: ComposerLabels(
-                        hint: l10n.messageHint,
-                        attach: l10n.attach,
-                        emoji: l10n.emoji,
-                        record: l10n.record,
-                        send: l10n.send,
-                      ),
-                      onSend: (text) => unawaited(_send(text)),
-                      recordButton: recordButton,
-                      replacement: recordingBar,
+                if (_actionBar(l10n, store) case final bar?)
+                  bar
+                else
+                  TapRegion(
+                    groupId: _EmojiPanelRegion,
+                    child: VoiceRecordComposer(
+                      onRecorded: _sendVoice,
+                      builder: (context, recordButton, recordingBar) =>
+                          Composer(
+                            controller: _draft,
+                            focusNode: _focus,
+                            header: _composerHeader(l10n),
+                            onCancel:
+                                _panelOpen ||
+                                    _editing != null ||
+                                    _replyTo != null
+                                ? _cancel
+                                : null,
+                            onEditLast: () => unawaited(_editLast()),
+                            onAttach: () => unawaited(_chooseFiles()),
+                            onEmoji: _togglePanel,
+                            onPaste: _paste,
+                            allowEmpty:
+                                _editing != null && _isCaption(_editing!),
+                            labels: ComposerLabels(
+                              hint: l10n.messageHint,
+                              attach: l10n.attach,
+                              emoji: l10n.emoji,
+                              record: l10n.record,
+                              send: l10n.send,
+                            ),
+                            onSend: (text) => unawaited(_send(text)),
+                            recordButton: recordButton,
+                            replacement: recordingBar,
+                          ),
                     ),
                   ),
-                ),
               ],
             ),
           ),
@@ -1115,7 +1179,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
   }
 }
 
-enum _Failure { send, edit, attach, forward }
+enum _Failure { send, edit, attach, forward, chatAction }
 
 /// Clicks in the panel and the composer keep the emoji panel open.
 abstract final class _EmojiPanelRegion {}
