@@ -1319,6 +1319,21 @@ void main() {
     expect(await controller.quickReactions(7, 1), isEmpty);
   });
 
+  test('offers custom emoji reactions by their ids for the pickers', () async {
+    await controller.start();
+
+    final types = await controller.quickReactionTypes(7, 1);
+    expect(types, hasLength(4));
+    expect(
+      types.whereType<td.ReactionTypeCustomEmoji>().map((t) => t.customEmojiId),
+      [9],
+    );
+    // The emoji-only list still fills its limit with emoji.
+    expect(await controller.quickReactions(7, 1, limit: 2), ['👍', '❤']);
+    final all = await controller.allReactionTypes(7, 1);
+    expect(all.whereType<td.ReactionTypeCustomEmoji>(), hasLength(1));
+  });
+
   test('translates a message with Telegram', () async {
     expect(await controller.translate(7, 1, 'en'), 'Hello (en)');
     final request = json.sent.last;

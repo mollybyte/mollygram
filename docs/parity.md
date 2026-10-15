@@ -90,7 +90,7 @@ M8 calls and macOS release, M9 after release.
 |---|---|---|---|---|
 | Reply, edit, delete (for me / for everyone), forward, copy text, copy link | done | #30 | | |
 | Quick reactions and toggling reactions | done | #30 | | |
-| Full reaction picker (all emoji, custom reactions) | partial | Chevron in the reaction bar opens a grid of every emoji reaction TDLib offers; custom emoji reactions wait for sticker rendering | S | M2 |
+| Full reaction picker (all emoji, custom reactions) | done | Chevron in the reaction bar opens a grid of every reaction TDLib offers; custom emoji reactions are drawn as their stickers in the bar, the grid and the chips under a message | S | M2 |
 | Reply with quote (part of the text) | done | Select text, Quote in the menu | S | M2 |
 | Pin and unpin | done (#49) | | S | M1 |
 | Forward without author or caption | done | Checkboxes in the forward picker | S | M2 |

@@ -315,10 +315,17 @@ class ReactionChip extends StatelessWidget {
     required this.count,
     required this.chosen,
     this.onTap,
+    this.icon,
   });
 
-  /// The emoji; custom emoji are drawn by their fallback emoji for now.
+  /// The emoji, or the semantics of [icon].
   final String emoji;
+
+  /// Drawn in place of the [emoji], [iconSize] wide: a custom emoji's
+  /// sticker.
+  final Widget? icon;
+
+  static const double iconSize = 16;
   final int count;
   final bool chosen;
   final VoidCallback? onTap;
@@ -341,7 +348,7 @@ class ReactionChip extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(emoji, style: mgTextStyle(c, size: 13, height: 1.2)),
+              icon ?? Text(emoji, style: mgTextStyle(c, size: 13, height: 1.2)),
               if (count > 0) ...[
                 const SizedBox(width: 4),
                 Text(

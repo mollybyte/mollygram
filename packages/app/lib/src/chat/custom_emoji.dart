@@ -1,10 +1,11 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 
 import '../session/providers.dart';
+import 'media_content.dart';
 
 /// The stickers behind the custom emoji on screen, fetched in batches as
 /// texts ask for them, so a message with ten of them costs one request.
@@ -78,3 +79,63 @@ class CustomEmojiCache extends ChangeNotifier {
     super.dispose();
   }
 }
+
+/// A custom emoji drawn as its sticker, [size] wide, blank until the
+/// sticker arrives; in reaction chips and pickers.
+class CustomEmojiIcon extends ConsumerWidget {
+  const CustomEmojiIcon({super.key, required this.id, required this.size});
+
+  final int id;
+  final double size;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final emoji = ref.watch(customEmojiProvider);
+    return ListenableBuilder(
+      listenable: emoji,
+      builder: (context, _) {
+        final sticker = emoji.lookup(id);
+        return SizedBox.square(
+          dimension: size,
+          child: sticker == null
+              ? null
+              : StickerContent(
+                  sticker: sticker,
+                  side: size,
+                  animate: false,
+                  lazy: true,
+                ),
+        );
+      },
+    );
+  }
+}
+
+/// Reactions travel through the ui_kit pickers as strings: an emoji as
+/// itself, a custom emoji as `custom:<id>`.
+String reactionKey(td.ReactionType type) => switch (type) {
+  td.ReactionTypeEmoji(:final emoji) => emoji,
+  td.ReactionTypeCustomEmoji(:final customEmojiId) => '$_custom$customEmojiId',
+  td.ReactionTypePaid() => '⭐',
+};
+
+/// The reaction behind a [reactionKey].
+td.ReactionType reactionOfKey(String key) {
+  final id = customEmojiOfKey(key);
+  return id == null
+      ? td.ReactionTypeEmoji(emoji: key)
+      : td.ReactionTypeCustomEmoji(customEmojiId: id);
+}
+
+/// The custom emoji id a [reactionKey] names, if it is one.
+int? customEmojiOfKey(String key) => key.startsWith(_custom)
+    ? int.tryParse(key.substring(_custom.length))
+    : null;
+
+/// Draws custom emoji reactions in a [ReactionBar] or [ReactionGrid].
+Widget? customReactionIcon(String key, double size) {
+  final id = customEmojiOfKey(key);
+  return id == null ? null : CustomEmojiIcon(id: id, size: size);
+}
+
+const _custom = 'custom:';
