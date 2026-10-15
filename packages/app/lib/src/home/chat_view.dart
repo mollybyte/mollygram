@@ -1371,9 +1371,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
   /// only read. Null when the composer belongs.
   Widget? _actionBar(AppLocalizations l10n, ConversationStore store) {
     final chatId = widget.chatId;
-    // A member the group or an admin keeps from writing sees why.
-    if (store.membership(chatId) == ChatMembership.member &&
-        !store.canSendText(chatId)) {
+    if (store.canPost(chatId)) {
+      if (store.canSendText(chatId)) return null;
+      // A member the group or an admin keeps from writing sees why.
       final until = store.restrictedUntil(chatId);
       return ComposerActionBar(
         label: until == null
@@ -1387,7 +1387,6 @@ class _ChatViewState extends ConsumerState<ChatView> {
         onPressed: null,
       );
     }
-    if (store.canPost(chatId)) return null;
     final isChannel = store.isChannel(chatId);
     switch (store.membership(chatId)) {
       case ChatMembership.member:
