@@ -521,6 +521,31 @@ class _ChatViewState extends ConsumerState<ChatView> {
     }
   }
 
+  /// Sends a video message recorded in the composer (lib/src/voice).
+  Future<void> _sendVideoNote(RecordedVideoNote note) async {
+    final chatId = widget.chatId;
+    final replyTo = _replyTo;
+    setState(() {
+      _failure = null;
+      _replyTo = null;
+    });
+    try {
+      await _conversations.sendVideoNote(
+        chatId,
+        path: note.path,
+        duration: note.duration,
+        side: note.side,
+        replyTo: replyTo?.id,
+      );
+    } catch (_) {
+      if (!mounted || widget.chatId != chatId) return;
+      setState(() {
+        _failure = _Failure.send;
+        _replyTo ??= replyTo;
+      });
+    }
+  }
+
   /// The up arrow in an empty composer edits the last message the user
   /// sent, as in the official apps.
   Future<void> _editLast() async {
@@ -1036,6 +1061,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
                   groupId: _EmojiPanelRegion,
                   child: VoiceRecordComposer(
                     onRecorded: _sendVoice,
+                    onRecordedVideo: _sendVideoNote,
                     builder: (context, recordButton, recordingBar) => Composer(
                       controller: _draft,
                       focusNode: _focus,

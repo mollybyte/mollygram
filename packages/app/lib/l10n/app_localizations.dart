@@ -434,6 +434,18 @@ abstract class AppLocalizations {
   /// **'Couldn\'t send the voice message'**
   String get voiceSendFailed;
 
+  /// No description provided for @videoHoldToRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold to record a video message'**
+  String get videoHoldToRecord;
+
+  /// No description provided for @videoCameraDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Mollygram has no access to the camera.'**
+  String get videoCameraDenied;
+
   /// No description provided for @previewYou.
   ///
   /// In en, this message translates to:

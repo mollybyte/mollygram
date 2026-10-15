@@ -188,6 +188,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get voiceSendFailed => 'Couldn\'t send the voice message';
 
   @override
+  String get videoHoldToRecord => 'Hold to record a video message';
+
+  @override
+  String get videoCameraDenied => 'Mollygram has no access to the camera.';
+
+  @override
   String previewYou(String text) {
     return 'You: $text';
   }

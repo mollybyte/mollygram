@@ -441,6 +441,38 @@ final class ConversationController {
     );
   }
 
+  /// Sends a recorded video message: a square MP4 at [path], [side]
+  /// pixels wide and at most 60 seconds long.
+  Future<void> sendVideoNote(
+    int chatId, {
+    required String path,
+    required Duration duration,
+    required int side,
+    int? replyTo,
+  }) async {
+    _add(
+      await _client.send(
+        td.SendMessage(
+          chatId: chatId,
+          replyTo: replyTo == null
+              ? null
+              : td.InputMessageReplyToMessage(
+                  messageId: replyTo,
+                  checklistTaskId: 0,
+                  pollOptionId: '',
+                ),
+          inputMessageContent: td.InputMessageVideoNote(
+            videoNote: td.InputVideoNote(
+              videoNote: td.InputFileLocal(path: path),
+              duration: (duration.inMilliseconds / 1000).ceil(),
+              length: side,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   int? _captionMax;
 
   /// The longest caption the server takes, 1024 when TDLib can't say.
