@@ -506,6 +506,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get menuForward => 'Forward';
 
   @override
+  String get menuSaveAs => 'Save as…';
+
+  @override
+  String get menuSaveToDownloads => 'Save to Downloads';
+
+  @override
+  String get menuShowInFinder => 'Show in Finder';
+
+  @override
+  String get menuShowInFolder => 'Show in folder';
+
+  @override
   String get menuDelete => 'Delete';
 
   @override

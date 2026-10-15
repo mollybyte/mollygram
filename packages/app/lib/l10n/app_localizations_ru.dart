@@ -509,6 +509,18 @@ class AppLocalizationsRu extends AppLocalizations {
   String get menuForward => 'Переслать';
 
   @override
+  String get menuSaveAs => 'Сохранить как…';
+
+  @override
+  String get menuSaveToDownloads => 'Сохранить в загрузки';
+
+  @override
+  String get menuShowInFinder => 'Показать в Finder';
+
+  @override
+  String get menuShowInFolder => 'Показать в папке';
+
+  @override
   String get menuDelete => 'Удалить';
 
   @override
