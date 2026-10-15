@@ -452,6 +452,114 @@ abstract class AppLocalizations {
   /// **'Message'**
   String get previewOther;
 
+  /// No description provided for @notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notifications;
+
+  /// No description provided for @notificationsSectionAlerts.
+  ///
+  /// In en, this message translates to:
+  /// **'Alerts'**
+  String get notificationsSectionAlerts;
+
+  /// No description provided for @notificationsSectionBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Dock icon'**
+  String get notificationsSectionBadge;
+
+  /// No description provided for @notificationsShow.
+  ///
+  /// In en, this message translates to:
+  /// **'Show notifications'**
+  String get notificationsShow;
+
+  /// No description provided for @notificationsShowHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Banners appear while Mollygram is in the background. Muted chats stay silent.'**
+  String get notificationsShowHint;
+
+  /// No description provided for @notificationsPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Show message text'**
+  String get notificationsPreview;
+
+  /// No description provided for @notificationsPreviewHint.
+  ///
+  /// In en, this message translates to:
+  /// **'When off, a notification only says who wrote.'**
+  String get notificationsPreviewHint;
+
+  /// No description provided for @notificationsSound.
+  ///
+  /// In en, this message translates to:
+  /// **'Play sound'**
+  String get notificationsSound;
+
+  /// No description provided for @notificationsBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Show unread count'**
+  String get notificationsBadge;
+
+  /// No description provided for @notificationsBadgeMuted.
+  ///
+  /// In en, this message translates to:
+  /// **'Include muted chats'**
+  String get notificationsBadgeMuted;
+
+  /// No description provided for @notificationsBadgeMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Count messages instead of chats'**
+  String get notificationsBadgeMessages;
+
+  /// No description provided for @notificationsDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications for Mollygram are turned off in System Settings.'**
+  String get notificationsDenied;
+
+  /// No description provided for @notificationsOpenSystemSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open System Settings'**
+  String get notificationsOpenSystemSettings;
+
+  /// No description provided for @notificationHiddenText.
+  ///
+  /// In en, this message translates to:
+  /// **'New message'**
+  String get notificationHiddenText;
+
+  /// No description provided for @notificationReply.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply'**
+  String get notificationReply;
+
+  /// No description provided for @notificationSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get notificationSend;
+
+  /// No description provided for @notificationReplyPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Message'**
+  String get notificationReplyPlaceholder;
+
+  /// No description provided for @notificationMarkRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as read'**
+  String get notificationMarkRead;
+
   /// No description provided for @sendFailed.
   ///
   /// In en, this message translates to:
@@ -1243,6 +1351,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No stickers yet'**
   String get noStickerSets;
+
+  /// No description provided for @forwardedMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Forwarded messages'**
+  String get forwardedMessages;
+
+  /// No description provided for @leaveComment.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave a comment'**
+  String get leaveComment;
+
+  /// No description provided for @commentCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} comment} other{{count} comments}}'**
+  String commentCount(int count);
 }
 
 class _AppLocalizationsDelegate

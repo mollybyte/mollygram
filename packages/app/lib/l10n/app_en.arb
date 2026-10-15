@@ -68,6 +68,24 @@
   "previewSticker": "Sticker",
   "previewAnimation": "GIF",
   "previewOther": "Message",
+  "notifications": "Notifications",
+  "notificationsSectionAlerts": "Alerts",
+  "notificationsSectionBadge": "Dock icon",
+  "notificationsShow": "Show notifications",
+  "notificationsShowHint": "Banners appear while Mollygram is in the background. Muted chats stay silent.",
+  "notificationsPreview": "Show message text",
+  "notificationsPreviewHint": "When off, a notification only says who wrote.",
+  "notificationsSound": "Play sound",
+  "notificationsBadge": "Show unread count",
+  "notificationsBadgeMuted": "Include muted chats",
+  "notificationsBadgeMessages": "Count messages instead of chats",
+  "notificationsDenied": "Notifications for Mollygram are turned off in System Settings.",
+  "notificationsOpenSystemSettings": "Open System Settings",
+  "notificationHiddenText": "New message",
+  "notificationReply": "Reply",
+  "notificationSend": "Send",
+  "notificationReplyPlaceholder": "Message",
+  "notificationMarkRead": "Mark as read",
   "sendFailed": "The message wasn't sent. Try again",
   "noMessages": "No messages here yet",
   "today": "Today",
@@ -334,5 +352,11 @@
   "emojiFlags": "Flags",
   "favoriteStickers": "Favorites",
   "stickersFailed": "Couldn't load stickers",
-  "noStickerSets": "No stickers yet"
+  "noStickerSets": "No stickers yet",
+  "forwardedMessages": "Forwarded messages",
+  "leaveComment": "Leave a comment",
+  "commentCount": "{count, plural, one{{count} comment} other{{count} comments}}",
+  "@commentCount": {
+    "placeholders": { "count": { "type": "int" } }
+  }
 }

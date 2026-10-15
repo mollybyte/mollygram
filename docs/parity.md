@@ -22,7 +22,7 @@ M8 calls and macOS release, M9 after release.
 
 ### First items to take
 
-1. Desktop notifications with reply and mark as read (M1)
+1. ~~Desktop notifications with reply and mark as read (M1)~~ done
 2. Unread jump: "new messages" separator, scroll-to-bottom button with a counter, jump to mentions and reactions (M1)
 3. Typing, online and last-seen statuses in the header and chat list (M1)
 4. Chat list context menu: pin, mute, archive, mark as read, delete or leave, plus the archive folder (M1)
@@ -200,7 +200,7 @@ M8 calls and macOS release, M9 after release.
 | Feature | Status | Notes | Size | M |
 |---|---|---|---|---|
 | Settings window shell in macOS System Settings style | partial | Only the Plugins page exists | M | M1 |
-| Notifications and sounds: per-type, badge, preview, sound | missing | `NotificationPreferencesController` | M | M1 |
+| Notifications and sounds: per-type, badge, preview, sound | partial | Global switches, preview, sound and badge done (`NotificationsPage`); per-type scopes (private, groups, channels) and tones missing | S | M1 |
 | Active sessions and terminate | missing | `RecentSessionsController` | S | M1 |
 | Privacy and security: last seen, phone, photo, calls, forwards, groups, blocked list | missing | `SelectivePrivacySettingsController` | L | M6 |
 | Two-step verification setup | missing | `TwoStepVerification` | M | M6 |
@@ -221,9 +221,9 @@ M8 calls and macOS release, M9 after release.
 
 | Feature | Status | Notes | Size | M |
 |---|---|---|---|---|
-| Desktop notifications with reply and mark read | missing | `UpdateNotificationGroup` | M | M1 |
-| Dock badge with unread count | missing | `UpdateUnreadChatCount` | S | M1 |
-| Notification sounds | missing | | S | M1 |
+| Desktop notifications with reply and mark read | done | `NotificationController` on TDLib notification groups; macOS only, banners hidden while the window is in front | | |
+| Dock badge with unread count | done | Unmuted chats by default; muted chats and message count are options | | |
+| Notification sounds | partial | System default sound; Telegram tones and custom sounds missing | S | M1 |
 | Menu bar and dock menu items | partial | Traffic lights done | S | M7 |
 | Share extension, Spotlight, Focus filters | missing | macOS-only niceties | M | M9 |
 | Auto update | missing | Sparkle or release-please assets | M | M8 |

@@ -11,6 +11,7 @@ export 'src/connection_status.dart';
 export 'src/conversation_controller.dart';
 export 'src/conversation_store.dart';
 export 'src/file_controller.dart';
+export 'src/notification_controller.dart';
 export 'src/outgoing_file.dart';
 export 'src/phone_country.dart';
 export 'src/sticker_library.dart';

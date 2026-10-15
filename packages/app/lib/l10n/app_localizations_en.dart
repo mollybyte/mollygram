@@ -198,6 +198,63 @@ class AppLocalizationsEn extends AppLocalizations {
   String get previewOther => 'Message';
 
   @override
+  String get notifications => 'Notifications';
+
+  @override
+  String get notificationsSectionAlerts => 'Alerts';
+
+  @override
+  String get notificationsSectionBadge => 'Dock icon';
+
+  @override
+  String get notificationsShow => 'Show notifications';
+
+  @override
+  String get notificationsShowHint =>
+      'Banners appear while Mollygram is in the background. Muted chats stay silent.';
+
+  @override
+  String get notificationsPreview => 'Show message text';
+
+  @override
+  String get notificationsPreviewHint =>
+      'When off, a notification only says who wrote.';
+
+  @override
+  String get notificationsSound => 'Play sound';
+
+  @override
+  String get notificationsBadge => 'Show unread count';
+
+  @override
+  String get notificationsBadgeMuted => 'Include muted chats';
+
+  @override
+  String get notificationsBadgeMessages => 'Count messages instead of chats';
+
+  @override
+  String get notificationsDenied =>
+      'Notifications for Mollygram are turned off in System Settings.';
+
+  @override
+  String get notificationsOpenSystemSettings => 'Open System Settings';
+
+  @override
+  String get notificationHiddenText => 'New message';
+
+  @override
+  String get notificationReply => 'Reply';
+
+  @override
+  String get notificationSend => 'Send';
+
+  @override
+  String get notificationReplyPlaceholder => 'Message';
+
+  @override
+  String get notificationMarkRead => 'Mark as read';
+
+  @override
   String get sendFailed => 'The message wasn\'t sent. Try again';
 
   @override
@@ -738,4 +795,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noStickerSets => 'No stickers yet';
+
+  @override
+  String get forwardedMessages => 'Forwarded messages';
+
+  @override
+  String get leaveComment => 'Leave a comment';
+
+  @override
+  String commentCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count comments',
+      one: '$count comment',
+    );
+    return '$_temp0';
+  }
 }
