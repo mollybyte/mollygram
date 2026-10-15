@@ -278,6 +278,26 @@ void main() {
     expect(header('Anna'), findsOneWidget);
   });
 
+  testWidgets('the gear in the sidebar opens the settings', (tester) async {
+    await pump(tester);
+    expect(find.byTooltip('Settings  Ctrl+,'), findsOneWidget);
+    await tester.tap(find.byTooltip('Settings  Ctrl+,'));
+    await settle(tester);
+    expect(find.byType(SettingsWindow), findsOneWidget);
+  });
+
+  testWidgets('the app menu opens the settings', (tester) async {
+    await pump(tester);
+    final messenger = tester.binding.defaultBinaryMessenger;
+    await messenger.handlePlatformMessage(
+      appMenuChannel.name,
+      appMenuChannel.codec.encodeMethodCall(const MethodCall('openSettings')),
+      (_) {},
+    );
+    await settle(tester);
+    expect(find.byType(SettingsWindow), findsOneWidget);
+  });
+
   testWidgets('saves the layout and restores it without lost chats', (
     tester,
   ) async {

@@ -11,9 +11,29 @@ class AppDelegate: FlutterAppDelegate {
     return true
   }
 
+  /// The app menu's items, sent to Dart (HomeScreen listens).
+  private var appMenu: FlutterMethodChannel?
+
   override func applicationDidFinishLaunching(_ notification: Notification) {
     super.applicationDidFinishLaunching(notification)
     registerAppIconChannel()
+    registerAppMenuChannel()
+  }
+
+  private func registerAppMenuChannel() {
+    guard let window = mainFlutterWindow,
+          let controller = window.contentViewController as? FlutterViewController
+    else { return }
+    appMenu = FlutterMethodChannel(
+      name: "mollygram/app_menu",
+      binaryMessenger: controller.engine.binaryMessenger)
+  }
+
+  /// "Settings…" (⌘,) in the app menu (MainMenu.xib). Dart answers only
+  /// while signed in; before that the item does nothing.
+  @IBAction func openSettings(_ sender: Any?) {
+    mainFlutterWindow?.makeKeyAndOrderFront(nil)
+    appMenu?.invokeMethod("openSettings", arguments: nil)
   }
 
   /// Appearance's "App icon": Dart sends the PNG of the chosen Dock icon,

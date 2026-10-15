@@ -15,7 +15,15 @@ import 'workspace.dart';
 
 /// The floating glass island with folders and the chat list.
 class Sidebar extends ConsumerStatefulWidget {
-  const Sidebar({super.key});
+  const Sidebar({super.key, this.onSettings, this.settingsShortcut});
+
+  /// Opens the settings; the gear beside the search field is hidden
+  /// without it.
+  final VoidCallback? onSettings;
+
+  /// The settings shortcut as menus write it (`⌘,`), shown in the gear's
+  /// tooltip; null for none.
+  final String? settingsShortcut;
 
   @override
   ConsumerState<Sidebar> createState() => _SidebarState();
@@ -64,7 +72,27 @@ class _SidebarState extends ConsumerState<Sidebar> {
 
     return SidebarIsland(
       titleBarFill: const WindowDragArea(),
-      search: MgSearchField(hintText: l10n.searchHint, controller: _search),
+      search: Row(
+        children: [
+          Expanded(
+            child: MgSearchField(
+              hintText: l10n.searchHint,
+              controller: _search,
+            ),
+          ),
+          if (widget.onSettings != null) ...[
+            const SizedBox(width: 2),
+            MgIconButton(
+              icon: MgIcons.settings,
+              iconSize: 16,
+              tooltip: widget.settingsShortcut == null
+                  ? l10n.settings
+                  : '${l10n.settings}  ${widget.settingsShortcut}',
+              onPressed: widget.onSettings,
+            ),
+          ],
+        ],
+      ),
       folders: folders.isEmpty
           ? null
           : FolderTabBar(
