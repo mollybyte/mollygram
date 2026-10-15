@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mollygram/src/compose/mention_suggester.dart';
@@ -27,6 +29,13 @@ void main() {
           (21, 4, 'textEntityTypeMentionName'),
         ],
       );
+    });
+
+    test('sends no mention without a user', () {
+      final text = formattedDraft('Vera', const [
+        FormatRange(0, 4, TextFormat.mention),
+      ]);
+      expect(text.entities, isEmpty);
     });
 
     test('reads back what the composer can show, not detected links', () {
@@ -113,6 +122,35 @@ void main() {
       type('@bo');
       await settle();
       expect(suggester.suggestions, hasLength(2));
+    });
+
+    test('another chat offers the dismissed word again', () async {
+      type('@b');
+      await settle();
+      suggester.dismiss();
+      suggester.reset();
+      await settle();
+      expect(suggester.suggestions, hasLength(2));
+    });
+
+    test('a search that ends after dispose stays quiet', () async {
+      final pending = Completer<List<MentionCandidate>>();
+      final other = RichTextEditingController();
+      final quiet = MentionSuggester(
+        controller: other,
+        search: (_) => pending.future,
+        delay: Duration.zero,
+      );
+      quiet.addListener(() => fail('notified after dispose'));
+      other.value = const TextEditingValue(
+        text: '@b',
+        selection: TextSelection.collapsed(offset: 2),
+      );
+      await settle();
+      quiet.dispose();
+      pending.complete(const [MentionCandidate(userId: 2, name: 'Boris')]);
+      await settle();
+      other.dispose();
     });
   });
 }

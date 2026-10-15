@@ -276,10 +276,7 @@ class _ComposerState extends State<Composer> {
       final content = Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          SizedBox(
-            width: 16,
-            child: on ? const Text('\u2713') : null,
-          ),
+          SizedBox(width: 16, child: on ? const Text('\u2713') : null),
           Text(label),
         ],
       );
@@ -295,11 +292,8 @@ class _ComposerState extends State<Composer> {
             );
     }
 
-    Widget toggle(String label, TextFormat format) => item(
-      label,
-      () => text.toggle(format),
-      on: text.isActive(format),
-    );
+    Widget toggle(String label, TextFormat format) =>
+        item(label, () => text.toggle(format), on: text.isActive(format));
     final c = MgColors.of(context);
     return AdaptiveTextSelectionToolbar(
       anchors: state.contextMenuAnchors,

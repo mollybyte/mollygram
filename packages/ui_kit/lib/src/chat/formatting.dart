@@ -173,12 +173,12 @@ List<FormatRange> shiftForEdit(
   (int, int)? selection,
 }) {
   if (before == after) return ranges;
-  // Typing and pasting replace the selection; when the texts agree with
+  // Typing and pasting go in at the caret; when the texts agree with
   // that, the edit is exactly there, even where the texts alone can't
   // tell (typing "a" before or after another "a").
   if (selection case (final start, final end)
       when start >= 0 &&
-          start <= end &&
+          start == end &&
           end <= before.length &&
           after.length - (before.length - end) >= start &&
           after.startsWith(before.substring(0, start)) &&
@@ -320,7 +320,8 @@ const _escapeBase = 0xE000;
       if (contentEnd <= contentStart) continue;
       // Formats may wrap code, but their markers can't be inside it.
       bool inCode(int start, int end) => formats.any(
-        (r) => r.format == TextFormat.monospace && r.start < end && r.end > start,
+        (r) =>
+            r.format == TextFormat.monospace && r.start < end && r.end > start,
       );
       if (inCode(match.start, contentStart) || inCode(contentEnd, match.end)) {
         continue;
@@ -362,6 +363,11 @@ String? _escape(
       return null;
     }
   }
+  // Code keeps its backslashes: find where it will be before escaping.
+  final code = [
+    for (final (pattern, _) in _markdown.take(3))
+      for (final match in pattern.allMatches(text)) (match.start, match.end),
+  ];
   final out = StringBuffer();
   var formats = ranges;
   var removed = 0;
@@ -370,9 +376,12 @@ String? _escape(
     final next = i + 1 < text.length ? text[i + 1] : '';
     final kind = next.isEmpty ? -1 : _escapable.indexOf(next);
     final at = i - removed;
-    final inCode = formats.any(
-      (r) => r.format == TextFormat.monospace && r.start <= at && r.end > at,
-    );
+    final inCode =
+        code.any((c) => c.$1 <= i && c.$2 > i) ||
+        formats.any(
+          (r) =>
+              r.format == TextFormat.monospace && r.start <= at && r.end > at,
+        );
     if (unit == 0x5C && kind >= 0 && !inCode) {
       formats = _applyEdit(formats, at, at + 1, 0, text.length - removed - 1);
       removed++;

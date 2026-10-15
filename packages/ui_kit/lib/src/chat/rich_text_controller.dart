@@ -74,22 +74,26 @@ class RichTextEditingController extends TextEditingController {
               old.selection.baseOffset == _typingAt
           ? _typing
           : const <TextFormat>{};
-      _remember(old.text, _ranges);
       final restored = _undoing
           ? _history.lastIndexWhere((entry) => entry.$1 == newValue.text)
           : -1;
       _undoing = false;
-      _ranges = restored >= 0
-          ? _history[restored].$2
-          : shiftForEdit(
-              _ranges,
-              old.text,
-              newValue.text,
-              typing: typing,
-              selection: old.selection.isValid
-                  ? (old.selection.start, old.selection.end)
-                  : null,
-            );
+      if (restored >= 0) {
+        // Back to that point: what came after it is undone.
+        _ranges = _history[restored].$2;
+        _history.removeRange(restored, _history.length);
+      } else {
+        _remember(old.text, _ranges);
+        _ranges = shiftForEdit(
+          _ranges,
+          old.text,
+          newValue.text,
+          typing: typing,
+          selection: old.selection.isValid
+              ? (old.selection.start, old.selection.end)
+              : null,
+        );
+      }
       final caret = newValue.selection;
       if (typing.isNotEmpty && caret.isCollapsed) {
         _typingAt = caret.baseOffset;

@@ -105,6 +105,35 @@ void main() {
         const FormatRange(1, 3, _i),
       ]);
     });
+
+    test('never split an emoji', () {
+      // Deleting 😀 before a bold 😁: the texts share the high surrogate.
+      expect(shiftForEdit([const FormatRange(2, 4, _b)], '😀😁', '😁'), [
+        const FormatRange(0, 2, _b),
+      ]);
+      // Typing 😀 with bold on, between two other emoji.
+      expect(shiftForEdit(const [], '😁😂', '😁😀😂', typing: {_b}), [
+        const FormatRange(2, 4, _b),
+      ]);
+      expect(snapToCharacter('a😀', 2), 1);
+      expect(snapToCharacter('a😀', 3), 3);
+    });
+
+    test('the selection says where text went when the texts cannot', () {
+      // An "a" typed at the start of "a": the bold one stays second.
+      expect(
+        shiftForEdit(
+          [const FormatRange(0, 1, _b)],
+          'a',
+          'aa',
+          selection: (0, 0),
+        ),
+        [const FormatRange(1, 2, _b)],
+      );
+      expect(shiftForEdit([const FormatRange(0, 1, _b)], 'a', 'aa'), [
+        const FormatRange(0, 1, _b),
+      ]);
+    });
   });
 
   group('markdown', () {
@@ -143,6 +172,41 @@ void main() {
     test('leaves lone and empty markers alone', () {
       expect(md('2 ** 3 and ****'), ['2 ** 3 and ****', isEmpty]);
       expect(md('a*b*c'), ['a*b*c', isEmpty]);
+    });
+
+    test('a backslash keeps a marker as text', () {
+      expect(md(r'\_\_init\_\_ and \*\*x\*\*'), [
+        '__init__ and **x**',
+        isEmpty,
+      ]);
+      expect(md(r'\__init__'), ['__init__', isEmpty]);
+      expect(md(r'a \\ b'), [r'a \ b', isEmpty]);
+      expect(md(r'C:\path'), [r'C:\path', isEmpty]);
+      // Inside code the backslash is part of the code.
+      expect(md(r'`a\*b`'), [
+        r'a\*b',
+        [const FormatRange(0, 4, _m)],
+      ]);
+    });
+
+    test('double backticks hold code with backticks', () {
+      expect(md('`` `x` ``'), [
+        '`x`',
+        [const FormatRange(0, 3, _m)],
+      ]);
+      expect(md('a ` ` b'), ['a ` ` b', isEmpty]);
+    });
+
+    test('formats may wrap code', () {
+      expect(md('**a `b` c**'), [
+        'a b c',
+        [const FormatRange(0, 5, _b), const FormatRange(2, 3, _m)],
+      ]);
+      // A marker inside code stays text.
+      expect(md('**a `b** c`'), [
+        '**a b** c',
+        [const FormatRange(4, 9, _m)],
+      ]);
     });
 
     test('moves existing formats with the text', () {
@@ -224,6 +288,57 @@ void main() {
       c.insertMention(name: 'Boris', username: 'boris', userId: 2);
       expect(c.text, '@boris ');
       expect(c.ranges, isEmpty);
+    });
+
+    test('undo brings the formatting back with the text', () {
+      final c = RichTextEditingController(text: 'one two');
+      addTearDown(c.dispose);
+      c.selection = const TextSelection(baseOffset: 4, extentOffset: 7);
+      c.toggle(_b);
+      // Deleting the bold word, then undoing it as the field does.
+      c.value = const TextEditingValue(
+        text: 'one ',
+        selection: TextSelection.collapsed(offset: 4),
+      );
+      expect(c.ranges, isEmpty);
+      expect(c.prepareUndo(), isFalse);
+      c.value = const TextEditingValue(
+        text: 'one two',
+        selection: TextSelection(baseOffset: 4, extentOffset: 7),
+      );
+      expect(c.ranges, [const FormatRange(4, 7, _b)]);
+      // The next undo takes the ⌘B back.
+      expect(c.prepareUndo(), isTrue);
+      expect(c.ranges, isEmpty);
+    });
+
+    testWidgets('keeps the formatting while an input method composes', (
+      tester,
+    ) async {
+      final c = RichTextEditingController(text: 'bold é');
+      addTearDown(c.dispose);
+      c
+        ..selection = const TextSelection(baseOffset: 0, extentOffset: 4)
+        ..toggle(_b)
+        ..value = c.value.copyWith(
+          composing: const TextRange(start: 5, end: 6),
+        );
+      late TextSpan span;
+      await tester.pumpWidget(
+        themed(
+          Builder(
+            builder: (context) {
+              span = c.buildTextSpan(context: context, withComposing: true);
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
+      final pieces = span.children!.cast<TextSpan>();
+      expect(pieces.first.text, 'bold');
+      expect(pieces.first.style!.fontWeight, FontWeight.w600);
+      expect(pieces.last.text, 'é');
+      expect(pieces.last.style!.decoration, TextDecoration.underline);
     });
 
     test('loads formatted text for editing', () {
@@ -309,26 +424,30 @@ void main() {
       expect(c.text, 'hello world');
     });
 
-    testWidgets('⌘K asks for a link, prefilled from the clipboard', (
-      tester,
-    ) async {
-      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-        SystemChannels.platform,
-        (call) async => call.method == 'Clipboard.getData'
-            ? {'text': 'https://telegram.org'}
-            : null,
-      );
+    testWidgets('⌘K asks for a link', (tester) async {
       final c = await pump(tester);
       await press(tester, LogicalKeyboardKey.keyK);
       await tester.pumpAndSettle();
       expect(find.text('Add link'), findsOneWidget);
-      expect(find.text('https://telegram.org'), findsOneWidget);
 
+      await tester.enterText(
+        find.byType(EditableText).last,
+        'https://telegram.org',
+      );
       await tester.tap(find.text('Apply'));
       await tester.pumpAndSettle();
       expect(c.ranges, [
         const FormatRange(0, 5, TextFormat.link, url: 'https://telegram.org'),
       ]);
+    });
+
+    testWidgets('⌘Z takes back a format', (tester) async {
+      final c = await pump(tester);
+      await press(tester, LogicalKeyboardKey.keyB);
+      expect(c.ranges, [const FormatRange(0, 5, _b)]);
+      await press(tester, LogicalKeyboardKey.keyZ);
+      expect(c.ranges, isEmpty);
+      expect(c.text, 'hello world');
     });
 
     testWidgets('picks a suggestion with the keyboard', (tester) async {
