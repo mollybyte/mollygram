@@ -41,6 +41,12 @@ final authorizationStageProvider = StreamProvider<AuthorizationStage>((ref) {
   );
 });
 
+/// How the connection to Telegram is doing, for the status in the window.
+final connectionStatusProvider = StreamProvider<ConnectionStatus>((ref) {
+  final connection = ref.watch(telegramSessionProvider).requireValue.connection;
+  return _startWith(connection.current, connection.changes);
+});
+
 /// Sends what the user typed on the sign-in screen to TDLib.
 final signInActionsProvider = Provider<SignInActions>((ref) {
   final session = ref.watch(telegramSessionProvider).requireValue;

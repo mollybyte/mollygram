@@ -326,6 +326,30 @@ abstract class AppLocalizations {
   /// **'No chats yet'**
   String get noChats;
 
+  /// No description provided for @connectionWaitingForNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for network…'**
+  String get connectionWaitingForNetwork;
+
+  /// No description provided for @connectionConnectingToProxy.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting to proxy…'**
+  String get connectionConnectingToProxy;
+
+  /// No description provided for @connectionConnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting…'**
+  String get connectionConnecting;
+
+  /// No description provided for @connectionUpdating.
+  ///
+  /// In en, this message translates to:
+  /// **'Updating…'**
+  String get connectionUpdating;
+
   /// No description provided for @nothingFound.
   ///
   /// In en, this message translates to:
@@ -1387,6 +1411,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, one{{count} comment} other{{count} comments}}'**
   String commentCount(int count);
+
+  /// No description provided for @mediaSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved'**
+  String get mediaSaved;
+
+  /// No description provided for @mediaSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save the file'**
+  String get mediaSaveFailed;
+
+  /// No description provided for @mediaCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied'**
+  String get mediaCopied;
+
+  /// No description provided for @mediaCounter.
+  ///
+  /// In en, this message translates to:
+  /// **'{index} of {count}'**
+  String mediaCounter(int index, int count);
+
+  /// No description provided for @mediaCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get mediaCopy;
+
+  /// No description provided for @mediaSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get mediaSave;
+
+  /// No description provided for @mediaPrevious.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous'**
+  String get mediaPrevious;
+
+  /// No description provided for @mediaNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get mediaNext;
+
+  /// No description provided for @mediaPause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get mediaPause;
+
+  /// No description provided for @mediaPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Play'**
+  String get mediaPlay;
+
+  /// No description provided for @mediaSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Playback speed'**
+  String get mediaSpeed;
+
+  /// No description provided for @mediaLoop.
+  ///
+  /// In en, this message translates to:
+  /// **'Loop'**
+  String get mediaLoop;
+
+  /// No description provided for @mediaUnmute.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute'**
+  String get mediaUnmute;
+
+  /// No description provided for @mediaMute.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute'**
+  String get mediaMute;
+
+  /// No description provided for @unreadMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Unread messages'**
+  String get unreadMessages;
+
+  /// No description provided for @scrollToBottom.
+  ///
+  /// In en, this message translates to:
+  /// **'Scroll to the newest message'**
+  String get scrollToBottom;
+
+  /// No description provided for @nextMention.
+  ///
+  /// In en, this message translates to:
+  /// **'Next mention'**
+  String get nextMention;
+
+  /// No description provided for @nextReaction.
+  ///
+  /// In en, this message translates to:
+  /// **'Next reaction'**
+  String get nextReaction;
 }
 
 class _AppLocalizationsDelegate

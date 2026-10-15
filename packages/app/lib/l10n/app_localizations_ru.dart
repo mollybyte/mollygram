@@ -134,6 +134,18 @@ class AppLocalizationsRu extends AppLocalizations {
   String get noChats => 'Чатов пока нет';
 
   @override
+  String get connectionWaitingForNetwork => 'Ожидание сети…';
+
+  @override
+  String get connectionConnectingToProxy => 'Подключение к прокси…';
+
+  @override
+  String get connectionConnecting => 'Соединение…';
+
+  @override
+  String get connectionUpdating => 'Обновление…';
+
+  @override
   String get nothingFound => 'Ничего не найдено';
 
   @override
@@ -825,4 +837,60 @@ class AppLocalizationsRu extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get mediaSaved => 'Сохранено';
+
+  @override
+  String get mediaSaveFailed => 'Не удалось сохранить файл';
+
+  @override
+  String get mediaCopied => 'Скопировано';
+
+  @override
+  String mediaCounter(int index, int count) {
+    return '$index из $count';
+  }
+
+  @override
+  String get mediaCopy => 'Копировать';
+
+  @override
+  String get mediaSave => 'Сохранить';
+
+  @override
+  String get mediaPrevious => 'Назад';
+
+  @override
+  String get mediaNext => 'Вперёд';
+
+  @override
+  String get mediaPause => 'Пауза';
+
+  @override
+  String get mediaPlay => 'Воспроизвести';
+
+  @override
+  String get mediaSpeed => 'Скорость';
+
+  @override
+  String get mediaLoop => 'Повтор';
+
+  @override
+  String get mediaUnmute => 'Включить звук';
+
+  @override
+  String get mediaMute => 'Выключить звук';
+
+  @override
+  String get unreadMessages => 'Непрочитанные сообщения';
+
+  @override
+  String get scrollToBottom => 'К последнему сообщению';
+
+  @override
+  String get nextMention => 'Следующее упоминание';
+
+  @override
+  String get nextReaction => 'Следующая реакция';
 }

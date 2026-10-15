@@ -255,7 +255,7 @@ void main() {
         matchesGoldenFile('goldens/voice_recording_$name.png'),
       );
       await gesture.up();
-    await io(tester);
+      await io(tester);
       await tester.pump(const Duration(milliseconds: 400));
     });
   }

@@ -133,6 +133,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noChats => 'No chats yet';
 
   @override
+  String get connectionWaitingForNetwork => 'Waiting for network…';
+
+  @override
+  String get connectionConnectingToProxy => 'Connecting to proxy…';
+
+  @override
+  String get connectionConnecting => 'Connecting…';
+
+  @override
+  String get connectionUpdating => 'Updating…';
+
+  @override
   String get nothingFound => 'Nothing found';
 
   @override
@@ -822,4 +834,60 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get mediaSaved => 'Saved';
+
+  @override
+  String get mediaSaveFailed => 'Couldn\'t save the file';
+
+  @override
+  String get mediaCopied => 'Copied';
+
+  @override
+  String mediaCounter(int index, int count) {
+    return '$index of $count';
+  }
+
+  @override
+  String get mediaCopy => 'Copy';
+
+  @override
+  String get mediaSave => 'Save';
+
+  @override
+  String get mediaPrevious => 'Previous';
+
+  @override
+  String get mediaNext => 'Next';
+
+  @override
+  String get mediaPause => 'Pause';
+
+  @override
+  String get mediaPlay => 'Play';
+
+  @override
+  String get mediaSpeed => 'Playback speed';
+
+  @override
+  String get mediaLoop => 'Loop';
+
+  @override
+  String get mediaUnmute => 'Unmute';
+
+  @override
+  String get mediaMute => 'Mute';
+
+  @override
+  String get unreadMessages => 'Unread messages';
+
+  @override
+  String get scrollToBottom => 'Scroll to the newest message';
+
+  @override
+  String get nextMention => 'Next mention';
+
+  @override
+  String get nextReaction => 'Next reaction';
 }

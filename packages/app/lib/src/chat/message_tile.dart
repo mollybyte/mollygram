@@ -78,6 +78,8 @@ class MessageRowActions {
     required this.onNeedReplied,
     this.onMenu,
     this.onOpen,
+    this.onViewMedia,
+    this.onJump,
   });
 
   /// Adds the reaction, or takes it back when the user had chosen it.
@@ -96,6 +98,12 @@ class MessageRowActions {
 
   /// The user revealed self-destructing media, which starts its timer.
   final void Function(ConversationMessage message)? onOpen;
+
+  /// A click on a photo, video or GIF, which opens the media viewer.
+  final void Function(ConversationMessage message)? onViewMedia;
+
+  /// A click on a reply's quote, which scrolls to the message it answers.
+  final void Function(int messageId)? onJump;
 }
 
 /// A message, or an album, in Telegram's flat layout: no bubbles, the
@@ -432,7 +440,7 @@ class _MessageBody extends StatelessWidget {
         );
       default:
     }
-    final visual = _visualFor(row, actions.onOpen);
+    final visual = _visualFor(row, actions);
     if (visual != null) {
       final caption = _caption(row);
       final media = Padding(
@@ -526,10 +534,18 @@ class _MessageBody extends StatelessWidget {
       text = '';
     }
     if (quote != null && quote.isNotEmpty) text = quote;
+    final jump = actions.onJump;
+    // Only an original of this chat that still exists can be scrolled to.
+    final canJump =
+        jump != null &&
+        reply.chatId == message.chatId &&
+        reply.messageId != 0 &&
+        !store.isMissing(message.chatId, message.id);
     return ReplyHeader(
       author: author,
       text: text,
       thumbnail: content == null ? null : _replyThumbnail(content),
+      onTap: canJump ? () => jump(reply.messageId) : null,
     );
   }
 
@@ -571,25 +587,24 @@ class _MessageBody extends StatelessWidget {
 /// The media of a row and the width it takes.
 typedef _Visual = ({Widget widget, double width});
 
-_Visual? _visualFor(
-  MessageRow row,
-  void Function(ConversationMessage message)? onOpen,
-) {
-  if (row.messages.length > 1) return _album(row, onOpen);
+_Visual? _visualFor(MessageRow row, MessageRowActions actions) {
+  final onOpen = actions.onOpen;
+  if (row.messages.length > 1) return _album(row, actions);
   final message = row.primary;
+  final view = _viewer(message, actions);
   final Widget media;
   final Size size;
   switch (message.content) {
     case td.MessagePhoto(:final photo):
       final largest = photo.sizes.isEmpty ? null : photo.sizes.last;
       size = fitMedia(largest?.width ?? 0, largest?.height ?? 0);
-      media = PhotoContent(photo: photo, size: size);
+      media = PhotoContent(photo: photo, size: size, onTap: view);
     case td.MessageVideo(:final video):
       size = fitMedia(video.width, video.height);
-      media = VideoContent(video: video, size: size);
+      media = VideoContent(video: video, size: size, onTap: view);
     case td.MessageAnimation(:final animation):
       size = fitMedia(animation.width, animation.height);
-      media = AnimationContent(animation: animation, size: size);
+      media = AnimationContent(animation: animation, size: size, onTap: view);
     default:
       return null;
   }
@@ -621,10 +636,13 @@ Widget _concealIfNeeded(
 
 /// Photos and videos sent together, in justified rows: every row is as
 /// wide as the bubble and as tall as its pictures' proportions allow.
-_Visual _album(
-  MessageRow row,
-  void Function(ConversationMessage message)? onOpen,
-) {
+VoidCallback? _viewer(ConversationMessage message, MessageRowActions actions) {
+  final view = actions.onViewMedia;
+  return view == null ? null : () => view(message);
+}
+
+_Visual _album(MessageRow row, MessageRowActions actions) {
+  final onOpen = actions.onOpen;
   const width = kMaxMediaWidth;
   const gap = 2.0;
   final items = row.messages;
@@ -668,7 +686,7 @@ _Visual _album(
                 return _concealIfNeeded(
                   cells[i],
                   size,
-                  _albumCell(cells[i], size),
+                  _albumCell(cells[i], size, _viewer(cells[i], actions)),
                   onOpen,
                 );
               }(),
@@ -694,12 +712,23 @@ _Visual _album(
   );
 }
 
-Widget _albumCell(ConversationMessage message, Size size) =>
-    switch (message.content) {
-      td.MessagePhoto(:final photo) => PhotoContent(photo: photo, size: size),
-      td.MessageVideo(:final video) => VideoContent(video: video, size: size),
-      _ => SizedBox.fromSize(size: size),
-    };
+Widget _albumCell(
+  ConversationMessage message,
+  Size size,
+  VoidCallback? onTap,
+) => switch (message.content) {
+  td.MessagePhoto(:final photo) => PhotoContent(
+    photo: photo,
+    size: size,
+    onTap: onTap,
+  ),
+  td.MessageVideo(:final video) => VideoContent(
+    video: video,
+    size: size,
+    onTap: onTap,
+  ),
+  _ => SizedBox.fromSize(size: size),
+};
 
 /// How many pictures go in each album row, top to bottom. A wide first
 /// picture of three gets a row of its own.
