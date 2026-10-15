@@ -1,0 +1,275 @@
+# Feature parity with the official macOS client
+
+This is the backlog for reaching feature parity with the official macOS
+Telegram client, [TelegramSwift](https://github.com/overtake/TelegramSwift).
+TelegramSwift is GPL v2: we study how it behaves and looks, and write our
+own code on TDLib. Nothing is copied from it.
+
+Audited against `main` on 2026-10-15 (after #32). Status is read from the
+code, so "done" means implemented, not that every edge case is covered.
+
+- **Status**: `done`, `partial` (works but is missing parts the official
+  client has), `missing`.
+- **Size**: `S` up to a day, `M` a few days, `L` a week or more.
+- **M**: the milestone the item belongs to (see the order below).
+
+## Milestones
+
+The order makes the app usable every day first, then fills in the rest.
+
+| # | Milestone | Goal |
+|---|---|---|
+| M1 | Daily driver | You can live in Mollygram for normal chatting: notifications, unread handling, statuses, stickers and emoji, voice, chat actions, basic settings. |
+| M2 | Full chat | Every message type can be sent, not only shown; search, shared media, gallery, topics and comments. |
+| M3 | Chats and account management | Create and manage groups and channels, contacts, profile, privacy, folders, multiple accounts. |
+| M4 | Settings parity | Every section of the official Settings: notifications, data and storage, appearance, language, passcode, proxy, stickers. |
+| M5 | Privacy extras | Mollygram's own features: ghost mode, saved deleted messages, edit history (already planned, see [forks-research.md](forks-research.md)). |
+| M6 | Calls and macOS release | 1:1 calls, screen sharing (see [calls.md](calls.md)), then group calls and live streams. |
+| M7 | Telegram platform | Stories, Premium, bots and mini apps, payments and Stars, Business, Instant View, statistics, boosts, gifts. |
+
+### First items to take
+
+1. Desktop notifications with reply and mark as read (M1)
+2. Unread jump: "new messages" separator, scroll-to-bottom button with a counter, jump to mentions and reactions (M1)
+3. Typing, online and last-seen statuses in the header and chat list (M1)
+4. Chat list context menu: pin, mute, archive, mark as read, delete or leave, plus the archive folder (M1)
+5. Emoji and sticker picker in the composer (M1)
+
+## Backlog
+
+### Chat list and folders
+
+| Feature | Status | Notes | Size | M |
+|---|---|---|---|---|
+| Chat list with last message, time, unread count, muted state | done | `ChatListTile`, `ChatListStore` | | |
+| Folder tabs | done | Read-only tabs from `UpdateChatFolders` | | |
+| Paging the chat list | done | `loadMore` | | |
+| Chat list context menu: pin, mute, archive, mark read/unread, clear, delete, leave | missing | `ToggleChatIsPinned`, `SetChatNotificationSettings`, `AddChatToList`, `ToggleChatIsMarkedAsUnread` | M | M1 |
+| Archive folder entry and archive view | partial | `ChatListLocation.archive` exists, no UI entry | S | M1 |
+| Unread mention and reaction badges in the list | missing | `unreadMentionCount`, `unreadReactionCount` | S | M1 |
+| Typing and online dot in the list | missing | `UpdateChatAction`, `UpdateUserStatus` | S | M1 |
+| Draft preview in the list ("Draft: …") | partial | `UpdateChatDraftMessage` is stored, not shown | S | M1 |
+| Pinned chats order with drag | missing | `SetPinnedChats` | S | M3 |
+| Folder editor: create, edit, delete, reorder, include/exclude, recommended | missing | TelegramSwift `ChatListFilterController` | M | M3 |
+| Folder sidebar (vertical tabs) and folder icons | missing | Official offers left-side folders | M | M4 |
+| Shared folders (chat folder invite links) | missing | `CreateChatFolderInviteLink` | M | M7 |
+| Saved Messages as a list of sub-chats | missing | Saved Messages tags and per-source chats | M | M2 |
+| Contacts birthdays and suggestions in the list | missing | | S | M7 |
+
+### Opening and reading chats
+
+| Feature | Status | Notes | Size | M |
+|---|---|---|---|---|
+| History with paging, flat no-bubble layout | done | #24, #29 | | |
+| Read receipts sent on view | done | `ViewMessages` | | |
+| Read ticks on outgoing messages | done | `UpdateChatReadOutbox` | | |
+| "New messages" separator and opening at the first unread | missing | | M | M1 |
+| Scroll-to-bottom button with unread counter | missing | | S | M1 |
+| Jump to next mention and reaction | missing | `GetChatMessageByDate`, `ReadAllChatMentions` | S | M1 |
+| Pinned message bar with cycling and the pinned list | missing | `UpdateMessageIsPinned` is handled, no bar | M | M1 |
+| Jump to a replied message and back | missing | Needs history at an arbitrary message | M | M1 |
+| Date headers and sticky date | partial | Date pills exist, not sticky while scrolling | S | M1 |
+| Jump to date (calendar) | missing | `ChatCalendarModalController` | M | M2 |
+| Header status: online, last seen, members, typing | missing | Header has the slot | S | M1 |
+| Join and mute buttons for channels and groups you are not in | missing | `JoinChat` | S | M1 |
+| Open `t.me` and `tg://` links, usernames, hashtags, bot commands | missing | `GetInternalLinkType` | M | M1 |
+| Link previews in messages | partial | Check `MessageText.linkPreview` rendering | M | M1 |
+| Text selection across messages | missing | `ChatSelectText` | M | M2 |
+| Multi-select mode: forward, delete, copy several | missing | | M | M2 |
+| Forum topics: topic list, topic chat, create and close topics | missing | Service messages render only | L | M2 |
+| Channel comments (discussion thread) | missing | `GetMessageThread` | M | M2 |
+| Reply threads in groups | missing | | M | M2 |
+| Secret chats | missing | TDLib supports them; key view, TTL | L | M3 |
+| Spoilers, custom emoji in text | partial | `concealed.dart` covers spoilers; custom emoji need sticker rendering | M | M2 |
+| Polls and quizzes: vote, results | partial | Rendered; voting unverified | M | M2 |
+| Checklists (todo messages) | missing | `ChatTodoItem` | S | M7 |
+| Dice and slot animations | partial | | S | M7 |
+| Live location view | missing | | M | M2 |
+| Auto-translate and "Translate" in the menu | missing | Built-in Translate plugin planned | M | M2 |
+| Voice message transcription | missing | `RecognizeSpeech` (Premium) | S | M7 |
+| Message effects and reaction animations | missing | | M | M7 |
+| Sponsored messages in channels | missing | Required by Telegram API terms | S | M2 |
+
+### Message actions
+
+| Feature | Status | Notes | Size | M |
+|---|---|---|---|---|
+| Reply, edit, delete (for me / for everyone), forward, copy text, copy link | done | #30 | | |
+| Quick reactions and toggling reactions | done | #30 | | |
+| Full reaction picker (all emoji, custom reactions) | missing | | M | M1 |
+| Reply with quote (part of the text) | missing | `InputTextQuote` | S | M2 |
+| Pin and unpin | missing | `PinChatMessage` | S | M1 |
+| Forward without author or caption | missing | `sendCopy`, `removeCaption` | S | M2 |
+| Save media to Downloads, show in Finder | missing | | S | M1 |
+| Report message | missing | `ReportChat` | S | M2 |
+| Who read and who reacted | missing | `GetMessageViewers`, `GetMessageAddedReactions` | S | M2 |
+| Message info: view count, forwards, edit date | partial | | S | M2 |
+| Select and copy part of a message | missing | See text selection | | M2 |
+
+### Composer
+
+| Feature | Status | Notes | Size | M |
+|---|---|---|---|---|
+| Text, Enter to send, Shift+Enter newline | done | | | |
+| Attach photos, videos, files: pick, drop, paste, albums | done | #31 | | |
+| Edit mode and reply panel | done | #30 | | |
+| Drafts saved to the server and synced | partial | Draft is local to the open view; `SetChatDraftMessage` not called | S | M1 |
+| Emoji picker | missing | Button exists, no panel | M | M1 |
+| Sticker panel, recent and favourite stickers, sticker search | missing | `StickersViewController` | L | M1 |
+| GIF panel and GIF search | missing | `GifKeyboardController` | M | M2 |
+| Emoji and sticker suggestions while typing | missing | `InputSwapSuggestionsPanel` | M | M2 |
+| Rich text formatting: bold, italic, code, link, spoiler, quote; Markdown shortcuts | missing | `text_edit.dart` sends plain text | M | M1 |
+| Mentions autocomplete (@) | missing | `SearchChatMembers` | S | M1 |
+| Bot command autocomplete (/) and bot keyboards | missing | `ReplyMarkupNode` | M | M2 |
+| Inline bots (@gif, @vid) | missing | `GetInlineQueryResults` | M | M7 |
+| Voice message recording | missing | Mic button is a placeholder | M | M1 |
+| Video message (circle) recording | missing | Playback done in `packages/media` | L | M2 |
+| Silent send and scheduled messages, scheduled list | missing | `MessageSchedulingStateSendAtDate` | M | M2 |
+| Send as (channel identity) | missing | `ChatInputSendAsView` | S | M3 |
+| Polls and quizzes creation | missing | `NewPollController` | M | M2 |
+| Location and venue sending | missing | | M | M2 |
+| Contact sending | missing | | S | M2 |
+| Media editor before sending: crop, rotate, draw, compression toggle | partial | Preview exists; uncompressed default planned | L | M2 |
+| Spoiler and self-destruct on media | missing | `hasSpoiler`, `selfDestructType` | S | M2 |
+| Slowmode and restriction notices | missing | | S | M2 |
+| Link preview control (remove, above/below) | missing | | S | M2 |
+
+### Media
+
+| Feature | Status | Notes | Size | M |
+|---|---|---|---|---|
+| Photos, videos, GIFs, stickers (WebP, TGS, WebM) in chat | done | #29 | | |
+| Voice messages playback with waveform | done | | | |
+| Video circles playback at 120 fps | done | `packages/media` | | |
+| Files and music: download, open, cancel | done | | | |
+| Fullscreen media viewer | partial | Single item; no gallery navigation, zoom, thumbnails | M | M2 |
+| Gallery: swipe between chat media, zoom, rotate, save, forward | missing | `GalleryViewer` | M | M2 |
+| Global audio player with playlist and header bar | missing | `InlineAudioPlayerView` | M | M2 |
+| Picture-in-picture for video and circles | missing | `PIPVideoWindow` | M | M2 |
+| Voice playback speed and continuous play | missing | | S | M1 |
+| Downloads manager (list, pause, show in Finder) | missing | `DownloadsController` | M | M4 |
+| Autodownload rules | missing | Data and storage | M | M4 |
+| Quick Look for documents | missing | | S | M2 |
+
+### Search
+
+| Feature | Status | Notes | Size | M |
+|---|---|---|---|---|
+| Chat search in the sidebar and ⌘K palette | done | `chat_search.dart`, #27 | | |
+| Global message search | partial | `SearchMessages` used by the palette; no jump to the message | M | M2 |
+| Search inside a chat, by sender, by date | missing | `ChatSearchView` | M | M2 |
+| Hashtag and cashtag search | missing | | S | M2 |
+| Search filters (media, links, files, voice) | missing | | S | M2 |
+| Recent searches and top peers | missing | | S | M2 |
+
+### Profiles and info panels
+
+| Feature | Status | Notes | Size | M |
+|---|---|---|---|---|
+| User profile: photo, bio, username, phone, birthday, actions | missing | `PeerInfoController` | M | M1 |
+| Group and channel info: description, link, members count | missing | | M | M1 |
+| Shared media tabs: media, files, links, voice, music, GIFs, groups in common | missing | `PeerMediaController` | L | M2 |
+| Members list with search | missing | | M | M3 |
+| Profile photo gallery | missing | | S | M2 |
+| Per-chat notifications and auto-delete timer | missing | | S | M1 |
+| Block, report, share contact | missing | | S | M3 |
+
+### Groups, channels and admin tools
+
+| Feature | Status | Notes | Size | M |
+|---|---|---|---|---|
+| Create group and channel | missing | `CreateGroupViewController`, `CreateChannelController` | M | M3 |
+| Edit title, photo, description, username, public/private | missing | | M | M3 |
+| Add, remove, ban members; admin rights and titles | missing | `ChannelAdminController` | L | M3 |
+| Group permissions, slow mode | missing | `ChannelPermissionsController` | M | M3 |
+| Invite links: create, revoke, join requests | missing | `InviteLinksController` | M | M3 |
+| Linked discussion group | missing | | S | M3 |
+| Allowed reactions, chat history for new members | missing | | S | M3 |
+| Recent actions (admin log) | missing | `ChannelEventLogController` | M | M3 |
+| Enable topics in a group | missing | | S | M3 |
+| Channel and group statistics | missing | `ChannelStatsViewController` | L | M7 |
+| Boosts | missing | | M | M7 |
+
+### Contacts and accounts
+
+| Feature | Status | Notes | Size | M |
+|---|---|---|---|---|
+| Sign in: QR, phone, code, 2FA password | done | #16, #24 | | |
+| Sign up (new account), email code, account reset | partial | Unsupported steps show a notice | M | M3 |
+| Contacts list, add and edit contact | missing | `ContactsController` | M | M3 |
+| New message / compose (pick a user) | missing | `ComposeViewController` | S | M1 |
+| Edit own profile: name, bio, username, photo, birthday | missing | `EditAccountInfoController` | M | M3 |
+| Multiple accounts and switching | missing | Several TDLib clients | L | M3 |
+| Log out | missing | Core has `LogOut`, no button in the app | S | M1 |
+
+### Settings
+
+| Feature | Status | Notes | Size | M |
+|---|---|---|---|---|
+| Settings window shell in macOS System Settings style | partial | Only the Plugins page exists | M | M1 |
+| Notifications and sounds: per-type, badge, preview, sound | missing | `NotificationPreferencesController` | M | M1 |
+| Active sessions and terminate | missing | `RecentSessionsController` | S | M1 |
+| Privacy and security: last seen, phone, photo, calls, forwards, groups, blocked list | missing | `SelectivePrivacySettingsController` | L | M3 |
+| Two-step verification setup | missing | `TwoStepVerification` | M | M3 |
+| Passcode lock and Touch ID | missing | `PasscodeSettingsViewController`, `LocalAuth` | M | M4 |
+| Data and storage: cache usage, clear, limits, network usage | missing | `StorageUsageController` | M | M4 |
+| Appearance: theme, accent, night mode schedule, chat background, text size | partial | Light/dark follow the system | M | M4 |
+| Language: UI language picker, translation settings | partial | RU and EN follow the system | S | M4 |
+| Stickers and emoji: packs, reorder, archived, suggest, large emoji | missing | `InstalledStickerPacksController` | M | M4 |
+| Quick reaction choice | missing | | S | M4 |
+| Proxy: SOCKS5, MTProto, list, share | missing | `ProxyListController` | M | M4 |
+| Connection status in the window ("Connecting…") | missing | `UpdateConnectionState` | S | M1 |
+| Keyboard shortcuts list | partial | Shell shortcuts exist; no list | S | M4 |
+| Auto-delete messages default | missing | | S | M4 |
+| Settings search | missing | | S | M4 |
+| Ask a question, FAQ, about | missing | | S | M4 |
+
+### Notifications and system integration
+
+| Feature | Status | Notes | Size | M |
+|---|---|---|---|---|
+| Desktop notifications with reply and mark read | missing | `UpdateNotificationGroup` | M | M1 |
+| Dock badge with unread count | missing | `UpdateUnreadChatCount` | S | M1 |
+| Notification sounds | missing | | S | M1 |
+| Menu bar and dock menu items | partial | Traffic lights done | S | M4 |
+| Share extension, Spotlight, Focus filters | missing | macOS-only niceties | M | M7 |
+| Auto update | missing | Sparkle or release-please assets | M | M6 |
+
+### Calls
+
+| Feature | Status | Notes | Size | M |
+|---|---|---|---|---|
+| 1:1 audio and video calls | missing | Research done, `packages/calls` scaffold | L | M6 |
+| Screen sharing | missing | | L | M6 |
+| Call history | missing | `RecentCallsViewController` | S | M6 |
+| Group calls and live streams | missing | | L | M6 |
+| Call settings: devices, push-to-talk | missing | | M | M6 |
+
+### Telegram platform
+
+| Feature | Status | Notes | Size | M |
+|---|---|---|---|---|
+| Stories: view, react, reply, post, stealth mode | missing | `Story*` controllers | L | M7 |
+| Premium: subscribe screen, limits, emoji status, profile colour | missing | `PremiumBoardingController` | L | M7 |
+| Bots: start, menu button, inline keyboards, callback answers | missing | | M | M2 |
+| Mini apps (web apps) | missing | `WebappBrowser`, needs a webview | L | M7 |
+| Payments and invoices | missing | `PaymentsCheckoutController` | L | M7 |
+| Stars: balance, paid media, paid reactions, subscriptions | missing | | L | M7 |
+| Gifts and collectible gifts | partial | Service messages render | M | M7 |
+| Instant View | missing | `InstantPage*` | L | M7 |
+| Telegram Business: hours, location, quick replies, greeting/away, chatbots, links | missing | `Business*` | L | M7 |
+| Monoforums (channel direct messages) | missing | | M | M7 |
+| Telegram Passport | missing | | M | M7 |
+| Games | missing | | S | M7 |
+| Fact checks and verification badges | missing | | S | M7 |
+
+## Mollygram on top of the official client
+
+These are not parity items; they are tracked in their own docs.
+
+| Feature | Status | Doc |
+|---|---|---|
+| Tabs, split view, ⌘K palette, layout restore | done | [packages/shell](../packages/shell) |
+| JS plugin sandbox with manifest permissions | partial | [plugins.md](plugins.md) |
+| Ghost mode, saved deleted messages, edit history | missing | [forks-research.md](forks-research.md) |
+| 640×640 circles, uncompressed media by default | partial | [packages/media](../packages/media) |
