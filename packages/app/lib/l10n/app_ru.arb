@@ -537,7 +537,6 @@
   "unpinAll": "Открепить все",
   "unpinAllTitle": "{count, plural, one{Открепить {count} сообщение?} few{Открепить все {count} сообщения?} other{Открепить все {count} сообщений?}}",
   "edit": "Изменить",
-  "save": "Сохранить",
   "create": "Создать",
   "remove": "Удалить",
   "leave": "Выйти",
