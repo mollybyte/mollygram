@@ -6,6 +6,7 @@ import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../settings/appearance.dart';
 import 'message_tile.dart';
 import 'timeline.dart';
 import 'timeline_scroll.dart';
@@ -317,7 +318,8 @@ class _TimelineList extends StatelessWidget {
       };
       final padded = Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: child,
+        // The text size chosen in Settings, Appearance.
+        child: MessageTextSize(child: child),
       );
       return KeyedSubtree(
         key: ValueKey<Object>(item.key),

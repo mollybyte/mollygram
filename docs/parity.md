@@ -215,8 +215,8 @@ M8 calls and macOS release, M9 after release.
 | Privacy and security: last seen, phone, photo, calls, forwards, groups, blocked list | missing | `SelectivePrivacySettingsController` | L | M6 |
 | Two-step verification setup | missing | `TwoStepVerification` | M | M6 |
 | Passcode lock and Touch ID | missing | `PasscodeSettingsViewController`, `LocalAuth` | M | M7 |
-| Data and storage: cache usage, clear, limits, network usage | missing | `StorageUsageController` | M | M7 |
-| Appearance: theme, accent, night mode schedule, chat background, text size | partial | Light/dark follow the system | M | M7 |
+| Data and storage: cache usage, clear, limits, network usage | partial | Usage by kind, clear by kind, download folder; auto-download switches are stored but not yet applied; no limits or network usage | M | M7 |
+| Appearance: theme, accent, night mode schedule, chat background, text size | partial | Theme, accent, wallpaper on or off, message text size, reduce motion; no night schedule or custom backgrounds | M | M7 |
 | Language: UI language picker, translation settings | partial | RU and EN follow the system | S | M7 |
 | Stickers and emoji: packs, reorder, archived, suggest, large emoji | missing | `InstalledStickerPacksController` | M | M7 |
 | Quick reaction choice | missing | | S | M7 |

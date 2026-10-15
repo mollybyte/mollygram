@@ -184,6 +184,42 @@ void main() {
     });
   });
 
+  testWidgets('message flash stays still with reduce motion', (tester) async {
+    Widget flash(int n) => themed(
+      MediaQuery(
+        data: const MediaQueryData(disableAnimations: true),
+        child: MessageFlash(
+          flash: n,
+          child: const SizedBox(width: 40, height: 20),
+        ),
+      ),
+    );
+    Color? color() =>
+        (tester
+                    .widgetList<DecoratedBox>(
+                      find.descendant(
+                        of: find.byType(MessageFlash),
+                        matching: find.byType(DecoratedBox),
+                      ),
+                    )
+                    .firstOrNull
+                    ?.decoration
+                as BoxDecoration?)
+            ?.color;
+
+    await tester.pumpWidget(flash(0));
+    expect(color(), isNull);
+    await tester.pumpWidget(flash(1));
+    await tester.pump(const Duration(milliseconds: 10));
+    final early = color();
+    await tester.pump(const Duration(milliseconds: 1200));
+    // Full strength the whole time: no fade in or out.
+    expect(early, isNotNull);
+    expect(color(), early);
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(color(), isNull);
+  });
+
   testWidgets('chat list tile shows unread and reports taps', (tester) async {
     var taps = 0;
     await tester.pumpWidget(
