@@ -21,6 +21,7 @@ import '../avatar/peer_avatar.dart';
 import '../chat/attachment_preview.dart';
 import '../chat/audio_player_bar.dart';
 import '../chat/bot_keyboard.dart';
+import '../chat/chat_translation.dart';
 import '../chat/contact_picker.dart';
 import '../chat/custom_emoji.dart';
 import '../chat/describe.dart';
@@ -50,6 +51,7 @@ import '../chat/timeline.dart';
 import '../chat/timeline_scroll.dart';
 import '../chat/timeline_view.dart';
 import '../chat/topic_sheet.dart';
+import '../chat/translate_bar.dart';
 import '../chat_search/chat_search_bar.dart';
 import '../chat_search/sender_picker.dart';
 import '../compose/command_suggester.dart';
@@ -62,6 +64,7 @@ import '../links/link_router.dart';
 import '../profile/peer_info_state.dart';
 import '../secret/secret_chat.dart';
 import '../session/providers.dart';
+import '../settings/preferences.dart';
 import '../shared_media/message_jump.dart';
 import '../voice/voice_record_composer.dart';
 import '../window_drag_area.dart';
@@ -174,6 +177,14 @@ class _ChatViewState extends ConsumerState<ChatView> {
   static final _pinnedHidden = <int>{};
   var _pinnedShown = false;
 
+  /// The chat's translation, shown in place of its messages' text while
+  /// the user has it on, and whether its bar is under the header.
+  late final _translation = ChatTranslation(
+    (chatId, messageId, to) =>
+        _conversations.translateFormatted(chatId, messageId, to),
+  )..onFailure = _translateFailed;
+  var _translateShown = false;
+
   /// The timeline shows only the pinned messages, from the bar's button.
   var _pinnedListOpen = false;
 
@@ -284,6 +295,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _close(old.chatId);
     _dropTopics();
     _dropSavedTopics();
+    _translation.reset();
     _sponsored = null;
     _sponsoredAsked = false;
     _viewed.clear();
@@ -338,6 +350,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _close(widget.chatId);
     _dropTopics();
     _dropSavedTopics();
+    _translation.dispose();
     _deletedSub?.cancel();
     _mentions.dispose();
     _emojiHints.dispose();
@@ -598,6 +611,133 @@ class _ChatViewState extends ConsumerState<ChatView> {
 
   /// The bar under the header, when the chat has pinned messages and the
   /// user hasn't closed it.
+  /// The room the translation bar takes under the header.
+  double get _translateInset =>
+      _translateShown ? ChatTranslateBar.height + 8 : 0;
+
+  void _translateFailed() {
+    if (mounted) {
+      showMgToast(context, AppLocalizations.of(context).translateFailed);
+    }
+  }
+
+  /// The bar that translates the whole chat: offered when the chat is in
+  /// another language than the one the user reads, and, once it is on,
+  /// the way back to the original. Sets [_translateShown], which the
+  /// timeline's inset follows.
+  Widget? _translateBar(
+    AppLocalizations l10n,
+    List<ConversationMessage>? list,
+  ) {
+    final chatId = widget.chatId;
+    final choice = ref.watch(
+      preferencesProvider.select(
+        (p) => (
+          p.translateTo,
+          p.translateSkip,
+          p.translateChats.contains(chatId),
+          p.translateHidden.contains(chatId),
+        ),
+      ),
+    );
+    final locale = Localizations.localeOf(context).languageCode;
+    final to = choice.$1 ?? locale;
+    final (_, skip, active, hidden) = choice;
+    _translation.configure(to: to, skip: skip, active: active);
+    _translateShown = false;
+    if (list == null || _listOpen) return null;
+    final detected = _translation.chatLanguage(list);
+    final source = active ? _translation.language : detected;
+    if (!active &&
+        (hidden || source == null || source == to || skip.contains(source))) {
+      return null;
+    }
+    _translateShown = true;
+    final state = !active
+        ? TranslateBarState.offer
+        : _translation.working
+        ? TranslateBarState.working
+        : TranslateBarState.shown;
+    return ChatTranslateBar(
+      key: const ValueKey('translateBar'),
+      state: state,
+      primary: switch (state) {
+        TranslateBarState.offer => l10n.translateTo(languageName(to, locale)),
+        TranslateBarState.working => l10n.translating,
+        TranslateBarState.shown => l10n.translateShowOriginal,
+      },
+      secondary: state == TranslateBarState.shown
+          ? source == null
+                ? l10n.translated
+                : l10n.translatedFrom(languageName(source, locale, from: true))
+          : null,
+      optionsTooltip: l10n.translateOptions,
+      onPrimary: () => _setTranslating(!active),
+      onOptions: (position) => _translateMenu(position, source, active),
+    );
+  }
+
+  void _updateTranslation(Preferences Function(Preferences p) change) =>
+      ref.read(preferencesProvider.notifier).update(change);
+
+  void _setTranslating(bool on) {
+    final chatId = widget.chatId;
+    _updateTranslation(
+      (p) => p.copyWith(
+        translateChats: on
+            ? {...p.translateChats, chatId}
+            : ({...p.translateChats}..remove(chatId)),
+      ),
+    );
+  }
+
+  void _translateMenu(Offset position, String? source, bool active) {
+    final l10n = AppLocalizations.of(context);
+    final locale = Localizations.localeOf(context).languageCode;
+    final chatId = widget.chatId;
+    unawaited(
+      showMgMenu(
+        context,
+        position: position,
+        items: [
+          MgMenuItem(
+            label: l10n.translateChooseLanguage,
+            submenu: [
+              for (final code in translateTargets)
+                MgMenuItem(
+                  label: languageName(code, locale),
+                  onSelected: () => _updateTranslation(
+                    (p) => p.copyWith(
+                      translateTo: code,
+                      translateChats: {...p.translateChats, chatId},
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          if (source != null)
+            MgMenuItem(
+              label: l10n.translateSkipLanguage(languageName(source, locale)),
+              onSelected: () => _updateTranslation(
+                (p) => p.copyWith(
+                  translateSkip: {...p.translateSkip, source},
+                  translateChats: {...p.translateChats}..remove(chatId),
+                ),
+              ),
+            ),
+          if (!active)
+            MgMenuItem(
+              label: l10n.translateHideBar,
+              onSelected: () => _updateTranslation(
+                (p) =>
+                    p.copyWith(translateHidden: {...p.translateHidden, chatId}),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget? _pinnedBar(AppLocalizations l10n, ConversationStore store) {
     final chatId = widget.chatId;
     final ids = store.pinnedIds(chatId);
@@ -1514,6 +1654,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
   /// Where the timeline starts under the header and the pinned bar.
   double get _topInset =>
       TimelineView.headerInset +
+      _translateInset +
       (_tagsShown ? SavedTagBar.height + 8 : 0) +
       (_pinnedShown && !_pinnedListOpen ? PinnedBar.height + 8 : 0);
 
@@ -3407,6 +3548,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     final keyboardPanel = _selected == null && !_listOpen
         ? _replyKeyboardPanel(store)
         : null;
+    final translateBar = _translateBar(l10n, messages.value);
     final view = DropTarget(
       onDragEntered: (_) => setState(() => _dragging = true),
       onDragExited: (_) => setState(() => _dragging = false),
@@ -3498,9 +3640,16 @@ class _ChatViewState extends ConsumerState<ChatView> {
               _ => const SizedBox.shrink(),
             },
           ),
-          if (_tagBar(l10n) case final bar?)
+          if (translateBar != null)
             Positioned(
               top: 10 + ChatHeaderBar.height + 8,
+              left: 14,
+              right: 14,
+              child: translateBar,
+            ),
+          if (_tagBar(l10n) case final bar?)
+            Positioned(
+              top: 10 + ChatHeaderBar.height + 8 + _translateInset,
               left: 14,
               right: 14,
               child: bar,
@@ -3512,6 +3661,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
                     10 +
                     ChatHeaderBar.height +
                     8 +
+                    _translateInset +
                     (_tagsShown ? SavedTagBar.height + 8 : 0),
                 left: 14,
                 right: 14,
@@ -3786,7 +3936,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     );
     return CallbackShortcuts(
       bindings: {primaryShortcut(LogicalKeyboardKey.keyF): _openSearch},
-      child: view,
+      child: ChatTranslationScope(translation: _translation, child: view),
     );
   }
 }
