@@ -889,4 +889,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get hidePinned => 'Скрыть закреплённые';
+
+  @override
+  String get backToPrevious => 'Вернуться назад';
 }

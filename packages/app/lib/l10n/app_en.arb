@@ -387,5 +387,6 @@
   "@pinnedMessageNumber": {
     "placeholders": { "number": { "type": "int" } }
   },
-  "hidePinned": "Hide pinned messages"
+  "hidePinned": "Hide pinned messages",
+  "backToPrevious": "Back to where you were"
 }
