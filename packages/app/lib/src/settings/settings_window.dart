@@ -45,7 +45,7 @@ class SettingsSection {
   final WidgetBuilder builder;
 
   /// The page fills the pane edge to edge and brings its own title bar,
-  /// like the plugins screen.
+  /// like the notifications page.
   final bool fullBleed;
 
   static List<String> _noKeywords(AppLocalizations l10n) => const [];
@@ -127,8 +127,7 @@ final settingsSections = <SettingsSection>[
     icon: MgIcons.plugin,
     tint: const Color(0xFF8E8E93),
     title: (l10n) => l10n.plugins,
-    builder: (context) => const PluginsPane(),
-    fullBleed: true,
+    builder: (context) => const PluginsPage(),
   ),
 ];
 

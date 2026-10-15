@@ -252,6 +252,11 @@ enum PluginEvent {
     _ when readsMessages && !p.canObserveMessages =>
       'messages.read: chats[] or all',
     messageSending when !p.composerWrite => 'composer.write',
+    // Code blocks are message text: with a way out to the network, they
+    // need the same consent as reading all messages.
+    messageRenderCode
+        when p.net.isNotEmpty && p.messagesRead != MessagesScope.all =>
+      'messages.read: all (it also has net)',
     messageRenderVoice when !p.mediaRead.contains(MediaKind.voice) =>
       'media.read: [voice]',
     messageRenderRound when !p.mediaRead.contains(MediaKind.round) =>
