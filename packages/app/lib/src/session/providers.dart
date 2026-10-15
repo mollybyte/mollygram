@@ -6,6 +6,7 @@ import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' show TdClientClosed;
 
 import '../home/workspace_storage.dart';
+import '../privacy/message_store.dart';
 import '../privacy/privacy_settings.dart';
 import 'sign_in_actions.dart';
 import 'telegram_session_launcher.dart';
@@ -37,6 +38,7 @@ final telegramSessionProvider = FutureProvider<TelegramSession>((ref) async {
       session = await launcher.start(
         config,
         privacy: ref.read(privacySettingsProvider),
+        openStore: ref.read(messageStoreOpenerProvider),
       );
       break;
     } on SessionClosedElsewhere {
@@ -46,7 +48,7 @@ final telegramSessionProvider = FutureProvider<TelegramSession>((ref) async {
     }
   }
   // A switch flipped while the session was starting.
-  session.privacy.settings = ref.read(privacySettingsProvider);
+  session.privacySettings = ref.read(privacySettingsProvider);
   // Online while the window is active, as the official client is.
   final privacy = session.privacy;
   final lifecycle = AppLifecycleListener(

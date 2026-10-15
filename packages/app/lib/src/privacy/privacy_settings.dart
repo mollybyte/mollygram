@@ -116,7 +116,7 @@ class PrivacySettingsNotifier extends Notifier<PrivacySettings> {
     if (next == state) return;
     _changed = true;
     state = next;
-    ref.read(telegramSessionProvider).value?.privacy.settings = next;
+    ref.read(telegramSessionProvider).value?.privacySettings = next;
     final storage = ref.read(privacySettingsStorageProvider);
     final json = next.toJson();
     _saving = _saving

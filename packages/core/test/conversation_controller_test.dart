@@ -339,6 +339,91 @@ void main() {
     expect(all, containsAll(await controller.quickReactions(7, 10)));
   });
 
+  test('tells when a member may not write and how slowmode holds', () async {
+    await controller.start();
+    json.push(
+      _chat(
+        lastRead: 0,
+        unread: 0,
+        last: 8,
+        type: {
+          '@type': 'chatTypeSupergroup',
+          'supergroup_id': 99,
+          'is_channel': false,
+        },
+        canSendText: false,
+      ),
+    );
+    json.push(
+      _supergroup(99, {
+        '@type': 'chatMemberStatusMember',
+        'member_since_date': 0,
+      }),
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    final store = controller.store;
+    expect(store.canPost(7), isTrue);
+    expect(store.canSendText(7), isFalse);
+    expect(store.restrictedUntil(7), isNull);
+
+    // The group lets people write again, but this user is restricted.
+    json.push({
+      '@type': 'updateChatPermissions',
+      'chat_id': 7,
+      'permissions': {
+        '@type': 'chatPermissions',
+        'can_send_basic_messages': true,
+      },
+    });
+    json.push(
+      _supergroup(99, {
+        '@type': 'chatMemberStatusRestricted',
+        'is_member': true,
+        'restricted_until_date': 1800000000,
+        'permissions': {'@type': 'chatPermissions'},
+      }),
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    expect(store.canSendText(7), isFalse);
+    expect(store.restrictedUntil(7), 1800000000);
+
+    // An admin writes whatever the group says.
+    json.push(
+      _supergroup(99, {
+        '@type': 'chatMemberStatusAdministrator',
+        'can_be_edited': false,
+        'rights': {'@type': 'chatAdministratorRights'},
+      }),
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    expect(store.canSendText(7), isTrue);
+
+    json.push(
+      _supergroup(99, {
+        '@type': 'chatMemberStatusMember',
+        'member_since_date': 0,
+      }),
+    );
+    json.push({
+      '@type': 'updateSupergroupFullInfo',
+      'supergroup_id': 99,
+      'supergroup_full_info': {
+        '@type': 'supergroupFullInfo',
+        'slow_mode_delay': 30,
+        'slow_mode_delay_expires_in': 12.5,
+      },
+    });
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    expect(store.canSendText(7), isTrue);
+    expect(store.slowModeDelay(7), 30);
+    expect(store.slowModeUntil(7), isNotNull);
+
+    controller.noteSlowModeWait(7, 0);
+    expect(store.slowModeUntil(7), isNull);
+    controller.noteSlowModeWait(7, 20);
+    expect(store.slowModeUntil(7), isNotNull);
+  });
+
   test('reports messages step by step as the server asks', () async {
     await controller.start();
 
@@ -912,6 +997,7 @@ Map<String, Object?> _chat({
   int mentions = 0,
   int reactions = 0,
   Map<String, Object?> type = const {'@type': 'chatTypePrivate', 'user_id': 2},
+  bool canSendText = true,
 }) => {
   '@type': 'updateNewChat',
   'chat': {
@@ -925,7 +1011,10 @@ Map<String, Object?> _chat({
     'last_read_outbox_message_id': 0,
     'unread_mention_count': mentions,
     'unread_reaction_count': reactions,
-    'permissions': {'@type': 'chatPermissions'},
+    'permissions': {
+      '@type': 'chatPermissions',
+      'can_send_basic_messages': canSendText,
+    },
     'positions': <Object?>[],
     'chat_lists': <Object?>[],
     'notification_settings': {'@type': 'chatNotificationSettings'},

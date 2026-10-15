@@ -25,6 +25,7 @@ import '../chat/forward_picker.dart';
 import '../chat/media_viewer.dart';
 import '../chat/message_actions.dart';
 import '../chat/message_tile.dart';
+import '../chat/slow_mode.dart';
 import '../chat/timeline.dart';
 import '../chat/timeline_scroll.dart';
 import '../chat/timeline_view.dart';
@@ -36,6 +37,7 @@ import '../session/providers.dart';
 import '../shared_media/message_jump.dart';
 import '../voice/voice_record_composer.dart';
 import '../window_drag_area.dart';
+import 'format.dart';
 
 /// One conversation: messages scroll under the floating header and
 /// composer.
@@ -988,7 +990,13 @@ class _ChatViewState extends ConsumerState<ChatView> {
         quote: quote?.text,
         quotePosition: quote?.position ?? 0,
       );
-    } catch (_) {
+    } catch (error) {
+      // TDLib names the wait under slowmode: SLOWMODE_WAIT_27.
+      if (error case td.TdException(:final message)
+          when message.startsWith('SLOWMODE_WAIT_')) {
+        final seconds = int.tryParse(message.substring(14));
+        if (seconds != null) _conversations.noteSlowModeWait(chatId, seconds);
+      }
       // Give the text back rather than lose it, unless the user has
       // started typing something else or moved to another chat.
       if (!mounted || widget.chatId != chatId) return;
@@ -1363,7 +1371,22 @@ class _ChatViewState extends ConsumerState<ChatView> {
   /// only read. Null when the composer belongs.
   Widget? _actionBar(AppLocalizations l10n, ConversationStore store) {
     final chatId = widget.chatId;
-    if (store.canPost(chatId)) return null;
+    if (store.canPost(chatId)) {
+      if (store.canSendText(chatId)) return null;
+      // A member the group or an admin keeps from writing sees why.
+      final until = store.restrictedUntil(chatId);
+      return ComposerActionBar(
+        label: until == null
+            ? l10n.textNotAllowed
+            : l10n.restrictedUntil(
+                formatFullDate(
+                  until,
+                  Localizations.localeOf(context).toLanguageTag(),
+                ),
+              ),
+        onPressed: null,
+      );
+    }
     final isChannel = store.isChannel(chatId);
     switch (store.membership(chatId)) {
       case ChatMembership.member:
@@ -1543,6 +1566,12 @@ class _ChatViewState extends ConsumerState<ChatView> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (!_panelOpen && !_pinnedListOpen) _jumpButtons(l10n, store),
+                if (store.slowModeUntil(widget.chatId) case final until?)
+                  SlowModeNotice(
+                    key: ValueKey(until),
+                    until: until,
+                    label: l10n.slowModeWait,
+                  ),
                 if (_failure case final failure?)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 6),

@@ -164,6 +164,8 @@ final class ConversationStore {
   final _supergroupStatus = <int, td.ChatMemberStatus>{};
   final _basicGroupStatus = <int, td.ChatMemberStatus>{};
   final _muteFor = <int, int>{};
+  final _permissions = <int, td.ChatPermissions>{};
+  final _slowMode = <int, ({int delay, DateTime until})>{};
 
   /// Replaces the timeline of [chatId] with [messages], keeping the ones in
   /// [keep] that are still present (messages that arrived while the history
@@ -445,6 +447,87 @@ final class ConversationStore {
       if (entry.value == basicGroupId) return entry.key;
     }
     return null;
+  }
+
+  /// The supergroup behind [chatId], when it is one.
+  int? supergroupIdOf(int chatId) => _supergroupOf[chatId];
+
+  /// Remembers what plain members may do in [chatId]; true when changed.
+  bool setPermissions(int chatId, td.ChatPermissions permissions) {
+    final same =
+        _permissions[chatId]?.toJson().toString() ==
+        permissions.toJson().toString();
+    _permissions[chatId] = permissions;
+    return !same;
+  }
+
+  /// Remembers the slowmode of [supergroupId]: one message every [delay]
+  /// seconds, the next one allowed in [expiresIn] seconds.
+  void setSlowMode(
+    int supergroupId, {
+    required int delay,
+    double expiresIn = 0,
+  }) {
+    if (delay <= 0) {
+      _slowMode.remove(supergroupId);
+      return;
+    }
+    _slowMode[supergroupId] = (
+      delay: delay,
+      until: DateTime.now().add(
+        Duration(milliseconds: (expiresIn * 1000).round()),
+      ),
+    );
+  }
+
+  bool _isAdmin(int chatId) => switch (_statusOf(chatId)) {
+    td.ChatMemberStatusCreator() || td.ChatMemberStatusAdministrator() => true,
+    _ => false,
+  };
+
+  /// Whether the user may write text in [chatId]: the chat's permissions
+  /// and the user's own restrictions apply to plain members of a group,
+  /// never to its admins.
+  bool canSendText(int chatId) {
+    if (!canPost(chatId)) return false;
+    if (isChannel(chatId) || _isAdmin(chatId)) return true;
+    if (_statusOf(chatId) case td.ChatMemberStatusRestricted(:final permissions)
+        when !permissions.canSendBasicMessages) {
+      return false;
+    }
+    final isGroup =
+        _supergroupOf.containsKey(chatId) || _basicGroupOf.containsKey(chatId);
+    return !isGroup || (_permissions[chatId]?.canSendBasicMessages ?? true);
+  }
+
+  /// When the user's own restriction on writing in [chatId] ends, in Unix
+  /// seconds; null when it has no end or there is no such restriction.
+  int? restrictedUntil(int chatId) {
+    if (_statusOf(chatId)
+        case td.ChatMemberStatusRestricted(
+          :final permissions,
+          :final restrictedUntilDate,
+        )
+        when !permissions.canSendBasicMessages && restrictedUntilDate > 0) {
+      return restrictedUntilDate;
+    }
+    return null;
+  }
+
+  /// Seconds between messages in [chatId] for plain members, 0 without
+  /// slowmode.
+  int slowModeDelay(int chatId) {
+    final supergroupId = _supergroupOf[chatId];
+    if (supergroupId == null || _isAdmin(chatId)) return 0;
+    return _slowMode[supergroupId]?.delay ?? 0;
+  }
+
+  /// When the user may send the next message in [chatId] under slowmode;
+  /// null when they may send now or slowmode doesn't bind them.
+  DateTime? slowModeUntil(int chatId) {
+    if (slowModeDelay(chatId) == 0) return null;
+    final until = _slowMode[_supergroupOf[chatId]!]!.until;
+    return until.isAfter(DateTime.now()) ? until : null;
   }
 
   td.ChatMemberStatus? _statusOf(int chatId) {

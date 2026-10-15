@@ -7,7 +7,9 @@ environment:
   sdk: ^3.13.0
 
 dependencies:
+  drift: ^2.35.2
   mollygram_tdlib: any
+  sqlite3: ^3.7.1
 
 dev_dependencies:
   lints: ^6.0.0

@@ -130,7 +130,7 @@ M8 calls and macOS release, M9 after release.
 | Media editor: arrows and shapes, blur and pixelate brush | done | `packages/media_editor` | | |
 | Media editor: filters and adjustments (brightness, contrast, saturation, warmth, vignette) | done | `packages/media_editor`: seven looks, six sliders | | |
 | Video editor: trim, mute, cover frame, quality | partial | `packages/media_editor`: trim, mute and cover done (macOS, AVFoundation); quality presets pending | S | M4 |
-| Slowmode and restriction notices | missing | | S | M2 |
+| Slowmode and restriction notices | done | Members who may not write see why instead of the composer; slowmode counts down under it (`chat/slow_mode.dart`) | | |
 | Link preview control (remove, above/below) | missing | | S | M2 |
 
 ### Media
@@ -276,5 +276,5 @@ These are not parity items; they are tracked in their own docs.
 | Tabs, split view, ⌘K palette, layout restore | done | [packages/shell](../packages/shell) |
 | JS plugin sandbox with manifest permissions (M5) | partial | [plugins.md](plugins.md) |
 | Ghost mode: no read receipts, typing, online or played marks; per-chat silent read API (M3) | done | [privacy_guard.dart](../packages/core/lib/src/privacy_guard.dart) |
-| Saved deleted messages, edit history (M3) | missing | [forks-research.md](forks-research.md) |
+| Saved deleted messages, edit history (M3) | partial: kept in the encrypted store; the chat does not show them yet | [privacy-store.md](privacy-store.md) |
 | 640×640 circles, uncompressed media by default (M4) | partial | [packages/media](../packages/media) |

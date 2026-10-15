@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'store/store_key.dart';
+
 /// Where one account keeps its TDLib data, and the name of its database
 /// key in the system keychain.
 final class AccountFolders {
@@ -50,7 +52,7 @@ final class AccountStorage {
   /// key of its encrypted message store.
   static List<String> secretNamesFor(int slot) => [
     keyNameFor(slot),
-    'mollygram.store.database-key.v1.account-$slot',
+    messageStoreKeyNameFor(slot),
   ];
 
   /// As many accounts as the official apps allow without Premium.
