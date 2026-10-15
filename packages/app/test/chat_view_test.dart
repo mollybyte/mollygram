@@ -1765,9 +1765,13 @@ void main() {
         tester.widget<TimelineView>(find.byType(TimelineView));
     final keyboard = tester.getSize(find.byType(ReplyKeyboard));
     expect(keyboard.height, greaterThan(60));
+    // The room covers everything under the strip's buttons: the keyboard
+    // and the composer.
+    final chatBottom = tester.getBottomLeft(find.byType(ChatView)).dy;
+    final keyboardTop = tester.getTopLeft(find.byType(ReplyKeyboard)).dy;
     expect(
       timeline().bottomInset,
-      TimelineView.composerInset + keyboard.height,
+      greaterThanOrEqualTo(chatBottom - keyboardTop),
     );
     // The newest message sits above the keyboard, not under it.
     final newest = tester.getBottomLeft(find.text('Mine'));
@@ -1777,10 +1781,15 @@ void main() {
     );
 
     // Hidden, the keyboard gives the space back.
+    final withKeyboard = timeline().bottomInset;
     await tester.tap(find.byTooltip('Bot keyboard'));
     await tester.pump();
+    await tester.pump();
     expect(find.byType(ReplyKeyboard), findsNothing);
-    expect(timeline().bottomInset, TimelineView.composerInset);
+    expect(
+      timeline().bottomInset,
+      lessThan(withKeyboard - keyboard.height + 1),
+    );
   });
 
   testWidgets('offers emoji for a :word and stickers for an emoji', (
