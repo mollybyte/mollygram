@@ -3836,7 +3836,6 @@ class _ChatViewState extends ConsumerState<ChatView> {
                               ? () => unawaited(_inline.loadMore())
                               : null,
                         ),
-                      ?keyboardPanel,
                       if (_panelOpen)
                         Align(
                           alignment: Alignment.centerRight,
@@ -3862,6 +3861,21 @@ class _ChatViewState extends ConsumerState<ChatView> {
                     ],
                   ),
                 ),
+                // A bot's keyboard is a solid strip above the composer, so
+                // messages never scroll through the gaps between buttons.
+                if (keyboardPanel != null)
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: c.card,
+                      border: Border(
+                        top: BorderSide(color: c.separator, width: 0.5),
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
+                      child: keyboardPanel,
+                    ),
+                  ),
                 // The composer is the card's own bottom edge; the other
                 // bars still float over the messages.
                 if (_thread case final thread?)
