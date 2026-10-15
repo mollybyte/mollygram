@@ -8,6 +8,7 @@ import '../notifications/notifications_page.dart';
 import '../window_drag_area.dart';
 import 'account_page.dart';
 import 'appearance_page.dart';
+import 'folders_page.dart';
 import 'plugins_page.dart';
 import 'sessions_page.dart';
 import 'settings_style.dart';
@@ -102,6 +103,7 @@ final settingsSections = <SettingsSection>[
     ],
     builder: (context) => const AppearancePage(),
   ),
+  foldersSection,
   SettingsSection(
     id: 'plugins',
     icon: MgIcons.plugin,
