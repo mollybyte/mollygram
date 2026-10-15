@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:mollygram_core/mollygram_core.dart';
+import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
@@ -309,3 +310,11 @@ class _ChatHeaderTitleState extends ConsumerState<ChatHeaderTitle> {
     );
   }
 }
+
+/// The name and icon of topic `topicId` of forum `chatId`, for the forum's
+/// row in the chat list.
+final forumTopicInfoProvider =
+    FutureProvider.family<td.ForumTopicInfo, (int, int)>((ref, key) {
+      final session = ref.watch(telegramSessionProvider).requireValue;
+      return session.conversations.topicInfo(key.$1, key.$2);
+    });

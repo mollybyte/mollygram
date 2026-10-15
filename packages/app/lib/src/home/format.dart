@@ -47,14 +47,20 @@ String kindLabel(AppLocalizations l10n, ChatPreviewKind kind) => switch (kind) {
 /// The last message as a chat-list row shows it. A message with a
 /// thumbnail drops the kind before its caption, the picture says it.
 /// [you] puts "You:" before the user's own message; a group's row names
-/// the sender on a line of its own instead.
+/// the sender on a line of its own instead. [sender] puts their name
+/// before someone else's message, as in a forum, where the topic takes
+/// that line.
 String formatPreview(
   AppLocalizations l10n,
   ChatPreview? preview, {
   bool you = true,
+  String sender = '',
 }) {
   if (preview == null) return '';
-  final label = preview.thumbnail != null && preview.text.isNotEmpty
+  // A file or a song is named by what it is called, not "File".
+  final label = preview.fileName.isNotEmpty
+      ? preview.fileName
+      : preview.thumbnail != null && preview.text.isNotEmpty
       ? ''
       : kindLabel(l10n, preview.kind);
   final text = preview.text.replaceAll('\n', ' ');
@@ -63,7 +69,8 @@ String formatPreview(
     (false, true) => label,
     (false, false) => '$label, $text',
   };
-  return you && preview.isOutgoing ? l10n.previewYou(body) : body;
+  if (you && preview.isOutgoing) return l10n.previewYou(body);
+  return sender.isEmpty || preview.isOutgoing ? body : '$sender: $body';
 }
 
 /// What a chat-list row shows for an unsent draft: its text, or the kind of

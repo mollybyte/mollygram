@@ -47,6 +47,10 @@ class MgColors extends ThemeExtension<MgColors> {
   /// Secondary text: subtitles, times, placeholders, idle icons.
   final Color fg2;
 
+  /// Icons at rest: between [fg2] and [fg], so a thin line glyph reads as
+  /// clearly as the secondary text beside it.
+  Color get icon => Color.lerp(fg2, fg, 0.45)!;
+
   /// The single accent: selection, unread badges, send button, links.
   final Color accent;
 

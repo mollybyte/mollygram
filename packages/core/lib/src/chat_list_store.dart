@@ -64,6 +64,8 @@ final class ChatPreview {
     this.senderChatId = 0,
     this.thumbnail,
     this.sendState = PreviewSendState.sent,
+    this.fileName = '',
+    this.topicId = 0,
   });
 
   /// The message, for reading the chat up to it; 0 when unknown.
@@ -90,6 +92,13 @@ final class ChatPreview {
 
   /// Whether an outgoing message is still on its way or failed.
   final PreviewSendState sendState;
+
+  /// What a file or a song is called, shown in place of its kind: the
+  /// file's name, or "Performer – Title"; empty for other messages.
+  final String fileName;
+
+  /// The forum topic the message is in; 0 outside forums.
+  final int topicId;
 }
 
 /// Where an outgoing last message is: on its way, failed, or with the

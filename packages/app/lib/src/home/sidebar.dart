@@ -10,6 +10,7 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../avatar/peer_avatar.dart';
+import '../chat/forum_topics.dart' show TopicIcon;
 import '../downloads/downloads_bar.dart';
 import '../folders/folder_icons.dart';
 import '../privacy/ghost_mode_capsule.dart';
@@ -714,6 +715,12 @@ class _ChatRowState extends ConsumerState<_ChatRow>
         : info.sender.isEmpty
         ? null
         : info.sender;
+    // In a forum the topic the last message went to takes the sender's
+    // line, with its icon, and the sender moves before the message.
+    final topicId = draft == null ? last?.topicId ?? 0 : 0;
+    final topic = topicId == 0
+        ? null
+        : ref.watch(forumTopicInfoProvider((chat.id, topicId))).value;
     final thumbnail = draft == null ? last?.thumbnail : null;
     final tile = ChatListTile(
       title: chat.title,
@@ -722,12 +729,16 @@ class _ChatRowState extends ConsumerState<_ChatRow>
         size: ChatListTile.avatarSize,
         photo: chat.photo,
       ),
-      subtitle: draft == null
-          ? formatPreview(l10n, last, you: sender == null)
-          : draftText(l10n, draft),
-      sender: sender,
+      subtitle: draft != null
+          ? draftText(l10n, draft)
+          : topic != null
+          ? formatPreview(l10n, last, sender: info.sender)
+          : formatPreview(l10n, last, you: sender == null),
+      sender: topic?.name ?? sender,
       // "You" needs no face of its own.
-      senderAvatar: sender == null || last!.isOutgoing
+      senderAvatar: topic != null
+          ? TopicIcon(info: topic, size: ChatListTile.senderAvatarSize)
+          : sender == null || last!.isOutgoing
           ? null
           : _senderAvatar(ref, sender, last),
       thumbnails: [?thumbnail == null ? null : MemoryImage(thumbnail)],
@@ -859,7 +870,7 @@ class _ArchiveAvatar extends StatelessWidget {
       height: ChatListTile.avatarSize,
       alignment: Alignment.center,
       decoration: BoxDecoration(shape: BoxShape.circle, color: c.field),
-      child: MgIcon(MgIcons.archive, size: 19, color: c.fg2),
+      child: MgIcon(MgIcons.archive, size: 19, color: c.icon),
     );
   }
 }

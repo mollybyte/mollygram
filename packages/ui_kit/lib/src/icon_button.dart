@@ -37,7 +37,7 @@ class _MgIconButtonState extends State<MgIconButton> {
     final c = MgColors.of(context);
     final enabled = widget.onPressed != null;
     final hover = _hover && enabled;
-    final fg = widget.selected ? c.accent : (hover ? c.fg : c.fg2);
+    final fg = widget.selected ? c.accent : (hover ? c.fg : c.icon);
     final bg = widget.selected
         ? c.field
         : (hover ? c.hover : const Color(0x00000000));

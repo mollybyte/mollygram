@@ -492,6 +492,38 @@ void main() {
     expect(find.text('typing'), findsNothing);
   });
 
+  testWidgets('a forum row names the topic of its last message', (
+    tester,
+  ) async {
+    session.chatLists.store.upsert(
+      ChatListEntry(
+        id: 4,
+        title: 'Sota',
+        type: ChatType.supergroup,
+        unreadCount: 0,
+        lastMessage: const ChatPreview(
+          kind: ChatPreviewKind.document,
+          text: '',
+          date: 1700000000,
+          isOutgoing: true,
+          fileName: 'artifacts.zip',
+          topicId: 5,
+        ),
+        positions: [
+          ChatListPosition(
+            list: const ChatListLocation.main(),
+            order: 200,
+            isPinned: false,
+          ),
+        ],
+      ),
+    );
+    await pump(tester);
+    await settle(tester);
+    expect(row('Changelog'), findsOneWidget);
+    expect(row('You: artifacts.zip'), findsOneWidget);
+  });
+
   test('recent chats put the ones opened here first', () {
     final directory = TelegramChatDirectory(
       session.chatLists.store,
@@ -550,6 +582,57 @@ final class _FakeTdJson implements td.TdJson {
         'total_count': 1,
         'messages': [_message(41, 3, 'hello there').toJson()],
         'next_offset': '',
+      },
+      'getForumTopic' => {
+        '@type': 'forumTopic',
+        'info': {
+          '@type': 'forumTopicInfo',
+          'chat_id': decoded['chat_id'],
+          'forum_topic_id': decoded['forum_topic_id'],
+          'name': 'Changelog',
+          'icon': {
+            '@type': 'forumTopicIcon',
+            'color': 0x6FB9F0,
+            'custom_emoji_id': 0,
+          },
+          'creation_date': 0,
+          'creator_id': {'@type': 'messageSenderUser', 'user_id': 3},
+          'is_general': false,
+          'is_outgoing': false,
+          'is_closed': false,
+          'is_hidden': false,
+        },
+        'order': 0,
+        'is_pinned': false,
+        'unread_count': 0,
+        'last_read_inbox_message_id': 0,
+        'last_read_outbox_message_id': 0,
+        'unread_mention_count': 0,
+        'unread_reaction_count': 0,
+        'unread_poll_vote_count': 0,
+        'total_count': 0,
+        'notification_settings': {
+          '@type': 'chatNotificationSettings',
+          for (final key in [
+            'use_default_mute_for',
+            'use_default_sound',
+            'use_default_show_preview',
+            'show_preview',
+            'use_default_mute_stories',
+            'mute_stories',
+            'use_default_story_sound',
+            'use_default_show_story_poster',
+            'show_story_poster',
+            'use_default_disable_pinned_message_notifications',
+            'disable_pinned_message_notifications',
+            'use_default_disable_mention_notifications',
+            'disable_mention_notifications',
+          ])
+            key: true,
+          'mute_for': 0,
+          'sound_id': 0,
+          'story_sound_id': 0,
+        },
       },
       'getChatHistory' => {
         '@type': 'messages',

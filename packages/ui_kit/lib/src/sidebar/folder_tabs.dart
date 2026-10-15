@@ -332,7 +332,7 @@ class _FolderTabState extends State<FolderTab> {
 
   /// An icon over the label; an unread count is an accent dot.
   Widget _stacked(MgColors c, bool on) {
-    final tone = on ? c.accent : (_hover ? c.fg : c.fg2);
+    final tone = on ? c.accent : (_hover ? c.fg : c.icon);
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
