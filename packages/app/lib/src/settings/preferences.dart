@@ -175,6 +175,10 @@ final class Preferences {
     this.language = AppLanguage.system,
     this.largeEmoji = true,
     this.loopStickers = true,
+    this.translateTo,
+    this.translateSkip = const {},
+    this.translateChats = const {},
+    this.translateHidden = const {},
   });
 
   static const minTextSize = 12;
@@ -236,6 +240,18 @@ final class Preferences {
   /// Animated stickers play on; off, they play once.
   final bool loopStickers;
 
+  /// The language chats are translated into, as a code such as `en`; null
+  /// follows the app's language.
+  final String? translateTo;
+
+  /// Languages the translation bar leaves alone, as codes.
+  final Set<String> translateSkip;
+
+  /// The chats shown translated, and those whose translation bar the
+  /// user hid, by chat id.
+  final Set<int> translateChats;
+  final Set<int> translateHidden;
+
   AutoDownload autoDownloadOf(AutoDownloadKind kind) =>
       autoDownload[kind] ?? defaultAutoDownload[kind]!;
 
@@ -259,6 +275,11 @@ final class Preferences {
     AppLanguage? language,
     bool? largeEmoji,
     bool? loopStickers,
+    String? translateTo,
+    bool clearTranslateTo = false,
+    Set<String>? translateSkip,
+    Set<int>? translateChats,
+    Set<int>? translateHidden,
   }) => Preferences(
     theme: theme ?? this.theme,
     accent: accent ?? this.accent,
@@ -280,6 +301,10 @@ final class Preferences {
     language: language ?? this.language,
     largeEmoji: largeEmoji ?? this.largeEmoji,
     loopStickers: loopStickers ?? this.loopStickers,
+    translateTo: clearTranslateTo ? null : translateTo ?? this.translateTo,
+    translateSkip: translateSkip ?? this.translateSkip,
+    translateChats: translateChats ?? this.translateChats,
+    translateHidden: translateHidden ?? this.translateHidden,
   );
 
   /// The same with [kind] changed.
@@ -309,6 +334,10 @@ final class Preferences {
     'language': language.name,
     'largeEmoji': largeEmoji,
     'loopStickers': loopStickers,
+    'translateTo': ?translateTo,
+    if (translateSkip.isNotEmpty) 'translateSkip': translateSkip.toList(),
+    if (translateChats.isNotEmpty) 'translateChats': translateChats.toList(),
+    if (translateHidden.isNotEmpty) 'translateHidden': translateHidden.toList(),
   };
 
   /// Reads what [toJson] wrote. Anything missing or unknown, say from an
@@ -367,6 +396,18 @@ final class Preferences {
           _byName(AppLanguage.values, json['language']) ?? defaults.language,
       largeEmoji: _bool(json['largeEmoji']) ?? defaults.largeEmoji,
       loopStickers: _bool(json['loopStickers']) ?? defaults.loopStickers,
+      translateTo:
+          json['translateTo'] is String &&
+              (json['translateTo'] as String).isNotEmpty
+          ? json['translateTo'] as String
+          : null,
+      translateSkip: {
+        if (json['translateSkip'] is List)
+          for (final code in json['translateSkip'] as List)
+            if (code is String && code.isNotEmpty) code,
+      },
+      translateChats: _ids(json['translateChats']),
+      translateHidden: _ids(json['translateHidden']),
     );
   }
 }
@@ -379,6 +420,12 @@ T? _byName<T extends Enum>(List<T> values, Object? name) {
 }
 
 bool? _bool(Object? value) => value is bool ? value : null;
+
+Set<int> _ids(Object? value) => {
+  if (value is List)
+    for (final id in value)
+      if (id is int) id,
+};
 
 /// Where [Preferences] are kept between launches.
 abstract interface class PreferencesStorage {

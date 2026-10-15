@@ -4597,4 +4597,40 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String translateTo(String language) {
+    return 'Translate to $language';
+  }
+
+  @override
+  String translatedFrom(String language) {
+    return 'Translated from $language';
+  }
+
+  @override
+  String get translated => 'Translated';
+
+  @override
+  String get translating => 'Translating…';
+
+  @override
+  String get translateShowOriginal => 'Show original';
+
+  @override
+  String get translateOptions => 'Translation options';
+
+  @override
+  String get translateChooseLanguage => 'Translate to…';
+
+  @override
+  String translateSkipLanguage(String language) {
+    return 'Don\'t translate $language';
+  }
+
+  @override
+  String get translateHideBar => 'Hide';
+
+  @override
+  String get translateFailed => 'Couldn\'t translate some messages';
 }

@@ -1726,5 +1726,18 @@
   "downloadsAllPaused": "{count, plural, one{{count} download paused} other{{count} downloads paused}}",
   "@downloadsAllPaused": {"placeholders": {"count": {"type": "int"}}},
   "downloadsFinished": "{count, plural, one{{count} file downloaded} other{{count} files downloaded}}",
-  "@downloadsFinished": {"placeholders": {"count": {"type": "int"}}}
+  "@downloadsFinished": {"placeholders": {"count": {"type": "int"}}},
+  "translateTo": "Translate to {language}",
+  "@translateTo": {"placeholders": {"language": {"type": "String"}}},
+  "translatedFrom": "Translated from {language}",
+  "@translatedFrom": {"placeholders": {"language": {"type": "String"}}},
+  "translated": "Translated",
+  "translating": "Translating…",
+  "translateShowOriginal": "Show original",
+  "translateOptions": "Translation options",
+  "translateChooseLanguage": "Translate to…",
+  "translateSkipLanguage": "Don't translate {language}",
+  "@translateSkipLanguage": {"placeholders": {"language": {"type": "String"}}},
+  "translateHideBar": "Hide",
+  "translateFailed": "Couldn't translate some messages"
 }

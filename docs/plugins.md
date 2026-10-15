@@ -151,7 +151,7 @@ Limits: 200 nodes, nesting depth 8, strings up to 4000 characters, the text of a
 Shipped with the app in `packages/plugin_host/builtin`, built from TypeScript like any other plugin and run in the same sandbox with the same permission checks. They cannot be uninstalled, only turned off.
 
 - **Filters** (`dev.mollygram.filters`): collapses or hides advertising (`erid` tokens, `#ad`, `#реклама`, a "Sponsored" line) and messages with the user's keywords. Keywords match whole words in any script, ignoring case. Permissions: `messages.read: all`; no network, no storage.
-- **Translate** (`dev.mollygram.translate`): shows "Translate from German" under messages in another language, detected on the device, and translates them with Telegram's own translation, so the text goes nowhere it has not been already. Translates automatically when the user turns that on; caches translations keyed by the message text, so an edited message is translated again. Permissions: `messages.read: all`, `storage: 2mb`.
+- **Translate** (`dev.mollygram.translate`): not installed. Translation moved into the chat itself, a bar under the header that translates the whole conversation in place, so the per-message "Translate from German" link is gone. The plugin's sources stay in `builtin/translate` as a worked example of the `message.render.text` hook, `text.detectLanguage` and `messages.translate`, which plugins can still use.
 
 - **Code highlight** (`dev.mollygram.codehighlight`): colors code blocks in messages through `message.render.code`. Knows the keywords, comments and strings of the common languages (JavaScript and TypeScript, Dart, Python, Go, Rust, C-like, Java-like, shell, SQL) and falls back to the keywords they share. Permissions: none.
 

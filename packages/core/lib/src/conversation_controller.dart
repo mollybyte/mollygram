@@ -1858,17 +1858,23 @@ final class ConversationController {
 
   /// The message's text translated into [to] by Telegram, free of Premium
   /// when asked for one message at a time.
-  Future<String> translate(int chatId, int messageId, String to) async {
-    final text = await _client.send(
-      td.TranslateMessageText(
-        chatId: chatId,
-        messageId: messageId,
-        toLanguageCode: to,
-        tone: '',
-      ),
-    );
-    return text.text;
-  }
+  Future<String> translate(int chatId, int messageId, String to) async =>
+      (await translateFormatted(chatId, messageId, to)).text;
+
+  /// Like [translate], keeping the entities, so links and formatting
+  /// survive in the translation.
+  Future<td.FormattedText> translateFormatted(
+    int chatId,
+    int messageId,
+    String to,
+  ) => _client.send(
+    td.TranslateMessageText(
+      chatId: chatId,
+      messageId: messageId,
+      toLanguageCode: to,
+      tone: '',
+    ),
+  );
 
   /// Announces a change, unless the controller is already closed: a reply
   /// can land after the session started shutting down.

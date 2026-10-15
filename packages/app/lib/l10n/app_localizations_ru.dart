@@ -4661,4 +4661,40 @@ class AppLocalizationsRu extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String translateTo(String language) {
+    return 'Перевести на $language';
+  }
+
+  @override
+  String translatedFrom(String language) {
+    return 'Переведено с $language';
+  }
+
+  @override
+  String get translated => 'Переведено';
+
+  @override
+  String get translating => 'Перевожу…';
+
+  @override
+  String get translateShowOriginal => 'Показать оригинал';
+
+  @override
+  String get translateOptions => 'Параметры перевода';
+
+  @override
+  String get translateChooseLanguage => 'Перевести на…';
+
+  @override
+  String translateSkipLanguage(String language) {
+    return 'Не переводить $language';
+  }
+
+  @override
+  String get translateHideBar => 'Скрыть';
+
+  @override
+  String get translateFailed => 'Не удалось перевести часть сообщений';
 }

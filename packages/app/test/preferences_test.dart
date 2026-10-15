@@ -119,6 +119,32 @@ void main() {
       );
     });
 
+    test('keeps the translation choices', () {
+      final preferences = const Preferences().copyWith(
+        translateTo: 'de',
+        translateSkip: {'uk', 'be'},
+        translateChats: {7, 9},
+        translateHidden: {11},
+      );
+      final restored = Preferences.fromJson(preferences.toJson());
+      expect(restored.translateTo, 'de');
+      expect(restored.translateSkip, {'uk', 'be'});
+      expect(restored.translateChats, {7, 9});
+      expect(restored.translateHidden, {11});
+
+      final defaults = Preferences.fromJson(const Preferences().toJson());
+      expect(defaults.translateTo, isNull);
+      expect(defaults.translateSkip, isEmpty);
+      expect(defaults.translateChats, isEmpty);
+      expect(
+        Preferences.fromJson({
+          'translateTo': 3,
+          'translateChats': ['x', 5],
+        }).translateChats,
+        {5},
+      );
+    });
+
     test('falls back to defaults for missing or unknown values', () {
       final restored = Preferences.fromJson({
         'theme': 'sepia',

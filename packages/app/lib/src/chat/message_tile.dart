@@ -16,6 +16,7 @@ import '../plugins/message_hooks.dart';
 import '../settings/stickers/sticker_options.dart';
 import '../settings/stickers/sticker_set_sheet.dart';
 import 'bot_keyboard.dart';
+import 'chat_translation.dart';
 import 'concealed.dart';
 import 'custom_emoji.dart';
 import 'describe.dart';
@@ -588,17 +589,22 @@ class _MessageBody extends StatelessWidget {
   ConversationMessage get message => row.primary;
 
   /// The text of [of] reports its selection for a quote.
-  FormattedTextView _text(td.FormattedText text, {ConversationMessage? of}) {
+  Widget _text(td.FormattedText text, {ConversationMessage? of}) {
     final onTextSelected = actions.onTextSelected;
     final owner = of ?? message;
-    // Bot commands in it go to this chat, meant for the bot that sent it.
-    return FormattedTextView(
+    // The chat may be shown translated; the text is then the translation.
+    return TranslatedText(
+      message: owner,
       text: text,
-      chatId: owner.chatId,
-      senderUserId: owner.sender.isChat ? null : owner.sender.id,
-      onSelection: onTextSelected == null
-          ? null
-          : (quote) => onTextSelected(owner, quote),
+      // Bot commands in it go to this chat, meant for the bot that sent it.
+      builder: (shown) => FormattedTextView(
+        text: shown,
+        chatId: owner.chatId,
+        senderUserId: owner.sender.isChat ? null : owner.sender.id,
+        onSelection: onTextSelected == null
+            ? null
+            : (quote) => onTextSelected(owner, quote),
+      ),
     );
   }
 

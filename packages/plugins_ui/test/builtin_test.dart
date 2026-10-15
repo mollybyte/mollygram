@@ -9,7 +9,6 @@ void main() {
     final plugins = await loadBuiltinPlugins();
     expect(plugins.map((p) => p.entry.id), [
       'dev.mollygram.filters',
-      'dev.mollygram.translate',
       'dev.mollygram.codehighlight',
     ]);
     for (final p in plugins) {

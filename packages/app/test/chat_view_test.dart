@@ -1621,6 +1621,97 @@ void main() {
     expect(find.text('Menu'), findsOneWidget);
   });
 
+  /// A chat whose incoming messages are in Russian.
+  List<td.Message> russianHistory() => [
+    _message(id: 13, senderId: 2, text: 'Привет, как дела у вас сегодня?'),
+    _message(id: 12, senderId: 2, text: 'Мы собираемся встретиться завтра'),
+    _message(id: 11, senderId: 2, text: 'Не забудьте взять с собой ключи'),
+    _message(
+      id: 10,
+      senderId: 1,
+      text: 'Спасибо большое за напоминание',
+      outgoing: true,
+    ),
+  ];
+
+  Future<void> openRussianChat(WidgetTester tester) async {
+    json.history = russianHistory();
+    json.push(_chat(lastRead: 13, unread: 0, last: 13));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await pump(tester);
+    await tester.pump();
+  }
+
+  Future<void> settleTranslation(WidgetTester tester) async {
+    for (var i = 0; i < 4; i++) {
+      await tester.runAsync(() => Future<void>.delayed(_tick));
+      await tester.pump();
+    }
+    await tester.pump(const Duration(seconds: 1));
+  }
+
+  testWidgets('translates the whole chat from the bar under the header', (
+    tester,
+  ) async {
+    await openRussianChat(tester);
+    expect(find.text('Translate to English'), findsOneWidget);
+    // Nothing is translated until asked, and no message offers a link.
+    expect(find.textContaining('Привет', findRichText: true), findsOneWidget);
+    expect(find.textContaining('Translate from'), findsNothing);
+    expect(
+      json.sent.where((r) => r['@type'] == 'translateMessageText'),
+      isEmpty,
+    );
+
+    await tester.tap(find.text('Translate to English'));
+    await settleTranslation(tester);
+    expect(find.text('Translated from Russian'), findsOneWidget);
+    expect(find.text('Show original'), findsOneWidget);
+    expect(
+      find.textContaining('Translated 13', findRichText: true),
+      findsOneWidget,
+    );
+    expect(find.textContaining('Привет', findRichText: true), findsNothing);
+    // The user's own message is left as written.
+    expect(find.textContaining('Спасибо', findRichText: true), findsOneWidget);
+    final asked = {
+      for (final r in json.sent.where(
+        (r) => r['@type'] == 'translateMessageText',
+      ))
+        r['message_id']: r['to_language_code'],
+    };
+    expect(asked, {13: 'en', 12: 'en', 11: 'en'});
+
+    await tester.tap(find.text('Show original'));
+    await settleTranslation(tester);
+    expect(find.textContaining('Привет', findRichText: true), findsOneWidget);
+    expect(find.text('Translate to English'), findsOneWidget);
+  });
+
+  testWidgets('hides the translation bar from its menu', (tester) async {
+    await openRussianChat(tester);
+    await tester.tap(find.byTooltip('Translation options'));
+    await tester.pumpAndSettle();
+    expect(find.text('Translate to…'), findsOneWidget);
+    expect(find.text("Don't translate Russian"), findsOneWidget);
+    await tester.tap(find.text('Hide'));
+    await tester.pumpAndSettle();
+    expect(find.text('Translate to English'), findsNothing);
+    await tester.pump(const Duration(seconds: 1));
+  });
+
+  testWidgets('stops offering a language the user does not want translated', (
+    tester,
+  ) async {
+    await openRussianChat(tester);
+    await tester.tap(find.byTooltip('Translation options'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text("Don't translate Russian"));
+    await tester.pumpAndSettle();
+    expect(find.text('Translate to English'), findsNothing);
+    await tester.pump(const Duration(seconds: 1));
+  });
+
   testWidgets('makes room under the messages for a bot\'s keyboard', (
     tester,
   ) async {
@@ -3613,6 +3704,11 @@ final class _FakeTdJson implements td.TdJson {
           'show_above_text': false,
           'instant_view_version': 0,
         },
+      'translateMessageText' => {
+        '@type': 'formattedText',
+        'text': 'Translated ${decoded['message_id']}',
+        'entities': <Object?>[],
+      },
       'getLinkPreview' => {
         '@type': 'error',
         'code': 404,

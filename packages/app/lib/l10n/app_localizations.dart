@@ -7663,6 +7663,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, one{{count} file downloaded} other{{count} files downloaded}}'**
   String downloadsFinished(int count);
+
+  /// No description provided for @translateTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Translate to {language}'**
+  String translateTo(String language);
+
+  /// No description provided for @translatedFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'Translated from {language}'**
+  String translatedFrom(String language);
+
+  /// No description provided for @translated.
+  ///
+  /// In en, this message translates to:
+  /// **'Translated'**
+  String get translated;
+
+  /// No description provided for @translating.
+  ///
+  /// In en, this message translates to:
+  /// **'Translating…'**
+  String get translating;
+
+  /// No description provided for @translateShowOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Show original'**
+  String get translateShowOriginal;
+
+  /// No description provided for @translateOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Translation options'**
+  String get translateOptions;
+
+  /// No description provided for @translateChooseLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Translate to…'**
+  String get translateChooseLanguage;
+
+  /// No description provided for @translateSkipLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t translate {language}'**
+  String translateSkipLanguage(String language);
+
+  /// No description provided for @translateHideBar.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide'**
+  String get translateHideBar;
+
+  /// No description provided for @translateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t translate some messages'**
+  String get translateFailed;
 }
 
 class _AppLocalizationsDelegate
