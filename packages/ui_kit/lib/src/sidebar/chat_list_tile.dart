@@ -171,6 +171,7 @@ class _ChatListTileState extends State<ChatListTile> {
     final metrics = MgMetrics.of(context);
     final on = widget.selected;
     final faint = on ? c.onAccentSecondary : c.muted;
+    final icon = on ? c.onAccentSecondary : c.fg2;
     final badges = <Widget>[
       if (widget.reactions)
         GlyphBadge.reaction(key: const ValueKey('reactions'), onAccent: on),
@@ -192,7 +193,7 @@ class _ChatListTileState extends State<ChatListTile> {
             Padding(
               key: const ValueKey('pin'),
               padding: const EdgeInsets.only(right: 2, bottom: 3),
-              child: MgIcon(MgIcons.pin, size: 12, color: faint),
+              child: MgIcon(MgIcons.pin, size: 12, color: icon),
             ),
           ]
         : badges;
@@ -262,7 +263,7 @@ class _ChatListTileState extends State<ChatListTile> {
                         child: Row(
                           children: [
                             if (kindIcon != null) ...[
-                              MgIcon(kindIcon, size: 12, color: faint),
+                              MgIcon(kindIcon, size: 12, color: icon),
                               const SizedBox(width: 4),
                             ],
                             if (widget.secret) ...[

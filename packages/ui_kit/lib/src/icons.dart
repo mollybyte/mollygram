@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -465,6 +467,9 @@ class MgIcon extends StatelessWidget {
   final Color? color;
   final String? semanticLabel;
 
+  /// The thinnest line drawn, in logical pixels.
+  static const double minLine = 1.45;
+
   @override
   Widget build(BuildContext context) {
     final color =
@@ -472,9 +477,12 @@ class MgIcon extends StatelessWidget {
         IconTheme.of(context).color ??
         DefaultTextStyle.of(context).style.color ??
         const Color(0xFF000000);
+    // The strokes are drawn at 24 x 24 and shrink with the icon; small
+    // icons keep a line of at least [minLine] px so they don't fade out.
+    final width = math.max(stroke ?? icon.stroke, minLine * 24 / size);
     return SvgPicture.string(
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" '
-      'stroke="currentColor" stroke-width="${stroke ?? icon.stroke}" '
+      'stroke="currentColor" stroke-width="$width" '
       'stroke-linecap="round" stroke-linejoin="round">${icon.body}</svg>',
       width: size,
       height: size,

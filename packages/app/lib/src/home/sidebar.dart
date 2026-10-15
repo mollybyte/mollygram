@@ -859,7 +859,7 @@ class _ArchiveAvatar extends StatelessWidget {
       height: ChatListTile.avatarSize,
       alignment: Alignment.center,
       decoration: BoxDecoration(shape: BoxShape.circle, color: c.field),
-      child: MgIcon(MgIcons.archive, size: 19, color: c.fg2),
+      child: MgIcon(MgIcons.archive, size: 19, color: c.icon),
     );
   }
 }
