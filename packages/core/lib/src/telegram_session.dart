@@ -8,6 +8,7 @@ import 'chat_list_controller.dart';
 import 'chat_search.dart';
 import 'conversation_controller.dart';
 import 'file_controller.dart';
+import 'notification_controller.dart';
 import 'sticker_library.dart';
 import 'tdlib_initializer.dart';
 
@@ -24,6 +25,7 @@ final class TelegramSession {
     required this.conversations,
     required this.search,
     required this.files,
+    required this.notifications,
     required this.stickers,
     required this._initializer,
   });
@@ -35,6 +37,7 @@ final class TelegramSession {
   final ConversationController conversations;
   final ChatSearch search;
   final FileController files;
+  final NotificationController notifications;
   final StickerLibrary stickers;
   final _errors = StreamController<Object>.broadcast(sync: true);
   StreamSubscription<AuthorizationStage>? _stageSubscription;
@@ -53,6 +56,7 @@ final class TelegramSession {
     final authorization = AuthorizationController(client);
     final conversations = ConversationController(client);
     final files = FileController(client);
+    final notifications = NotificationController(client);
     final session = TelegramSession._(
       tdlib: tdlib,
       authorization: authorization,
@@ -60,6 +64,7 @@ final class TelegramSession {
       conversations: conversations,
       search: ChatSearch(client),
       files: files,
+      notifications: notifications,
       stickers: StickerLibrary(client),
       initializer: TdlibInitializer(client, parameters: parameters),
     );
@@ -67,6 +72,7 @@ final class TelegramSession {
     try {
       await conversations.start();
       await files.start();
+      await notifications.start();
       await authorization.start();
       // Sending the parameters is part of starting: a wrong database key or
       // bad credentials must fail the session, not leave the UI waiting.
@@ -119,6 +125,7 @@ final class TelegramSession {
     await chatLists.dispose();
     await conversations.dispose();
     await files.dispose();
+    await notifications.dispose();
     await authorization.dispose();
     await _tdlib.close();
     await _errors.close();
