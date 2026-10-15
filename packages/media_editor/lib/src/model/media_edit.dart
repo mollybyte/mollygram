@@ -3,6 +3,8 @@ import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 
+import 'stroke.dart';
+
 /// The whole rectangle in normalized coordinates.
 const Rect unitRect = Rect.fromLTRB(0, 0, 1, 1);
 
@@ -39,6 +41,7 @@ final class MediaEdit {
     this.crop = unitRect,
     this.aspect = AspectPreset.free,
     this.portrait = false,
+    this.strokes = const [],
   }) : assert(quarterTurns >= 0 && quarterTurns < 4);
 
   /// Clockwise quarter turns of the source, 0 to 3.
@@ -57,8 +60,12 @@ final class MediaEdit {
   /// wide).
   final bool portrait;
 
+  /// Drawn lines in the oriented picture, oldest first.
+  final List<Stroke> strokes;
+
   /// Nothing to apply: the original file can be sent as is.
-  bool get isIdentity => quarterTurns == 0 && !flipped && _nearlyUnit(crop);
+  bool get isIdentity =>
+      quarterTurns == 0 && !flipped && _nearlyUnit(crop) && strokes.isEmpty;
 
   /// Size of the oriented picture for a source of [source] pixels.
   Size orientedSize(Size source) =>
@@ -93,6 +100,9 @@ final class MediaEdit {
     crop: Rect.fromLTRB(crop.top, 1 - crop.right, crop.bottom, 1 - crop.left),
     aspect: aspect,
     portrait: aspect.hasOrientation ? !portrait : portrait,
+    strokes: [
+      for (final s in strokes) s.mapPoints((p) => Offset(p.dy, 1 - p.dx)),
+    ],
   );
 
   /// Mirrored left to right, crop included.
@@ -102,16 +112,28 @@ final class MediaEdit {
     crop: Rect.fromLTRB(1 - crop.right, crop.top, 1 - crop.left, crop.bottom),
     aspect: aspect,
     portrait: portrait,
+    strokes: [
+      for (final s in strokes) s.mapPoints((p) => Offset(1 - p.dx, p.dy)),
+    ],
   );
 
-  MediaEdit copyWith({Rect? crop, AspectPreset? aspect, bool? portrait}) =>
-      MediaEdit(
-        quarterTurns: quarterTurns,
-        flipped: flipped,
-        crop: crop ?? this.crop,
-        aspect: aspect ?? this.aspect,
-        portrait: portrait ?? this.portrait,
-      );
+  MediaEdit copyWith({
+    Rect? crop,
+    AspectPreset? aspect,
+    bool? portrait,
+    List<Stroke>? strokes,
+  }) => MediaEdit(
+    quarterTurns: quarterTurns,
+    flipped: flipped,
+    crop: crop ?? this.crop,
+    aspect: aspect ?? this.aspect,
+    portrait: portrait ?? this.portrait,
+    strokes: strokes ?? this.strokes,
+  );
+
+  /// With [stroke] drawn on top.
+  MediaEdit withStroke(Stroke stroke) =>
+      copyWith(strokes: [...strokes, stroke]);
 
   /// Locks the crop to [preset], fitting the largest rectangle of that ratio
   /// around the current crop's center. [portrait] defaults to the shape of
@@ -137,16 +159,24 @@ final class MediaEdit {
       other.flipped == flipped &&
       other.crop == crop &&
       other.aspect == aspect &&
-      other.portrait == portrait;
+      other.portrait == portrait &&
+      listEquals(other.strokes, strokes);
 
   @override
-  int get hashCode =>
-      Object.hash(quarterTurns, flipped, crop, aspect, portrait);
+  int get hashCode => Object.hash(
+    quarterTurns,
+    flipped,
+    crop,
+    aspect,
+    portrait,
+    Object.hashAll(strokes),
+  );
 
   @override
   String toString() =>
       'MediaEdit(turns: $quarterTurns, flipped: $flipped, crop: $crop, '
-      'aspect: ${aspect.name}${portrait ? ' portrait' : ''})';
+      'aspect: ${aspect.name}${portrait ? ' portrait' : ''}, '
+      '${strokes.length} strokes)';
 }
 
 bool _nearlyUnit(Rect r) =>

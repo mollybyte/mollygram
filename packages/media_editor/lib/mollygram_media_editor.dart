@@ -9,6 +9,8 @@ library;
 export 'src/editor.dart' show MediaEditResult, MediaEditorPage, showMediaEditor;
 export 'src/model/crop_geometry.dart' show CropHandle, resizeCrop;
 export 'src/model/media_edit.dart' show AspectPreset, MediaEdit, unitRect;
+export 'src/model/stroke.dart';
 export 'src/render/render.dart' show exportEdit;
 export 'src/strings.dart';
+export 'src/ui/draw_panel.dart' show brushColors;
 export 'src/ui/editor_icons.dart';

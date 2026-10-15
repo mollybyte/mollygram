@@ -209,4 +209,54 @@ void main() {
     expect((result!.width, result!.height), (32, 16));
     expect(File(result!.path).existsSync(), isTrue);
   });
+
+  testWidgets('drawing a line adds a stroke and undo removes it', (
+    tester,
+  ) async {
+    MediaEditResult? result;
+    tester.view.physicalSize = const Size(1200, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildMgTheme(MgColors.dark),
+        home: Builder(
+          builder: (context) => TextButton(
+            onPressed: () async => result = await showMediaEditor(
+              context,
+              path: path,
+              outputDirectory: dir.path,
+            ),
+            child: const Text('open'),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await waitForPicture(tester);
+    await tester.tap(find.byTooltip('Draw'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Marker'));
+    await tester.pumpAndSettle();
+    final gesture = await tester.startGesture(const Offset(300, 300));
+    await gesture.moveBy(const Offset(200, 20));
+    await gesture.moveBy(const Offset(200, -20));
+    await gesture.up();
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Undo'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Redo'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Done'));
+    for (var i = 0; i < 200 && result == null; i++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 10)),
+      );
+      await tester.pump();
+    }
+    expect(result, isNotNull);
+    expect(result!.edit.strokes, hasLength(1));
+    expect(result!.edit.strokes.single.tool, BrushTool.marker);
+    expect(result!.isEdited, isTrue);
+  });
 }
