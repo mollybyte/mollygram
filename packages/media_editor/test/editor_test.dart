@@ -357,4 +357,59 @@ void main() {
     await tester.pumpAndSettle();
     expect(iconButton(tester, 'Redo').onPressed, isNotNull);
   });
+
+  testWidgets('a look and a slider change the adjustments', (tester) async {
+    MediaEditResult? result;
+    tester.view.physicalSize = const Size(1200, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildMgTheme(MgColors.dark),
+        home: Builder(
+          builder: (context) => TextButton(
+            onPressed: () async => result = await showMediaEditor(
+              context,
+              path: path,
+              outputDirectory: dir.path,
+            ),
+            child: const Text('open'),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await waitForPicture(tester);
+    await tester.tap(find.byTooltip('Adjust'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Vivid'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Vignette'));
+    await tester.pumpAndSettle();
+    // The adjust panel's slider is the one with change callbacks.
+    final slider = find.byWidgetPredicate(
+      (w) => w is Slider && w.onChangeEnd != null,
+    );
+    final drag = await tester.startGesture(tester.getCenter(slider));
+    await drag.moveBy(const Offset(40, 0));
+    await drag.up();
+    await tester.pumpAndSettle();
+    // Undo takes the slider move back in one step, redo brings it back.
+    await tester.tap(find.byTooltip('Undo'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Redo'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Done'));
+    for (var i = 0; i < 200 && result == null; i++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 10)),
+      );
+      await tester.pump();
+    }
+    expect(result, isNotNull);
+    final a = result!.edit.adjustments;
+    expect(a.saturation, FilterPreset.vivid.look.saturation);
+    expect(a.vignette, greaterThan(0.5));
+    expect(a.preset, isNull);
+  });
 }
