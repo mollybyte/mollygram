@@ -1,3 +1,5 @@
+import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
+
 /// A chat-list identity used by TDLib for the main list, archive, or a folder.
 final class ChatListLocation {
   const ChatListLocation._(this.folderId);
@@ -76,10 +78,15 @@ final class ChatListEntry {
     required List<ChatListPosition> positions,
     this.lastMessage,
     this.isGroup = false,
+    this.photo,
   }) : positions = List.unmodifiable(positions);
 
   final int id;
   final String title;
+
+  /// The chat photo (a 160 px `small` file and a blurred minithumbnail), or
+  /// null when the chat has none and a monogram stands in.
+  final td.ChatPhotoInfo? photo;
 
   /// A basic group or a supergroup that is not a channel: incoming messages
   /// come from different people, so they show the sender's name.
@@ -100,10 +107,12 @@ final class ChatListEntry {
     int? unreadCount,
     List<ChatListPosition>? positions,
     ChatPreview? Function()? lastMessage,
+    td.ChatPhotoInfo? Function()? photo,
   }) => ChatListEntry(
     id: id,
     title: title ?? this.title,
     isGroup: isGroup,
+    photo: photo == null ? this.photo : photo(),
     unreadCount: unreadCount ?? this.unreadCount,
     positions: positions ?? this.positions,
     lastMessage: lastMessage == null ? this.lastMessage : lastMessage(),
@@ -143,6 +152,11 @@ final class ChatListStore {
   void updateTitle(int chatId, String title) {
     final chat = _chats[chatId];
     if (chat != null) _chats[chatId] = chat.copyWith(title: title);
+  }
+
+  void updatePhoto(int chatId, td.ChatPhotoInfo? photo) {
+    final chat = _chats[chatId];
+    if (chat != null) _chats[chatId] = chat.copyWith(photo: () => photo);
   }
 
   void updateUnreadCount(int chatId, int unreadCount) {

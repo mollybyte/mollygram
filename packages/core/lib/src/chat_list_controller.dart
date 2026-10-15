@@ -86,6 +86,8 @@ final class ChatListController {
         store.upsert(_entryFrom(chat));
       case td.UpdateChatTitle(:final chatId, :final title):
         store.updateTitle(chatId, title);
+      case td.UpdateChatPhoto(:final chatId, :final photo):
+        store.updatePhoto(chatId, photo);
       case td.UpdateChatReadInbox(:final chatId, :final unreadCount):
         store.updateUnreadCount(chatId, unreadCount);
       case td.UpdateChatLastMessage(
@@ -131,6 +133,7 @@ ChatListEntry _entryFrom(td.Chat chat) => ChatListEntry(
     _ => false,
   },
   unreadCount: chat.unreadCount,
+  photo: chat.photo,
   positions: _positionsFrom(chat.positions),
   lastMessage: _previewFrom(chat.lastMessage),
 );

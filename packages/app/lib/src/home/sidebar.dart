@@ -7,6 +7,7 @@ import 'package:mollygram_shell/mollygram_shell.dart';
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../avatar/peer_avatar.dart';
 import '../downloads/downloads_bar.dart';
 import '../session/providers.dart';
 import '../window_drag_area.dart';
@@ -132,6 +133,11 @@ class _ChatList extends ConsumerWidget {
             return ChatListTile(
               key: ValueKey(chat.id),
               title: chat.title,
+              avatar: PeerAvatar.chat(
+                name: chat.title,
+                size: ChatListTile.avatarSize,
+                photo: chat.photo,
+              ),
               subtitle: formatPreview(l10n, last),
               time: last == null ? '' : formatChatTime(last.date, locale),
               unread: chat.unreadCount,

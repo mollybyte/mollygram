@@ -26,7 +26,11 @@ class CommandPalette extends StatefulWidget {
     required this.onClose,
     this.onOpenMessage,
     this.initialQuery = '',
+    this.chatAvatar,
   });
+
+  /// Draws a chat row's avatar at [size]; the default is its monogram.
+  final Widget Function(ChatSummary chat, double size)? chatAvatar;
 
   final ChatDirectory directory;
   final List<PaletteCommand> commands;
@@ -399,6 +403,7 @@ class _CommandPaletteState extends State<CommandPalette> {
             item: item,
             selected: i == _selected,
             strings: widget.strings,
+            chatAvatar: widget.chatAvatar,
             onHover: () {
               if (_selected != i) setState(() => _selected = i);
             },
@@ -486,8 +491,10 @@ class _PaletteRow extends StatelessWidget {
     required this.strings,
     required this.onHover,
     required this.onTap,
+    this.chatAvatar,
   });
 
+  final Widget Function(ChatSummary chat, double size)? chatAvatar;
   final PaletteItem item;
   final bool selected;
   final ShellStrings strings;
@@ -507,7 +514,8 @@ class _PaletteRow extends StatelessWidget {
       String? kbd,
     ) = switch (item) {
       ChatPaletteItem(:final chat) => (
-        MonogramAvatar(name: chat.title, size: 24),
+        chatAvatar?.call(chat, 24) ??
+            MonogramAvatar(name: chat.title, size: 24),
         chat.title,
         chat.unread > 0
             ? strings.newMessages(chat.unread)

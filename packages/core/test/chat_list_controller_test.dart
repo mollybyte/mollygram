@@ -86,6 +86,26 @@ void main() {
     expect(json.sent.where((r) => r['@type'] == 'loadChats'), hasLength(2));
   });
 
+  test('keeps the chat photo and follows updateChatPhoto', () async {
+    await controller.start();
+    json.push({
+      '@type': 'updateNewChat',
+      'chat': _chatWithPhoto(7, 'Pictured', photoId: 70),
+    });
+    await pumpEventQueue();
+    expect(controller.store.chat(7)!.photo!.small.id, 70);
+    expect(controller.store.chat(7)!.photo!.minithumbnail, isNotNull);
+
+    json.push({'@type': 'updateChatPhoto', 'chat_id': 7, 'photo': _photo(71)});
+    await _polled();
+    expect(controller.store.chat(7)!.photo!.small.id, 71);
+
+    json.push({'@type': 'updateChatPhoto', 'chat_id': 7, 'photo': null});
+    await _polled();
+    expect(controller.store.chat(7)!.photo, isNull);
+    expect(controller.store.chat(7)!.title, 'Pictured');
+  });
+
   test('applies positions sent with a draft change', () async {
     const main = ChatListLocation.main();
     await controller.start();
@@ -197,3 +217,59 @@ final class _FakeTdJson implements td.TdJson {
   void push(Map<String, Object?> update) =>
       _queue.add(jsonEncode({...update, '@client_id': 1}));
 }
+
+/// Waits for the event source's poll timer to deliver a pushed update.
+Future<void> _polled() async {
+  await Future<void>.delayed(const Duration(milliseconds: 10));
+  await pumpEventQueue();
+}
+
+Map<String, Object?> _chatWithPhoto(
+  int id,
+  String title, {
+  required int photoId,
+}) => {
+  '@type': 'chat',
+  'id': id,
+  'type': {'@type': 'chatTypePrivate', 'user_id': id},
+  'title': title,
+  'photo': _photo(photoId),
+  'permissions': {'@type': 'chatPermissions'},
+  'notification_settings': {'@type': 'chatNotificationSettings'},
+  'available_reactions': {
+    '@type': 'chatAvailableReactionsAll',
+    'max_reaction_count': 11,
+  },
+  'video_chat': {'@type': 'videoChat'},
+  'positions': <Object?>[],
+};
+
+Map<String, Object?> _photo(int fileId) => {
+  '@type': 'chatPhotoInfo',
+  'small': _file(fileId),
+  'big': _file(fileId + 1),
+  'minithumbnail': {
+    '@type': 'minithumbnail',
+    'width': 8,
+    'height': 8,
+    'data': 'AAAA',
+  },
+  'has_animation': false,
+  'is_personal': false,
+};
+
+Map<String, Object?> _file(int id) => {
+  '@type': 'file',
+  'id': id,
+  'size': 100,
+  'expected_size': 100,
+  'local': {
+    '@type': 'localFile',
+    'path': '',
+    'can_be_downloaded': true,
+    'is_downloading_active': false,
+    'is_downloading_completed': false,
+    'downloaded_size': 0,
+  },
+  'remote': {'@type': 'remoteFile', 'id': 'r$id', 'unique_id': 'u$id'},
+};
