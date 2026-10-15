@@ -9,6 +9,7 @@ import 'forum_topics.dart';
 import 'message_thread.dart';
 import 'outgoing_file.dart';
 import 'peer_info.dart';
+import 'saved_tags.dart';
 import 'saved_topics.dart';
 import 'text_edit.dart';
 
@@ -39,6 +40,7 @@ final class ConversationController {
   /// The forum topic lists open on screen, fed every update.
   final _topicLists = <ForumTopicList>{};
   final _savedLists = <SavedTopicList>{};
+  final _savedTagLists = <SavedTags>{};
   int? _myId;
 
   /// The signed-in user's id, once TDLib has said it.
@@ -1162,6 +1164,32 @@ final class ConversationController {
     return thread;
   }
 
+  /// The tags on Saved Messages, fed updates until disposed; they still
+  /// have to be loaded.
+  SavedTags openSavedTags() {
+    final tags = SavedTags(_client, onDispose: _savedTagLists.remove);
+    _savedTagLists.add(tags);
+    return tags;
+  }
+
+  /// Opens the Saved Messages that carry [tag] in [chatId] as a thread of
+  /// its own.
+  Future<MessageThread> openSavedTag(int chatId, td.ReactionType tag) async {
+    final thread = MessageThread(
+      _client,
+      store,
+      chatId: chatId,
+      threadId: 0,
+      savedTag: tag,
+      roots: const [],
+      replyCount: 0,
+      onDispose: _threads.remove,
+      sendFiles: sendFiles,
+    );
+    _threads.add(thread);
+    return thread;
+  }
+
   /// Pins or unpins Saved Messages topic [topicId].
   Future<void> setSavedTopicPinned(int topicId, bool pinned) => _client.send(
     td.ToggleSavedMessagesTopicIsPinned(
@@ -1862,6 +1890,9 @@ final class ConversationController {
     }
     for (final list in _savedLists.toList()) {
       list.handle(object);
+    }
+    for (final tags in _savedTagLists.toList()) {
+      tags.handle(object);
     }
     switch (object) {
       case td.UpdateOption(
