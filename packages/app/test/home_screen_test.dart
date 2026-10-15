@@ -234,7 +234,7 @@ void main() {
 
     await tester.tap(find.text('Plugins'));
     await settle(tester);
-    expect(find.byType(PluginsScreen), findsOneWidget);
+    expect(find.byType(PluginsPage), findsOneWidget);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await settle(tester);

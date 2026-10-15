@@ -11,6 +11,10 @@ import 'plugin_instance.dart';
 /// budget on every event does not drop the frame rate. Services are called
 /// in the app isolate: the worker forwards only calls that are already
 /// authorized.
+/// What the isolate sends when it exits; a plain string, as exit
+/// messages must be.
+const _exited = 'mg.worker.exited';
+
 final class PluginWorker {
   PluginWorker._(this.manifest, this._services);
 
@@ -59,6 +63,9 @@ final class PluginWorker {
       debugName: 'plugin ${manifest.id}',
       errorsAreFatal: false,
     );
+    // An isolate that dies (a crash in native code it survived, a kill)
+    // must not leave callers waiting.
+    w._isolate.addOnExitListener(w._receive.sendPort, response: _exited);
     w._send = await ready.future;
     await w._request((id) => ('start', id, null));
     return w;
@@ -81,18 +88,28 @@ final class PluginWorker {
   Future<void> updateSetting(String key, Object? value) =>
       _request((id) => ('setting', id, (key, value)));
 
+  var _stopped = false;
+
   void stop() {
+    if (_stopped) return;
+    _stopped = true;
     _send.send(('stop', 0, null));
     _isolate.kill(priority: Isolate.beforeNextEvent);
     _receive.close();
+    _failPending('plugin stopped');
+    _setStatus(PluginStatus.stopped, null);
+    unawaited(_statusChanges.close());
+  }
+
+  void _failPending(String why) {
     for (final c in _replies.values) {
-      c.completeError(StateError('plugin stopped'));
+      c.completeError(StateError(why));
     }
     _replies.clear();
-    _setStatus(PluginStatus.stopped, null);
   }
 
   Future<Object?> _request((String, int, Object?) Function(int id) build) {
+    if (_stopped) return Future.error(StateError('plugin stopped'));
     final id = _nextId++;
     final c = _replies[id] = Completer<Object?>();
     _send.send(build(id));
@@ -100,7 +117,7 @@ final class PluginWorker {
   }
 
   void _setStatus(PluginStatus s, String? reason) {
-    if (s == _status) return;
+    if (s == _status || _statusChanges.isClosed) return;
     _status = s;
     _disabledReason = reason;
     _statusChanges.add(s);
@@ -110,6 +127,13 @@ final class PluginWorker {
     switch (msg) {
       case final SendPort port:
         ready.complete(port);
+      case _exited:
+        if (_stopped) return;
+        if (!ready.isCompleted) {
+          ready.completeError(StateError('worker exited'));
+        }
+        _failPending('worker exited');
+        _setStatus(PluginStatus.disabled, 'the plugin process exited');
       case ('reply', final int id, final Object? value, final Object? error):
         final c = _replies.remove(id);
         if (c == null) return;

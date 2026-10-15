@@ -94,7 +94,7 @@ M8 calls and macOS release, M9 after release.
 | Pin and unpin | done (#49) | | S | M1 |
 | Forward without author or caption | done | Checkboxes in the forward picker | S | M2 |
 | Save media to Downloads, show in Finder | missing | | S | M1 |
-| Report message | missing | `ReportChat` | S | M2 |
+| Report message | done | `ReportChat` step by step: reason, sub-reason, details, toast (`chat/report.dart`) | | |
 | Who read and who reacted | done | Rows at the top of the message menu, read time in private chats | S | M2 |
 | Message info: view count, forwards, edit date | done | Views and forwards on channel posts, full date and edit time on hover | S | M2 |
 | Select and copy part of a message | done | | | M2 |
@@ -172,7 +172,7 @@ M8 calls and macOS release, M9 after release.
 | User profile: photo, bio, username, phone, birthday, actions | done | `PeerInfoController` in core, inspector panel in `app/lib/src/profile` | | |
 | Group and channel info: description, link, members count | done | First 50 members, most recently active first | | |
 | Shared media tabs: media, files, links, voice, music, GIFs, groups in common | partial | `SharedMediaView` has media, files, links, voice, music; GIFs and groups in common missing; in the info panel | M | M2 |
-| Members list with search | partial | First page in the info panel, no search or paging | M | M6 |
+| Members list with search | done | Info panel (`profile/`): owner and admins first, then online; search and Show more pages through `getSupergroupMembers` | | |
 | Profile photo gallery | missing | | S | M2 |
 | Per-chat notifications and auto-delete timer | partial | Mute and unmute in the info panel; no mute-for durations, no auto-delete | S | M1 |
 | Block, report, share contact | partial | Block and unblock in the info panel | S | M6 |
@@ -181,11 +181,12 @@ M8 calls and macOS release, M9 after release.
 
 | Feature | Status | Notes | Size | M |
 |---|---|---|---|---|
-| Create group and channel | missing | `CreateGroupViewController`, `CreateChannelController` | M | M6 |
-| Edit title, photo, description, username, public/private | missing | | M | M6 |
-| Add, remove, ban members; admin rights and titles | missing | `ChannelAdminController` | L | M6 |
+| Create group and channel | partial | ⌘K New group (contacts, then a name) and New channel (name, description); no photo or public link at creation | S | M6 |
+| Edit title, photo, description, username, public/private | partial | Edit sheet for title, description and photo; username and public/private missing | S | M6 |
+| Add, remove, ban members; admin rights and titles | partial | Member context menu: make admin with a rights sheet, edit or dismiss, restrict, remove; adding members to an existing group and admin titles missing | M | M6 |
 | Group permissions, slow mode | missing | `ChannelPermissionsController` | M | M6 |
-| Invite links: create, revoke, join requests | missing | `InviteLinksController` | M | M6 |
+| Invite links: create, revoke, join requests | partial | Primary link copy and revoke, additional links with expiry, limit and approval; editing a link and the join request queue missing | S | M6 |
+| Leave a group or channel, delete it for everyone | done | Info panel rows with a confirmation; delete only for the owner | | |
 | Linked discussion group | missing | | S | M6 |
 | Allowed reactions, chat history for new members | missing | | S | M6 |
 | Recent actions (admin log) | missing | `ChannelEventLogController` | M | M6 |

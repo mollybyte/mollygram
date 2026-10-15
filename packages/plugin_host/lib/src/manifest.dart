@@ -85,6 +85,12 @@ final class PluginManifest {
   static final _command = RegExp(r'^/[a-z][a-z0-9_]{0,31}$');
   static final _main = RegExp(r'^[A-Za-z0-9_\-][A-Za-z0-9_.\-/]*\.js$');
 
+  static const _reserved = {
+    'con', 'prn', 'aux', 'nul', //
+    'com1', 'com2', 'com3', 'com4', 'com5', 'com6', 'com7', 'com8', 'com9',
+    'lpt1', 'lpt2', 'lpt3', 'lpt4', 'lpt5', 'lpt6', 'lpt7', 'lpt8', 'lpt9',
+  };
+
   static const _knownKeys = {
     'id',
     'name',
@@ -134,6 +140,9 @@ final class PluginManifest {
         'id "$id" must be in reverse domain notation, '
         'for example dev.example.plugin',
       );
+    } else if (id != null && id.split('.').any(_reserved.contains)) {
+      // The id names the plugin's folder; Windows refuses these names.
+      errors.add('id "$id" uses a name reserved for devices');
     }
     final name = str('name');
     if (name != null && name.length > 40) {
@@ -304,4 +313,44 @@ final class PluginManifest {
       options: List.unmodifiable(options),
     );
   }
+}
+
+/// Orders two semver versions: negative when [a] is older than [b].
+///
+/// Build metadata is ignored; a pre-release sorts before its release.
+/// Pre-release identifiers compare one by one, as numbers when both are
+/// numeric, numbers before words, and a shorter list first.
+int compareVersions(String a, String b) {
+  (List<int>, List<String>?) parse(String v) {
+    final core = v.split('+').first;
+    final dash = core.indexOf('-');
+    final numbers = dash < 0 ? core : core.substring(0, dash);
+    return (
+      [for (final p in numbers.split('.')) int.tryParse(p) ?? 0],
+      dash < 0 ? null : core.substring(dash + 1).split('.'),
+    );
+  }
+
+  final (x, xPre) = parse(a);
+  final (y, yPre) = parse(b);
+  for (var i = 0; i < 3; i++) {
+    final d = (i < x.length ? x[i] : 0).compareTo(i < y.length ? y[i] : 0);
+    if (d != 0) return d;
+  }
+  if (xPre == null || yPre == null) {
+    if (xPre == yPre) return 0;
+    return xPre == null ? 1 : -1;
+  }
+  for (var i = 0; i < xPre.length && i < yPre.length; i++) {
+    final m = int.tryParse(xPre[i]);
+    final n = int.tryParse(yPre[i]);
+    final d = switch ((m, n)) {
+      (final m?, final n?) => m.compareTo(n),
+      (_?, null) => -1,
+      (null, _?) => 1,
+      _ => xPre[i].compareTo(yPre[i]),
+    };
+    if (d != 0) return d;
+  }
+  return xPre.length.compareTo(yPre.length);
 }

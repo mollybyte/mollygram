@@ -145,6 +145,34 @@ final class ConsentRequest {
   bool get isUpdate => update != null;
 }
 
+/// Why a picked plugin was not offered for install.
+enum InstallProblem {
+  /// The manifest or the bundle is invalid; see [InstallFailure.details].
+  invalid,
+
+  /// An older version than the one installed.
+  older,
+
+  /// The version that is already installed.
+  sameVersion,
+
+  /// Approved, but could not be saved; see [InstallFailure.details].
+  notSaved,
+
+  /// Has the id of one of our own plugins.
+  builtIn,
+}
+
+@immutable
+final class InstallFailure {
+  const InstallFailure(this.problem, {this.details = const []});
+
+  final InstallProblem problem;
+
+  /// The manifest errors, as the host wrote them.
+  final List<String> details;
+}
+
 /// Connects the screen to the running plugins. The app implements it; the
 /// screen works without it against its own state (mock data, tests).
 abstract interface class PluginsDelegate {
@@ -154,7 +182,11 @@ abstract interface class PluginsDelegate {
   Future<void> setSetting(PluginEntry entry, String key, Object? value);
   Future<void> applyUpdate(PluginEntry entry, PluginUpdate update);
 
-  /// Opens a file picker and returns the chosen plugin, or null.
+  /// Forgets a picked plugin the user declined to install.
+  void discard(PluginEntry entry);
+
+  /// Opens a file picker and returns the chosen plugin, or null. Throws
+  /// [ManifestException] for a bundle that is not a valid plugin.
   Future<PluginEntry?> pickFile();
 }
 
@@ -173,6 +205,15 @@ final class PluginsController extends ChangeNotifier {
   String _query = '';
   bool _manifestOpen = false;
   ConsentRequest? _consent;
+  InstallFailure? _installFailure;
+
+  /// Why the last picked file was not installed, until dismissed.
+  InstallFailure? get installFailure => _installFailure;
+
+  void dismissInstallFailure() {
+    _installFailure = null;
+    notifyListeners();
+  }
 
   List<PluginEntry> get entries => List.unmodifiable(_entries);
   String get query => _query;
@@ -249,7 +290,11 @@ final class PluginsController extends ChangeNotifier {
   }
 
   void cancelConsent() {
+    final c = _consent;
     _consent = null;
+    // A declined install leaves nothing behind; a declined update stays on
+    // the plugin's page to review later.
+    if (c != null && !c.isUpdate) delegate?.discard(c.entry);
     notifyListeners();
   }
 
@@ -271,12 +316,23 @@ final class PluginsController extends ChangeNotifier {
         update: () => null,
       ),
     );
-    await delegate?.applyUpdate(e, u);
+    try {
+      await delegate?.applyUpdate(e, u);
+    } on Object catch (error) {
+      // The old version stays, with the update still waiting.
+      _replace(e.copyWith(update: () => u));
+      _fail(InstallFailure(InstallProblem.notSaved, details: ['$error']));
+    }
   }
 
   Future<void> _install(PluginEntry e) async {
     _replace(e.copyWith(installed: true, enabled: true));
-    await delegate?.install(e);
+    try {
+      await delegate?.install(e);
+    } on Object catch (error) {
+      _replace(e);
+      _fail(InstallFailure(InstallProblem.notSaved, details: ['$error']));
+    }
   }
 
   Future<void> uninstall(String id) async {
@@ -315,31 +371,65 @@ final class PluginsController extends ChangeNotifier {
   }
 
   Future<void> installFromFile() async {
-    final picked = await delegate?.pickFile();
-    if (picked == null) return;
+    final d = delegate;
+    if (d == null) return;
+    final PluginEntry picked;
+    try {
+      final file = await d.pickFile();
+      if (file == null) return;
+      picked = file;
+    } on ManifestException catch (e) {
+      _fail(InstallFailure(InstallProblem.invalid, details: e.errors));
+      return;
+    }
     final i = _entries.indexWhere((e) => e.id == picked.id);
-    if (i < 0) {
+    final current = i < 0 ? null : _entries[i];
+    if (current != null && current.builtIn) {
+      d.discard(picked);
+      _fail(const InstallFailure(InstallProblem.builtIn));
+      return;
+    }
+    if (current == null) {
       _entries.add(picked.copyWith(installed: false));
-    } else if (!_entries[i].installed) {
+    } else if (!current.installed) {
       _entries[i] = picked.copyWith(installed: false);
     } else {
-      // Installing a newer version of an installed plugin is an update.
+      final order = compareVersions(
+        picked.manifest.version,
+        current.manifest.version,
+      );
+      if (order <= 0) {
+        d.discard(picked);
+        _fail(
+          InstallFailure(
+            order < 0 ? InstallProblem.older : InstallProblem.sameVersion,
+          ),
+        );
+        return;
+      }
+      // Installing a newer version of an installed plugin is an update:
+      // the old version keeps running until the user allows what it adds.
       final added = escalation(
         picked.manifest.permissions,
-        _entries[i].manifest.permissions,
+        current.manifest.permissions,
       );
       final u = PluginUpdate(picked.manifest, picked.manifestSource);
       _selected = picked.id;
       if (_isEmpty(added)) {
-        await _applyUpdate(_entries[i], u);
+        await _applyUpdate(current, u);
       } else {
-        _entries[i] = _entries[i].copyWith(update: () => u);
+        _entries[i] = current.copyWith(update: () => u);
         requestUpdate(picked.id);
       }
       return;
     }
     _selected = picked.id;
     requestInstall(picked.id);
+    notifyListeners();
+  }
+
+  void _fail(InstallFailure failure) {
+    _installFailure = failure;
     notifyListeners();
   }
 

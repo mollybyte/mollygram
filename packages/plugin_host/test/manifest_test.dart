@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:plugin_host/plugin_host.dart';
 import 'package:test/test.dart';
 
+import 'fake_services.dart';
+
 void main() {
   test('parses the example manifest', () async {
     final m = PluginManifest.parse(
@@ -113,5 +115,52 @@ commands:
       'net: evil.example.com',
     ]);
     expect(old.escalationsFrom(next), isEmpty);
+  });
+
+  test('orders versions by semver', () {
+    expect(compareVersions('1.2.0', '1.10.0'), lessThan(0));
+    expect(compareVersions('2.0.0', '1.9.9'), greaterThan(0));
+    expect(compareVersions('1.0.0', '1.0.0+build.7'), 0);
+    expect(compareVersions('1.0.0-beta', '1.0.0'), lessThan(0));
+    expect(compareVersions('1.0.0-alpha', '1.0.0-beta'), lessThan(0));
+    // Pre-release parts compare one by one, numbers as numbers.
+    expect(compareVersions('1.0.0-beta.2', '1.0.0-beta.11'), lessThan(0));
+    expect(compareVersions('1.0.0-1', '1.0.0-alpha'), lessThan(0));
+    expect(compareVersions('1.0.0-alpha', '1.0.0-alpha.1'), lessThan(0));
+  });
+
+  test('refuses ids Windows cannot use as folder names', () {
+    for (final id in ['dev.con.plugin', 'dev.example.nul', 'com1.a.b']) {
+      expect(
+        () => PluginManifest.parse(
+          'id: $id\nname: X\nversion: 1.0.0\nruntime: js\nsdk: ^1.0',
+        ),
+        throwsA(isA<ManifestException>()),
+        reason: id,
+      );
+    }
+  });
+
+  test('code blocks with network access need messages.read: all', () {
+    expect(
+      () => manifest(
+        permissions: '  net: [paste.example.com]',
+        hooks: '  - message.render.code',
+      ),
+      throwsA(
+        isA<ManifestException>().having(
+          (e) => e.errors.single,
+          'error',
+          contains('messages.read: all'),
+        ),
+      ),
+    );
+    expect(
+      manifest(
+        permissions: '  net: [paste.example.com]\n  messages.read: all',
+        hooks: '  - message.render.code',
+      ).hooks,
+      ['message.render.code'],
+    );
   });
 }

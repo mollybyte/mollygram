@@ -27,3 +27,5 @@ flutter:
     - builtin/filters/index.js
     - builtin/translate/manifest.yaml
     - builtin/translate/index.js
+    - builtin/code_highlight/manifest.yaml
+    - builtin/code_highlight/index.js

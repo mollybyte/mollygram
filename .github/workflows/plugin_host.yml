@@ -67,7 +67,7 @@ jobs:
       - name: Example and built-in plugins compile and match committed index.js
         working-directory: packages/plugin_host
         run: |
-          for d in example/transcribe builtin/filters builtin/translate; do
+          for d in example/transcribe builtin/filters builtin/translate builtin/code_highlight; do
             (cd "$d" && npx --yes -p typescript@5.9 tsc -p .)
           done
           git diff --exit-code -- '*.js'
