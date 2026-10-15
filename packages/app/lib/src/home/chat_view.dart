@@ -106,6 +106,14 @@ class _ChatViewState extends ConsumerState<ChatView> {
   /// A join or mute request on its way.
   var _actionPending = false;
 
+  /// The ids of the selected messages while messages are being selected;
+  /// null otherwise.
+  Set<int>? _selected;
+
+  /// What the selection allows, from the properties of its messages.
+  var _canForwardSelected = false;
+  List<td.MessageProperties>? _selectedProperties;
+
   @override
   void initState() {
     super.initState();
@@ -145,6 +153,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _flashId = null;
     _returnTo = null;
     _pinnedIndex = 0;
+    _selected = null;
+    _selectedProperties = null;
     _flashTimer?.cancel();
     _scroll.pinToBottom();
     _away.value = false;
@@ -266,6 +276,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
       ),
     ),
     onJump: (messageId) => unawaited(_jumpTo(messageId)),
+    onSelectToggle: _toggleSelected,
   );
 
   /// The scroll offset that puts the anchor's row just under the header.
@@ -432,6 +443,163 @@ class _ChatViewState extends ConsumerState<ChatView> {
         onReply: _reply,
         onEdit: _edit,
         onForward: (messages) => unawaited(_forward(messages)),
+        onSelect: _select,
+      ),
+    );
+  }
+
+  /// Starts selecting with [row], or adds it when already selecting.
+  void _select(MessageRow row) {
+    if (row.primary.chatId != widget.chatId) return;
+    final selected = _selected ?? <int>{};
+    selected.addAll([for (final message in row.messages) message.id]);
+    _setSelection(selected);
+  }
+
+  void _toggleSelected(MessageRow row) {
+    final selected = _selected;
+    if (selected == null) return;
+    final ids = [for (final message in row.messages) message.id];
+    if (ids.any(selected.contains)) {
+      selected.removeAll(ids);
+    } else {
+      selected.addAll(ids);
+    }
+    // Taking the last one out ends the selection, as in the official app.
+    _setSelection(selected.isEmpty ? null : selected);
+  }
+
+  void _setSelection(Set<int>? selected) {
+    // A fresh set each time, so a request for properties can tell whether
+    // the selection it was made for still stands.
+    final fresh = selected == null ? null : Set.of(selected);
+    setState(() {
+      _selected = fresh;
+      _selectedProperties = null;
+      _canForwardSelected = false;
+    });
+    if (fresh == null) {
+      _focus.requestFocus();
+    } else {
+      unawaited(_loadSelectedProperties(fresh));
+    }
+  }
+
+  void _clearSelection() {
+    if (_selected != null) _setSelection(null);
+  }
+
+  /// The selected messages, oldest first.
+  List<ConversationMessage> _selectedMessages() {
+    final selected = _selected ?? const <int>{};
+    return [
+      for (final message in _conversations.store.messagesFor(widget.chatId))
+        if (selected.contains(message.id)) message,
+    ].reversed.toList();
+  }
+
+  /// Fetches what may be done with the selection; the bar's commands
+  /// enable once it is known. A change of selection meanwhile wins.
+  Future<void> _loadSelectedProperties(Set<int> selected) async {
+    final chatId = widget.chatId;
+    final ids = selected.toList();
+    final List<td.MessageProperties> properties;
+    try {
+      properties = await Future.wait([
+        for (final id in ids) _conversations.propertiesOf(chatId, id),
+      ]);
+    } on Object {
+      return;
+    }
+    if (!mounted ||
+        widget.chatId != chatId ||
+        !identical(_selected, selected)) {
+      return;
+    }
+    setState(() {
+      _selectedProperties = properties;
+      _canForwardSelected = properties.every((p) => p.canBeForwarded);
+    });
+  }
+
+  /// Copies the texts of the selected messages, one under another.
+  Future<void> _copySelected() async {
+    final texts = [
+      for (final message in _selectedMessages())
+        if (message.text.isNotEmpty) message.text,
+    ];
+    _clearSelection();
+    if (texts.isEmpty) return;
+    await Clipboard.setData(ClipboardData(text: texts.join('\n\n')));
+  }
+
+  Future<void> _forwardSelected() async {
+    final messages = _selectedMessages();
+    _clearSelection();
+    await _forward(messages);
+  }
+
+  Future<void> _deleteSelected() async {
+    final properties = _selectedProperties;
+    final messages = _selectedMessages();
+    if (properties == null || messages.isEmpty) return;
+    final store = _conversations.store;
+    final chat = ref.read(chatEntryProvider(widget.chatId)).value;
+    final isPrivate =
+        chat != null && !chat.isGroup && !store.isChannel(widget.chatId);
+    final chatId = widget.chatId;
+    await confirmDeleteMessages(
+      context,
+      conversations: _conversations,
+      messages: messages,
+      properties: properties,
+      peerName: isPrivate ? chat.title : null,
+      isShown: () => mounted && widget.chatId == chatId,
+    );
+    if (mounted && widget.chatId == chatId) _clearSelection();
+  }
+
+  /// The bar in place of the composer while messages are selected. Esc
+  /// ends the selection.
+  Widget _selectionBar(AppLocalizations l10n) {
+    final selected = _selected!;
+    final properties = _selectedProperties;
+    final canDelete =
+        properties != null &&
+        (properties.every((p) => p.canBeDeletedForAllUsers) ||
+            properties.every((p) => p.canBeDeletedOnlyForSelf));
+    final hasText = _selectedMessages().any((m) => m.text.isNotEmpty);
+    return Focus(
+      autofocus: true,
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.escape) {
+          _clearSelection();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: SelectionBar(
+        countLabel: l10n.selectedCount(selected.length),
+        closeTooltip: l10n.clearSelection,
+        onClose: _clearSelection,
+        actions: [
+          SelectionBarAction(
+            label: l10n.copy,
+            onPressed: hasText ? () => unawaited(_copySelected()) : null,
+          ),
+          SelectionBarAction(
+            label: l10n.menuForward,
+            onPressed: _canForwardSelected
+                ? () => unawaited(_forwardSelected())
+                : null,
+          ),
+          SelectionBarAction(
+            label: l10n.menuDelete,
+            destructive: true,
+            onPressed: canDelete ? () => unawaited(_deleteSelected()) : null,
+          ),
+        ],
       ),
     );
   }
@@ -1087,6 +1255,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
                   flashId: _flashId,
                   flash: _flash,
                   topInset: _topInset,
+                  selection: _selected,
                   onShown: _shown,
                   onNearTop: _loadOlder,
                   onNearBottom: _loadNewer,
@@ -1162,7 +1331,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
                       ),
                     ),
                   ),
-                if (_actionBar(l10n, store) case final bar?)
+                if (_selected != null)
+                  _selectionBar(l10n)
+                else if (_actionBar(l10n, store) case final bar?)
                   bar
                 else
                   TapRegion(

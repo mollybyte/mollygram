@@ -15,6 +15,7 @@ import 'mention_search.dart';
 import 'notification_controller.dart';
 import 'peer_info.dart';
 import 'sticker_library.dart';
+import 'storage_usage.dart';
 import 'tdlib_initializer.dart';
 
 /// Thrown by [TelegramSession.attach] when TDLib closes the client while
@@ -45,6 +46,7 @@ final class TelegramSession {
     required this.peers,
     required this.account,
     required this.mentions,
+    required this.storage,
     required this.connection,
     required this.links,
     required this._initializer,
@@ -61,6 +63,7 @@ final class TelegramSession {
   final StickerLibrary stickers;
   final PeerInfoController peers;
   final AccountSettings account;
+  final StorageManager storage;
 
   /// Group members for @mentions in the composer.
   final MentionSearch mentions;
@@ -103,6 +106,7 @@ final class TelegramSession {
       peers: peers,
       account: AccountSettings(client),
       mentions: mentions,
+      storage: StorageManager(client),
       connection: connection,
       links: LinkResolver(client),
       initializer: TdlibInitializer(client, parameters: parameters),

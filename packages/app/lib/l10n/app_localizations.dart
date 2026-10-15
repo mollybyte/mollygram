@@ -1820,6 +1820,12 @@ abstract class AppLocalizations {
   /// **'Connected business bot'**
   String get connectedBot;
 
+  /// No description provided for @connectedBotFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the connected bot'**
+  String get connectedBotFailed;
+
   /// No description provided for @connectedBotHint.
   ///
   /// In en, this message translates to:
@@ -1837,6 +1843,306 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Disconnect {name}?'**
   String disconnectBotTitle(String name);
+
+  /// No description provided for @appearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get appearance;
+
+  /// No description provided for @themeAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get themeAuto;
+
+  /// No description provided for @themeLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get themeLight;
+
+  /// No description provided for @themeDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get themeDark;
+
+  /// No description provided for @accentColor.
+  ///
+  /// In en, this message translates to:
+  /// **'Accent color'**
+  String get accentColor;
+
+  /// No description provided for @accentBlue.
+  ///
+  /// In en, this message translates to:
+  /// **'Blue'**
+  String get accentBlue;
+
+  /// No description provided for @accentIndigo.
+  ///
+  /// In en, this message translates to:
+  /// **'Indigo'**
+  String get accentIndigo;
+
+  /// No description provided for @accentTeal.
+  ///
+  /// In en, this message translates to:
+  /// **'Teal'**
+  String get accentTeal;
+
+  /// No description provided for @accentGreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Green'**
+  String get accentGreen;
+
+  /// No description provided for @accentOrange.
+  ///
+  /// In en, this message translates to:
+  /// **'Orange'**
+  String get accentOrange;
+
+  /// No description provided for @accentGraphite.
+  ///
+  /// In en, this message translates to:
+  /// **'Graphite'**
+  String get accentGraphite;
+
+  /// No description provided for @chatWallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat wallpaper'**
+  String get chatWallpaper;
+
+  /// No description provided for @chatWallpaperHint.
+  ///
+  /// In en, this message translates to:
+  /// **'When off, chats sit on a plain background.'**
+  String get chatWallpaperHint;
+
+  /// No description provided for @messageTextSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Message text size'**
+  String get messageTextSize;
+
+  /// No description provided for @textSizeValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{size} pt'**
+  String textSizeValue(String size);
+
+  /// No description provided for @previewSender.
+  ///
+  /// In en, this message translates to:
+  /// **'Anna'**
+  String get previewSender;
+
+  /// No description provided for @previewMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Good morning! The new settings look great.'**
+  String get previewMessage;
+
+  /// No description provided for @reduceMotion.
+  ///
+  /// In en, this message translates to:
+  /// **'Reduce motion'**
+  String get reduceMotion;
+
+  /// No description provided for @reduceMotionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Turns animations off. Mollygram also follows the same setting in macOS Accessibility.'**
+  String get reduceMotionHint;
+
+  /// No description provided for @dataAndStorage.
+  ///
+  /// In en, this message translates to:
+  /// **'Data and storage'**
+  String get dataAndStorage;
+
+  /// No description provided for @storageUsage.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage'**
+  String get storageUsage;
+
+  /// No description provided for @storageCalculating.
+  ///
+  /// In en, this message translates to:
+  /// **'Calculating…'**
+  String get storageCalculating;
+
+  /// No description provided for @storageUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'{size} of media and files'**
+  String storageUsed(String size);
+
+  /// No description provided for @storageEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No media or files are stored on this computer.'**
+  String get storageEmpty;
+
+  /// No description provided for @storagePhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos'**
+  String get storagePhotos;
+
+  /// No description provided for @storageVideos.
+  ///
+  /// In en, this message translates to:
+  /// **'Videos'**
+  String get storageVideos;
+
+  /// No description provided for @storageFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Files'**
+  String get storageFiles;
+
+  /// No description provided for @storageVoiceAndMusic.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice and music'**
+  String get storageVoiceAndMusic;
+
+  /// No description provided for @storageStickers.
+  ///
+  /// In en, this message translates to:
+  /// **'Stickers'**
+  String get storageStickers;
+
+  /// No description provided for @storageOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get storageOther;
+
+  /// No description provided for @storageDatabase.
+  ///
+  /// In en, this message translates to:
+  /// **'Message database'**
+  String get storageDatabase;
+
+  /// No description provided for @storageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Cleared media stays in the Telegram cloud and downloads again when needed. Messages are kept.'**
+  String get storageHint;
+
+  /// No description provided for @storageFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t read the storage usage.'**
+  String get storageFailed;
+
+  /// No description provided for @clearCache.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear cache…'**
+  String get clearCache;
+
+  /// No description provided for @clearCacheTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear {size} from this computer?'**
+  String clearCacheTitle(String size);
+
+  /// No description provided for @clearCacheMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Media stays in the Telegram cloud and downloads again when you open it.'**
+  String get clearCacheMessage;
+
+  /// No description provided for @clear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get clear;
+
+  /// No description provided for @clearCacheFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t clear the cache.'**
+  String get clearCacheFailed;
+
+  /// No description provided for @autoDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic media download'**
+  String get autoDownload;
+
+  /// No description provided for @autoDownloadWifi.
+  ///
+  /// In en, this message translates to:
+  /// **'On Wi-Fi and Ethernet'**
+  String get autoDownloadWifi;
+
+  /// No description provided for @autoDownloadOther.
+  ///
+  /// In en, this message translates to:
+  /// **'On other networks'**
+  String get autoDownloadOther;
+
+  /// No description provided for @autoDownloadHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Other networks are personal hotspots and other metered connections.'**
+  String get autoDownloadHint;
+
+  /// No description provided for @downloadFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Download folder'**
+  String get downloadFolder;
+
+  /// No description provided for @downloadFolderDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloads'**
+  String get downloadFolderDefault;
+
+  /// No description provided for @chooseFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose…'**
+  String get chooseFolder;
+
+  /// No description provided for @downloadFolderHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Files you save from chats go here.'**
+  String get downloadFolderHint;
+
+  /// No description provided for @sizeBytes.
+  ///
+  /// In en, this message translates to:
+  /// **'{size} B'**
+  String sizeBytes(String size);
+
+  /// No description provided for @sizeKilobytes.
+  ///
+  /// In en, this message translates to:
+  /// **'{size} KB'**
+  String sizeKilobytes(String size);
+
+  /// No description provided for @sizeMegabytes.
+  ///
+  /// In en, this message translates to:
+  /// **'{size} MB'**
+  String sizeMegabytes(String size);
+
+  /// No description provided for @sizeGigabytes.
+  ///
+  /// In en, this message translates to:
+  /// **'{size} GB'**
+  String sizeGigabytes(String size);
 
   /// No description provided for @emojiTab.
   ///
@@ -2227,6 +2533,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t do that, try again'**
   String get chatActionFailed;
+
+  /// No description provided for @menuSelect.
+  ///
+  /// In en, this message translates to:
+  /// **'Select'**
+  String get menuSelect;
+
+  /// No description provided for @selectedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} selected} other{{count} selected}}'**
+  String selectedCount(int count);
+
+  /// No description provided for @clearSelection.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear selection'**
+  String get clearSelection;
+
+  /// No description provided for @copy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get copy;
 }
 
 class _AppLocalizationsDelegate

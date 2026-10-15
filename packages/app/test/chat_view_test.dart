@@ -498,6 +498,93 @@ void main() {
     expect(forward['message_ids'], [12]);
   });
 
+  Future<void> selectTwo(WidgetTester tester) async {
+    await rightClick(tester, 'From Boris');
+    await tester.tap(find.text('Select'));
+    await tester.pump();
+    expect(find.text('1 selected'), findsOneWidget);
+    // While selecting, the row's content doesn't take clicks; the row does.
+    await tester.tap(find.text('From Vera'), warnIfMissed: false);
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+    expect(find.text('2 selected'), findsOneWidget);
+  }
+
+  testWidgets('selects messages and forwards them together', (tester) async {
+    await pump(tester);
+    await selectTwo(tester);
+
+    await tester.tap(find.text('Forward'));
+    await tester.pump();
+    await tester.pump();
+    expect(find.byType(SelectionBar), findsNothing);
+    await tester.tap(find.text('Saved'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+
+    final forward = json.sent.lastWhere((r) => r['@type'] == 'forwardMessages');
+    expect(forward['message_ids'], [10, 12]);
+  });
+
+  testWidgets('copies the selected texts oldest first', (tester) async {
+    final copied = <String>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData') {
+          copied.add((call.arguments as Map)['text'] as String);
+        }
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+    await pump(tester);
+    await selectTwo(tester);
+
+    await tester.tap(find.text('Copy'));
+    await tester.pumpAndSettle();
+
+    expect(copied, ['From Boris\n\nFrom Vera']);
+    expect(find.byType(SelectionBar), findsNothing);
+  });
+
+  testWidgets('deletes the selected messages after asking', (tester) async {
+    await pump(tester);
+    await selectTwo(tester);
+
+    await tester.tap(find.text('Delete'));
+    await tester.pump();
+    expect(find.text('Delete 2 messages?'), findsOneWidget);
+    await tester.tap(find.text('Delete').last);
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+
+    final delete = json.sent.lastWhere((r) => r['@type'] == 'deleteMessages');
+    expect(delete['message_ids'], [10, 12]);
+    expect(find.byType(SelectionBar), findsNothing);
+  });
+
+  testWidgets('a click takes a message out again and Esc ends selecting', (
+    tester,
+  ) async {
+    await pump(tester);
+    await selectTwo(tester);
+
+    await tester.tap(find.text('From Vera'), warnIfMissed: false);
+    await tester.pumpAndSettle();
+    expect(find.text('1 selected'), findsOneWidget);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.byType(SelectionBar), findsNothing);
+    expect(find.byType(Composer), findsOneWidget);
+  });
+
   testWidgets('opens a photo full screen and pages through the chat media', (
     tester,
   ) async {

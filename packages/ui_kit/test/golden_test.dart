@@ -477,6 +477,57 @@ void main() {
       );
     });
 
+    testWidgets('selection bar $theme', skip: _skip, (tester) async {
+      tester.view.physicalSize = const Size(640, 140);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        themed(
+          Stack(
+            children: [
+              const Positioned.fill(child: Wallpaper()),
+              Positioned(
+                left: 24,
+                right: 24,
+                top: 20,
+                child: SelectionBar(
+                  countLabel: '3 selected',
+                  closeTooltip: 'Clear selection',
+                  onClose: () {},
+                  actions: [
+                    SelectionBarAction(label: 'Copy', onPressed: () {}),
+                    const SelectionBarAction(label: 'Forward', onPressed: null),
+                    SelectionBarAction(
+                      label: 'Delete',
+                      destructive: true,
+                      onPressed: () {},
+                    ),
+                  ],
+                ),
+              ),
+              const Positioned(
+                left: 24,
+                top: 84,
+                child: Row(
+                  spacing: 12,
+                  children: [
+                    SelectCheck(selected: false),
+                    SelectCheck(selected: true),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          colors: colors,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await expectLater(
+        find.byType(Stack).first,
+        matchesGoldenFile('goldens/selection_bar_$theme.png'),
+      );
+    });
+
     testWidgets('message menu $theme', skip: _skip, (tester) async {
       tester.view.physicalSize = const Size(640, 420);
       tester.view.devicePixelRatio = 1;

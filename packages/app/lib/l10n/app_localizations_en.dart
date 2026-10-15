@@ -1076,6 +1076,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connectedBot => 'Connected business bot';
 
   @override
+  String get connectedBotFailed => 'Couldn\'t load the connected bot';
+
+  @override
   String get connectedBotHint =>
       'This bot can read and answer your business chats.';
 
@@ -1085,6 +1088,174 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String disconnectBotTitle(String name) {
     return 'Disconnect $name?';
+  }
+
+  @override
+  String get appearance => 'Appearance';
+
+  @override
+  String get themeAuto => 'Auto';
+
+  @override
+  String get themeLight => 'Light';
+
+  @override
+  String get themeDark => 'Dark';
+
+  @override
+  String get accentColor => 'Accent color';
+
+  @override
+  String get accentBlue => 'Blue';
+
+  @override
+  String get accentIndigo => 'Indigo';
+
+  @override
+  String get accentTeal => 'Teal';
+
+  @override
+  String get accentGreen => 'Green';
+
+  @override
+  String get accentOrange => 'Orange';
+
+  @override
+  String get accentGraphite => 'Graphite';
+
+  @override
+  String get chatWallpaper => 'Chat wallpaper';
+
+  @override
+  String get chatWallpaperHint => 'When off, chats sit on a plain background.';
+
+  @override
+  String get messageTextSize => 'Message text size';
+
+  @override
+  String textSizeValue(String size) {
+    return '$size pt';
+  }
+
+  @override
+  String get previewSender => 'Anna';
+
+  @override
+  String get previewMessage => 'Good morning! The new settings look great.';
+
+  @override
+  String get reduceMotion => 'Reduce motion';
+
+  @override
+  String get reduceMotionHint =>
+      'Turns animations off. Mollygram also follows the same setting in macOS Accessibility.';
+
+  @override
+  String get dataAndStorage => 'Data and storage';
+
+  @override
+  String get storageUsage => 'Storage';
+
+  @override
+  String get storageCalculating => 'Calculating…';
+
+  @override
+  String storageUsed(String size) {
+    return '$size of media and files';
+  }
+
+  @override
+  String get storageEmpty => 'No media or files are stored on this computer.';
+
+  @override
+  String get storagePhotos => 'Photos';
+
+  @override
+  String get storageVideos => 'Videos';
+
+  @override
+  String get storageFiles => 'Files';
+
+  @override
+  String get storageVoiceAndMusic => 'Voice and music';
+
+  @override
+  String get storageStickers => 'Stickers';
+
+  @override
+  String get storageOther => 'Other';
+
+  @override
+  String get storageDatabase => 'Message database';
+
+  @override
+  String get storageHint =>
+      'Cleared media stays in the Telegram cloud and downloads again when needed. Messages are kept.';
+
+  @override
+  String get storageFailed => 'Couldn\'t read the storage usage.';
+
+  @override
+  String get clearCache => 'Clear cache…';
+
+  @override
+  String clearCacheTitle(String size) {
+    return 'Clear $size from this computer?';
+  }
+
+  @override
+  String get clearCacheMessage =>
+      'Media stays in the Telegram cloud and downloads again when you open it.';
+
+  @override
+  String get clear => 'Clear';
+
+  @override
+  String get clearCacheFailed => 'Couldn\'t clear the cache.';
+
+  @override
+  String get autoDownload => 'Automatic media download';
+
+  @override
+  String get autoDownloadWifi => 'On Wi-Fi and Ethernet';
+
+  @override
+  String get autoDownloadOther => 'On other networks';
+
+  @override
+  String get autoDownloadHint =>
+      'Other networks are personal hotspots and other metered connections.';
+
+  @override
+  String get downloadFolder => 'Download folder';
+
+  @override
+  String get downloadFolderDefault => 'Downloads';
+
+  @override
+  String get chooseFolder => 'Choose…';
+
+  @override
+  String get downloadFolderHint => 'Files you save from chats go here.';
+
+  @override
+  String sizeBytes(String size) {
+    return '$size B';
+  }
+
+  @override
+  String sizeKilobytes(String size) {
+    return '$size KB';
+  }
+
+  @override
+  String sizeMegabytes(String size) {
+    return '$size MB';
+  }
+
+  @override
+  String sizeGigabytes(String size) {
+    return '$size GB';
   }
 
   @override
@@ -1319,4 +1490,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatActionFailed => 'Couldn\'t do that, try again';
+
+  @override
+  String get menuSelect => 'Select';
+
+  @override
+  String selectedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count selected',
+      one: '$count selected',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get clearSelection => 'Clear selection';
+
+  @override
+  String get copy => 'Copy';
 }
