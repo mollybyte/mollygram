@@ -676,7 +676,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
       controller: _threadDraft,
       focusNode: _threadFocus,
       labels: ComposerLabels(
-        hint: l10n.commentHint,
+        hint: _thread?.chatId == widget.chatId
+            ? l10n.replyHint
+            : l10n.commentHint,
         attach: l10n.attach,
         emoji: l10n.emoji,
         record: l10n.record,
@@ -2646,7 +2648,11 @@ class _ChatViewState extends ConsumerState<ChatView> {
                     )
                   : _thread != null
                   ? ChatTitleCapsule(
-                      title: _thread!.replyCount == 0
+                      title: _thread!.chatId == widget.chatId
+                          ? _thread!.replyCount == 0
+                                ? l10n.replies
+                                : l10n.replyCount(_thread!.replyCount)
+                          : _thread!.replyCount == 0
                           ? l10n.comments
                           : l10n.commentCount(_thread!.replyCount),
                       avatar: MgIconButton(

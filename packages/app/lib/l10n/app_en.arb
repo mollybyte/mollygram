@@ -674,7 +674,13 @@
   "commentHint": "Comment",
   "commentsUnavailable": "Couldn't open the comments",
   "commentCount": "{count, plural, one{{count} comment} other{{count} comments}}",
+  "replies": "Replies",
+  "replyHint": "Reply",
+  "replyCount": "{count, plural, one{{count} reply} other{{count} replies}}",
   "@commentCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "@replyCount": {
     "placeholders": { "count": { "type": "int" } }
   },
   "mediaSaved": "Saved",
