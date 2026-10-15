@@ -143,7 +143,7 @@ M8 calls and macOS release, M9 after release.
 | Video circles playback at 120 fps | done | `packages/media` | | |
 | Files and music: download, open, cancel | done | | | |
 | Fullscreen media viewer on a dimmed backdrop, open and close animation | done | Viewer PR | | |
-| Viewer: arrows and swipe between the chat's photos and videos, thumbnail strip | partial | Viewer PR: arrows and keys over `SearchChatMessages`; no swipe, no thumbnail strip | S | M2 |
+| Viewer: arrows and swipe between the chat's photos and videos, thumbnail strip | partial | Arrows and keys over `SearchChatMessages`; a thumbnail strip under the page, centered on the one on screen, jumps to any of them; no swipe | S | M2 |
 | Viewer: zoom (pinch, scroll, double click) and pan, rotate | partial | Viewer PR: zoom and pan; no rotate | S | M2 |
 | Viewer: video scrubbing, loop, playback speed, volume, fullscreen | partial | Viewer PR: scrubbing, loop, speed, mute; plays once downloaded, no streaming | S | M2 |
 | Viewer: GIFs and video stickers looped | partial | Viewer PR: GIFs looped; video stickers not yet | S | M2 |

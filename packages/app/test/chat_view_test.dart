@@ -1767,9 +1767,15 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('1 of 2'), findsOneWidget);
 
+    // The strip under the page goes straight to a thumbnail.
+    expect(find.byKey(const ValueKey('viewer-thumbnails')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('viewer-thumbnail-1')));
+    await tester.pumpAndSettle();
+    expect(find.text('2 of 2'), findsOneWidget);
+
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pumpAndSettle();
-    expect(find.text('1 of 2'), findsNothing);
+    expect(find.text('2 of 2'), findsNothing);
   });
 
   testWidgets('deletes the photo on screen from the viewer', (tester) async {

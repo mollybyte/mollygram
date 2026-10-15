@@ -324,7 +324,9 @@ class _MediaViewerState extends State<_MediaViewer> {
                   72,
                   68,
                   72,
-                  (isVideo ? 76 : 24) + (hasCaption ? 56 : 0),
+                  (isVideo ? 76 : 24) +
+                      (hasCaption ? 56 : 0) +
+                      (entries.length > 1 ? _Thumbnails.height + 12 : 0),
                 ),
                 child: ScaleTransition(
                   scale: Tween(begin: 0.94, end: 1.0).animate(curved),
@@ -470,6 +472,15 @@ class _MediaViewerState extends State<_MediaViewer> {
                           ),
                         if (_playback case final playback? when isVideo)
                           _VideoControls(playback: playback),
+                        if (entries.length > 1)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 12),
+                            child: _Thumbnails(
+                              key: const ValueKey('viewer-thumbnails'),
+                              gallery: _gallery,
+                              onPick: (index) => _go(index - _gallery.index),
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -501,6 +512,11 @@ td.PhotoSize? _largest(td.Photo photo) {
   return photo.sizes.reduce((a, b) => a.width >= b.width ? a : b);
 }
 
+td.PhotoSize? _smallest(td.Photo photo) {
+  if (photo.sizes.isEmpty) return null;
+  return photo.sizes.reduce((a, b) => a.width <= b.width ? a : b);
+}
+
 /// A name for the saved copy: the file's own name, or the kind and when it
 /// was sent.
 String _fileName(GalleryEntry entry, String path) {
@@ -518,6 +534,181 @@ String _fileName(GalleryEntry entry, String path) {
   final stamp = DateFormat('yyyy-MM-dd HH.mm.ss').format(date);
   final kind = entry.item is PhotoItem ? 'Photo' : 'Video';
   return extension.isEmpty ? '$kind $stamp' : '$kind $stamp.$extension';
+}
+
+/// The chat's media as a strip of small thumbnails under the page, the
+/// one on screen a little larger with a light frame and kept centered as
+/// the pages turn; a click on another goes to it.
+class _Thumbnails extends StatefulWidget {
+  const _Thumbnails({super.key, required this.gallery, required this.onPick});
+
+  final MediaGallery gallery;
+  final void Function(int index) onPick;
+
+  static const double height = 52;
+  static const double side = 40;
+  static const double gap = 6;
+
+  @override
+  State<_Thumbnails> createState() => _ThumbnailsState();
+}
+
+class _ThumbnailsState extends State<_Thumbnails> {
+  final _scroll = ScrollController();
+  int? _index;
+  int? _messageId;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _center(animate: false),
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant _Thumbnails oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _center(animate: true));
+  }
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  /// Scrolls the page on screen to the middle: smoothly when the page
+  /// turned, at once when the same page shifted because more media loaded
+  /// before it.
+  void _center({required bool animate}) {
+    if (!mounted || !_scroll.hasClients) return;
+    final gallery = widget.gallery;
+    final index = gallery.index;
+    final id = gallery.current.message?.id;
+    final samePage = id != null && id == _messageId;
+    if (index == _index && samePage) return;
+    _index = index;
+    _messageId = id;
+    final target = (index * (_Thumbnails.side + _Thumbnails.gap)).clamp(
+      0.0,
+      _scroll.position.maxScrollExtent,
+    );
+    if (!animate || samePage || MediaQuery.disableAnimationsOf(context)) {
+      _scroll.jumpTo(target);
+    } else {
+      unawaited(
+        _scroll.animateTo(
+          target,
+          duration: const Duration(milliseconds: 240),
+          curve: Curves.easeOutCubic,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final gallery = widget.gallery;
+    final entries = gallery.entries;
+    return SizedBox(
+      height: _Thumbnails.height,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final inset = math.max(
+            0.0,
+            (constraints.maxWidth - _Thumbnails.side) / 2,
+          );
+          return ListView.builder(
+            controller: _scroll,
+            scrollDirection: Axis.horizontal,
+            padding: EdgeInsets.symmetric(horizontal: inset),
+            itemCount: entries.length,
+            itemBuilder: (context, index) => _Thumbnail(
+              key: ValueKey('viewer-thumbnail-$index'),
+              entry: entries[index],
+              current: index == gallery.index,
+              onTap: () => widget.onPick(index),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _Thumbnail extends StatelessWidget {
+  const _Thumbnail({
+    super.key,
+    required this.entry,
+    required this.current,
+    required this.onTap,
+  });
+
+  final GalleryEntry entry;
+  final bool current;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final animate = !MediaQuery.disableAnimationsOf(context);
+    final duration = Duration(milliseconds: animate ? 200 : 0);
+    final side = _Thumbnails.side;
+    final image = switch (entry.item) {
+      PhotoItem(:final photo) => TdImage(
+        file: _smallest(photo)?.photo,
+        minithumbnail: photo.minithumbnail,
+        cacheWidth: (side * 1.3 * MediaQuery.devicePixelRatioOf(context))
+            .round(),
+      ),
+      VideoItem(:final video) => TdImage(
+        thumbnail: video.thumbnail?.file,
+        minithumbnail: video.minithumbnail,
+      ),
+      AnimationItem(:final animation) => TdImage(
+        thumbnail: animation.thumbnail?.file,
+        minithumbnail: animation.minithumbnail,
+      ),
+    };
+    return Padding(
+      padding: EdgeInsets.only(right: _Thumbnails.gap),
+      child: Center(
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            onTap: onTap,
+            child: AnimatedScale(
+              scale: current ? 1.25 : 1,
+              duration: duration,
+              curve: Curves.easeOutCubic,
+              child: AnimatedContainer(
+                duration: duration,
+                width: side,
+                height: side,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(7),
+                  border: Border.all(
+                    color: current
+                        ? const Color(0xFFF2F2F5)
+                        : const Color(0x00000000),
+                    width: 1.5,
+                  ),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(5.5),
+                  child: AnimatedOpacity(
+                    duration: duration,
+                    opacity: current ? 1 : 0.7,
+                    child: image,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 /// Fades the bars and arrows in with the viewer and out while a video
