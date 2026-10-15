@@ -1004,6 +1004,48 @@ abstract class AppLocalizations {
   /// **'Show in folder'**
   String get menuShowInFolder;
 
+  /// No description provided for @sendWithoutSound.
+  ///
+  /// In en, this message translates to:
+  /// **'Send without sound'**
+  String get sendWithoutSound;
+
+  /// No description provided for @scheduleMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule message…'**
+  String get scheduleMessage;
+
+  /// No description provided for @scheduleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule message'**
+  String get scheduleTitle;
+
+  /// No description provided for @scheduleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick the day and the time it goes out.'**
+  String get scheduleHint;
+
+  /// No description provided for @scheduleTimeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'HH:MM'**
+  String get scheduleTimeHint;
+
+  /// No description provided for @scheduleAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule'**
+  String get scheduleAction;
+
+  /// No description provided for @scheduledFor.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled for {date}'**
+  String scheduledFor(String date);
+
   /// No description provided for @menuDelete.
   ///
   /// In en, this message translates to:

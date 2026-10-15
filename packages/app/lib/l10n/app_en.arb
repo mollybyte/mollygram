@@ -175,6 +175,16 @@
   "menuSaveToDownloads": "Save to Downloads",
   "menuShowInFinder": "Show in Finder",
   "menuShowInFolder": "Show in folder",
+  "sendWithoutSound": "Send without sound",
+  "scheduleMessage": "Schedule message…",
+  "scheduleTitle": "Schedule message",
+  "scheduleHint": "Pick the day and the time it goes out.",
+  "scheduleTimeHint": "HH:MM",
+  "scheduleAction": "Schedule",
+  "scheduledFor": "Scheduled for {date}",
+  "@scheduledFor": {
+    "placeholders": { "date": { "type": "String" } }
+  },
   "menuDelete": "Delete",
   "cancel": "Cancel",
   "formatBold": "Bold",

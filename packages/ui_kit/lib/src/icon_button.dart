@@ -72,10 +72,19 @@ class _MgIconButtonState extends State<MgIconButton> {
 /// The filled round send button that replaces the microphone when the
 /// composer has a draft.
 class MgSendButton extends StatelessWidget {
-  const MgSendButton({super.key, required this.tooltip, this.onPressed});
+  const MgSendButton({
+    super.key,
+    required this.tooltip,
+    this.onPressed,
+    this.onMenu,
+  });
 
   final String tooltip;
   final VoidCallback? onPressed;
+
+  /// A right click or a long press, with where it happened: the place for
+  /// a menu of other ways to send, such as without sound or later.
+  final void Function(Offset position)? onMenu;
 
   @override
   Widget build(BuildContext context) {
@@ -91,6 +100,12 @@ class MgSendButton extends StatelessWidget {
           cursor: SystemMouseCursors.click,
           child: GestureDetector(
             onTap: onPressed,
+            onSecondaryTapUp: onMenu == null
+                ? null
+                : (details) => onMenu!(details.globalPosition),
+            onLongPressStart: onMenu == null
+                ? null
+                : (details) => onMenu!(details.globalPosition),
             child: Container(
               width: 32,
               height: 32,
