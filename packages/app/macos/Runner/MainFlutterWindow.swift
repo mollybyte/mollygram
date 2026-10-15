@@ -43,6 +43,11 @@ class MainFlutterWindow: NSWindow {
       case "zoom":
         self.zoom(nil)
         result(nil)
+      case "setContentProtection":
+        // Kept out of screenshots and screen recordings (secret chats).
+        let protect = call.arguments as? Bool ?? false
+        self.sharingType = protect ? .none : .readOnly
+        result(nil)
       default:
         result(FlutterMethodNotImplemented)
       }

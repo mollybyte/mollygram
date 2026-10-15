@@ -17,6 +17,7 @@ final class PrivacySettings {
     this.beforeGhost,
     this.keepDeletedMessages = false,
     this.keepEditHistory = false,
+    this.allowSecretScreenshots = false,
   });
 
   /// All switches on.
@@ -51,6 +52,11 @@ final class PrivacySettings {
   /// Earlier versions of edited messages stay readable here. Not part of
   /// ghost mode.
   final bool keepEditHistory;
+
+  /// Screenshots and screen recordings of secret chats are not blocked
+  /// on this computer, against what the other person expects. Risky; not
+  /// part of ghost mode.
+  final bool allowSecretScreenshots;
 
   /// Whether anything is kept in the [MessageStore].
   bool get keepsMessages => keepDeletedMessages || keepEditHistory;
@@ -93,6 +99,7 @@ final class PrivacySettings {
     beforeGhost: beforeGhost,
     keepDeletedMessages: keepDeletedMessages,
     keepEditHistory: keepEditHistory,
+    allowSecretScreenshots: allowSecretScreenshots,
   );
 
   PrivacySettings copyWith({
@@ -103,6 +110,7 @@ final class PrivacySettings {
     Set<int>? silentReadChats,
     bool? keepDeletedMessages,
     bool? keepEditHistory,
+    bool? allowSecretScreenshots,
   }) => PrivacySettings(
     hideReadReceipts: hideReadReceipts ?? this.hideReadReceipts,
     hideTyping: hideTyping ?? this.hideTyping,
@@ -112,6 +120,8 @@ final class PrivacySettings {
     beforeGhost: beforeGhost,
     keepDeletedMessages: keepDeletedMessages ?? this.keepDeletedMessages,
     keepEditHistory: keepEditHistory ?? this.keepEditHistory,
+    allowSecretScreenshots:
+        allowSecretScreenshots ?? this.allowSecretScreenshots,
   );
 
   /// The same settings with [chatId] read silently or not.
@@ -130,6 +140,7 @@ final class PrivacySettings {
     'before_ghost': ?beforeGhost,
     'keep_deleted_messages': keepDeletedMessages,
     'keep_edit_history': keepEditHistory,
+    'allow_secret_screenshots': allowSecretScreenshots,
   };
 
   /// Reads what [toJson] wrote; anything unexpected reads as off.
@@ -151,6 +162,7 @@ final class PrivacySettings {
       beforeGhost: before is int && before >= 0 && before <= 15 ? before : null,
       keepDeletedMessages: flag('keep_deleted_messages'),
       keepEditHistory: flag('keep_edit_history'),
+      allowSecretScreenshots: flag('allow_secret_screenshots'),
     );
   }
 
@@ -164,6 +176,7 @@ final class PrivacySettings {
       other.beforeGhost == beforeGhost &&
       other.keepDeletedMessages == keepDeletedMessages &&
       other.keepEditHistory == keepEditHistory &&
+      other.allowSecretScreenshots == allowSecretScreenshots &&
       other.silentReadChats.length == silentReadChats.length &&
       other.silentReadChats.containsAll(silentReadChats);
 
@@ -176,6 +189,7 @@ final class PrivacySettings {
     beforeGhost,
     keepDeletedMessages,
     keepEditHistory,
+    allowSecretScreenshots,
     Object.hashAllUnordered(silentReadChats),
   );
 }

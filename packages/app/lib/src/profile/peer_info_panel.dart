@@ -10,6 +10,7 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 import '../../l10n/app_localizations.dart';
 import '../chat/formatted_text.dart';
 import '../chat/message_tile.dart' show SenderAvatar;
+import '../secret/secret_chat.dart';
 import '../session/providers.dart';
 import '../window_drag_area.dart';
 import 'edit_chat_sheet.dart';
@@ -369,6 +370,22 @@ class _Content extends ConsumerWidget {
             ),
           ],
           if (canAct && info.kind == PeerKind.user && !info.isSelf) ...[
+            const SizedBox(height: 12),
+            _Group(
+              children: [
+                _NavRow(
+                  label: secretChatActionLabel(info.chatId, l10n),
+                  onTap: () => unawaited(
+                    runSecretChatAction(
+                      context,
+                      chatId: info.chatId,
+                      userId: info.userId,
+                      name: info.title,
+                    ),
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 12),
             _Group(
               children: [

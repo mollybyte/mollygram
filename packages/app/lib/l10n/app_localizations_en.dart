@@ -2705,6 +2705,127 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pluginFilteredMessage => 'Filtered by a plugin';
 
   @override
+  String get secretChat => 'Secret chat';
+
+  @override
+  String get newSecretChat => 'New secret chat';
+
+  @override
+  String get startSecretChat => 'Start secret chat';
+
+  @override
+  String get secretChatFailed => 'Couldn\'t start a secret chat. Try again.';
+
+  @override
+  String secretChatWaiting(String name) {
+    return 'Waiting for $name to come online';
+  }
+
+  @override
+  String get secretChatExchangingKeys => 'Exchanging encryption keys';
+
+  @override
+  String get secretChatClosed => 'Secret chat closed';
+
+  @override
+  String get closeSecretChat => 'Close secret chat';
+
+  @override
+  String get deleteChat => 'Delete chat';
+
+  @override
+  String get deleteSecretChatTitle =>
+      'Delete this secret chat? It closes for both of you and its messages are removed here.';
+
+  @override
+  String get encryptionKey => 'Encryption key';
+
+  @override
+  String encryptionKeyHint(String name) {
+    return 'If this picture and these numbers look the same on $name\'s device, your chat is end-to-end encrypted.';
+  }
+
+  @override
+  String get encryptionKeyPending =>
+      'The key appears once the other person\'s app accepts the chat.';
+
+  @override
+  String get selfDestructTitle => 'Self-destruct timer';
+
+  @override
+  String get selfDestructOff => 'Off';
+
+  @override
+  String selfDestructSeconds(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count seconds',
+      one: '1 second',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String selfDestructMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count minutes',
+      one: '1 minute',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String selfDestructHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count hours',
+      one: '1 hour',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String selfDestructDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days',
+      one: '1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String selfDestructWeeks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count weeks',
+      one: '1 week',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get allowSecretScreenshots => 'Allow screenshots in secret chats';
+
+  @override
+  String get allowSecretScreenshotsHint =>
+      'Risky: the other person expects secret chats to stay off screenshots and screen recordings';
+
+  @override
+  String get secretScreenshotsOff =>
+      'Secret chats are kept out of screenshots by default; on macOS 15 and later this is best effort';
+
+  @override
+  String get selfDestructFailed =>
+      'Couldn\'t change the self-destruct timer. The secret chat isn\'t ready yet, or the connection was lost.';
+
+  @override
   String get stickersAndEmoji => 'Stickers and emoji';
 
   @override

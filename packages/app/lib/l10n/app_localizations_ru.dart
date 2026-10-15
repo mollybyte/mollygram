@@ -2734,6 +2734,139 @@ class AppLocalizationsRu extends AppLocalizations {
   String get pluginFilteredMessage => 'Скрыто плагином';
 
   @override
+  String get secretChat => 'Секретный чат';
+
+  @override
+  String get newSecretChat => 'Новый секретный чат';
+
+  @override
+  String get startSecretChat => 'Начать секретный чат';
+
+  @override
+  String get secretChatFailed =>
+      'Не удалось начать секретный чат. Попробуйте ещё раз.';
+
+  @override
+  String secretChatWaiting(String name) {
+    return 'Ожидание, пока $name появится в сети';
+  }
+
+  @override
+  String get secretChatExchangingKeys => 'Обмен ключами шифрования';
+
+  @override
+  String get secretChatClosed => 'Секретный чат закрыт';
+
+  @override
+  String get closeSecretChat => 'Закрыть секретный чат';
+
+  @override
+  String get deleteChat => 'Удалить чат';
+
+  @override
+  String get deleteSecretChatTitle =>
+      'Удалить этот секретный чат? Он закроется для вас обоих, а его сообщения будут удалены здесь.';
+
+  @override
+  String get encryptionKey => 'Ключ шифрования';
+
+  @override
+  String encryptionKeyHint(String name) {
+    return 'Если на устройстве $name картинка и числа такие же, ваш чат защищён сквозным шифрованием.';
+  }
+
+  @override
+  String get encryptionKeyPending =>
+      'Ключ появится, когда приложение собеседника примет чат.';
+
+  @override
+  String get selfDestructTitle => 'Таймер самоуничтожения';
+
+  @override
+  String get selfDestructOff => 'Выключен';
+
+  @override
+  String selfDestructSeconds(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count секунды',
+      many: '$count секунд',
+      few: '$count секунды',
+      one: '$count секунда',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String selfDestructMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count минуты',
+      many: '$count минут',
+      few: '$count минуты',
+      one: '$count минута',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String selfDestructHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count часа',
+      many: '$count часов',
+      few: '$count часа',
+      one: '$count час',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String selfDestructDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count дня',
+      many: '$count дней',
+      few: '$count дня',
+      one: '$count день',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String selfDestructWeeks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count недели',
+      many: '$count недель',
+      few: '$count недели',
+      one: '$count неделя',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get allowSecretScreenshots =>
+      'Разрешить снимки экрана в секретных чатах';
+
+  @override
+  String get allowSecretScreenshotsHint =>
+      'Рискованно: собеседник ожидает, что секретный чат не попадёт в снимки и запись экрана';
+
+  @override
+  String get secretScreenshotsOff =>
+      'По умолчанию секретные чаты не попадают в снимки экрана; на macOS 15 и новее — по возможности';
+
+  @override
+  String get selfDestructFailed =>
+      'Не удалось изменить таймер самоуничтожения. Секретный чат ещё не готов или нет соединения.';
+
+  @override
   String get stickersAndEmoji => 'Стикеры и эмодзи';
 
   @override

@@ -25,6 +25,7 @@ export 'src/phone_country.dart';
 export 'src/privacy_guard.dart';
 export 'src/privacy_settings_controller.dart';
 export 'src/proxy_controller.dart';
+export 'src/secret_chats.dart';
 export 'src/sticker_library.dart';
 export 'src/sticker_sets_controller.dart';
 export 'src/storage_usage.dart';

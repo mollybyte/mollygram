@@ -16,6 +16,7 @@ import '../plugins/plugin_commands.dart';
 import '../privacy/ghost_mode_capsule.dart';
 import '../profile/new_chat_sheet.dart';
 import '../profile/peer_info_host.dart';
+import '../secret/secret_chat.dart';
 import '../session/accounts.dart';
 import '../session/connection_status_capsule.dart';
 import '../settings/appearance.dart';
@@ -57,12 +58,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   void _newMessage() => unawaited(showPeopleSheet(context));
 
+  List<PaletteCommand> _secretCommands() =>
+      secretChatCommands(context, ref, _l10n);
+
   @override
   void initState() {
     super.initState();
     _registry
       ..register('app', _commands)
       ..register('accounts', _accountCommands)
+      ..register('secret', _secretCommands)
       ..register('shell', _shellCommands)
       ..registerShortcuts('shell', _shellShortcuts)
       ..addListener(_keysChanged);
@@ -86,6 +91,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ..removeListener(_keysChanged)
       ..unregister('app', _commands)
       ..unregister('accounts', _accountCommands)
+      ..unregister('secret', _secretCommands)
       ..unregister('shell', _shellCommands)
       ..unregisterShortcuts('shell', _shellShortcuts);
     super.dispose();
@@ -214,28 +220,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
     );
     final settings = _settings;
-    return LinkHost(
-      contentLeft: SidebarIsland.width + 16,
-      covered: settings != null,
-      child: NotificationsHost(
-        child: Stack(
-          children: [
-            // The chats stay mounted under the settings, so drafts and
-            // scroll positions survive opening them.
-            Positioned.fill(
-              child: ExcludeFocus(
-                excluding: settings != null,
-                child: TickerMode(enabled: settings == null, child: home),
-              ),
-            ),
-            if (settings != null)
+    return SecretScreenProtection(
+      child: LinkHost(
+        contentLeft: SidebarIsland.width + 16,
+        covered: settings != null,
+        child: NotificationsHost(
+          child: Stack(
+            children: [
+              // The chats stay mounted under the settings, so drafts and
+              // scroll positions survive opening them.
               Positioned.fill(
-                child: SettingsWindow(
-                  initialSection: settings,
-                  onClose: _closeSettings,
+                child: ExcludeFocus(
+                  excluding: settings != null,
+                  child: TickerMode(enabled: settings == null, child: home),
                 ),
               ),
-          ],
+              if (settings != null)
+                Positioned.fill(
+                  child: SettingsWindow(
+                    initialSection: settings,
+                    onClose: _closeSettings,
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
