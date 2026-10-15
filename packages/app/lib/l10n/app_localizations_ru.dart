@@ -577,6 +577,15 @@ class AppLocalizationsRu extends AppLocalizations {
   String get editingMessage => 'Редактирование';
 
   @override
+  String get linkPreviewAboveText => 'Показать превью над текстом';
+
+  @override
+  String get linkPreviewBelowText => 'Показать превью под текстом';
+
+  @override
+  String get removeLinkPreview => 'Убрать превью ссылки';
+
+  @override
   String get forwardTitle => 'Переслать в чат';
 
   @override

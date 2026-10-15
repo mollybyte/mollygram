@@ -131,7 +131,7 @@ M8 calls and macOS release, M9 after release.
 | Media editor: filters and adjustments (brightness, contrast, saturation, warmth, vignette) | done | `packages/media_editor`: seven looks, six sliders | | |
 | Video editor: trim, mute, cover frame, quality | partial | `packages/media_editor`: trim, mute and cover done (macOS, AVFoundation); quality presets pending | S | M4 |
 | Slowmode and restriction notices | done | Members who may not write see why instead of the composer; slowmode counts down under it (`chat/slow_mode.dart`) | | |
-| Link preview control (remove, above/below) | missing | | S | M2 |
+| Link preview control (remove, above/below) | done | The composer shows the preview of the first link in the draft, with a button to put it above the text and one to drop it; the choice goes with the draft and the message | | |
 
 ### Media
 

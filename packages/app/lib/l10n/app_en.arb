@@ -196,6 +196,9 @@
     "placeholders": { "name": { "type": "String" } }
   },
   "editingMessage": "Editing",
+  "linkPreviewAboveText": "Show the preview above the text",
+  "linkPreviewBelowText": "Show the preview below the text",
+  "removeLinkPreview": "Remove the link preview",
   "forwardTitle": "Forward to chat",
   "forwardSearch": "Search chats",
   "forwardHideSender": "Hide sender names",

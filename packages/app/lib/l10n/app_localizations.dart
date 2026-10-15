@@ -1094,6 +1094,24 @@ abstract class AppLocalizations {
   /// **'Editing'**
   String get editingMessage;
 
+  /// No description provided for @linkPreviewAboveText.
+  ///
+  /// In en, this message translates to:
+  /// **'Show the preview above the text'**
+  String get linkPreviewAboveText;
+
+  /// No description provided for @linkPreviewBelowText.
+  ///
+  /// In en, this message translates to:
+  /// **'Show the preview below the text'**
+  String get linkPreviewBelowText;
+
+  /// No description provided for @removeLinkPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove the link preview'**
+  String get removeLinkPreview;
+
   /// No description provided for @forwardTitle.
   ///
   /// In en, this message translates to:

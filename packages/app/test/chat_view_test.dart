@@ -680,6 +680,63 @@ void main() {
     );
   });
 
+  testWidgets('previews a typed link, moves it above the text or drops it', (
+    tester,
+  ) async {
+    await pump(tester);
+
+    await tester.enterText(find.byType(TextField), 'See https://example.com/a');
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    expect(find.text('An example page'), findsOneWidget);
+
+    // Above the text, then sent that way.
+    await tester.tap(find.byTooltip('Show the preview above the text'));
+    await tester.pump();
+    await tester.tap(find.byType(MgSendButton));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    var sent = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    var options =
+        (sent['input_message_content']! as Map)['link_preview_options']! as Map;
+    expect(options['show_above_text'], isTrue);
+    expect(options['is_disabled'], isFalse);
+    expect(find.text('An example page'), findsNothing);
+
+    // Removed: the bar goes, and the message says so.
+    await tester.enterText(
+      find.byType(TextField),
+      'Again https://example.com/a',
+    );
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    expect(find.text('An example page'), findsOneWidget);
+    await tester.tap(find.byTooltip('Remove the link preview'));
+    await tester.pump();
+    expect(find.text('An example page'), findsNothing);
+    await tester.tap(find.byType(MgSendButton));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    sent = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    options =
+        (sent['input_message_content']! as Map)['link_preview_options']! as Map;
+    expect(options['is_disabled'], isTrue);
+
+    // Plain words carry no options at all.
+    await tester.enterText(find.byType(TextField), 'No link here');
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.tap(find.byType(MgSendButton));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    sent = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    expect(
+      (sent['input_message_content']! as Map).containsKey(
+        'link_preview_options',
+      ),
+      isFalse,
+    );
+  });
+
   testWidgets('reports a message with a reason and details', (tester) async {
     await pump(tester);
 
@@ -1446,6 +1503,35 @@ final class _FakeTdJson implements td.TdJson {
         ],
         'allow_custom_emoji': true,
         'are_tags': false,
+      },
+      'getLinkPreview'
+          when ((decoded['text']! as Map)['text']! as String).contains(
+            'example.com',
+          ) =>
+        {
+          '@type': 'linkPreview',
+          'url': 'https://example.com/a',
+          'display_url': 'example.com/a',
+          'site_name': 'Example',
+          'title': 'An example page',
+          'description': {
+            '@type': 'formattedText',
+            'text': 'Nothing to see',
+            'entities': <Object?>[],
+          },
+          'author': '',
+          'type': {'@type': 'linkPreviewTypeArticle'},
+          'has_large_media': false,
+          'show_large_media': false,
+          'show_media_above_description': false,
+          'skip_confirmation': false,
+          'show_above_text': false,
+          'instant_view_version': 0,
+        },
+      'getLinkPreview' => {
+        '@type': 'error',
+        'code': 404,
+        'message': 'Not Found',
       },
       _ => {'@type': 'ok'},
     };
