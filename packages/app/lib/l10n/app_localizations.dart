@@ -392,6 +392,48 @@ abstract class AppLocalizations {
   /// **'Send'**
   String get send;
 
+  /// No description provided for @voiceHoldToRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold to record a voice message'**
+  String get voiceHoldToRecord;
+
+  /// No description provided for @voiceReleaseToCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Release to cancel'**
+  String get voiceReleaseToCancel;
+
+  /// No description provided for @voiceDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete recording'**
+  String get voiceDelete;
+
+  /// No description provided for @voiceMicrophoneDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Mollygram has no access to the microphone.'**
+  String get voiceMicrophoneDenied;
+
+  /// No description provided for @voiceOpenSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open System Settings'**
+  String get voiceOpenSettings;
+
+  /// No description provided for @voiceRecordFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t start recording'**
+  String get voiceRecordFailed;
+
+  /// No description provided for @voiceSendFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t send the voice message'**
+  String get voiceSendFailed;
+
   /// No description provided for @previewYou.
   ///
   /// In en, this message translates to:

@@ -1,5 +1,6 @@
 import 'dart:collection';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
@@ -427,6 +428,29 @@ void main() {
       'sticker': {'@type': 'inputFileId', 'id': 301},
       'width': 512,
       'height': 480,
+    });
+  });
+
+  test('sends a voice message with its waveform', () async {
+    await controller.start();
+
+    await controller.sendVoiceNote(
+      7,
+      path: '/tmp/voice.ogg',
+      duration: const Duration(milliseconds: 2400),
+      waveform: Uint8List.fromList([1, 2, 3]),
+      replyTo: 10,
+    );
+
+    final send = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    expect(send['reply_to'], containsPair('message_id', 10));
+    final content = send['input_message_content']! as Map;
+    expect(content['@type'], 'inputMessageVoiceNote');
+    expect(content['voice_note'], {
+      '@type': 'inputVoiceNote',
+      'voice_note': {'@type': 'inputFileLocal', 'path': '/tmp/voice.ogg'},
+      'duration': 3,
+      'waveform': base64Encode([1, 2, 3]),
     });
   });
 

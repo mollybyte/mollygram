@@ -166,6 +166,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get send => 'Send';
 
   @override
+  String get voiceHoldToRecord => 'Hold to record a voice message';
+
+  @override
+  String get voiceReleaseToCancel => 'Release to cancel';
+
+  @override
+  String get voiceDelete => 'Delete recording';
+
+  @override
+  String get voiceMicrophoneDenied =>
+      'Mollygram has no access to the microphone.';
+
+  @override
+  String get voiceOpenSettings => 'Open System Settings';
+
+  @override
+  String get voiceRecordFailed => 'Couldn\'t start recording';
+
+  @override
+  String get voiceSendFailed => 'Couldn\'t send the voice message';
+
+  @override
   String previewYou(String text) {
     return 'You: $text';
   }
