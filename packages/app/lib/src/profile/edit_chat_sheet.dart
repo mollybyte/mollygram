@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:file_selector/file_selector.dart';
@@ -75,6 +76,11 @@ class _EditChatSheetState extends ConsumerState<EditChatSheet> {
     final path = await _pick();
     if (path == null || !mounted) return;
     setState(() => _photo = _Set(path));
+  }
+
+  /// Enter in a field; ignored while a save is on its way.
+  void _submit() {
+    if (!_busy) unawaited(_save());
   }
 
   Future<void> _save() async {
@@ -174,14 +180,14 @@ class _EditChatSheetState extends ConsumerState<EditChatSheet> {
               onChanged: (_) {
                 if (_titleError != null) setState(() => _titleError = null);
               },
-              onSubmitted: (_) => _save(),
+              onSubmitted: (_) => _submit(),
             ),
             const SizedBox(height: 14),
             MgUnderlineField(
               controller: _about,
               hintText: l10n.descriptionHint,
               fontSize: 14,
-              onSubmitted: (_) => _save(),
+              onSubmitted: (_) => _submit(),
             ),
             const SizedBox(height: 4),
             Text(

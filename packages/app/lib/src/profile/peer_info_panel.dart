@@ -393,64 +393,17 @@ class _Content extends ConsumerWidget {
             _MembersSection(
               key: ValueKey(info.chatId),
               info: info,
+              rights: rights,
               now: now,
               onMember: onMember,
             ),
           if (!info.isUser && rights.isMember) ...[
             const SizedBox(height: 16),
-            _Group(
-              children: [
-                _ActionRow(
-                  label: channel ? l10n.leaveChannel : l10n.leaveGroup,
-                  color: MgDestructive.color,
-                  onTap: () => unawaited(_leave(context, ref, delete: false)),
-                ),
-                if (rights.canDeleteChat)
-                  _ActionRow(
-                    label: channel ? l10n.deleteChannel : l10n.deleteGroup,
-                    color: MgDestructive.color,
-                    onTap: () => unawaited(_leave(context, ref, delete: true)),
-                  ),
-              ],
-            ),
+            _LeaveRows(info: info, rights: rights, onLeft: onClose),
           ],
         ],
       ),
     );
-  }
-
-  /// Leaves the group or channel, or deletes it for everyone, once the
-  /// user confirms.
-  Future<void> _leave(
-    BuildContext context,
-    WidgetRef ref, {
-    required bool delete,
-  }) async {
-    final l10n = AppLocalizations.of(context);
-    final channel = info.kind == PeerKind.channel;
-    final confirmed = await showMgConfirm(
-      context,
-      title: delete
-          ? (channel ? l10n.deleteChannelTitle : l10n.deleteGroupTitle)
-          : (channel ? l10n.leaveChannelTitle : l10n.leaveGroupTitle),
-      message: delete ? l10n.deleteChatMessage : null,
-      confirmLabel: delete ? l10n.deleteForEveryone : l10n.leave,
-      cancelLabel: l10n.cancel,
-      destructive: true,
-    );
-    if (confirmed == null) return;
-    final management = ref
-        .read(telegramSessionProvider)
-        .requireValue
-        .management;
-    try {
-      delete
-          ? await management.deleteChat(info.chatId)
-          : await management.leave(info.chatId);
-      onClose();
-    } on Object {
-      // The chat stays as it was; nothing to undo.
-    }
   }
 
   Future<void> _toggleBlock(
@@ -809,6 +762,99 @@ class _MemberRow extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Leave, and for the owner Delete, with a confirmation. A refusal from
+/// TDLib is said under the rows.
+class _LeaveRows extends ConsumerStatefulWidget {
+  const _LeaveRows({
+    required this.info,
+    required this.rights,
+    required this.onLeft,
+  });
+
+  final PeerInfo info;
+  final ChatRights rights;
+  final VoidCallback onLeft;
+
+  @override
+  ConsumerState<_LeaveRows> createState() => _LeaveRowsState();
+}
+
+class _LeaveRowsState extends ConsumerState<_LeaveRows> {
+  String? _error;
+
+  Future<void> _leave({required bool delete}) async {
+    final l10n = AppLocalizations.of(context);
+    final channel = widget.info.kind == PeerKind.channel;
+    // The owner of a supergroup or channel stays its owner after leaving
+    // and may come back; say so before they go.
+    final ownerNote = widget.rights.isOwner && widget.rights.isSupergroup
+        ? l10n.leaveOwnerNote
+        : null;
+    final confirmed = await showMgConfirm(
+      context,
+      title: delete
+          ? (channel ? l10n.deleteChannelTitle : l10n.deleteGroupTitle)
+          : (channel ? l10n.leaveChannelTitle : l10n.leaveGroupTitle),
+      message: delete
+          ? (channel ? l10n.deleteChannelMessage : l10n.deleteGroupMessage)
+          : ownerNote,
+      confirmLabel: delete ? l10n.deleteForEveryone : l10n.leave,
+      cancelLabel: l10n.cancel,
+      destructive: true,
+    );
+    if (confirmed == null || !mounted) return;
+    final management = ref
+        .read(telegramSessionProvider)
+        .requireValue
+        .management;
+    try {
+      delete
+          ? await management.deleteChat(widget.info.chatId)
+          : await management.leave(widget.info.chatId);
+      widget.onLeft();
+    } on Object {
+      if (mounted) {
+        setState(() => _error = delete ? l10n.deleteFailed : l10n.leaveFailed);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final c = MgColors.of(context);
+    final channel = widget.info.kind == PeerKind.channel;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _Group(
+          children: [
+            _ActionRow(
+              label: channel ? l10n.leaveChannel : l10n.leaveGroup,
+              color: MgDestructive.color,
+              onTap: () => unawaited(_leave(delete: false)),
+            ),
+            if (widget.rights.canDeleteChat)
+              _ActionRow(
+                label: channel ? l10n.deleteChannel : l10n.deleteGroup,
+                color: MgDestructive.color,
+                onTap: () => unawaited(_leave(delete: true)),
+              ),
+          ],
+        ),
+        if (_error case final error?)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
+            child: Text(
+              error,
+              style: mgTextStyle(c, size: MgType.small, color: c.fg2),
+            ),
+          ),
+      ],
     );
   }
 }

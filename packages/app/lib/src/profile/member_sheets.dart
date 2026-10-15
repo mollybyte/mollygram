@@ -31,12 +31,14 @@ enum AdminRight {
   restrictMembers,
   inviteUsers,
   pinMessages,
+  manageTopics,
   manageVideoChats,
   promoteMembers,
   anonymous;
 
   /// The rights that mean something in a group, or in a channel.
-  static List<AdminRight> of({required bool channel}) => channel
+  static List<AdminRight> of({required bool channel, bool forum = false}) =>
+      channel
       ? const [
           changeInfo,
           postMessages,
@@ -46,12 +48,13 @@ enum AdminRight {
           manageVideoChats,
           promoteMembers,
         ]
-      : const [
+      : [
           changeInfo,
           deleteMessages,
           restrictMembers,
           inviteUsers,
           pinMessages,
+          if (forum) manageTopics,
           manageVideoChats,
           promoteMembers,
           anonymous,
@@ -68,6 +71,7 @@ enum AdminRight {
     restrictMembers => l10n.rightBanUsers,
     inviteUsers => channel ? l10n.rightAddSubscribers : l10n.rightInviteUsers,
     pinMessages => l10n.rightPinMessages,
+    manageTopics => l10n.rightManageTopics,
     manageVideoChats => l10n.rightManageVideoChats,
     promoteMembers => l10n.rightAddAdmins,
     anonymous => l10n.rightAnonymous,
@@ -83,34 +87,64 @@ Set<AdminRight> rightsOf(td.ChatAdministratorRights rights) => {
   if (rights.canRestrictMembers) AdminRight.restrictMembers,
   if (rights.canInviteUsers) AdminRight.inviteUsers,
   if (rights.canPinMessages) AdminRight.pinMessages,
+  if (rights.canManageTopics) AdminRight.manageTopics,
   if (rights.canManageVideoChats) AdminRight.manageVideoChats,
   if (rights.canPromoteMembers) AdminRight.promoteMembers,
   if (rights.isAnonymous) AdminRight.anonymous,
 };
 
-/// TDLib rights with [on] given. Stories follow posting, as in the
-/// official apps; the rest of what a sheet doesn't show stays off.
-td.ChatAdministratorRights adminRights(Set<AdminRight> on) =>
-    td.ChatAdministratorRights(
-      canManageChat: true,
-      canChangeInfo: on.contains(AdminRight.changeInfo),
-      canPostMessages: on.contains(AdminRight.postMessages),
-      canEditMessages: on.contains(AdminRight.editMessages),
-      canDeleteMessages: on.contains(AdminRight.deleteMessages),
-      canInviteUsers: on.contains(AdminRight.inviteUsers),
-      canRestrictMembers: on.contains(AdminRight.restrictMembers),
-      canPinMessages: on.contains(AdminRight.pinMessages),
-      canManageTopics: false,
-      canPromoteMembers: on.contains(AdminRight.promoteMembers),
-      canManageVideoChats: on.contains(AdminRight.manageVideoChats),
-      canPostStories: on.contains(AdminRight.postMessages),
-      canEditStories: on.contains(AdminRight.editMessages),
-      canDeleteStories: on.contains(AdminRight.deleteMessages),
-      canManageDirectMessages: false,
-      canManageTags: false,
-      canSendWelcomeMessages: false,
-      isAnonymous: on.contains(AdminRight.anonymous),
-    );
+/// [base] with the [shown] rights set as [on] says; rights a sheet does
+/// not show keep their value. A new administrator ([base] null) gets the
+/// story rights with posting, editing and deleting, as in the official
+/// apps.
+td.ChatAdministratorRights adminRights(
+  Set<AdminRight> on, {
+  td.ChatAdministratorRights? base,
+  Iterable<AdminRight> shown = AdminRight.values,
+}) {
+  final visible = shown.toSet();
+  bool pick(AdminRight right, bool? current) =>
+      visible.contains(right) ? on.contains(right) : current ?? false;
+  return td.ChatAdministratorRights(
+    canManageChat: true,
+    canChangeInfo: pick(AdminRight.changeInfo, base?.canChangeInfo),
+    canPostMessages: pick(AdminRight.postMessages, base?.canPostMessages),
+    canEditMessages: pick(AdminRight.editMessages, base?.canEditMessages),
+    canDeleteMessages: pick(AdminRight.deleteMessages, base?.canDeleteMessages),
+    canInviteUsers: pick(AdminRight.inviteUsers, base?.canInviteUsers),
+    canRestrictMembers: pick(
+      AdminRight.restrictMembers,
+      base?.canRestrictMembers,
+    ),
+    canPinMessages: pick(AdminRight.pinMessages, base?.canPinMessages),
+    canManageTopics: pick(AdminRight.manageTopics, base?.canManageTopics),
+    canPromoteMembers: pick(AdminRight.promoteMembers, base?.canPromoteMembers),
+    canManageVideoChats: pick(
+      AdminRight.manageVideoChats,
+      base?.canManageVideoChats,
+    ),
+    canPostStories:
+        base?.canPostStories ?? on.contains(AdminRight.postMessages),
+    canEditStories:
+        base?.canEditStories ?? on.contains(AdminRight.editMessages),
+    canDeleteStories:
+        base?.canDeleteStories ?? on.contains(AdminRight.deleteMessages),
+    canManageDirectMessages: base?.canManageDirectMessages ?? false,
+    canManageTags: base?.canManageTags ?? false,
+    canSendWelcomeMessages: base?.canSendWelcomeMessages ?? false,
+    isAnonymous: pick(AdminRight.anonymous, base?.isAnonymous),
+  );
+}
+
+/// The rights every administrator of a basic group has.
+final basicGroupAdmin = adminRights({
+  AdminRight.changeInfo,
+  AdminRight.deleteMessages,
+  AdminRight.restrictMembers,
+  AdminRight.inviteUsers,
+  AdminRight.pinMessages,
+  AdminRight.manageVideoChats,
+});
 
 /// Appoints an administrator or edits one: a switch for each right, and
 /// for an administrator already there, a way to dismiss them.
@@ -119,11 +153,18 @@ class AdminRightsSheet extends StatefulWidget {
     super.key,
     required this.name,
     required this.channel,
+    this.forum = false,
     this.current,
+    this.granter,
   });
 
   final String name;
   final bool channel;
+  final bool forum;
+
+  /// The rights of the administrator appointing, who can only give what
+  /// they have; null for the owner.
+  final td.ChatAdministratorRights? granter;
 
   /// The rights of an administrator being edited; null to appoint one.
   final td.ChatAdministratorRights? current;
@@ -135,14 +176,22 @@ class AdminRightsSheet extends StatefulWidget {
 class _AdminRightsSheetState extends State<AdminRightsSheet> {
   // A new administrator gets everything but adding others and hiding,
   // as in TelegramSwift.
+  late final _shown = AdminRight.of(
+    channel: widget.channel,
+    forum: widget.forum,
+  );
   late final _on = widget.current == null
       ? {
-          for (final right in AdminRight.of(channel: widget.channel))
+          for (final right in _shown)
             if (right != AdminRight.promoteMembers &&
-                right != AdminRight.anonymous)
+                right != AdminRight.anonymous &&
+                _mayGive(right))
               right,
         }
       : rightsOf(widget.current!);
+
+  bool _mayGive(AdminRight right) =>
+      widget.granter == null || rightsOf(widget.granter!).contains(right);
 
   @override
   Widget build(BuildContext context) {
@@ -150,17 +199,22 @@ class _AdminRightsSheetState extends State<AdminRightsSheet> {
     return ManageSheetFrame(
       title: widget.current == null ? l10n.addAdmin : l10n.adminRights,
       action: l10n.save,
-      onAction: () => Navigator.of(context).pop(SaveAdmin(adminRights(_on))),
+      onAction: () => Navigator.of(
+        context,
+      ).pop(SaveAdmin(adminRights(_on, base: widget.current, shown: _shown))),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           SheetCaption(l10n.adminRightsOf(widget.name)),
-          for (final right in AdminRight.of(channel: widget.channel))
+          for (final right in _shown)
             ToggleRow(
               label: right.label(l10n, channel: widget.channel),
               value: _on.contains(right),
-              onChanged: (on) =>
-                  setState(() => on ? _on.add(right) : _on.remove(right)),
+              // Rights the user doesn't hold can't be given or taken.
+              onChanged: _mayGive(right)
+                  ? (on) =>
+                        setState(() => on ? _on.add(right) : _on.remove(right))
+                  : null,
             ),
           if (widget.current != null) ...[
             const SizedBox(height: 6),

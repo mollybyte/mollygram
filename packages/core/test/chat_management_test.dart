@@ -65,6 +65,37 @@ void main() {
       expect(rights.canInviteUsers, isFalse);
     });
 
+    test('a restricted member has what is left to them', () async {
+      json.answer = (r) => switch (r['@type']) {
+        'getChat' => _chat(1, _superType(5)),
+        'getSupergroup' => _supergroup(5, {
+          '@type': 'chatMemberStatusRestricted',
+          'is_member': true,
+          'permissions': {'@type': 'chatPermissions', 'can_invite_users': true},
+        }),
+        _ => null,
+      };
+      final rights = await management.rights(1);
+      expect(rights.isMember, isTrue);
+      expect(rights.canInviteUsers, isTrue);
+      expect(rights.canChangeInfo || rights.canManageLinks, isFalse);
+    });
+
+    test('a channel subscriber may change nothing', () async {
+      json.answer = (r) => switch (r['@type']) {
+        'getChat' => _chat(
+          1,
+          _superType(5, channel: true),
+          permissions: {'@type': 'chatPermissions', 'can_change_info': true},
+        ),
+        'getSupergroup' => _supergroup(5, _member),
+        _ => null,
+      };
+      final rights = await management.rights(1);
+      expect(rights.isChannel, isTrue);
+      expect(rights.canChangeInfo || rights.canInviteUsers, isFalse);
+    });
+
     test('a private chat has none', () async {
       json.answer = (r) => r['@type'] == 'getChat'
           ? _chat(1, {'@type': 'chatTypePrivate', 'user_id': 2})
@@ -74,21 +105,37 @@ void main() {
   });
 
   group('members', () {
-    void supergroup({String status = 'creator'}) {
+    void supergroup({
+      String status = 'creator',
+      bool channel = false,
+      bool failMembers = false,
+    }) {
       json.answer = (r) => switch (r['@type']) {
         'getMe' => _user(1, 'Me'),
-        'getChat' => _chat(10, _superType(5)),
+        'getChat' => _chat(10, _superType(5, channel: channel)),
         'getSupergroup' => _supergroup(
           5,
           status == 'creator' ? _creator : _admin(changeInfo: true),
         ),
+        'getSupergroupMembers' when failMembers => {
+          '@type': 'error',
+          'code': 400,
+          'message': 'CHAT_ADMIN_REQUIRED',
+        },
         'getSupergroupMembers' => switch ((r['filter']! as Map)['@type']) {
           'supergroupMembersFilterAdministrators' => _members(2, [
             _chatMember(1, _creator),
             _chatMember(4, _admin(canBeEdited: true)),
           ]),
           'supergroupMembersFilterRecent' => _members(120, [
-            for (final id in [4, 6, 7]) _chatMember(id, _member),
+            for (final id in [4, 6, 7])
+              _chatMember(id + (r['offset']! as int), _member),
+            // A channel in the group: not a person to list.
+            {
+              '@type': 'chatMember',
+              'member_id': {'@type': 'messageSenderChat', 'chat_id': -100},
+              'status': _member,
+            },
           ]),
           _ => _members(1, [_chatMember(7, _member)]),
         },
@@ -103,17 +150,57 @@ void main() {
 
     test('come admins first, then online, without repeats', () async {
       supergroup();
-      final page = await management.members(10, limit: 3);
+      final page = await management.members(10, limit: 4);
       expect([for (final m in page.members) m.userId], [1, 4, 7, 6]);
       expect(page.members.first.role, MemberRole.owner);
       expect(page.members.first.isSelf, isTrue);
       expect(page.hasMore, isTrue);
-      expect(page.nextOffset, 3);
+      expect(page.nextOffset, 4);
+    });
+
+    test('page on without asking again what the first page knew', () async {
+      supergroup();
+      await management.members(10, limit: 4);
+      json.sent.clear();
+      final next = await management.members(10, offset: 4, limit: 4);
+      // Recent members from offset 4: users 8, 10 and 11, no admins.
+      expect([for (final m in next.members) m.userId], [8, 10, 11]);
+      expect(next.nextOffset, 8);
+      final types = [for (final r in json.sent) r['@type']];
+      expect(types, isNot(contains('getChat')));
+      expect(
+        json.sent.where((r) => r['@type'] == 'getSupergroupMembers'),
+        hasLength(1),
+      );
+    });
+
+    test('list people only, not chats that are members', () async {
+      supergroup();
+      final page = await management.members(10, limit: 4);
+      expect(page.members.map((m) => m.userId), isNot(contains(0)));
+      expect(
+        json.sent.where((r) => r['@type'] == 'getUser' && r['user_id'] == 0),
+        isEmpty,
+      );
+    });
+
+    test('pass on what TDLib refuses', () async {
+      supergroup(failMembers: true);
+      expect(management.members(10), throwsA(isA<td.TdException>()));
+    });
+
+    test('of a channel are no one to restrict for an owner', () async {
+      supergroup(channel: true);
+      final rights = await management.rights(10);
+      expect(rights.isChannel && rights.isOwner, isTrue);
+      final page = await management.members(10, limit: 4);
+      final member = page.members.firstWhere((m) => m.userId == 6);
+      expect(member.canRemove && member.canPromote, isTrue);
     });
 
     test('say what the user may do to each', () async {
       supergroup();
-      final page = await management.members(10, limit: 3);
+      final page = await management.members(10, limit: 4);
       final byId = {for (final m in page.members) m.userId: m};
       // Yourself and the owner: nothing.
       expect(byId[1]!.canPromote || byId[1]!.canRemove, isFalse);
@@ -128,7 +215,7 @@ void main() {
 
     test('an administrator without rights may do nothing', () async {
       supergroup(status: 'admin');
-      final page = await management.members(10, limit: 3);
+      final page = await management.members(10, limit: 4);
       expect(
         page.members.any((m) => m.canPromote || m.canRemove || m.canRestrict),
         isFalse,
@@ -179,6 +266,49 @@ void main() {
       expect(all.members.last.canRestrict, isFalse);
       final found = await management.members(10, query: 'ver');
       expect([for (final m in found.members) m.name], ['Vera']);
+    });
+  });
+
+  group('basic group removal', () {
+    /// A basic group with the owner (2), an admin (3), a member the user
+    /// invited (4) and one somebody else invited (5).
+    void basic(Map<String, Object?> myStatus) {
+      json.answer = (r) => switch (r['@type']) {
+        'getMe' => _user(1, 'Me'),
+        'getChat' => _chat(10, {
+          '@type': 'chatTypeBasicGroup',
+          'basic_group_id': 3,
+        }),
+        'getBasicGroup' => _basicGroup(3, myStatus),
+        'getBasicGroupFullInfo' => {
+          '@type': 'basicGroupFullInfo',
+          'members': [
+            _chatMember(1, myStatus),
+            _chatMember(2, _creator),
+            _chatMember(3, _admin()),
+            _chatMember(4, _member),
+            {..._chatMember(5, _member), 'inviter_user_id': 2},
+          ],
+          'bot_commands': <Object?>[],
+        },
+        'getUser' => _user(r['user_id']! as int, 'U${r['user_id']}'),
+        _ => null,
+      };
+    }
+
+    Future<Set<int>> removable() async => {
+      for (final m in (await management.members(10)).members)
+        if (m.canRemove) m.userId,
+    };
+
+    test('an admin removes anyone but admins', () async {
+      basic(_admin());
+      expect(await removable(), {4, 5});
+    });
+
+    test('a member removes whom they invited', () async {
+      basic(_member);
+      expect(await removable(), {4});
     });
   });
 
@@ -250,19 +380,48 @@ void main() {
       expect(photos.last, isNull);
     });
 
-    test('follow member updates from elsewhere', () async {
+    test('follow changes made elsewhere', () async {
+      json.answer = (r) => switch (r['@type']) {
+        'getChat' => _chat(10, _superType(5)),
+        'getSupergroup' => _supergroup(5, _member),
+        _ => null,
+      };
+      await management.rights(10);
       final changed = <int>[];
       final sub = management.changes.listen(changed.add);
-      json.push({
-        '@type': 'updateChatMember',
-        'chat_id': 12,
-        'old_chat_member': _chatMember(2, _member),
-        'new_chat_member': _chatMember(2, _admin()),
+      Future<void> deliver(Map<String, Object?> update) async {
+        json.push(update);
+        // The fake hands out updates while TDLib is being asked something.
+        await management.setTitle(99, 'x');
+        await pumpEventQueue();
+      }
+
+      // The member count changing is not the user's status changing.
+      await deliver({
+        '@type': 'updateSupergroup',
+        'supergroup': {..._supergroup(5, _member), 'member_count': 3},
       });
-      // The fake hands out updates while TDLib is being asked something.
-      await management.setTitle(12, 'Team');
-      await pumpEventQueue();
-      expect(changed, [12]);
+      expect(changed, isEmpty);
+      // Promoted from another device.
+      await deliver({
+        '@type': 'updateSupergroup',
+        'supergroup': _supergroup(5, _admin()),
+      });
+      expect(changed, [10]);
+      await deliver({
+        '@type': 'updateSupergroupFullInfo',
+        'supergroup_id': 5,
+        'supergroup_full_info': {
+          '@type': 'supergroupFullInfo',
+          'bot_commands': <Object?>[],
+        },
+      });
+      await deliver({
+        '@type': 'updateChatPermissions',
+        'chat_id': 10,
+        'permissions': {'@type': 'chatPermissions'},
+      });
+      expect(changed, [10, 10, 10]);
       await sub.cancel();
     });
   });
@@ -295,7 +454,7 @@ void main() {
           r['@type'] == 'createChatInviteLink' ? _link('c') : null;
       await management.createLink(
         10,
-        name: ' Friends ',
+        name: ' Friends ${'x' * 40}',
         expiresAt: DateTime.fromMillisecondsSinceEpoch(5000 * 1000),
         memberLimit: 20,
         joinRequests: true,
@@ -303,7 +462,7 @@ void main() {
       final request = json.sent.lastWhere(
         (r) => r['@type'] == 'createChatInviteLink',
       );
-      expect(request['name'], 'Friends');
+      expect(request['name'], 'Friends ${'x' * 24}');
       expect(request['expiration_date'], 5000);
       expect(request['member_limit'], 0);
       expect(request['creates_join_request'], isTrue);
@@ -340,13 +499,17 @@ void main() {
           'chat_id': 30,
           'failed_to_add_members': {
             '@type': 'failedToAddMembers',
-            'failed_to_add_members': <Object?>[],
+            'failed_to_add_members': [
+              {'@type': 'failedToAddMember', 'user_id': 3},
+            ],
           },
         },
         'createNewSupergroupChat' => _chat(31, _superType(9, channel: true)),
         _ => null,
       };
-      expect(await management.createGroup(' Trip ', [2, 3]), 30);
+      final created = await management.createGroup(' Trip ', [2, 3]);
+      expect(created.chatId, 30);
+      expect(created.notAdded, [3]);
       expect(await management.createChannel('News', description: 'D'), 31);
       final group = json.sent.firstWhere(
         (r) => r['@type'] == 'createNewBasicGroupChat',

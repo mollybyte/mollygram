@@ -799,5 +799,17 @@
   "leaveChannelTitle": "Leave this channel?",
   "deleteGroupTitle": "Delete this group?",
   "deleteChannelTitle": "Delete this channel?",
-  "deleteChatMessage": "All members will lose it with all its messages. This can't be undone."
+  "membersFailed": "Couldn't load the members.",
+  "memberChangeFailed": "Couldn't make the change. You may not have the right to.",
+  "removeRestrictions": "Remove restrictions",
+  "rightManageTopics": "Manage topics",
+  "notAddedMembers": "{count, plural, =1{The group is created, but {names} couldn't be added because of their privacy settings.} other{The group is created, but {names} couldn't be added because of their privacy settings.}}",
+  "@notAddedMembers": {
+    "placeholders": {"count":  {"type":  "int"},  "names":  {"type":  "String"}}
+  },
+  "leaveOwnerNote": "You stay the owner and can come back with an invite link.",
+  "deleteGroupMessage": "Every member loses the group and all its messages. This can't be undone.",
+  "deleteChannelMessage": "Every subscriber loses the channel and all its posts. This can't be undone.",
+  "leaveFailed": "Couldn't leave. Try again.",
+  "deleteFailed": "Couldn't delete it. Try again."
 }

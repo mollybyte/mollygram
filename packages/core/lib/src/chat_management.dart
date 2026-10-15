@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 
@@ -17,6 +18,8 @@ final class ChatRights {
     this.canRestrictMembers = false,
     this.canPromoteMembers = false,
     this.canDeleteChat = false,
+    this.isForum = false,
+    this.adminRights,
   });
 
   /// A private chat, or a group the user is not in.
@@ -36,6 +39,14 @@ final class ChatRights {
 
   /// The owner may delete the chat for everyone.
   final bool canDeleteChat;
+
+  /// A supergroup with topics, where managing topics is a right.
+  final bool isForum;
+
+  /// The user's own administrator rights; an administrator can only give
+  /// rights they hold. Null for the owner, who holds them all, and for
+  /// everyone who is not an administrator.
+  final td.ChatAdministratorRights? adminRights;
 
   /// Invite links need an administrator with the invite right.
   bool get canManageLinks => (isOwner || isAdmin) && canInviteUsers;
@@ -104,10 +115,20 @@ final class ChatManagement {
   /// from another one.
   Stream<int> get changes => _changes.stream;
 
+  /// Which chat each group is, from the chats asked about, so that
+  /// updates about a group reach the right chat.
+  final _chatOfBasicGroup = <int, int>{};
+  final _chatOfSupergroup = <int, int>{};
+
+  /// The user's own status in each group, to tell a change of it from
+  /// the other updates about the group, such as its member count.
+  final _ownStatus = <String, String>{};
+
+  /// What [members] learned about a chat for the pages after the first.
+  final _pageContext = <int, (td.Chat, ChatRights)>{};
+
   Future<void> start() async {
-    _subscription ??= _client.updates.listen((update) {
-      if (update case td.UpdateChatMember(:final chatId)) _notify(chatId);
-    });
+    _subscription ??= _client.updates.listen(_onUpdate);
   }
 
   Future<void> dispose() async {
@@ -115,23 +136,62 @@ final class ChatManagement {
     await _changes.close();
   }
 
+  /// Members, administrators and the user's own rights change with these
+  /// updates, from this app or from another device.
+  void _onUpdate(td.TdObject update) {
+    switch (update) {
+      case td.UpdateChatMember(:final chatId) ||
+          td.UpdateChatPermissions(:final chatId):
+        _notify(chatId);
+      case td.UpdateBasicGroup(:final basicGroup):
+        _statusChanged(
+          _chatOfBasicGroup[basicGroup.id],
+          'b${basicGroup.id}',
+          basicGroup.status,
+        );
+      case td.UpdateSupergroup(:final supergroup):
+        _statusChanged(
+          _chatOfSupergroup[supergroup.id],
+          's${supergroup.id}',
+          supergroup.status,
+        );
+      case td.UpdateBasicGroupFullInfo(:final basicGroupId):
+        if (_chatOfBasicGroup[basicGroupId] case final chatId?) {
+          _notify(chatId);
+        }
+      case td.UpdateSupergroupFullInfo(:final supergroupId):
+        if (_chatOfSupergroup[supergroupId] case final chatId?) {
+          _notify(chatId);
+        }
+      default:
+        break;
+    }
+  }
+
+  void _statusChanged(int? chatId, String key, td.ChatMemberStatus status) {
+    final encoded = jsonEncode(status.toJson());
+    final before = _ownStatus[key];
+    _ownStatus[key] = encoded;
+    if (chatId != null && before != null && before != encoded) {
+      _notify(chatId);
+    }
+  }
+
   /// What the user may do in [chatId].
-  Future<ChatRights> rights(int chatId) async {
-    final chat = await _client.send(td.GetChat(chatId: chatId));
-    final (status, isChannel, isSupergroup) = switch (chat.type) {
+  Future<ChatRights> rights(int chatId) async =>
+      _rightsIn(await _client.send(td.GetChat(chatId: chatId)));
+
+  Future<ChatRights> _rightsIn(td.Chat chat) async {
+    final (status, isChannel, isSupergroup, isForum) = switch (chat.type) {
       td.ChatTypeBasicGroup(:final basicGroupId) => (
-        (await _client.send(td.GetBasicGroup(basicGroupId: basicGroupId)))
-            .status,
+        await _basicGroupStatus(chat.id, basicGroupId),
+        false,
         false,
         false,
       ),
-      td.ChatTypeSupergroup(:final supergroupId, :final isChannel) => (
-        (await _client.send(td.GetSupergroup(supergroupId: supergroupId)))
-            .status,
-        isChannel,
-        true,
-      ),
-      _ => (null, false, false),
+      td.ChatTypeSupergroup(:final supergroupId, :final isChannel) =>
+        await _supergroupStatus(chat.id, supergroupId, isChannel),
+      _ => (null, false, false, false),
     };
     final everyone = chat.permissions;
     return switch (status) {
@@ -140,6 +200,7 @@ final class ChatManagement {
         isOwner: true,
         isChannel: isChannel,
         isSupergroup: isSupergroup,
+        isForum: isForum,
         canChangeInfo: true,
         canInviteUsers: true,
         canRestrictMembers: true,
@@ -150,14 +211,17 @@ final class ChatManagement {
         isAdmin: true,
         isChannel: isChannel,
         isSupergroup: isSupergroup,
+        isForum: isForum,
         canChangeInfo: rights.canChangeInfo,
         canInviteUsers: rights.canInviteUsers,
         canRestrictMembers: rights.canRestrictMembers,
         canPromoteMembers: rights.canPromoteMembers,
+        adminRights: rights,
       ),
       td.ChatMemberStatusMember() => ChatRights(
         isChannel: isChannel,
         isSupergroup: isSupergroup,
+        isForum: isForum,
         canChangeInfo: !isChannel && everyone.canChangeInfo,
         canInviteUsers: !isChannel && everyone.canInviteUsers,
       ),
@@ -166,6 +230,7 @@ final class ChatManagement {
           isMember: isMember,
           isChannel: isChannel,
           isSupergroup: isSupergroup,
+          isForum: isForum,
           canChangeInfo: permissions.canChangeInfo,
           canInviteUsers: permissions.canInviteUsers,
         ),
@@ -177,6 +242,25 @@ final class ChatManagement {
     };
   }
 
+  Future<td.ChatMemberStatus> _basicGroupStatus(int chatId, int id) async {
+    _chatOfBasicGroup[id] = chatId;
+    final status = (await _client.send(td.GetBasicGroup(basicGroupId: id)))
+        .status;
+    _ownStatus['b$id'] = jsonEncode(status.toJson());
+    return status;
+  }
+
+  Future<(td.ChatMemberStatus, bool, bool, bool)> _supergroupStatus(
+    int chatId,
+    int id,
+    bool isChannel,
+  ) async {
+    _chatOfSupergroup[id] = chatId;
+    final group = await _client.send(td.GetSupergroup(supergroupId: id));
+    _ownStatus['s$id'] = jsonEncode(group.status.toJson());
+    return (group.status, isChannel, true, group.isForum);
+  }
+
   /// A page of the members of [chatId]. The first page without a [query]
   /// starts with the owner and the administrators; the rest follow online
   /// first. A basic group comes whole in one page.
@@ -186,11 +270,18 @@ final class ChatManagement {
     int offset = 0,
     int limit = pageSize,
   }) async {
-    final (rights, myId, chat) = await (
-      this.rights(chatId),
-      _me(),
-      _client.send(td.GetChat(chatId: chatId)),
-    ).wait;
+    final myId = await _me();
+    // The pages after the first reuse what the first one learned.
+    final known = offset > 0 ? _pageContext[chatId] : null;
+    final td.Chat chat;
+    final ChatRights rights;
+    if (known != null) {
+      (chat, rights) = known;
+    } else {
+      chat = await _client.send(td.GetChat(chatId: chatId));
+      rights = await _rightsIn(chat);
+      _pageContext[chatId] = (chat, rights);
+    }
     switch (chat.type) {
       case td.ChatTypeBasicGroup(:final basicGroupId):
         final full = await _client.send(
@@ -206,31 +297,28 @@ final class ChatManagement {
         );
       case td.ChatTypeSupergroup(:final supergroupId):
         final search = query.trim();
-        final (admins, page) = await (
-          search.isEmpty && offset == 0
-              ? _client
-                    .send(
-                      td.GetSupergroupMembers(
-                        supergroupId: supergroupId,
-                        filter:
-                            const td.SupergroupMembersFilterAdministrators(),
-                        offset: 0,
-                        limit: 200,
-                      ),
-                    )
-                    .then((found) => found.members)
-              : Future.value(const <td.ChatMember>[]),
-          _client.send(
+        final requests = [
+          td.GetSupergroupMembers(
+            supergroupId: supergroupId,
+            filter: search.isEmpty
+                ? const td.SupergroupMembersFilterRecent()
+                : td.SupergroupMembersFilterSearch(query: search),
+            offset: offset,
+            limit: limit,
+          ),
+          if (search.isEmpty && offset == 0)
             td.GetSupergroupMembers(
               supergroupId: supergroupId,
-              filter: search.isEmpty
-                  ? const td.SupergroupMembersFilterRecent()
-                  : td.SupergroupMembersFilterSearch(query: search),
-              offset: offset,
-              limit: limit,
+              filter: const td.SupergroupMembersFilterAdministrators(),
+              offset: 0,
+              limit: 200,
             ),
-          ),
-        ).wait;
+        ];
+        final found = await Future.wait(requests.map(_client.send));
+        final page = found.first;
+        final admins = found.length > 1
+            ? found.last.members
+            : const <td.ChatMember>[];
         final adminIds = {for (final m in admins) _userOf(m)};
         final managed = await _manage(
           [
@@ -348,7 +436,8 @@ final class ChatManagement {
     final link = await _client.send(
       td.CreateChatInviteLink(
         chatId: chatId,
-        name: name.trim(),
+        // Telegram takes names of up to 32 characters.
+        name: String.fromCharCodes(name.trim().runes.take(32)),
         expirationDate: expiresAt == null
             ? 0
             : expiresAt.millisecondsSinceEpoch ~/ 1000,
@@ -384,8 +473,12 @@ final class ChatManagement {
   Future<void> deleteChat(int chatId) =>
       _client.send(td.DeleteChat(chatId: chatId));
 
-  /// Creates a group of the user and [userIds] and returns its chat.
-  Future<int> createGroup(String title, List<int> userIds) async {
+  /// Creates a group of the user and [userIds]. Returns its chat and
+  /// the users whose privacy settings kept them out of it.
+  Future<({int chatId, List<int> notAdded})> createGroup(
+    String title,
+    List<int> userIds,
+  ) async {
     final created = await _client.send(
       td.CreateNewBasicGroupChat(
         userIds: userIds,
@@ -393,7 +486,13 @@ final class ChatManagement {
         messageAutoDeleteTime: 0,
       ),
     );
-    return created.chatId;
+    return (
+      chatId: created.chatId,
+      notAdded: [
+        for (final failed in created.failedToAddMembers.failedToAddMembers)
+          failed.userId,
+      ],
+    );
   }
 
   /// Creates a channel and returns its chat.
@@ -434,14 +533,18 @@ final class ChatManagement {
     ChatRights rights,
     int myId,
   ) async {
-    final users = await Future.wait([
+    // A channel can be a member of a group too; only users are listed.
+    final people = [
       for (final member in members)
+        if (member.memberId is td.MessageSenderUser) member,
+    ];
+    final users = await Future.wait([
+      for (final member in people)
         _client.send(td.GetUser(userId: _userOf(member))),
     ]);
     return [
-      for (final (i, member) in members.indexed)
-        if (member.memberId is td.MessageSenderUser)
-          _managed(member, users[i], rights, myId),
+      for (final (i, member) in people.indexed)
+        _managed(member, users[i], rights, myId),
     ];
   }
 
@@ -482,17 +585,23 @@ final class ChatManagement {
           (plain || editableAdmin) &&
           (rights.isSupergroup || rights.isOwner),
       canRestrict: plain && rights.isSupergroup && rights.canRestrictMembers,
-      canRemove:
-          !self &&
-          !owner &&
-          (admin ? editableAdmin : true) &&
-          (rights.isSupergroup
-              ? rights.canRestrictMembers
-              : rights.isOwner || (rights.isAdmin && invitedByMe)),
+      canRemove: rights.isSupergroup
+          ? !self &&
+                !owner &&
+                (!admin || editableAdmin) &&
+                rights.canRestrictMembers
+          // In a basic group the owner removes anyone, an administrator
+          // anyone but administrators, a member whom they invited.
+          : rights.isOwner
+          ? !self && !owner
+          : rights.isAdmin
+          ? plain
+          : rights.isMember && plain && invitedByMe,
     );
   }
 
   void _notify(int chatId) {
+    _pageContext.remove(chatId);
     if (!_changes.isClosed) _changes.add(chatId);
   }
 }

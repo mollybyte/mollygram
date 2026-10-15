@@ -59,6 +59,7 @@ final class ContactUser {
     this.presence = Presence.unknown,
     this.isContact = false,
     this.isBot = false,
+    this.photo,
   });
 
   final int id;
@@ -74,6 +75,9 @@ final class ContactUser {
   final bool isContact;
   final bool isBot;
 
+  /// The small profile photo, if there is one.
+  final td.File? photo;
+
   String get name => lastName.isEmpty ? firstName : '$firstName $lastName';
 
   factory ContactUser.from(td.User user) => ContactUser(
@@ -85,6 +89,7 @@ final class ContactUser {
     presence: Presence.from(user.status),
     isContact: user.isContact,
     isBot: user.type is td.UserTypeBot,
+    photo: user.profilePhoto?.small,
   );
 
   ContactUser withPresence(Presence presence) => ContactUser(
@@ -96,6 +101,7 @@ final class ContactUser {
     presence: presence,
     isContact: isContact,
     isBot: isBot,
+    photo: photo,
   );
 }
 

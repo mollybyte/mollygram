@@ -2030,6 +2030,46 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteChannelTitle => 'Delete this channel?';
 
   @override
-  String get deleteChatMessage =>
-      'All members will lose it with all its messages. This can\'t be undone.';
+  String get membersFailed => 'Couldn\'t load the members.';
+
+  @override
+  String get memberChangeFailed =>
+      'Couldn\'t make the change. You may not have the right to.';
+
+  @override
+  String get removeRestrictions => 'Remove restrictions';
+
+  @override
+  String get rightManageTopics => 'Manage topics';
+
+  @override
+  String notAddedMembers(int count, String names) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'The group is created, but $names couldn\'t be added because of their privacy settings.',
+      one:
+          'The group is created, but $names couldn\'t be added because of their privacy settings.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get leaveOwnerNote =>
+      'You stay the owner and can come back with an invite link.';
+
+  @override
+  String get deleteGroupMessage =>
+      'Every member loses the group and all its messages. This can\'t be undone.';
+
+  @override
+  String get deleteChannelMessage =>
+      'Every subscriber loses the channel and all its posts. This can\'t be undone.';
+
+  @override
+  String get leaveFailed => 'Couldn\'t leave. Try again.';
+
+  @override
+  String get deleteFailed => 'Couldn\'t delete it. Try again.';
 }

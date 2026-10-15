@@ -54,7 +54,12 @@ class _InviteLinksSheetState extends ConsumerState<InviteLinksSheet> {
   Future<void> _load() async {
     try {
       final links = await _management.inviteLinks(widget.chatId);
-      if (mounted) setState(() => _links = links);
+      if (mounted) {
+        setState(() {
+          _links = links;
+          _failed = false;
+        });
+      }
     } on Object {
       if (mounted) setState(() => _failed = true);
     }
@@ -393,7 +398,9 @@ class _NewLinkFormState extends ConsumerState<_NewLinkForm> {
               hintText: l10n.linkNameHint,
               autofocus: true,
               fontSize: 14,
-              onSubmitted: (_) => _create(),
+              onSubmitted: (_) {
+                if (!_busy) unawaited(_create());
+              },
             ),
             SheetCaption(l10n.linkDuration),
             ChoiceRow<_Expiry>(

@@ -3470,11 +3470,65 @@ abstract class AppLocalizations {
   /// **'Delete this channel?'**
   String get deleteChannelTitle;
 
-  /// No description provided for @deleteChatMessage.
+  /// No description provided for @membersFailed.
   ///
   /// In en, this message translates to:
-  /// **'All members will lose it with all its messages. This can\'t be undone.'**
-  String get deleteChatMessage;
+  /// **'Couldn\'t load the members.'**
+  String get membersFailed;
+
+  /// No description provided for @memberChangeFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t make the change. You may not have the right to.'**
+  String get memberChangeFailed;
+
+  /// No description provided for @removeRestrictions.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove restrictions'**
+  String get removeRestrictions;
+
+  /// No description provided for @rightManageTopics.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage topics'**
+  String get rightManageTopics;
+
+  /// No description provided for @notAddedMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{The group is created, but {names} couldn\'t be added because of their privacy settings.} other{The group is created, but {names} couldn\'t be added because of their privacy settings.}}'**
+  String notAddedMembers(int count, String names);
+
+  /// No description provided for @leaveOwnerNote.
+  ///
+  /// In en, this message translates to:
+  /// **'You stay the owner and can come back with an invite link.'**
+  String get leaveOwnerNote;
+
+  /// No description provided for @deleteGroupMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Every member loses the group and all its messages. This can\'t be undone.'**
+  String get deleteGroupMessage;
+
+  /// No description provided for @deleteChannelMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Every subscriber loses the channel and all its posts. This can\'t be undone.'**
+  String get deleteChannelMessage;
+
+  /// No description provided for @leaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t leave. Try again.'**
+  String get leaveFailed;
+
+  /// No description provided for @deleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t delete it. Try again.'**
+  String get deleteFailed;
 }
 
 class _AppLocalizationsDelegate

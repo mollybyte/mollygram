@@ -8,11 +8,15 @@ class _MembersSection extends ConsumerStatefulWidget {
   const _MembersSection({
     super.key,
     required this.info,
+    required this.rights,
     required this.now,
     required this.onMember,
   });
 
   final PeerInfo info;
+
+  /// The user's own rights, which bound the rights they can give.
+  final ChatRights rights;
   final DateTime now;
   final ValueChanged<int> onMember;
 
@@ -33,7 +37,9 @@ class _MembersSectionState extends ConsumerState<_MembersSection> {
   var _hasMore = false;
   var _nextOffset = 0;
   var _loading = false;
-  var _failed = false;
+
+  /// What went wrong last: loading a page or a change to a member.
+  String? _error;
 
   /// Bumped by every new search, so an older answer is dropped.
   var _generation = 0;
@@ -56,7 +62,7 @@ class _MembersSectionState extends ConsumerState<_MembersSection> {
     ];
     _changes = _management.changes
         .where((id) => id == widget.info.chatId)
-        .listen((_) => unawaited(_load()));
+        .listen((_) => unawaited(_load(refresh: true)));
     unawaited(_load());
   }
 
@@ -69,7 +75,9 @@ class _MembersSectionState extends ConsumerState<_MembersSection> {
   }
 
   /// The first page for the current search, or the next one with [more].
-  Future<void> _load({bool more = false}) async {
+  /// With [refresh], everything shown so far is asked for again, so a
+  /// change to one member doesn't fold the list back to its first page.
+  Future<void> _load({bool more = false, bool refresh = false}) async {
     final generation = more ? _generation : ++_generation;
     setState(() => _loading = true);
     try {
@@ -77,6 +85,9 @@ class _MembersSectionState extends ConsumerState<_MembersSection> {
         widget.info.chatId,
         query: _search.text,
         offset: more ? _nextOffset : 0,
+        limit: refresh
+            ? _nextOffset.clamp(ChatManagement.pageSize, 200)
+            : ChatManagement.pageSize,
       );
       if (!mounted || generation != _generation) return;
       final known = {if (more) ..._members.map((m) => m.userId)};
@@ -89,13 +100,13 @@ class _MembersSectionState extends ConsumerState<_MembersSection> {
         _hasMore = page.hasMore;
         _nextOffset = page.nextOffset;
         _loading = false;
-        _failed = false;
+        _error = null;
       });
     } on Object {
       if (mounted && generation == _generation) {
         setState(() {
           _loading = false;
-          _failed = true;
+          _error = AppLocalizations.of(context).membersFailed;
         });
       }
     }
@@ -117,7 +128,8 @@ class _MembersSectionState extends ConsumerState<_MembersSection> {
       context,
       position: position,
       items: [
-        if (member.canPromote)
+        // A basic group's administrators have no rights to edit.
+        if (member.canPromote && !(admin && !widget.rights.isSupergroup))
           MgMenuItem(
             label: admin ? l10n.editAdminRights : l10n.promoteToAdmin,
             onSelected: () => unawaited(_promote(member)),
@@ -134,6 +146,13 @@ class _MembersSectionState extends ConsumerState<_MembersSection> {
             label: l10n.restrictMember,
             onSelected: () => unawaited(_restrict(member)),
           ),
+        if (member.canRestrict && member.permissions != null)
+          MgMenuItem(
+            label: l10n.removeRestrictions,
+            onSelected: () => unawaited(
+              _act(() => _management.demote(widget.info.chatId, member.userId)),
+            ),
+          ),
         if (member.canRemove)
           MgMenuItem(
             label: channel ? l10n.removeFromChannel : l10n.removeFromGroup,
@@ -145,15 +164,27 @@ class _MembersSectionState extends ConsumerState<_MembersSection> {
   }
 
   Future<void> _promote(ManagedMember member) async {
+    final chatId = widget.info.chatId;
+    final rights = widget.rights;
+    // Administrators of a basic group all have the same rights; picking
+    // some would make it a supergroup, so it is promote or dismiss.
+    if (!rights.isSupergroup) {
+      if (member.role == MemberRole.admin) return;
+      await _act(
+        () => _management.promote(chatId, member.userId, basicGroupAdmin),
+      );
+      return;
+    }
     final choice = await showManageSheet<AdminChoice>(
       context,
       AdminRightsSheet(
         name: member.name,
         channel: widget.info.kind == PeerKind.channel,
+        forum: rights.isForum,
         current: member.adminRights,
+        granter: rights.isOwner ? null : rights.adminRights,
       ),
     );
-    final chatId = widget.info.chatId;
     switch (choice) {
       case SaveAdmin(:final rights):
         await _act(() => _management.promote(chatId, member.userId, rights));
@@ -189,12 +220,14 @@ class _MembersSectionState extends ConsumerState<_MembersSection> {
     await _act(() => _management.remove(widget.info.chatId, member.userId));
   }
 
-  /// Runs a change; the list reloads when TDLib confirms it.
+  /// Runs a change; the list reloads when TDLib confirms it, and says
+  /// so when TDLib refuses.
   Future<void> _act(Future<void> Function() change) async {
+    final l10n = AppLocalizations.of(context);
     try {
       await change();
     } on Object {
-      if (mounted) setState(() => _failed = true);
+      if (mounted) setState(() => _error = l10n.memberChangeFailed);
     }
   }
 
@@ -231,7 +264,7 @@ class _MembersSectionState extends ConsumerState<_MembersSection> {
           Padding(
             padding: const EdgeInsets.all(12),
             child: Text(
-              _failed ? l10n.infoFailed : l10n.nothingFound,
+              _error ?? l10n.nothingFound,
               textAlign: TextAlign.center,
               style: mgTextStyle(c, color: c.fg2),
             ),
@@ -261,6 +294,17 @@ class _MembersSectionState extends ConsumerState<_MembersSection> {
                           member.canRemove
                       ? (position) => unawaited(_menu(member, position))
                       : null,
+                ),
+              if (_error case final error?)
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  child: Text(
+                    error,
+                    style: mgTextStyle(c, size: MgType.small, color: c.fg2),
+                  ),
                 ),
               if (_hasMore)
                 _ActionRow(

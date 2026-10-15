@@ -2051,6 +2051,46 @@ class AppLocalizationsRu extends AppLocalizations {
   String get deleteChannelTitle => 'Удалить канал?';
 
   @override
-  String get deleteChatMessage =>
-      'Все участники потеряют её вместе со всеми сообщениями. Это нельзя отменить.';
+  String get membersFailed => 'Не удалось загрузить участников.';
+
+  @override
+  String get memberChangeFailed =>
+      'Не удалось внести изменение. Возможно, у вас нет на это прав.';
+
+  @override
+  String get removeRestrictions => 'Снять ограничения';
+
+  @override
+  String get rightManageTopics => 'Управлять темами';
+
+  @override
+  String notAddedMembers(int count, String names) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Группа создана, но $names нельзя добавить из-за их настроек приватности.',
+      one:
+          'Группа создана, но $names нельзя добавить из-за настроек приватности.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get leaveOwnerNote =>
+      'Вы останетесь владельцем и сможете вернуться по ссылке.';
+
+  @override
+  String get deleteGroupMessage =>
+      'Группа и все её сообщения пропадут у всех участников. Это нельзя отменить.';
+
+  @override
+  String get deleteChannelMessage =>
+      'Канал и все его публикации пропадут у всех подписчиков. Это нельзя отменить.';
+
+  @override
+  String get leaveFailed => 'Не удалось выйти. Попробуйте ещё раз.';
+
+  @override
+  String get deleteFailed => 'Не удалось удалить. Попробуйте ещё раз.';
 }

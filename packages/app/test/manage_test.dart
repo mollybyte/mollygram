@@ -10,6 +10,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:mollygram/l10n/app_localizations.dart';
 import 'package:mollygram/src/home/workspace.dart';
 import 'package:mollygram/src/profile/invite_links_sheet.dart';
+import 'package:mollygram/src/profile/manage_sheet.dart';
 import 'package:mollygram/src/profile/member_sheets.dart';
 import 'package:mollygram/src/profile/new_chat_sheet.dart';
 import 'package:mollygram/src/profile/peer_info_host.dart';
@@ -35,6 +36,25 @@ void main() {
         AdminRight.of(channel: false),
         isNot(contains(AdminRight.postMessages)),
       );
+    });
+
+    test('editing an administrator keeps the rights not shown', () {
+      final current = td.ChatAdministratorRights.fromJson({
+        '@type': 'chatAdministratorRights',
+        'can_manage_chat': true,
+        'can_manage_topics': true,
+        'can_post_stories': true,
+        'can_delete_messages': true,
+      });
+      final edited = adminRights(
+        {AdminRight.changeInfo},
+        base: current,
+        shown: AdminRight.of(channel: false),
+      );
+      expect(edited.canChangeInfo, isTrue);
+      expect(edited.canDeleteMessages, isFalse);
+      expect(edited.canManageTopics, isTrue);
+      expect(edited.canPostStories, isTrue);
     });
 
     test('restrictions keep media together', () {
@@ -186,13 +206,11 @@ void main() {
       expect(find.text('Restrict'), findsNothing);
       expect(find.text('Remove from group'), findsOneWidget);
 
+      // A basic group's administrators all have the same rights, so
+      // there is nothing to pick.
       await tester.tap(find.text('Make admin'));
-      await tester.pumpAndSettle();
-      expect(find.text('What Boris can do'), findsOneWidget);
-      await tester.tap(find.text('Add new admins'));
-      await tester.pump();
-      await tester.tap(find.text('Save'));
       await settle(tester);
+      expect(find.text('What Boris can do'), findsNothing);
 
       final request = sent('setChatMemberStatus').single;
       expect(request['member_id'], {
@@ -202,9 +220,55 @@ void main() {
       final status = request['status']! as Map;
       expect(status['@type'], 'chatMemberStatusAdministrator');
       final rights = status['rights']! as Map;
-      expect(rights['can_promote_members'], isTrue);
       expect(rights['can_change_info'], isTrue);
+      expect(rights['can_promote_members'], isFalse);
       expect(rights['is_anonymous'], isFalse);
+    });
+
+    testWidgets('gives only the rights the appointing admin holds', (
+      tester,
+    ) async {
+      td.ChatAdministratorRights? saved;
+      await pump(
+        tester,
+        home: Builder(
+          builder: (context) => Center(
+            child: MgTextButton(
+              label: 'open',
+              onPressed: () async {
+                final choice = await showManageSheet<AdminChoice>(
+                  context,
+                  AdminRightsSheet(
+                    name: 'Boris',
+                    channel: false,
+                    granter: adminRights({
+                      AdminRight.deleteMessages,
+                      AdminRight.pinMessages,
+                    }),
+                  ),
+                );
+                if (choice case SaveAdmin(:final rights)) saved = rights;
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+      expect(find.text('What Boris can do'), findsOneWidget);
+      ToggleRow toggle(String label) => tester.widget<ToggleRow>(
+        find.ancestor(of: find.text(label), matching: find.byType(ToggleRow)),
+      );
+      expect(toggle('Delete messages').onChanged, isNotNull);
+      expect(toggle('Change group info').onChanged, isNull);
+      expect(toggle('Change group info').value, isFalse);
+
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+      expect(rightsOf(saved!), {
+        AdminRight.deleteMessages,
+        AdminRight.pinMessages,
+      });
     });
 
     testWidgets('removes a member after asking', (tester) async {
@@ -320,6 +384,35 @@ void main() {
       expect(request['title'], 'Trip');
       expect(container.read(workspaceControllerProvider).value.focusedChat, 40);
       expect(find.text('New group'), findsNothing);
+    });
+
+    testWidgets('says who could not be added to a new group', (tester) async {
+      await pump(
+        tester,
+        home: Builder(
+          builder: (context) => Center(
+            child: TextButton(
+              onPressed: () =>
+                  newChatCommands(() => context, l10n, l10n).first.run(),
+              child: const Text('go'),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('go'));
+      await settle(tester);
+      await tester.tap(find.text('Vera'));
+      await tester.tap(find.text('Boris'));
+      await tester.pump();
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(EditableText), 'Trip');
+      await tester.tap(find.text('Create'));
+      await settle(tester);
+
+      expect(sent('createNewBasicGroupChat').single['user_ids'], [5, 6]);
+      expect(container.read(workspaceControllerProvider).value.focusedChat, 40);
+      expect(find.textContaining('Boris couldn'), findsOneWidget);
     });
   });
 }
@@ -458,7 +551,16 @@ final class _FakeTdJson implements td.TdJson {
         'chat_id': 40,
         'failed_to_add_members': {
           '@type': 'failedToAddMembers',
-          'failed_to_add_members': <Object?>[],
+          // Boris lets no one add him to groups.
+          'failed_to_add_members': [
+            if ((decoded['user_ids']! as List).contains(6))
+              {
+                '@type': 'failedToAddMember',
+                'user_id': 6,
+                'premium_would_allow_invite': false,
+                'premium_required_to_send_messages': false,
+              },
+          ],
         },
       },
       _ => {'@type': 'ok'},

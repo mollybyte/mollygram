@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_shell/mollygram_shell.dart';
+import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
@@ -54,12 +55,17 @@ class _NewChatSheetState extends ConsumerState<NewChatSheet> {
   final _search = TextEditingController();
   final _title = TextEditingController();
   final _about = TextEditingController();
-  final _picked = <int>{};
+
+  /// The people picked for a group, by id, with their names.
+  final _picked = <int, String>{};
 
   /// A group's members are chosen first; a channel starts at its name.
   late var _naming = widget.channel;
   var _busy = false;
   var _failed = false;
+
+  /// The people the new group couldn't take, by name.
+  List<String>? _notAdded;
   String? _titleError;
 
   @override
@@ -68,6 +74,11 @@ class _NewChatSheetState extends ConsumerState<NewChatSheet> {
     _title.dispose();
     _about.dispose();
     super.dispose();
+  }
+
+  /// Enter in a field; ignored while the chat is being created.
+  void _submit() {
+    if (!_busy) unawaited(_create());
   }
 
   Future<void> _create() async {
@@ -85,15 +96,30 @@ class _NewChatSheetState extends ConsumerState<NewChatSheet> {
         .requireValue
         .management;
     try {
-      final chatId = widget.channel
-          ? await management.createChannel(
-              _title.text,
-              description: _about.text,
+      final (chatId, notAdded) = widget.channel
+          ? (
+              await management.createChannel(
+                _title.text,
+                description: _about.text,
+              ),
+              const <int>[],
             )
-          : await management.createGroup(_title.text, [..._picked]);
+          : switch (await management.createGroup(_title.text, [
+              ..._picked.keys,
+            ])) {
+              (:final chatId, :final notAdded) => (chatId, notAdded),
+            };
       if (!mounted) return;
       ref.read(workspaceControllerProvider).open(chatId);
-      Navigator.of(context).pop();
+      if (notAdded.isEmpty) {
+        Navigator.of(context).pop();
+        return;
+      }
+      // Say who couldn't be added rather than leave them out silently.
+      setState(() {
+        _busy = false;
+        _notAdded = [for (final id in notAdded) _picked[id] ?? '$id'];
+      });
     } on Object {
       if (mounted) {
         setState(() {
@@ -107,6 +133,19 @@ class _NewChatSheetState extends ConsumerState<NewChatSheet> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    if (_notAdded case final names?) {
+      final c = MgColors.of(context);
+      return ManageSheetFrame(
+        title: l10n.newGroup,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Text(
+            l10n.notAddedMembers(names.length, names.join(', ')),
+            style: mgTextStyle(c, color: c.fg2),
+          ),
+        ),
+      );
+    }
     if (!_naming) return _members(l10n);
     return ManageSheetFrame(
       title: widget.channel ? l10n.newChannel : l10n.newGroup,
@@ -129,7 +168,7 @@ class _NewChatSheetState extends ConsumerState<NewChatSheet> {
               onChanged: (_) {
                 if (_titleError != null) setState(() => _titleError = null);
               },
-              onSubmitted: (_) => _create(),
+              onSubmitted: (_) => _submit(),
             ),
             if (widget.channel) ...[
               const SizedBox(height: 14),
@@ -137,7 +176,7 @@ class _NewChatSheetState extends ConsumerState<NewChatSheet> {
                 controller: _about,
                 hintText: l10n.descriptionHint,
                 fontSize: 14,
-                onSubmitted: (_) => _create(),
+                onSubmitted: (_) => _submit(),
               ),
             ] else ...[
               const SizedBox(height: 10),
@@ -193,15 +232,18 @@ class _NewChatSheetState extends ConsumerState<NewChatSheet> {
                       final user = contacts[i];
                       return _PickRow(
                         name: user.name,
+                        photo: user.photo,
                         status: formatPresence(
                           l10n,
                           user,
                           locale: l10n.localeName,
                           now: now,
                         ),
-                        picked: _picked.contains(user.id),
+                        picked: _picked.containsKey(user.id),
                         onTap: () => setState(
-                          () => _picked.remove(user.id) || _picked.add(user.id),
+                          () => _picked.remove(user.id) == null
+                              ? _picked[user.id] = user.name
+                              : null,
                         ),
                       );
                     },
@@ -219,9 +261,11 @@ class _PickRow extends StatelessWidget {
     required this.status,
     required this.picked,
     required this.onTap,
+    this.photo,
   });
 
   final String name;
+  final td.File? photo;
   final String status;
   final bool picked;
   final VoidCallback onTap;
@@ -243,7 +287,7 @@ class _PickRow extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
             child: Row(
               children: [
-                SenderAvatar(name: name, size: 30),
+                SenderAvatar(name: name, size: 30, photo: photo),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
