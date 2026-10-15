@@ -17,7 +17,12 @@ import 'workspace.dart';
 
 /// The floating glass island: the folder rail, search and the chat list.
 class Sidebar extends ConsumerStatefulWidget {
-  const Sidebar({super.key, this.onSettings, this.onPrivacy, this.onNewMessage});
+  const Sidebar({
+    super.key,
+    this.onSettings,
+    this.onPrivacy,
+    this.onNewMessage,
+  });
 
   /// The settings button at the rail's bottom.
   final VoidCallback? onSettings;
@@ -76,6 +81,13 @@ class _SidebarState extends ConsumerState<Sidebar> {
     return SidebarIsland(
       rail: FolderRail(
         topFill: const WindowDragArea(),
+        trailing: [
+          MgIconButton(
+            icon: MgIcons.settings,
+            tooltip: l10n.settings,
+            onPressed: widget.onSettings,
+          ),
+        ],
         children: [
           FolderRailItem(
             icon: folderIcon('All'),
@@ -90,13 +102,6 @@ class _SidebarState extends ConsumerState<Sidebar> {
               selected: list == ChatListLocation.folder(folder.id),
               onTap: () => select(ChatListLocation.folder(folder.id)),
             ),
-        ],
-        trailing: [
-          MgIconButton(
-            icon: MgIcons.settings,
-            tooltip: l10n.settings,
-            onPressed: widget.onSettings,
-          ),
         ],
       ),
       search: MgSearchField(hintText: l10n.searchHint, controller: _search),

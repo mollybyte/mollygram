@@ -475,7 +475,7 @@ void main() {
     expect(tester.getSize(find.byType(Glass)).width, Composer.maxWidth);
   });
 
-  testWidgets('header centres the title and keeps the actions at the right '
+  testWidgets('header keeps the title left and the actions at the right '
       'edge', (tester) async {
     tester.view.physicalSize = const Size(1000, 200);
     tester.view.devicePixelRatio = 1;
@@ -496,14 +496,12 @@ void main() {
     final title = tester.getRect(find.byKey(const Key('title')));
     final fill = tester.getRect(find.byKey(const Key('fill')));
     expect(bar.width, 1000);
-    expect(title.left, 440);
+    expect(title.left, 0);
     expect(fill.left, 0);
     expect(fill.right, 1000 - 80);
   });
 
-  testWidgets('a wide header title stays clear of the actions', (
-    tester,
-  ) async {
+  testWidgets('a wide header title stays clear of the actions', (tester) async {
     tester.view.physicalSize = const Size(400, 200);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -520,7 +518,7 @@ void main() {
     );
     final title = tester.getRect(find.byKey(const Key('title')));
     final actions = tester.getRect(find.byKey(const Key('actions')));
-    expect(title.left, 12);
+    expect(title.left, 0);
     expect(title.right, lessThanOrEqualTo(actions.left - 8));
   });
 

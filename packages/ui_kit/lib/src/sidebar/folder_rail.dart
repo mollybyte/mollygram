@@ -42,9 +42,8 @@ class FolderRail extends StatelessWidget {
           SizedBox(height: topInset, width: width, child: topFill),
           Expanded(
             child: ScrollConfiguration(
-              behavior: ScrollConfiguration.of(
-                context,
-              ).copyWith(scrollbars: false),
+              behavior: ScrollConfiguration.of(context)
+                  .copyWith(scrollbars: false),
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(8, 2, 8, 8),
                 children: [

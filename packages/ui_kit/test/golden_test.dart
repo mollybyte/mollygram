@@ -22,7 +22,10 @@ const _labels = ComposerLabels(
   send: 'Send',
 );
 
-const _folderAll = MgIconData('folderAll', '<path d="M4 6h16M4 12h16M4 18h16"/>');
+const _folderAll = MgIconData(
+  'folderAll',
+  '<path d="M4 6h16M4 12h16M4 18h16"/>',
+);
 
 /// The main window from design/Main.dc.html, built from the kit.
 class _Window extends StatelessWidget {
@@ -143,22 +146,26 @@ class _Window extends StatelessWidget {
             width: SidebarIsland.width,
             child: SidebarIsland(
               rail: FolderRail(
-                children: const [
-                  FolderRailItem(
-                    icon: _folderAll,
-                    label: 'All',
-                    selected: true,
-                  ),
-                  FolderRailItem(icon: MgIcons.chat, label: 'Personal', count: 2),
-                  FolderRailItem(icon: MgIcons.file, label: 'Work', count: 3),
-                  FolderRailItem(icon: MgIcons.volume, label: 'Channels'),
-                ],
                 trailing: [
                   MgIconButton(
                     icon: MgIcons.settings,
                     tooltip: 'Settings',
                     onPressed: () {},
                   ),
+                ],
+                children: const [
+                  FolderRailItem(
+                    icon: _folderAll,
+                    label: 'All',
+                    selected: true,
+                  ),
+                  FolderRailItem(
+                    icon: MgIcons.chat,
+                    label: 'Personal',
+                    count: 2,
+                  ),
+                  FolderRailItem(icon: MgIcons.file, label: 'Work', count: 3),
+                  FolderRailItem(icon: MgIcons.volume, label: 'Channels'),
                 ],
               ),
               actions: [
