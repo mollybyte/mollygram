@@ -432,6 +432,20 @@ ChatPreview? _previewFrom(td.Message? message) {
       td.MessageSendingStateFailed() => PreviewSendState.failed,
       null => PreviewSendState.sent,
     },
+    fileName: switch (message.content) {
+      td.MessageDocument(:final document) => document.fileName,
+      td.MessageAudio(:final audio) =>
+        audio.title.isNotEmpty && audio.performer.isNotEmpty
+            ? '${audio.performer} – ${audio.title}'
+            : audio.title.isNotEmpty
+            ? audio.title
+            : audio.fileName,
+      _ => '',
+    },
+    topicId: switch (message.topicId) {
+      td.MessageTopicForum(:final forumTopicId) => forumTopicId,
+      _ => 0,
+    },
   );
 }
 

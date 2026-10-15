@@ -1294,6 +1294,13 @@ final class ConversationController {
     td.DeleteForumTopic(chatId: chatId, forumTopicId: forumTopicId),
   );
 
+  /// The name and icon of topic [forumTopicId] of forum [chatId], as the
+  /// chat list shows it beside the forum's last message.
+  Future<td.ForumTopicInfo> topicInfo(int chatId, int forumTopicId) async =>
+      (await _client.send(
+        td.GetForumTopic(chatId: chatId, forumTopicId: forumTopicId),
+      )).info;
+
   /// Topic [forumTopicId] of forum [chatId] as a thread: its messages,
   /// kept current until it is disposed; its first page still has to be
   /// loaded.

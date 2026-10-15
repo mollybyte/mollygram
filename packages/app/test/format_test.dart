@@ -28,6 +28,27 @@ void main() {
     expect(formatPreview(ru, note), 'Видеосообщение');
   });
 
+  test('names files and puts a forum sender before the message', () {
+    final en = AppLocalizationsEn();
+    const file = ChatPreview(
+      kind: ChatPreviewKind.document,
+      text: '',
+      date: 0,
+      isOutgoing: true,
+      fileName: 'artifacts(4).zip',
+    );
+    expect(formatPreview(en, file), 'You: artifacts(4).zip');
+
+    const reply = ChatPreview(
+      kind: ChatPreviewKind.text,
+      text: 'on it',
+      date: 0,
+      isOutgoing: false,
+      topicId: 7,
+    );
+    expect(formatPreview(en, reply, sender: 'Mark'), 'Mark: on it');
+  });
+
   test('shows the hour today and the date in earlier years', () {
     final now = DateTime(2026, 10, 13, 18);
     int unix(DateTime d) => d.millisecondsSinceEpoch ~/ 1000;
