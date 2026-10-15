@@ -1610,6 +1610,33 @@ class _ChatViewState extends ConsumerState<ChatView> {
     }
   }
 
+  /// Sends a saved GIF picked in the panel, the way a sticker goes out.
+  Future<void> _sendAnimation(td.Animation animation) async {
+    final chatId = widget.chatId;
+    final replyTo = _replyTo;
+    setState(() {
+      _panelOpen = false;
+      _failure = null;
+      _replyTo = null;
+      _replyQuote = null;
+    });
+    _focus.requestFocus();
+    unawaited(_toLatestForSend());
+    try {
+      await _conversations.sendAnimation(
+        chatId,
+        animation,
+        replyTo: replyTo?.id,
+      );
+    } catch (_) {
+      if (!mounted || widget.chatId != chatId) return;
+      setState(() {
+        _failure = _Failure.send;
+        _replyTo ??= replyTo;
+      });
+    }
+  }
+
   /// Sends a voice message recorded in the composer (lib/src/voice).
   Future<void> _sendVoice(RecordedVoice voice) async {
     final chatId = widget.chatId;
@@ -2784,6 +2811,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
                           onEmoji: _insertEmoji,
                           onSticker: (sticker) =>
                               unawaited(_sendSticker(sticker)),
+                          onGif: (gif) => unawaited(_sendAnimation(gif)),
                           onClose: _closePanel,
                         ),
                       ),

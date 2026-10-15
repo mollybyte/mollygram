@@ -28,6 +28,10 @@ final class StickerLibrary {
   Future<List<td.Sticker>> favorites() async =>
       (await _client.send(const td.GetFavoriteStickers())).stickers;
 
+  /// The user's saved GIFs, newest first, for the panel's GIF tab.
+  Future<List<td.Animation>> savedAnimations() async =>
+      (await _client.send(const td.GetSavedAnimations())).animations;
+
   /// Emoji whose Telegram keywords start with [query], each with the
   /// keyword that matched, best matches first and no emoji twice.
   Future<List<({String emoji, String keyword})>> emojiSuggestions(

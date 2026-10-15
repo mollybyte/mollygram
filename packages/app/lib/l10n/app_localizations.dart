@@ -2768,6 +2768,12 @@ abstract class AppLocalizations {
   /// **'Stickers'**
   String get stickersTab;
 
+  /// No description provided for @gifsTab.
+  ///
+  /// In en, this message translates to:
+  /// **'GIFs'**
+  String get gifsTab;
+
   /// No description provided for @emojiSearch.
   ///
   /// In en, this message translates to:
@@ -2875,6 +2881,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No sets yet'**
   String get noStickerSets;
+
+  /// No description provided for @noGifs.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved GIFs yet'**
+  String get noGifs;
+
+  /// No description provided for @gifsFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load GIFs'**
+  String get gifsFailed;
 
   /// No description provided for @forwardedMessages.
   ///

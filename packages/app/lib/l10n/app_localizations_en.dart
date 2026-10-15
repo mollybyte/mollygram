@@ -1631,6 +1631,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get stickersTab => 'Stickers';
 
   @override
+  String get gifsTab => 'GIFs';
+
+  @override
   String get emojiSearch => 'Search emoji';
 
   @override
@@ -1683,6 +1686,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noStickerSets => 'No sets yet';
+
+  @override
+  String get noGifs => 'No saved GIFs yet';
+
+  @override
+  String get gifsFailed => 'Couldn\'t load GIFs';
 
   @override
   String get forwardedMessages => 'Forwarded messages';
