@@ -445,6 +445,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get menuReport => 'Пожаловаться';
 
   @override
+  String get moreReactions => 'Ещё реакции';
+
+  @override
   String get reportDetailsTitle => 'Добавить подробности';
 
   @override

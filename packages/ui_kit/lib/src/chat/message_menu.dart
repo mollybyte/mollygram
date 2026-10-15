@@ -203,22 +203,28 @@ abstract final class MgDestructive {
 }
 
 /// The quick reactions at the top of a message menu. [chosen] reactions
-/// get a filled circle; picking one again takes it back.
+/// get a filled circle; picking one again takes it back. With [onMore] a
+/// round chevron at the end closes the menu and opens the full picker.
 class ReactionBar extends StatelessWidget {
   const ReactionBar({
     super.key,
     required this.reactions,
     required this.onPick,
     this.chosen = const {},
+    this.onMore,
+    this.moreTooltip,
   });
 
   final List<String> reactions;
   final Set<String> chosen;
   final ValueChanged<String> onPick;
+  final VoidCallback? onMore;
+  final String? moreTooltip;
 
   @override
   Widget build(BuildContext context) {
     final c = MgColors.of(context);
+    final onMore = this.onMore;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
       child: Row(
@@ -236,7 +242,78 @@ class ReactionBar extends StatelessWidget {
                 onPick(emoji);
               },
             ),
+          if (onMore != null)
+            _ReactionButton(
+              label: moreTooltip ?? '',
+              chosen: false,
+              fill: c.field,
+              hover: c.hover,
+              onTap: () {
+                Navigator.of(context).maybePop();
+                onMore();
+              },
+              child: RotatedBox(
+                quarterTurns: 2,
+                child: MgIcon(MgIcons.chevronUp, size: 15, color: c.fg2),
+              ),
+            ),
         ],
+      ),
+    );
+  }
+}
+
+/// Every reaction the user may pick, in rows of eight, shown with
+/// [showMgPopover] from the chevron of a [ReactionBar].
+class ReactionGrid extends StatelessWidget {
+  const ReactionGrid({
+    super.key,
+    required this.reactions,
+    required this.onPick,
+    this.chosen = const {},
+  });
+
+  final List<String> reactions;
+  final Set<String> chosen;
+  final ValueChanged<String> onPick;
+
+  static const int columns = 8;
+  static const double cell = 36;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    return Glass(
+      radius: 14,
+      padding: const EdgeInsets.all(6),
+      child: SizedBox(
+        width: cell * columns,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: cell * 7),
+          child: GridView.builder(
+            shrinkWrap: true,
+            padding: EdgeInsets.zero,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: columns,
+            ),
+            itemCount: reactions.length,
+            itemBuilder: (context, index) {
+              final emoji = reactions[index];
+              final picked = chosen.contains(emoji);
+              return _ReactionButton(
+                emoji: emoji,
+                chosen: picked,
+                fill: c.field,
+                hover: c.hover,
+                size: cell - 2,
+                onTap: () {
+                  Navigator.of(context).maybePop();
+                  onPick(emoji);
+                },
+              );
+            },
+          ),
+        ),
       ),
     );
   }
@@ -244,18 +321,28 @@ class ReactionBar extends StatelessWidget {
 
 class _ReactionButton extends StatefulWidget {
   const _ReactionButton({
-    required this.emoji,
+    this.emoji = '',
+    this.label,
+    this.child,
     required this.chosen,
     required this.fill,
     required this.hover,
     required this.onTap,
+    this.size = 32,
   });
 
   final String emoji;
+
+  /// What the button is for when it has no [emoji], such as "More".
+  final String? label;
+
+  /// Drawn in place of the [emoji].
+  final Widget? child;
   final bool chosen;
   final Color fill;
   final Color hover;
   final VoidCallback onTap;
+  final double size;
 
   @override
   State<_ReactionButton> createState() => _ReactionButtonState();
@@ -266,10 +353,11 @@ class _ReactionButtonState extends State<_ReactionButton> {
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
+    final label = widget.label;
+    final button = Semantics(
       button: true,
       selected: widget.chosen,
-      label: widget.emoji,
+      label: label ?? widget.emoji,
       onTap: widget.onTap,
       excludeSemantics: true,
       child: MouseRegion(
@@ -279,8 +367,8 @@ class _ReactionButtonState extends State<_ReactionButton> {
         child: GestureDetector(
           onTap: widget.onTap,
           child: Container(
-            width: 32,
-            height: 32,
+            width: widget.size,
+            height: widget.size,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
@@ -290,13 +378,21 @@ class _ReactionButtonState extends State<_ReactionButton> {
                   ? widget.hover
                   : const Color(0x00000000),
             ),
-            child: Text(
-              widget.emoji,
-              style: const TextStyle(fontSize: 19, height: 1.1),
-            ),
+            child:
+                widget.child ??
+                Text(
+                  widget.emoji,
+                  style: const TextStyle(fontSize: 19, height: 1.1),
+                ),
           ),
         ),
       ),
+    );
+    if (label == null || label.isEmpty) return button;
+    return Tooltip(
+      message: label,
+      waitDuration: const Duration(milliseconds: 600),
+      child: button,
     );
   }
 }

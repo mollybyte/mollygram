@@ -779,13 +779,24 @@ final class ConversationController {
     int chatId,
     int messageId, {
     int limit = 8,
+  }) => _emojiReactions(chatId, messageId, limit: limit);
+
+  /// Every emoji reaction the user may put on a message, the ones offered
+  /// first coming first, for the full picker.
+  Future<List<String>> allReactions(int chatId, int messageId) =>
+      _emojiReactions(chatId, messageId, limit: null);
+
+  Future<List<String>> _emojiReactions(
+    int chatId,
+    int messageId, {
+    required int? limit,
   }) async {
     final available = await _client.send(
       td.GetMessageAvailableReactions(
         chatId: chatId,
         messageId: messageId,
         // TDLib accepts rows of 5 to 25.
-        rowSize: limit.clamp(5, 25),
+        rowSize: (limit ?? 25).clamp(5, 25),
       ),
     );
     // The user can't react here, for example without Premium in a chat

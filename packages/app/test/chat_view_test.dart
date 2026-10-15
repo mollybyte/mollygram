@@ -545,6 +545,30 @@ void main() {
     expect(delete['revoke'], isTrue);
   });
 
+  testWidgets('opens the full reaction picker and reacts from it', (
+    tester,
+  ) async {
+    await pump(tester);
+
+    await rightClick(tester, 'From Vera');
+    await tester.tap(find.byTooltip('More reactions'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    expect(find.byType(ReactionGrid), findsOneWidget);
+    await tester.tap(
+      find.descendant(of: find.byType(ReactionGrid), matching: find.text('🎉')),
+    );
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+
+    expect(find.byType(ReactionGrid), findsNothing);
+    final added = json.sent.lastWhere(
+      (r) => r['@type'] == 'addMessageReaction',
+    );
+    expect(added['message_id'], 12);
+    expect((added['reaction_type']! as Map)['emoji'], '🎉');
+  });
+
   testWidgets('reports a message with a reason and details', (tester) async {
     await pump(tester);
 
@@ -1282,7 +1306,14 @@ final class _FakeTdJson implements td.TdJson {
           },
         ],
         'recent_reactions': <Object?>[],
-        'popular_reactions': <Object?>[],
+        'popular_reactions': [
+          for (final emoji in ['🔥', '🎉'])
+            {
+              '@type': 'availableReaction',
+              'type': {'@type': 'reactionTypeEmoji', 'emoji': emoji},
+              'needs_premium': false,
+            },
+        ],
         'allow_custom_emoji': true,
         'are_tags': false,
       },
