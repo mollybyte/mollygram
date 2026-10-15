@@ -11,6 +11,7 @@ import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../session/providers.dart';
+import '../settings/stickers/sticker_options.dart';
 import 'describe.dart';
 import 'media_providers.dart';
 import 'media_viewer.dart';
@@ -231,6 +232,7 @@ class StickerContent extends StatelessWidget {
           return Lottie.file(
             File(path),
             animate: animate,
+            repeat: loopStickersOf(context),
             decoder: LottieComposition.decodeGZip,
             fit: BoxFit.contain,
             frameRate: FrameRate.max,

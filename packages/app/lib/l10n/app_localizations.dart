@@ -2531,7 +2531,7 @@ abstract class AppLocalizations {
   /// No description provided for @noStickerSets.
   ///
   /// In en, this message translates to:
-  /// **'No stickers yet'**
+  /// **'No sets yet'**
   String get noStickerSets;
 
   /// No description provided for @forwardedMessages.
@@ -4429,6 +4429,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Filtered by a plugin'**
   String get pluginFilteredMessage;
+
+  /// No description provided for @stickersAndEmoji.
+  ///
+  /// In en, this message translates to:
+  /// **'Stickers and emoji'**
+  String get stickersAndEmoji;
+
+  /// No description provided for @largeEmoji.
+  ///
+  /// In en, this message translates to:
+  /// **'Large emoji'**
+  String get largeEmoji;
+
+  /// No description provided for @largeEmojiHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A message of up to three emoji is shown large.'**
+  String get largeEmojiHint;
+
+  /// No description provided for @loopStickers.
+  ///
+  /// In en, this message translates to:
+  /// **'Loop animated stickers'**
+  String get loopStickers;
+
+  /// No description provided for @animatedEmoji.
+  ///
+  /// In en, this message translates to:
+  /// **'Animated emoji'**
+  String get animatedEmoji;
+
+  /// No description provided for @myStickers.
+  ///
+  /// In en, this message translates to:
+  /// **'My stickers'**
+  String get myStickers;
+
+  /// No description provided for @myEmoji.
+  ///
+  /// In en, this message translates to:
+  /// **'My emoji'**
+  String get myEmoji;
+
+  /// No description provided for @customEmoji.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom emoji'**
+  String get customEmoji;
+
+  /// No description provided for @trendingStickers.
+  ///
+  /// In en, this message translates to:
+  /// **'Trending stickers'**
+  String get trendingStickers;
+
+  /// No description provided for @trendingEmoji.
+  ///
+  /// In en, this message translates to:
+  /// **'Trending emoji'**
+  String get trendingEmoji;
+
+  /// No description provided for @archivedStickers.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived stickers'**
+  String get archivedStickers;
+
+  /// No description provided for @archivedEmoji.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived emoji'**
+  String get archivedEmoji;
+
+  /// No description provided for @stickerSetsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag to reorder. Right-click a set to archive or remove it.'**
+  String get stickerSetsHint;
+
+  /// No description provided for @archiveSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive'**
+  String get archiveSet;
+
+  /// No description provided for @restoreSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get restoreSet;
+
+  /// No description provided for @addSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get addSet;
+
+  /// No description provided for @addByLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Add by link'**
+  String get addByLink;
+
+  /// No description provided for @openSetLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get openSetLink;
+
+  /// No description provided for @stickerSetNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'There is no set at this link.'**
+  String get stickerSetNotFound;
+
+  /// No description provided for @noArchivedSets.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing archived'**
+  String get noArchivedSets;
+
+  /// No description provided for @stickerSetLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the sets.'**
+  String get stickerSetLoadFailed;
+
+  /// No description provided for @stickerCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} sticker} other{{count} stickers}}'**
+  String stickerCount(int count);
+
+  /// No description provided for @emojiCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} emoji} other{{count} emoji}}'**
+  String emojiCount(int count);
 }
 
 class _AppLocalizationsDelegate

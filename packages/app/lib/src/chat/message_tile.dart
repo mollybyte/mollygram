@@ -11,6 +11,7 @@ import '../../l10n/app_localizations.dart';
 import '../home/format.dart';
 import '../links/link_router.dart';
 import '../plugins/message_hooks.dart';
+import '../settings/stickers/sticker_options.dart';
 import 'concealed.dart';
 import 'describe.dart';
 import 'file_content.dart';
@@ -542,7 +543,10 @@ class _MessageBody extends StatelessWidget {
         );
       case td.MessageText(:final text, linkPreview: null)
           when text.entities.isEmpty && isEmojiOnly(text.text):
-        return _BigEmoji(text.text);
+        return LargeEmoji(
+          big: _BigEmoji(text.text),
+          small: FormattedTextView(text: text),
+        );
       case td.MessageText(:final text, :final linkPreview):
         if (linkPreview == null) return _text(text);
         return Column(

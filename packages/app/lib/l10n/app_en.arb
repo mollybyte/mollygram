@@ -994,5 +994,35 @@
   "proxyShowSecret": "Show secret",
   "proxyHideSecret": "Hide secret",
   "pluginShowMessage": "Show",
-  "pluginFilteredMessage": "Filtered by a plugin"
+  "pluginFilteredMessage": "Filtered by a plugin",
+  "stickersAndEmoji": "Stickers and emoji",
+  "largeEmoji": "Large emoji",
+  "largeEmojiHint": "A message of up to three emoji is shown large.",
+  "loopStickers": "Loop animated stickers",
+  "animatedEmoji": "Animated emoji",
+  "myStickers": "My stickers",
+  "myEmoji": "My emoji",
+  "customEmoji": "Custom emoji",
+  "trendingStickers": "Trending stickers",
+  "trendingEmoji": "Trending emoji",
+  "archivedStickers": "Archived stickers",
+  "archivedEmoji": "Archived emoji",
+  "stickerSetsHint": "Drag to reorder. Right-click a set to archive or remove it.",
+  "archiveSet": "Archive",
+  "restoreSet": "Restore",
+  "addSet": "Add",
+  "addByLink": "Add by link",
+  "openSetLink": "Open",
+  "stickerSetNotFound": "There is no set at this link.",
+  "noStickerSets": "No sets yet",
+  "noArchivedSets": "Nothing archived",
+  "stickerSetLoadFailed": "Couldn't load the sets.",
+  "stickerCount": "{count, plural, one{{count} sticker} other{{count} stickers}}",
+  "@stickerCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "emojiCount": "{count, plural, one{{count} emoji} other{{count} emoji}}",
+  "@emojiCount": {
+    "placeholders": { "count": { "type": "int" } }
+  }
 }
