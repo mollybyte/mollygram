@@ -9,6 +9,7 @@ import 'package:mollygram_shell/mollygram_shell.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../home/workspace.dart';
+import '../proxy/proxy_editor.dart';
 import 'join_sheet.dart';
 import 'link_router.dart';
 
@@ -111,6 +112,12 @@ class _LinkHostState extends ConsumerState<LinkHost> implements LinkPresenter {
         LinkNotice.cannotSend => l10n.linkCannotSend,
       }),
     );
+  }
+
+  @override
+  Future<void> offerProxy(ProxySettings proxy) async {
+    if (!mounted) return;
+    await showProxyEditor(context, initial: proxy, fromLink: true);
   }
 
   @override
