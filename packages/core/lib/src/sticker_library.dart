@@ -16,6 +16,16 @@ final class StickerLibrary {
     return sets.sets;
   }
 
+  /// Installed custom emoji sets, in the order the user arranged them.
+  Future<List<td.StickerSetInfo>> installedEmojiSets() async {
+    final sets = await _client.send(
+      const td.GetInstalledStickerSets(
+        stickerType: td.StickerTypeCustomEmoji(),
+      ),
+    );
+    return sets.sets;
+  }
+
   /// Every sticker of a set.
   Future<List<td.Sticker>> setStickers(int setId) async =>
       (await _client.send(td.GetStickerSet(setId: setId))).stickers;
