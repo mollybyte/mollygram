@@ -7,7 +7,15 @@
 /// provides.
 library;
 
-export 'src/editor.dart' show MediaEditResult, MediaEditorPage, showMediaEditor;
+export 'src/editor.dart'
+    show
+        EmojiPick,
+        MediaEditResult,
+        MediaEditorPage,
+        StickerFilePick,
+        StickerPick,
+        StickerPicker,
+        showMediaEditor;
 export 'src/model/adjustments.dart';
 export 'src/model/crop_geometry.dart' show CropHandle, resizeCrop;
 export 'src/model/media_edit.dart' show AspectPreset, MediaEdit, unitRect;
@@ -15,7 +23,7 @@ export 'src/model/overlay.dart';
 export 'src/model/stroke.dart';
 export 'src/model/video_edit.dart';
 export 'src/render/overlays.dart' show hitOverlay, overlaySize;
-export 'src/render/render.dart' show exportEdit;
+export 'src/render/render.dart' show exportEdit, loadOverlayImages;
 export 'src/strings.dart';
 export 'src/ui/draw_panel.dart' show brushColors;
 export 'src/ui/editor_icons.dart';

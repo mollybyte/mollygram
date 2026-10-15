@@ -193,3 +193,37 @@ final class ShapeOverlay extends MediaOverlay {
       other.strokeWidth == strokeWidth &&
       other.filled == filled;
 }
+
+/// A picture file placed on the photo, such as a sticker. [scale] is its
+/// width as a fraction of the shorter side.
+final class ImageOverlay extends MediaOverlay {
+  const ImageOverlay({
+    required super.id,
+    required super.center,
+    required this.path,
+    this.aspect = 1,
+    super.scale = 0.3,
+    super.rotation = 0,
+  });
+
+  /// The image file, decoded by whoever draws the overlay.
+  final String path;
+
+  /// Width over height of the image.
+  final double aspect;
+
+  @override
+  ImageOverlay placed({Offset? center, double? scale, double? rotation}) =>
+      ImageOverlay(
+        id: id,
+        center: center ?? this.center,
+        scale: scale ?? this.scale,
+        rotation: rotation ?? this.rotation,
+        path: path,
+        aspect: aspect,
+      );
+
+  @override
+  bool sameContent(ImageOverlay other) =>
+      other.path == path && other.aspect == aspect;
+}

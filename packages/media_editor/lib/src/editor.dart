@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
@@ -52,16 +53,42 @@ final class MediaEditResult {
   bool get isEdited => path != originalPath;
 }
 
+/// What a [StickerPicker] hands back: a sticker file to place, or an
+/// emoji.
+sealed class StickerPick {
+  const StickerPick();
+}
+
+/// A still image file (PNG, WebP, JPEG) to place on the picture.
+final class StickerFilePick extends StickerPick {
+  const StickerFilePick(this.path);
+
+  final String path;
+}
+
+/// An emoji to place on the picture.
+final class EmojiPick extends StickerPick {
+  const EmojiPick(this.emoji);
+
+  final String emoji;
+}
+
+/// Shows the app's sticker picker over the editor and completes with the
+/// choice, or null when it was closed without one.
+typedef StickerPicker = Future<StickerPick?> Function(BuildContext context);
+
 /// Opens the editor over the window for the picture at [path].
 ///
 /// [initial] restores an earlier edit of the same file. The edited file is
 /// written under [outputDirectory], the system temp folder by default.
+/// With a [stickerPicker] the editor gets a sticker tool that opens it.
 /// Completes with null when the user cancels.
 Future<MediaEditResult?> showMediaEditor(
   BuildContext context, {
   required String path,
   MediaEdit initial = const MediaEdit(),
   String? outputDirectory,
+  StickerPicker? stickerPicker,
 }) => Navigator.of(context).push(
   PageRouteBuilder<MediaEditResult>(
     opaque: false,
@@ -72,6 +99,7 @@ Future<MediaEditResult?> showMediaEditor(
       path: path,
       initial: initial,
       outputDirectory: outputDirectory,
+      stickerPicker: stickerPicker,
     ),
     transitionsBuilder: (context, animation, _, child) => FadeTransition(
       opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
@@ -81,7 +109,7 @@ Future<MediaEditResult?> showMediaEditor(
 );
 
 /// The editor's tools. [none] shows the result.
-enum EditorTool { none, crop, draw, text, emoji, shapes, adjust }
+enum EditorTool { none, crop, draw, text, emoji, stickers, shapes, adjust }
 
 /// The editor screen. Use [showMediaEditor] to open it.
 class MediaEditorPage extends StatefulWidget {
@@ -90,11 +118,13 @@ class MediaEditorPage extends StatefulWidget {
     required this.path,
     this.initial = const MediaEdit(),
     this.outputDirectory,
+    this.stickerPicker,
   });
 
   final String path;
   final MediaEdit initial;
   final String? outputDirectory;
+  final StickerPicker? stickerPicker;
 
   @override
   State<MediaEditorPage> createState() => _MediaEditorPageState();
@@ -103,12 +133,18 @@ class MediaEditorPage extends StatefulWidget {
 /// The longest side of the picture decoded for the screen.
 const _previewSide = 3072;
 
+/// The longest side a sticker is decoded at.
+const _stickerSide = 1024;
+
 const _ease = Cubic(0.2, 0.8, 0.2, 1);
 
 class _MediaEditorPageState extends State<MediaEditorPage>
     with TickerProviderStateMixin {
   ui.Image? _image;
   ui.Image? _pixelated;
+
+  /// Decoded pictures of the image overlays, by path.
+  final _images = <String, ui.Image>{};
   Size _source = Size.zero;
   var _loadFailed = false;
   var _saving = false;
@@ -211,6 +247,14 @@ class _MediaEditorPageState extends State<MediaEditorPage>
         _image = image;
         _source = source;
       });
+      final images = await loadOverlayImages(_edit, maxSide: _stickerSide);
+      if (!mounted) {
+        for (final overlayImage in images.values) {
+          overlayImage.dispose();
+        }
+        return;
+      }
+      setState(() => _images.addAll(images));
       await _appear.forward();
       final pixelated = await pixelatedCopy(image);
       if (!mounted) {
@@ -227,6 +271,9 @@ class _MediaEditorPageState extends State<MediaEditorPage>
   void dispose() {
     _image?.dispose();
     _pixelated?.dispose();
+    for (final image in _images.values) {
+      image.dispose();
+    }
     _cropMode.dispose();
     _grid.dispose();
     _appear.dispose();
@@ -335,6 +382,11 @@ class _MediaEditorPageState extends State<MediaEditorPage>
       _textFocus.requestFocus();
     } else if (_tool == EditorTool.shapes) {
       if (_edit.overlay(_selected) is! ShapeOverlay) _select(null);
+    } else if (_tool == EditorTool.stickers) {
+      if (_edit.overlay(_selected) is! ImageOverlay) {
+        _select(null);
+        unawaited(_pickSticker());
+      }
     } else if (_tool != EditorTool.emoji) {
       _select(null);
     }
@@ -530,6 +582,7 @@ class _MediaEditorPageState extends State<MediaEditorPage>
       !_saving &&
       (_tool == EditorTool.text ||
           _tool == EditorTool.emoji ||
+          _tool == EditorTool.stickers ||
           _tool == EditorTool.shapes);
 
   MediaOverlay? get _selectedOverlay => _edit.overlay(_selected);
@@ -610,6 +663,55 @@ class _MediaEditorPageState extends State<MediaEditorPage>
       scale: kind == ShapeKind.line || kind == ShapeKind.arrow ? 0.5 : 0.4,
     ),
   );
+
+  /// Opens the app's sticker picker and places what it returns.
+  Future<void> _pickSticker() async {
+    final picker = widget.stickerPicker;
+    if (picker == null || _saving) return;
+    final pick = await picker(context);
+    if (!mounted || pick == null) return;
+    switch (pick) {
+      case EmojiPick():
+        _addEmoji(pick.emoji);
+      case StickerFilePick():
+        final ui.Image image;
+        if (_images.containsKey(pick.path)) {
+          image = _images[pick.path]!;
+        } else {
+          try {
+            final (decoded, _) = await decodePicture(
+              await File(pick.path).readAsBytes(),
+              maxSide: _stickerSide,
+            );
+            image = decoded;
+          } on Object {
+            return;
+          }
+          if (!mounted) {
+            image.dispose();
+            return;
+          }
+          _images[pick.path] = image;
+        }
+        _addOverlay(
+          (id) => ImageOverlay(
+            id: id,
+            center: _edit.crop.center,
+            path: pick.path,
+            aspect: image.height == 0 ? 1 : image.width / image.height,
+          ),
+        );
+    }
+  }
+
+  void _setStickerScale(double value) {
+    if (_selectedOverlay is ImageOverlay) {
+      _updateSelected(
+        (o) => o.placed(scale: ui.lerpDouble(0.1, 0.8, value)),
+        live: true,
+      );
+    }
+  }
 
   void _deleteSelected() {
     final id = _selected;
@@ -974,6 +1076,17 @@ class _MediaEditorPageState extends State<MediaEditorPage>
                           child: EmojiGridPanel(onEmoji: _addEmoji),
                         ),
                         _ToolPanel(
+                          visible: _tool == EditorTool.stickers,
+                          child: StickerPanel(
+                            overlay: _selectedOverlay is ImageOverlay
+                                ? _selectedOverlay! as ImageOverlay
+                                : null,
+                            onAdd: _pickSticker,
+                            onScale: _setStickerScale,
+                            onScaleEnd: _endLive,
+                          ),
+                        ),
+                        _ToolPanel(
                           visible: _tool == EditorTool.adjust,
                           child: AdjustPanel(
                             values: _edit.adjustments,
@@ -1095,6 +1208,7 @@ class _MediaEditorPageState extends State<MediaEditorPage>
                         gridOpacity: _grid.value,
                         liveStroke: _liveStroke,
                         pixelated: _pixelated,
+                        images: _images,
                       ),
                     ),
                   ),
@@ -1154,6 +1268,13 @@ class _MediaEditorPageState extends State<MediaEditorPage>
               selected: _tool == EditorTool.emoji,
               onPressed: ready ? () => _setTool(EditorTool.emoji) : null,
             ),
+            if (widget.stickerPicker != null)
+              MgIconButton(
+                icon: MgIcons.sticker,
+                tooltip: s.stickers,
+                selected: _tool == EditorTool.stickers,
+                onPressed: ready ? () => _setTool(EditorTool.stickers) : null,
+              ),
             MgIconButton(
               icon: EditorIcons.shapes,
               tooltip: s.shapes,

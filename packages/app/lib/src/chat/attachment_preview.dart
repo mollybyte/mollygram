@@ -9,6 +9,7 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 import '../../l10n/app_localizations.dart';
 import '../media/native_video_engine.dart';
 import 'describe.dart';
+import 'sticker_picker.dart';
 
 /// What the user confirmed in [showAttachmentPreview].
 typedef AttachmentChoice = ({List<OutgoingFile> files, String caption});
@@ -119,6 +120,7 @@ class _PreviewState extends State<_Preview> {
       context,
       path: file.path,
       initial: previous?.edit ?? const MediaEdit(),
+      stickerPicker: showStickerPicker,
     );
     if (result == null || !mounted) return;
     setState(() => _edited[file.path] = result);

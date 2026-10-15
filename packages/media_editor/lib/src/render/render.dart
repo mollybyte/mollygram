@@ -8,6 +8,7 @@ import 'package:flutter/painting.dart';
 import 'package:image/image.dart' as img;
 
 import '../model/media_edit.dart';
+import '../model/overlay.dart';
 import '../model/stroke.dart';
 import 'overlays.dart';
 import 'strokes.dart';
@@ -28,6 +29,7 @@ void paintEdited(
   double opacity = 1,
   Stroke? liveStroke,
   ui.Image? pixelated,
+  Map<String, ui.Image> images = const {},
 }) {
   if (viewport.isEmpty || dest.isEmpty) return;
   final oriented = edit.orientedSize(source);
@@ -120,7 +122,7 @@ void paintEdited(
     oriented,
     live: liveStroke != null && !liveStroke.tool.isEffect ? liveStroke : null,
   );
-  paintOverlays(canvas, edit.overlays, oriented);
+  paintOverlays(canvas, edit.overlays, oriented, images: images);
   if (opacity < 1) canvas.restore();
   canvas.restore();
 }
@@ -220,6 +222,28 @@ Future<ui.Image> pixelatedCopy(ui.Image image) async {
   return small;
 }
 
+/// Decodes the pictures of the image overlays in [edit], by path. A file
+/// that cannot be read is left out, so its overlay is skipped.
+Future<Map<String, ui.Image>> loadOverlayImages(
+  MediaEdit edit, {
+  int? maxSide,
+}) async {
+  final images = <String, ui.Image>{};
+  for (final overlay in edit.overlays) {
+    if (overlay is! ImageOverlay || images.containsKey(overlay.path)) continue;
+    try {
+      final (image, _) = await decodePicture(
+        await File(overlay.path).readAsBytes(),
+        maxSide: maxSide,
+      );
+      images[overlay.path] = image;
+    } on Object {
+      continue;
+    }
+  }
+  return images;
+}
+
 /// An edited file written by [exportEdit].
 typedef ExportedPicture = ({String path, int width, int height});
 
@@ -246,6 +270,7 @@ Future<ExportedPicture> exportEdit(
   final pixelated = edit.strokes.any((s) => s.tool == BrushTool.pixelate)
       ? await pixelatedCopy(image)
       : null;
+  final images = await loadOverlayImages(edit);
   final recorder = ui.PictureRecorder();
   paintEdited(
     Canvas(recorder),
@@ -255,12 +280,16 @@ Future<ExportedPicture> exportEdit(
     viewport: crop,
     dest: Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble()),
     pixelated: pixelated,
+    images: images,
   );
   final picture = recorder.endRecording();
   final out = await picture.toImage(width, height);
   picture.dispose();
   image.dispose();
   pixelated?.dispose();
+  for (final overlayImage in images.values) {
+    overlayImage.dispose();
+  }
 
   final name = _baseName(path);
   final png = name.ext == 'png';
