@@ -105,6 +105,7 @@ const _ease = Cubic(0.2, 0.8, 0.2, 1);
 class _MediaEditorPageState extends State<MediaEditorPage>
     with TickerProviderStateMixin {
   ui.Image? _image;
+  ui.Image? _pixelated;
   Size _source = Size.zero;
   var _loadFailed = false;
   var _saving = false;
@@ -207,6 +208,12 @@ class _MediaEditorPageState extends State<MediaEditorPage>
         _source = source;
       });
       await _appear.forward();
+      final pixelated = await pixelatedCopy(image);
+      if (!mounted) {
+        pixelated.dispose();
+        return;
+      }
+      setState(() => _pixelated = pixelated);
     } on Object {
       if (mounted) setState(() => _loadFailed = true);
     }
@@ -215,6 +222,7 @@ class _MediaEditorPageState extends State<MediaEditorPage>
   @override
   void dispose() {
     _image?.dispose();
+    _pixelated?.dispose();
     _cropMode.dispose();
     _grid.dispose();
     _appear.dispose();
@@ -454,6 +462,7 @@ class _MediaEditorPageState extends State<MediaEditorPage>
       BrushTool.pen || BrushTool.arrow => base,
       BrushTool.marker => base * 2.4,
       BrushTool.eraser => base * 2.6,
+      BrushTool.blur || BrushTool.pixelate => base * 3,
     };
   }
 
@@ -1049,6 +1058,7 @@ class _MediaEditorPageState extends State<MediaEditorPage>
                         frameOpacity: mode,
                         gridOpacity: _grid.value,
                         liveStroke: _liveStroke,
+                        pixelated: _pixelated,
                       ),
                     ),
                   ),

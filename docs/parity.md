@@ -65,7 +65,7 @@ M8 calls and macOS release, M9 after release.
 | Jump to date (calendar) | missing | `ChatCalendarModalController` | M | M2 |
 | Header status: online, last seen, members, typing | missing | Header has the slot | S | M1 |
 | Join and mute buttons for channels and groups you are not in | done | Join in place of the composer; Mute and Unmute in channels you only read | | |
-| Open `t.me` and `tg://` links, usernames, hashtags, bot commands | missing | `GetInternalLinkType` | M | M1 |
+| Open `t.me` and `tg://` links, usernames, hashtags, bot commands | partial | Links, mentions, invites and `tg://` work (`links/`); hashtags, bot commands, mention names and the jump to a linked message are missing | S | M1 |
 | Link previews in messages | partial | Check `MessageText.linkPreview` rendering | M | M1 |
 | Text selection across messages | missing | `ChatSelectText` | M | M2 |
 | Multi-select mode: forward, delete, copy several | missing | | M | M2 |
@@ -127,7 +127,7 @@ M8 calls and macOS release, M9 after release.
 | Media editor: crop, rotate, flip, aspect presets | done | `packages/media_editor` | | |
 | Media editor: drawing (pen, marker, arrow, eraser, colours, thickness) | done | `packages/media_editor` | | |
 | Media editor: text, stickers and emoji placed on the image | partial | Text and emoji done; stickers need the app’s sticker picker | M | M4 |
-| Media editor: arrows and shapes, blur and pixelate brush | partial | Arrows and shapes done; blur and pixelate next | M | M4 |
+| Media editor: arrows and shapes, blur and pixelate brush | done | `packages/media_editor` | | |
 | Media editor: filters and adjustments (brightness, contrast, saturation, warmth, vignette) | missing | | M | M4 |
 | Video editor: trim, mute, cover frame, quality | missing | `VideoEditorModalController` | M | M4 |
 | Slowmode and restriction notices | missing | | S | M2 |

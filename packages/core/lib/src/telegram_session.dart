@@ -11,6 +11,7 @@ import 'chat_search_controller.dart';
 import 'connection_status.dart';
 import 'conversation_controller.dart';
 import 'file_controller.dart';
+import 'link_resolver.dart';
 import 'notification_controller.dart';
 import 'peer_info.dart';
 import 'sticker_library.dart';
@@ -45,6 +46,7 @@ final class TelegramSession {
     required this.peers,
     required this.account,
     required this.connection,
+    required this.links,
     required this._initializer,
   });
 
@@ -65,6 +67,8 @@ final class TelegramSession {
 
   /// The connection state, for the "Connecting…" status in the window.
   final ConnectionMonitor connection;
+
+  final LinkResolver links;
   final _errors = StreamController<Object>.broadcast(sync: true);
   final _closedElsewhere = Completer<void>();
   StreamSubscription<AuthorizationStage>? _stageSubscription;
@@ -99,6 +103,7 @@ final class TelegramSession {
       peers: peers,
       account: AccountSettings(client),
       connection: connection,
+      links: LinkResolver(client),
       initializer: TdlibInitializer(client, parameters: parameters),
     );
     session._stageSubscription = authorization.stages.listen(session._onStage);
