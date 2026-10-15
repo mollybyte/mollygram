@@ -19,6 +19,7 @@ import 'mention_search.dart';
 import 'notification_controller.dart';
 import 'peer_info.dart';
 import 'privacy_guard.dart';
+import 'privacy_settings_controller.dart';
 import 'proxy_controller.dart';
 import 'sticker_library.dart';
 import 'storage_usage.dart';
@@ -58,6 +59,7 @@ final class TelegramSession {
     required this.storage,
     required this.connection,
     required this.privacy,
+    required this.security,
     required this.capture,
     required this.contacts,
     required this.management,
@@ -94,6 +96,9 @@ final class TelegramSession {
   /// Ghost mode and the other privacy extras: the one filter on what
   /// this session sends to TDLib.
   final PrivacyGuard privacy;
+
+  /// The account's privacy settings and blocked list.
+  final PrivacySettingsController security;
 
   /// Keeps deleted messages and edit history while their switches are on.
   final MessageCapture capture;
@@ -154,11 +159,13 @@ final class TelegramSession {
     final contacts = ContactsController(client);
     final management = ChatManagement(client);
     final folders = ChatFoldersController(client);
+    final security = PrivacySettingsController(client);
     final session = TelegramSession._(
       tdlib: tdlib,
       authorization: authorization,
       chatLists: ChatListController(client),
       folders: folders,
+      security: security,
       conversations: conversations,
       search: ChatSearch(client),
       chatSearch: ChatSearchController(client),
@@ -195,6 +202,7 @@ final class TelegramSession {
       await management.start();
       await notifications.start();
       await folders.start();
+      await security.start();
       await authorization.start();
       // Sending the parameters is part of starting: a wrong database key or
       // bad credentials must fail the session, not leave the UI waiting.
@@ -267,6 +275,7 @@ final class TelegramSession {
     await management.dispose();
     await notifications.dispose();
     await folders.dispose();
+    await security.dispose();
     await authorization.dispose();
     await _tdlib.close();
     // After close: requests sent while the client closes stay filtered.

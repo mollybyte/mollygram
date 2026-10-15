@@ -213,7 +213,7 @@ M8 calls and macOS release, M9 after release.
 | Settings window shell in macOS System Settings style | done | Pages are descriptors in `settingsSections` | | |
 | Notifications and sounds: per-type, badge, preview, sound | partial | Global switches, preview, sound and badge done (`NotificationsPage`); per-type scopes (private, groups, channels) and tones missing | S | M1 |
 | Active sessions and terminate | partial | List, terminate one or all others; no auto-terminate period | S | M1 |
-| Privacy and security: last seen, phone, photo, calls, forwards, groups, blocked list | missing | `SelectivePrivacySettingsController` | L | M6 |
+| Privacy and security: last seen, phone, photo, calls, forwards, groups, blocked list | done | Nine settings with Everybody / My contacts / Nobody and always / never lists, finding by phone, blocked list with block and unblock ([privacy_settings_controller.dart](../packages/core/lib/src/privacy_settings_controller.dart)); exceptions add people from the contacts only, groups already in a list are kept and can be removed | | |
 | Two-step verification setup | missing | `TwoStepVerification` | M | M6 |
 | Passcode lock and Touch ID | missing | `PasscodeSettingsViewController`, `LocalAuth` | M | M7 |
 | Data and storage: cache usage, clear, limits, network usage | partial | Usage by kind, clear by kind, download folder; auto-download switches are stored but not yet applied; no limits or network usage | M | M7 |

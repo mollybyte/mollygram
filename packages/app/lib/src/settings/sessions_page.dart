@@ -7,7 +7,6 @@ import '../../l10n/app_localizations.dart';
 import '../home/format.dart';
 import '../session/providers.dart';
 import 'settings_style.dart';
-import 'settings_window.dart';
 
 /// Every session signed in to the account, this one first.
 final activeSessionsProvider = FutureProvider.autoDispose<List<ActiveSession>>(
@@ -20,47 +19,6 @@ final connectedBotProvider = FutureProvider.autoDispose<ConnectedBot?>(
   (ref) =>
       ref.watch(telegramSessionProvider).requireValue.account.connectedBot(),
 );
-
-/// Privacy and security. Only the sessions for now; the privacy rules
-/// join them with the account management milestone.
-class PrivacyPage extends ConsumerWidget {
-  const PrivacyPage({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final c = MgColors.of(context);
-    final l10n = AppLocalizations.of(context);
-    final sessions = ref.watch(activeSessionsProvider).value;
-    void open() =>
-        SettingsNavigation.of(context)
-            .push(l10n.activeSessions, (context) => const ActiveSessionsPage());
-    return SettingsPage(
-      children: [
-        SettingsGroup(
-          footer: SettingsFooter(l10n.activeSessionsHint),
-          children: [
-            SettingsRow(
-              key: const ValueKey('activeSessions'),
-              leading: const SettingsSymbol(
-                icon: _devicesIcon,
-                tint: Color(0xFF34A853),
-              ),
-              title: l10n.activeSessions,
-              trailing: sessions == null
-                  ? null
-                  : Text(
-                      '${sessions.length}',
-                      style: mgTextStyle(c, color: c.fg2),
-                    ),
-              chevron: true,
-              onTap: open,
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
 
 /// A laptop and a phone, for the sessions row.
 const _devicesIcon = MgIconData(
