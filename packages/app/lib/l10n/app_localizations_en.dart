@@ -2020,6 +2020,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get searchNewer => 'Next result';
 
   @override
+  String get hashtagThisChat => 'This chat';
+
+  @override
+  String get hashtagMyMessages => 'My messages';
+
+  @override
+  String get hashtagPublicPosts => 'Public posts';
+
+  @override
+  String hashtagEmpty(String tag) {
+    return 'No messages with $tag';
+  }
+
+  @override
+  String get hashtagFailed => 'Could not search';
+
+  @override
   String get sharedMedia => 'Shared media';
 
   @override

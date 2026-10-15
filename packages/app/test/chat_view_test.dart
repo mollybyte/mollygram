@@ -2492,6 +2492,76 @@ void main() {
     );
   });
 
+  testWidgets('a tapped hashtag lists the messages that carry it', (
+    tester,
+  ) async {
+    json.history = [
+      td.Message.fromJson({
+        ..._message(id: 14, senderId: 2, text: '').toJson(),
+        'content': {
+          '@type': 'messageText',
+          'text': {
+            '@type': 'formattedText',
+            'text': '#news',
+            'entities': [
+              {
+                '@type': 'textEntity',
+                'offset': 0,
+                'length': 5,
+                'type': {'@type': 'textEntityTypeHashtag'},
+              },
+            ],
+          },
+          'link_preview_options': null,
+        },
+      }),
+      ..._history,
+    ];
+    await pump(tester);
+
+    // The sheet sends its search on its first frame, then hears back.
+    Future<void> roundtrip() async {
+      await tester.pump();
+      await tester.runAsync(() => Future<void>.delayed(_tick));
+      await tester.pumpAndSettle();
+    }
+
+    await tester.tap(find.text('#news'));
+    await roundtrip();
+    // This chat first: the photos the chat search returns, in the chat.
+    expect(find.text('This chat'), findsOneWidget);
+    final inChat = json.sent.lastWhere(
+      (r) => r['@type'] == 'searchChatMessages',
+    );
+    expect(inChat['query'], '#news');
+    expect(inChat['chat_id'], 7);
+    // Rows name the sender in a group: "Boris: Photo".
+    expect(find.textContaining('Photo'), findsNWidgets(2));
+
+    await tester.tap(find.text('My messages'));
+    await roundtrip();
+    final mine = json.sent.lastWhere((r) => r['@type'] == 'searchMessages');
+    expect(mine['query'], '#news');
+    expect(find.textContaining('Vera: Mine with #news'), findsOneWidget);
+
+    await tester.tap(find.text('Public posts'));
+    await roundtrip();
+    expect(
+      json.sent.lastWhere(
+        (r) => r['@type'] == 'searchPublicMessagesByTag',
+      )['tag'],
+      '#news',
+    );
+    expect(find.text('No messages with #news'), findsOneWidget);
+
+    // A row closes the sheet and asks the chat to show its message.
+    await tester.tap(find.text('My messages'));
+    await roundtrip();
+    await tester.tap(find.textContaining('Mine with #news'));
+    await tester.pumpAndSettle();
+    expect(find.text('My messages'), findsNothing);
+  });
+
   testWidgets('draws a custom emoji as its sticker', (tester) async {
     json.history = [
       td.Message.fromJson({
@@ -3134,7 +3204,7 @@ final class _FakeTdJson implements td.TdJson {
         'emojis': <Object?>[],
       },
       'searchChatMessages'
-          when (decoded['filter']! as Map)['@type'] ==
+          when (decoded['filter'] as Map?)?['@type'] ==
               'searchMessagesFilterPinned' =>
         {
           '@type': 'foundChatMessages',
@@ -3156,6 +3226,20 @@ final class _FakeTdJson implements td.TdJson {
       },
       'downloadFile' => _stickerFile(decoded['file_id']! as int),
       'addFileToDownloads' => _stickerFile(decoded['file_id']! as int),
+      'searchMessages' => {
+        '@type': 'foundMessages',
+        'total_count': 1,
+        'next_offset': '',
+        'messages': [
+          _message(id: 31, senderId: 3, text: 'Mine with #news').toJson(),
+        ],
+      },
+      'searchPublicMessagesByTag' => {
+        '@type': 'foundMessages',
+        'total_count': 0,
+        'next_offset': '',
+        'messages': <Object?>[],
+      },
       'joinChat' => {'@type': 'chatJoinResultSuccess'},
       'getChatMessageByDate' => _message(
         id: 11,
