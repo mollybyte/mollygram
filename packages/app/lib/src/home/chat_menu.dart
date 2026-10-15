@@ -185,12 +185,14 @@ Future<void> showArchiveMenu(
   required ChatListController chats,
   required Offset position,
   required VoidCallback onFailed,
+  required VoidCallback onHide,
 }) {
   final l10n = AppLocalizations.of(context);
   return showMgMenu(
     context,
     position: position,
     items: [
+      MgMenuItem(label: l10n.menuHideArchive, onSelected: onHide),
       MgMenuItem(
         label: l10n.menuMarkAllRead,
         onSelected: () => unawaited(

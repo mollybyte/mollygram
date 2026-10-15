@@ -896,6 +896,19 @@ class AppLocalizationsRu extends AppLocalizations {
   String get menuMarkAllRead => 'Прочитать все';
 
   @override
+  String get menuHideArchive => 'Скрыть архив';
+
+  @override
+  String get menuShowArchive => 'Показать архив';
+
+  @override
+  String get showArchiveRow => 'Архив в списке чатов';
+
+  @override
+  String get showArchiveRowHint =>
+      'Пока строка скрыта, архив доступен на боковой панели и в поиске.';
+
+  @override
   String get menuClearHistory => 'Очистить историю';
 
   @override

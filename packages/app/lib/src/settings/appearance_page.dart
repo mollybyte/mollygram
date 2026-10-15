@@ -258,6 +258,12 @@ class AppearancePage extends ConsumerWidget {
               ),
             ),
             SettingsSwitchRow(
+              key: const ValueKey('showArchiveRow'),
+              title: l10n.showArchiveRow,
+              value: !p.hideArchive,
+              onChanged: (v) => update((p) => p.copyWith(hideArchive: !v)),
+            ),
+            SettingsSwitchRow(
               key: const ValueKey('compactLayout'),
               title: l10n.compactLayout,
               value: p.compactLayout,
