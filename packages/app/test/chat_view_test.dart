@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mollygram/l10n/app_localizations.dart';
 import 'package:mollygram/src/chat/bot_keyboard.dart';
+import 'package:mollygram/src/chat/load_spinner.dart';
 import 'package:mollygram/src/chat/location_content.dart';
 import 'package:mollygram/src/chat/media_content.dart';
 import 'package:mollygram/src/chat/media_providers.dart';
@@ -1620,6 +1621,36 @@ void main() {
     expect(find.text('Menu'), findsOneWidget);
   });
 
+  testWidgets('makes room under the messages for a bot\'s keyboard', (
+    tester,
+  ) async {
+    json.history = [_replyKeyboardMessage(), ..._history];
+    json.push(_chat(lastRead: 13, unread: 0, last: 13, replyMarkup: 17));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await pump(tester);
+    await tester.pump();
+    TimelineView timeline() =>
+        tester.widget<TimelineView>(find.byType(TimelineView));
+    final keyboard = tester.getSize(find.byType(ReplyKeyboard));
+    expect(keyboard.height, greaterThan(60));
+    expect(
+      timeline().bottomInset,
+      TimelineView.composerInset + keyboard.height,
+    );
+    // The newest message sits above the keyboard, not under it.
+    final newest = tester.getBottomLeft(find.text('Mine'));
+    expect(
+      newest.dy,
+      lessThan(tester.getTopLeft(find.byType(ReplyKeyboard)).dy),
+    );
+
+    // Hidden, the keyboard gives the space back.
+    await tester.tap(find.byTooltip('Bot keyboard'));
+    await tester.pump();
+    expect(find.byType(ReplyKeyboard), findsNothing);
+    expect(timeline().bottomInset, TimelineView.composerInset);
+  });
+
   testWidgets('offers emoji for a :word and stickers for an emoji', (
     tester,
   ) async {
@@ -2900,6 +2931,43 @@ void main() {
     expect(find.text('Repro steps'), findsNothing);
   });
 
+  testWidgets('asks for the topics again when the first load fails', (
+    tester,
+  ) async {
+    json.failTopics = 1;
+    json.push(
+      _supergroup(98, {'@type': 'chatMemberStatusMember'}, forum: true),
+    );
+    json.push(
+      _chat(
+        lastRead: 60,
+        unread: 0,
+        last: 60,
+        type: {
+          '@type': 'chatTypeSupergroup',
+          'supergroup_id': 98,
+          'is_channel': false,
+        },
+      ),
+    );
+    await pump(tester);
+    for (var i = 0; i < 3; i++) {
+      await tester.runAsync(() => Future<void>.delayed(_tick));
+      await tester.pump();
+    }
+    expect(find.text('General'), findsNothing);
+    expect(find.byType(LoadSpinner), findsOneWidget);
+
+    await tester.pump(const Duration(seconds: 2));
+    for (var i = 0; i < 3; i++) {
+      await tester.runAsync(() => Future<void>.delayed(_tick));
+      await tester.pump();
+    }
+    expect(find.text('General'), findsOneWidget);
+    expect(find.text('Bugs'), findsOneWidget);
+    expect(json.sent.where((r) => r['@type'] == 'getForumTopics').length, 2);
+  });
+
   testWidgets('manages forum topics: closes one and starts a new one', (
     tester,
   ) async {
@@ -3248,6 +3316,9 @@ final class _FakeTdJson implements td.TdJson {
   final _queue = Queue<String>();
   final sent = <Map<String, Object?>>[];
   var failSend = false;
+
+  /// How many getForumTopics requests still fail before one succeeds.
+  var failTopics = 0;
   var history = _history;
 
   /// A whole chat from Boris with these ids, paged as TDLib does with
@@ -3656,6 +3727,11 @@ final class _FakeTdJson implements td.TdJson {
       'getWebAppUrl' => {
         '@type': 'webAppUrl',
         'url': 'https://shop.example/app',
+      },
+      'getForumTopics' when failTopics-- > 0 => {
+        '@type': 'error',
+        'code': 400,
+        'message': 'Chat not found',
       },
       'getForumTopics' => {
         '@type': 'forumTopics',
