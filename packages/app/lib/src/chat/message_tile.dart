@@ -403,7 +403,7 @@ class MessageTile extends StatelessWidget {
     final tile = Padding(
       padding: EdgeInsets.only(
         top: context.startsRun
-            ? (metrics.compact ? 6 : 10)
+            ? (metrics.compact ? 5 : 10)
             : metrics.messageGap,
       ),
       child: Row(

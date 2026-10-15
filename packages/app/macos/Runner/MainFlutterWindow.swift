@@ -75,6 +75,33 @@ class MainFlutterWindow: NSWindow {
       }
     }
 
+    // Appearance's "App icon": Dart sends the PNG of the chosen Dock icon,
+    // or asks for the bundled one back. Only the running app's Dock tile
+    // changes; Finder keeps the bundled icon. Registered here, before Dart
+    // runs, so the choice saved last time is applied at launch.
+    let appIcon = FlutterMethodChannel(
+      name: "mollygram/app_icon",
+      binaryMessenger: flutterViewController.engine.binaryMessenger)
+    appIcon.setMethodCallHandler { call, result in
+      switch call.method {
+      case "set":
+        if let data = call.arguments as? FlutterStandardTypedData,
+           let image = NSImage(data: data.data) {
+          NSApp.applicationIconImage = image
+          NSApp.dockTile.display()
+          result(nil)
+        } else {
+          result(FlutterError(code: "bad_image", message: "Not a PNG", details: nil))
+        }
+      case "reset":
+        NSApp.applicationIconImage = nil
+        NSApp.dockTile.display()
+        result(nil)
+      default:
+        result(FlutterMethodNotImplemented)
+      }
+    }
+
     // Set up before launch finishes, so a notification tap that launched
     // the app is not lost.
     notifications = NotificationsChannel(

@@ -18,10 +18,10 @@ class MgMetrics extends ThemeExtension<MgMetrics> {
   static const defaults = MgMetrics();
 
   /// Vertical padding of a chat list row.
-  double get rowPadding => compact ? 5 : 8;
+  double get rowPadding => compact ? 4 : 8;
 
   /// Air between two messages of the same sender.
-  double get messageGap => compact ? 2 : 4;
+  double get messageGap => compact ? 1 : 4;
 
   static MgMetrics of(BuildContext context) =>
       Theme.of(context).extension<MgMetrics>() ?? defaults;

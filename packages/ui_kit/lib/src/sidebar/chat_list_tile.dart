@@ -139,6 +139,10 @@ class ChatListTile extends StatefulWidget {
   /// lays rows out at this fixed extent.
   static const double extent = _content + 2 * (8 + _ring) + 1;
 
+  /// [extent] for the density in [context]: compact rows are shorter.
+  static double extentOf(BuildContext context) =>
+      _content + 2 * (MgMetrics.of(context).rowPadding + _ring) + 1;
+
   /// The online dot's green.
   static const Color onlineGreen = Color(0xFF34C759);
 

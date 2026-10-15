@@ -535,7 +535,7 @@ class _ChatListState extends ConsumerState<_ChatList> {
         final selected = layout.focusedChat;
         final list = ListView.builder(
           padding: const EdgeInsets.fromLTRB(6, 0, 6, 8),
-          itemExtent: ChatListTile.extent,
+          itemExtent: ChatListTile.extentOf(context),
           itemCount: chats.length + shift,
           // Keeps each row's state (and its animation) when it moves.
           findChildIndexCallback: (key) => switch (key) {
@@ -776,7 +776,7 @@ class _ChatRowState extends ConsumerState<_ChatRow>
       builder: (context, child) {
         final t = Curves.easeOutCubic.transform(_motion.value);
         return Transform.translate(
-          offset: Offset(0, _from * ChatListTile.extent * (1 - t)),
+          offset: Offset(0, _from * ChatListTile.extentOf(context) * (1 - t)),
           child: Opacity(opacity: _fade ? t : 1, child: child),
         );
       },

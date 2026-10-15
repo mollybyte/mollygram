@@ -3,6 +3,30 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 void main() {
+  testWidgets('compact layout makes chat list rows shorter', (tester) async {
+    late double regular;
+    late double compact;
+    for (final dense in [false, true]) {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildMgTheme(
+            MgColors.light,
+            metrics: MgMetrics(compact: dense),
+          ),
+          home: Builder(
+            builder: (context) {
+              final extent = ChatListTile.extentOf(context);
+              dense ? compact = extent : regular = extent;
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
+    }
+    expect(regular, ChatListTile.extent);
+    expect(compact, lessThan(regular));
+  });
+
   group('MgColors', () {
     test('glass fill is .42 opaque in both themes', () {
       expect(MgColors.light.glass.a, closeTo(0.42, 0.005));
