@@ -43,7 +43,7 @@ M8 calls and macOS release, M9 after release.
 | Typing and online dot in the list | missing | `UpdateChatAction`, `UpdateUserStatus` | S | M1 |
 | Draft preview in the list ("Draft: …") | partial | `UpdateChatDraftMessage` is stored, not shown | S | M1 |
 | Pinned chats order with drag | missing | `SetPinnedChats` | S | M6 |
-| Folder editor: create, edit, delete, reorder, include/exclude, recommended | missing | TelegramSwift `ChatListFilterController` | M | M6 |
+| Folder editor: create, edit, delete, reorder, include/exclude, recommended | done | Settings > Chat folders: drag reorder, editor sheet with icon, chat types and a chat picker, delete with chats to leave, recommended folders; `ChatFoldersController` in core. No pinning inside a folder or "All chats" position yet | | M6 |
 | Folder sidebar (vertical tabs) and folder icons | missing | Official offers left-side folders | M | M7 |
 | Shared folders (chat folder invite links) | missing | `CreateChatFolderInviteLink` | M | M9 |
 | Saved Messages as a list of sub-chats | missing | Saved Messages tags and per-source chats | M | M2 |
@@ -67,7 +67,7 @@ M8 calls and macOS release, M9 after release.
 | Join and mute buttons for channels and groups you are not in | done | Join in place of the composer; Mute and Unmute in channels you only read | | |
 | Open `t.me` and `tg://` links, usernames, hashtags, bot commands | partial | Links, mentions, invites and `tg://` work (`links/`); hashtags, bot commands, mention names and the jump to a linked message are missing | S | M1 |
 | Link previews in messages | partial | Check `MessageText.linkPreview` rendering | M | M1 |
-| Text selection across messages | missing | `ChatSelectText`; whole messages go through multi-select | M | M2 |
+| Text selection across messages | done | Mouse selection over the timeline, copy with the shortcut | M | M2 |
 | Multi-select mode: forward, delete, copy several | done | Select from the menu, click rows, bar in place of the composer; no shift-click range yet | M | M2 |
 | Forum topics: topic list, topic chat, create and close topics | missing | Service messages render only | L | M2 |
 | Channel comments (discussion thread) | missing | `GetMessageThread` | M | M2 |
@@ -90,14 +90,14 @@ M8 calls and macOS release, M9 after release.
 | Reply, edit, delete (for me / for everyone), forward, copy text, copy link | done | #30 | | |
 | Quick reactions and toggling reactions | done | #30 | | |
 | Full reaction picker (all emoji, custom reactions) | missing | | M | M1 |
-| Reply with quote (part of the text) | missing | `InputTextQuote` | S | M2 |
+| Reply with quote (part of the text) | done | Select text, Quote in the menu | S | M2 |
 | Pin and unpin | done (#49) | | S | M1 |
-| Forward without author or caption | missing | `sendCopy`, `removeCaption` | S | M2 |
+| Forward without author or caption | done | Checkboxes in the forward picker | S | M2 |
 | Save media to Downloads, show in Finder | missing | | S | M1 |
 | Report message | missing | `ReportChat` | S | M2 |
 | Who read and who reacted | missing | `GetMessageViewers`, `GetMessageAddedReactions` | S | M2 |
 | Message info: view count, forwards, edit date | partial | | S | M2 |
-| Select and copy part of a message | partial | Whole messages copy via multi-select; part of a message needs text selection | | M2 |
+| Select and copy part of a message | done | | | M2 |
 
 ### Composer
 
@@ -129,7 +129,7 @@ M8 calls and macOS release, M9 after release.
 | Media editor: text, stickers and emoji placed on the image | partial | Text and emoji done; stickers need the app’s sticker picker | M | M4 |
 | Media editor: arrows and shapes, blur and pixelate brush | done | `packages/media_editor` | | |
 | Media editor: filters and adjustments (brightness, contrast, saturation, warmth, vignette) | done | `packages/media_editor`: seven looks, six sliders | | |
-| Video editor: trim, mute, cover frame, quality | missing | `VideoEditorModalController` | M | M4 |
+| Video editor: trim, mute, cover frame, quality | partial | `packages/media_editor`: trim, mute and cover done (macOS, AVFoundation); quality presets pending | S | M4 |
 | Slowmode and restriction notices | missing | | S | M2 |
 | Link preview control (remove, above/below) | missing | | S | M2 |
 

@@ -5,6 +5,7 @@ export 'src/account_settings.dart';
 export 'src/account_storage.dart';
 export 'src/authorization_controller.dart';
 export 'src/authorization_stage.dart';
+export 'src/chat_folders.dart';
 export 'src/chat_list_controller.dart';
 export 'src/chat_list_store.dart';
 export 'src/chat_management.dart';

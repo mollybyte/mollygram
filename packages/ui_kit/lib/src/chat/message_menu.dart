@@ -474,36 +474,10 @@ class _ConfirmState extends State<_Confirm> {
                   ],
                   if (widget.option != null) ...[
                     const SizedBox(height: 10),
-                    MergeSemantics(
-                      child: MouseRegion(
-                        cursor: SystemMouseCursors.click,
-                        child: GestureDetector(
-                          onTap: () => setState(() => _checked = !_checked),
-                          child: Row(
-                            children: [
-                              SizedBox.square(
-                                dimension: 18,
-                                child: Checkbox(
-                                  value: _checked,
-                                  activeColor: c.accent,
-                                  materialTapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                  visualDensity: VisualDensity.compact,
-                                  onChanged: (value) =>
-                                      setState(() => _checked = value ?? false),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  widget.option!,
-                                  style: mgTextStyle(c),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                    MgCheckRow(
+                      label: widget.option!,
+                      value: _checked,
+                      onChanged: (value) => setState(() => _checked = value),
                     ),
                   ],
                   const SizedBox(height: 16),
@@ -577,6 +551,50 @@ class _DialogButton extends StatelessWidget {
                 height: 1.2,
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A checkbox with its label, the whole row clickable, as in the confirm
+/// dialog and the forward picker.
+class MgCheckRow extends StatelessWidget {
+  const MgCheckRow({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String label;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    return MergeSemantics(
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: () => onChanged(!value),
+          child: Row(
+            children: [
+              SizedBox.square(
+                dimension: 18,
+                child: Checkbox(
+                  value: value,
+                  activeColor: c.accent,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  visualDensity: VisualDensity.compact,
+                  onChanged: (checked) => onChanged(checked ?? false),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(child: Text(label, style: mgTextStyle(c))),
+            ],
           ),
         ),
       ),

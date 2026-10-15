@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
@@ -9,17 +11,33 @@ import '../links/link_router.dart';
 /// Message text with its entities: bold, italic, code, links, mentions,
 /// spoilers. A [trailing] span (the room for the time) goes after the last
 /// line.
+/// A stretch of a message's text the user has selected, as a quote to
+/// reply with: [position] is its offset in the text, in UTF-16 units as
+/// TDLib counts them.
+@immutable
+final class QuoteSelection {
+  const QuoteSelection({required this.text, required this.position});
+
+  final String text;
+  final int position;
+}
+
 class FormattedTextView extends StatefulWidget {
   const FormattedTextView({
     super.key,
     required this.text,
     this.trailing,
     this.style,
+    this.onSelection,
   });
 
   final td.FormattedText text;
   final InlineSpan? trailing;
   final TextStyle? style;
+
+  /// Called as the selection within this text changes, with null once
+  /// nothing of it is selected. Needs a `SelectionArea` above.
+  final void Function(QuoteSelection? quote)? onSelection;
 
   @override
   State<FormattedTextView> createState() => _FormattedTextViewState();
@@ -27,14 +45,38 @@ class FormattedTextView extends StatefulWidget {
 
 class _FormattedTextViewState extends State<FormattedTextView> {
   final _recognizers = <GestureRecognizer>[];
+  final _selection = SelectionListenerNotifier();
 
   /// Spoilers the user has tapped open, by their offset.
   final _revealed = <int>{};
 
   @override
+  void initState() {
+    super.initState();
+    _selection.addListener(_onSelection);
+  }
+
+  @override
   void dispose() {
     _disposeRecognizers();
+    _selection.dispose();
     super.dispose();
+  }
+
+  /// The spans are all text, so the offsets of the selection are those
+  /// of the message's text; only [trailing] comes after it.
+  void _onSelection() {
+    final onSelection = widget.onSelection;
+    if (onSelection == null || !_selection.registered) return;
+    final range = _selection.selection.range;
+    final s = widget.text.text;
+    if (range == null) return onSelection(null);
+    final start = math
+        .min(range.startOffset, range.endOffset)
+        .clamp(0, s.length);
+    final end = math.max(range.startOffset, range.endOffset).clamp(0, s.length);
+    if (start >= end) return onSelection(null);
+    onSelection(QuoteSelection(text: s.substring(start, end), position: start));
   }
 
   void _disposeRecognizers() {
@@ -65,9 +107,11 @@ class _FormattedTextViewState extends State<FormattedTextView> {
         return r;
       },
     );
-    return Text.rich(
+    final text = Text.rich(
       TextSpan(style: widget.style, children: [...spans, ?widget.trailing]),
     );
+    if (widget.onSelection == null) return text;
+    return SelectionListener(selectionNotifier: _selection, child: text);
   }
 }
 

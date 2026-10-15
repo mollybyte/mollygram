@@ -5,6 +5,7 @@ import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 import 'account_settings.dart';
 import 'authorization_controller.dart';
 import 'authorization_stage.dart';
+import 'chat_folders.dart';
 import 'chat_list_controller.dart';
 import 'chat_management.dart';
 import 'chat_search.dart';
@@ -42,6 +43,7 @@ final class TelegramSession {
     required this._tdlib,
     required this.authorization,
     required this.chatLists,
+    required this.folders,
     required this.conversations,
     required this.search,
     required this.chatSearch,
@@ -64,6 +66,9 @@ final class TelegramSession {
   final TdlibInitializer _initializer;
   final AuthorizationController authorization;
   final ChatListController chatLists;
+
+  /// The chat folders and their editing.
+  final ChatFoldersController folders;
   final ConversationController conversations;
   final ChatSearch search;
 
@@ -122,10 +127,12 @@ final class TelegramSession {
     );
     final contacts = ContactsController(client);
     final management = ChatManagement(client);
+    final folders = ChatFoldersController(client);
     final session = TelegramSession._(
       tdlib: tdlib,
       authorization: authorization,
       chatLists: ChatListController(client),
+      folders: folders,
       conversations: conversations,
       search: ChatSearch(client),
       chatSearch: ChatSearchController(client),
@@ -159,6 +166,7 @@ final class TelegramSession {
       await contacts.start();
       await management.start();
       await notifications.start();
+      await folders.start();
       await authorization.start();
       // Sending the parameters is part of starting: a wrong database key or
       // bad credentials must fail the session, not leave the UI waiting.
@@ -230,6 +238,7 @@ final class TelegramSession {
     await contacts.dispose();
     await management.dispose();
     await notifications.dispose();
+    await folders.dispose();
     await authorization.dispose();
     await _tdlib.close();
     // After close: requests sent while the client closes stay filtered.

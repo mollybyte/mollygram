@@ -884,6 +884,12 @@ abstract class AppLocalizations {
   /// **'Reply'**
   String get menuReply;
 
+  /// No description provided for @menuQuote.
+  ///
+  /// In en, this message translates to:
+  /// **'Quote'**
+  String get menuQuote;
+
   /// No description provided for @menuEdit.
   ///
   /// In en, this message translates to:
@@ -1033,6 +1039,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Search chats'**
   String get forwardSearch;
+
+  /// No description provided for @forwardHideSender.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide sender names'**
+  String get forwardHideSender;
+
+  /// No description provided for @forwardHideCaptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide captions'**
+  String get forwardHideCaptions;
 
   /// No description provided for @noChatsFound.
   ///
@@ -2942,6 +2960,252 @@ abstract class AppLocalizations {
   /// **'Copy'**
   String get copy;
 
+  /// No description provided for @chatFolders.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat folders'**
+  String get chatFolders;
+
+  /// No description provided for @chatFoldersHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort chats into folders and switch between them in the sidebar.'**
+  String get chatFoldersHint;
+
+  /// No description provided for @createFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Create folder'**
+  String get createFolder;
+
+  /// No description provided for @newFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'New folder'**
+  String get newFolder;
+
+  /// No description provided for @editFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit folder'**
+  String get editFolder;
+
+  /// No description provided for @folderName.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder name'**
+  String get folderName;
+
+  /// No description provided for @folderIcon.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder icon'**
+  String get folderIcon;
+
+  /// No description provided for @folderIncluded.
+  ///
+  /// In en, this message translates to:
+  /// **'Included chats'**
+  String get folderIncluded;
+
+  /// No description provided for @folderExcluded.
+  ///
+  /// In en, this message translates to:
+  /// **'Excluded chats'**
+  String get folderExcluded;
+
+  /// No description provided for @folderAddChats.
+  ///
+  /// In en, this message translates to:
+  /// **'Add chats'**
+  String get folderAddChats;
+
+  /// No description provided for @folderExcludeChats.
+  ///
+  /// In en, this message translates to:
+  /// **'Exclude chats'**
+  String get folderExcludeChats;
+
+  /// No description provided for @folderIncludedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose chats or kinds of chats that will appear in this folder.'**
+  String get folderIncludedHint;
+
+  /// No description provided for @folderExcludedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose chats or kinds of chats that will never appear in this folder.'**
+  String get folderExcludedHint;
+
+  /// No description provided for @folderContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'Contacts'**
+  String get folderContacts;
+
+  /// No description provided for @folderNonContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'Non-contacts'**
+  String get folderNonContacts;
+
+  /// No description provided for @folderGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'Groups'**
+  String get folderGroups;
+
+  /// No description provided for @folderChannels.
+  ///
+  /// In en, this message translates to:
+  /// **'Channels'**
+  String get folderChannels;
+
+  /// No description provided for @folderBots.
+  ///
+  /// In en, this message translates to:
+  /// **'Bots'**
+  String get folderBots;
+
+  /// No description provided for @folderMuted.
+  ///
+  /// In en, this message translates to:
+  /// **'Muted'**
+  String get folderMuted;
+
+  /// No description provided for @folderRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Read'**
+  String get folderRead;
+
+  /// No description provided for @folderArchived.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived'**
+  String get folderArchived;
+
+  /// No description provided for @folderChatTypes.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat types'**
+  String get folderChatTypes;
+
+  /// No description provided for @folderChats.
+  ///
+  /// In en, this message translates to:
+  /// **'Chats'**
+  String get folderChats;
+
+  /// No description provided for @folderBot.
+  ///
+  /// In en, this message translates to:
+  /// **'bot'**
+  String get folderBot;
+
+  /// No description provided for @folderGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'group'**
+  String get folderGroup;
+
+  /// No description provided for @folderChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'channel'**
+  String get folderChannel;
+
+  /// No description provided for @folderSavedMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved Messages'**
+  String get folderSavedMessages;
+
+  /// No description provided for @folderRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get folderRemove;
+
+  /// No description provided for @folderAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get folderAdd;
+
+  /// No description provided for @folderReorder.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag to reorder'**
+  String get folderReorder;
+
+  /// No description provided for @folderReorderHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag the handles to change the order of folders in the sidebar.'**
+  String get folderReorderHint;
+
+  /// No description provided for @recommendedFolders.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended folders'**
+  String get recommendedFolders;
+
+  /// No description provided for @deleteFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete folder'**
+  String get deleteFolder;
+
+  /// No description provided for @deleteFolderMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The chats in it won\'t be deleted.'**
+  String get deleteFolderMessage;
+
+  /// No description provided for @deleteFolderLeave.
+  ///
+  /// In en, this message translates to:
+  /// **'The chats in it won\'t be deleted. You can also leave the chats this folder was shared with you through:'**
+  String get deleteFolderLeave;
+
+  /// No description provided for @delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get delete;
+
+  /// No description provided for @save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get save;
+
+  /// No description provided for @deleteFolderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete “{name}”?'**
+  String deleteFolderTitle(String name);
+
+  /// No description provided for @folderLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'You can have up to {count} folders.'**
+  String folderLimit(int count);
+
+  /// No description provided for @folderChatsLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'A folder can have up to {count} chats.'**
+  String folderChatsLimit(int count);
+
+  /// No description provided for @folderChatsCounter.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} of {max}'**
+  String folderChatsCounter(int count, int max);
+
   /// No description provided for @previousMonth.
   ///
   /// In en, this message translates to:
@@ -2989,12 +3253,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Edit'**
   String get edit;
-
-  /// No description provided for @save.
-  ///
-  /// In en, this message translates to:
-  /// **'Save'**
-  String get save;
 
   /// No description provided for @create.
   ///
@@ -3529,6 +3787,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t delete it. Try again.'**
   String get deleteFailed;
+
+  /// No description provided for @folderDeletedChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted chat'**
+  String get folderDeletedChat;
 }
 
 class _AppLocalizationsDelegate
