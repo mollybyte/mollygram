@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "types": [],
+    "strict": true,
+    "outDir": ".",
+    "rootDir": "src",
+    "removeComments": false,
+    "skipLibCheck": false
+  },
+  "files": ["../../../plugin_sdk/index.d.ts", "src/index.ts"]
+}

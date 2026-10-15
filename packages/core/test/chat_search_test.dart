@@ -41,6 +41,43 @@ void main() {
     expect(json.sent, isEmpty);
   });
 
+  test(
+    'looks for a hashtag in the chat, own messages or public posts',
+    () async {
+      final inChat = await search.hashtag(
+        '#lease',
+        scope: HashtagScope.thisChat,
+        chatId: 7,
+      );
+      expect(json.sent.last['@type'], 'searchChatMessages');
+      expect(json.sent.last['chat_id'], 7);
+      expect(json.sent.last['query'], '#lease');
+      expect(inChat.messages.map((m) => m.id), [30, 20]);
+      expect(inChat.nextFromMessageId, 20);
+
+      final mine = await search.hashtag(
+        '#lease',
+        scope: HashtagScope.myMessages,
+      );
+      expect(json.sent.last['@type'], 'searchMessages');
+      expect(json.sent.last['query'], '#lease');
+      expect(mine.messages.map((m) => m.id), [10, 11, 12]);
+      expect(mine.nextOffset, '');
+
+      final public = await search.hashtag(
+        '#lease',
+        scope: HashtagScope.publicPosts,
+        offset: 'page2',
+      );
+      expect(json.sent.last['@type'], 'searchPublicMessagesByTag');
+      expect(json.sent.last['tag'], '#lease');
+      expect(json.sent.last['offset'], 'page2');
+      expect(public.messages.map((m) => m.id), [40]);
+      expect(public.nextOffset, 'page3');
+      expect(public.totalCount, 5);
+    },
+  );
+
   test('finds messages with text, captions and file names', () async {
     final found = await search.messages('lease');
     expect(json.sent.single['@type'], 'searchMessages');
@@ -127,6 +164,35 @@ final class _FakeTdJson implements td.TdJson {
         '@type': 'chats',
         'total_count': 2,
         'chat_ids': [2, 3],
+      },
+      'searchChatMessages' => {
+        '@type': 'foundChatMessages',
+        'total_count': 2,
+        'next_from_message_id': 20,
+        'messages': [
+          _message(
+            id: 30,
+            chatId: 7,
+            content: td.MessageText(text: _text('#lease soon')),
+          ).toJson(),
+          _message(
+            id: 20,
+            chatId: 7,
+            content: td.MessageText(text: _text('#lease done')),
+          ).toJson(),
+        ],
+      },
+      'searchPublicMessagesByTag' => {
+        '@type': 'foundMessages',
+        'total_count': 5,
+        'next_offset': 'page3',
+        'messages': [
+          _message(
+            id: 40,
+            chatId: -100,
+            content: td.MessageText(text: _text('#lease news')),
+          ).toJson(),
+        ],
       },
       'searchMessages' => {
         '@type': 'foundMessages',

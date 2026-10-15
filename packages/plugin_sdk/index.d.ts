@@ -56,7 +56,11 @@ declare namespace Mg {
 
   interface MessagePayload { message: Message }
   interface RenderPayload { message: Message }
-  interface CodePayload { message: Message; language?: string; code: string }
+  /**
+   * A code block to render. `message` carries only the ids, and only when
+   * the app knows them: the plugin gets the block, not the message.
+   */
+  interface CodePayload { message?: { chatId: ChatId; id: MessageId }; language?: string; code: string }
   interface ActionPayload { action: string; payload?: unknown; message?: Message }
 
   /** SDK 1.1. Hide the message, or collapse it into a row showing `reason`. */

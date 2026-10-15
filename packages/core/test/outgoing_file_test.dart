@@ -52,4 +52,58 @@ void main() {
     final document = inputContentOf(_file('/a.jpg').asDocument());
     expect(document, isA<td.InputMessageDocument>());
   });
+
+  test('hides a photo behind a spoiler, never a document', () {
+    final photo = inputContentOf(_file('/a.jpg').copyWith(spoiler: true));
+    expect((photo as td.InputMessagePhoto).hasSpoiler, isTrue);
+    final document = inputContentOf(
+      _file('/a.jpg').copyWith(spoiler: true).asDocument(),
+    );
+    expect(document, isA<td.InputMessageDocument>());
+  });
+
+  test('sets a self-destruct timer and sends such media alone', () {
+    final timed = inputContentOf(_file('/a.jpg').copyWith(selfDestruct: 10));
+    expect(
+      (timed as td.InputMessagePhoto).selfDestructType?.toJson(),
+      const td.MessageSelfDestructTypeTimer(selfDestructTime: 10).toJson(),
+    );
+    final once = inputContentOf(
+      _file('/a.jpg').copyWith(selfDestruct: OutgoingFile.viewOnce),
+    );
+    expect(
+      (once as td.InputMessagePhoto).selfDestructType,
+      isA<td.MessageSelfDestructTypeImmediately>(),
+    );
+    final groups = groupForSending([
+      _file('/a.jpg').copyWith(selfDestruct: 10),
+      _file('/b.jpg'),
+      _file('/c.jpg'),
+    ]);
+    expect([for (final g in groups) g.length], [1, 2]);
+  });
+
+  test('sends an edited video with its thumbnail and cover', () {
+    final video = inputContentOf(
+      const OutgoingFile(
+        path: '/clip.mp4',
+        kind: OutgoingKind.video,
+        duration: 7,
+        thumbnail: '/thumb.jpg',
+        cover: '/cover.jpg',
+      ),
+    );
+    expect(video, isA<td.InputMessageVideo>());
+    final input = (video as td.InputMessageVideo).video;
+    expect(input.duration, 7);
+    expect(
+      (input.thumbnail!.thumbnail as td.InputFileLocal).path,
+      '/thumb.jpg',
+    );
+    expect((input.cover! as td.InputFileLocal).path, '/cover.jpg');
+
+    final plain = inputContentOf(_file('/clip.mp4').copyWith(duration: 3));
+    expect((plain as td.InputMessageVideo).video.thumbnail, isNull);
+    expect(plain.video.cover, isNull);
+  });
 }

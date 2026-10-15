@@ -1,9 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart' show Tooltip;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mollygram_core/mollygram_core.dart';
+import 'package:mollygram_media/mollygram_media.dart' show AudioTrackPlayer;
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -49,11 +51,22 @@ double? _progressOf(td.File file) {
 FileController _filesOf(WidgetRef ref) =>
     ref.read(telegramSessionProvider).requireValue.files;
 
+DownloadsController _downloadsOf(WidgetRef ref) =>
+    ref.read(telegramSessionProvider).requireValue.downloads;
+
 /// A file in a bubble: the round button (download, cancel, open), the name
 /// and the size or the download progress.
 class DocumentContent extends ConsumerWidget {
-  const DocumentContent({super.key, required this.document, this.meta});
+  const DocumentContent({
+    super.key,
+    required this.chatId,
+    required this.messageId,
+    required this.document,
+    this.meta,
+  });
 
+  final int chatId;
+  final int messageId;
   final td.Document document;
 
   /// The time and ticks, drawn at the end of the size line.
@@ -79,9 +92,11 @@ class DocumentContent extends ConsumerWidget {
           final files = _filesOf(ref);
           switch (state) {
             case _FileState.remote:
+              // A click is a download the user asked for: it goes on the
+              // downloads list, where it can be paused and found again.
               unawaited(
-                files
-                    .download(file.id, priority: DownloadPriority.requested)
+                _downloadsOf(ref)
+                    .add(file.id, chatId: chatId, messageId: messageId)
                     .then<void>((_) {}, onError: (Object _) {}),
               );
             case _FileState.downloading:
@@ -121,8 +136,10 @@ class DocumentContent extends ConsumerWidget {
   }
 }
 
-/// A voice message: play button, waveform and length.
-class VoiceNoteContent extends ConsumerWidget {
+/// A voice message: play button, waveform and length, and a button that
+/// asks Telegram for its transcript and shows it under the row, as the
+/// official client does.
+class VoiceNoteContent extends ConsumerStatefulWidget {
   const VoiceNoteContent({
     super.key,
     required this.chatId,
@@ -137,23 +154,130 @@ class VoiceNoteContent extends ConsumerWidget {
   final Widget? meta;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<VoiceNoteContent> createState() => _VoiceNoteContentState();
+}
+
+class _VoiceNoteContentState extends ConsumerState<VoiceNoteContent> {
+  /// Whether the transcript is shown; a message that already carries one
+  /// starts with it folded, like a new one.
+  var _open = false;
+
+  void _toggle() {
+    setState(() => _open = !_open);
+    if (_open && widget.voiceNote.speechRecognitionResult == null) {
+      final session = ref.read(telegramSessionProvider).asData?.value;
+      if (session == null) return;
+      unawaited(
+        session.conversations
+            .recognizeSpeech(widget.chatId, widget.messageId)
+            .catchError((Object _) {}),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final c = MgColors.of(context);
+    final l10n = AppLocalizations.of(context);
+    final voiceNote = widget.voiceNote;
     final samples = decodeWaveform(voiceNote.waveform);
-    return _AudioTrack(
-      chatId: chatId,
-      messageId: messageId,
+    final row = _AudioTrack(
+      chatId: widget.chatId,
+      messageId: widget.messageId,
       file: voiceNote.voice,
       duration: voiceNote.duration,
-      builder: (context, button, progress, time) => _FileRow(
+      builder: (context, button, progress, time, controls) => _FileRow(
         button: button,
-        titleWidget: VoiceWaveform(
-          samples: samples,
-          progress: progress,
-          color: c.accent,
+        titleWidget: _Scrubber(
+          onSeek: controls?.seek,
+          child: VoiceWaveform(
+            samples: samples,
+            progress: progress,
+            color: c.accent,
+          ),
         ),
         subtitle: time,
-        meta: meta,
+        subtitleTrailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (controls != null) ...[
+              SpeedButton(rate: controls.rate, onTap: controls.nextRate),
+              const SizedBox(width: 4),
+            ],
+            _TranscribeButton(
+              tooltip: _open ? l10n.hideTranscript : l10n.transcribe,
+              open: _open,
+              onTap: _toggle,
+            ),
+          ],
+        ),
+        meta: widget.meta,
+      ),
+    );
+    if (!_open) return row;
+    final result = voiceNote.speechRecognitionResult;
+    final (text, muted) = switch (result) {
+      td.SpeechRecognitionResultText(:final text) => (text, false),
+      td.SpeechRecognitionResultPending(:final partialText) => (
+        partialText.isEmpty ? l10n.transcribing : '$partialText…',
+        true,
+      ),
+      td.SpeechRecognitionResultError() => (l10n.transcriptionFailed, true),
+      null => (l10n.transcribing, true),
+    };
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        row,
+        Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 160),
+            child: Text(
+              text,
+              key: ValueKey(text),
+              style: mgTextStyle(c, color: muted ? c.fg2 : c.fg),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// The small "transcribe" button next to the voice message's time, filled
+/// with the accent while the transcript is shown.
+class _TranscribeButton extends StatelessWidget {
+  const _TranscribeButton({
+    required this.tooltip,
+    required this.open,
+    required this.onTap,
+  });
+
+  final String tooltip;
+  final bool open;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    return Tooltip(
+      message: tooltip,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 160),
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+            decoration: BoxDecoration(
+              color: c.accent.withValues(alpha: open ? 0.16 : 0.08),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: MgIcon(MgIcons.translate, size: 11, color: c.accent),
+          ),
+        ),
       ),
     );
   }
@@ -187,7 +311,7 @@ class AudioContent extends ConsumerWidget {
       messageId: messageId,
       file: audio.audio,
       duration: audio.duration,
-      builder: (context, button, progress, time) => _FileRow(
+      builder: (context, button, progress, time, _) => _FileRow(
         button: button,
         title: title,
         subtitle: audio.performer.isEmpty ? time : '${audio.performer} · $time',
@@ -217,6 +341,7 @@ class _AudioTrack extends ConsumerWidget {
     Widget button,
     double progress,
     String time,
+    _TrackControls? controls,
   )
   builder;
 
@@ -237,6 +362,7 @@ class _AudioTrack extends ConsumerWidget {
               player.playing,
               player.position,
               player.duration,
+              player.rate,
             ]),
             builder: (context, _) {
               final playing = current && player.playing.value;
@@ -257,6 +383,7 @@ class _AudioTrack extends ConsumerWidget {
                 if (playing) return player.pause();
                 // Read before any await: the row may scroll away meanwhile.
                 final files = _filesOf(ref);
+                final downloads = _downloadsOf(ref);
                 final conversations = ref
                     .read(telegramSessionProvider)
                     .requireValue
@@ -267,6 +394,11 @@ class _AudioTrack extends ConsumerWidget {
                     return files.cancel(file.id).catchError((Object _) {});
                   }
                   try {
+                    await downloads.add(
+                      file.id,
+                      chatId: chatId,
+                      messageId: messageId,
+                    );
                     path = downloadedPath(await files.downloadNow(file.id));
                   } on Object {
                     return;
@@ -294,10 +426,114 @@ class _AudioTrack extends ConsumerWidget {
                 semanticLabel: playing ? l10n.pause : l10n.play,
                 onTap: () => unawaited(onTap()),
               );
-              return builder(context, button, progress, time);
+              final rate = player.rate.value;
+              const rates = AudioTrackPlayer.rates;
+              return builder(
+                context,
+                button,
+                progress,
+                time,
+                current
+                    ? (
+                        seek: (fraction) => unawaited(
+                          player.seek(
+                            Duration(
+                              milliseconds: (length.inMilliseconds * fraction)
+                                  .round(),
+                            ),
+                          ),
+                        ),
+                        rate: rate,
+                        nextRate: () => unawaited(
+                          player.setRate(
+                            rates[(rates.indexOf(rate) + 1) % rates.length],
+                          ),
+                        ),
+                      )
+                    : null,
+              );
             },
           );
         },
+      ),
+    );
+  }
+}
+
+/// What a loaded track offers: seeking to a fraction, and the speed.
+typedef _TrackControls = ({
+  ValueChanged<double> seek,
+  double rate,
+  VoidCallback nextRate,
+});
+
+/// Lets a click or drag on the waveform move the playing voice message.
+class _Scrubber extends StatelessWidget {
+  const _Scrubber({required this.child, this.onSeek});
+
+  final Widget child;
+
+  /// Null while the message is not playing: the waveform is just a picture.
+  final ValueChanged<double>? onSeek;
+
+  @override
+  Widget build(BuildContext context) {
+    final seek = onSeek;
+    if (seek == null) return child;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        void at(Offset local) =>
+            seek((local.dx / constraints.maxWidth).clamp(0.0, 1.0).toDouble());
+        return MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTapDown: (d) => at(d.localPosition),
+            onHorizontalDragStart: (d) => at(d.localPosition),
+            onHorizontalDragUpdate: (d) => at(d.localPosition),
+            child: child,
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// `1×`, `1.5×`, `2×`: a click steps the playback speed.
+/// "1×", "1.5×", "2×": the playback speed, tinted when it is not 1×.
+class SpeedButton extends StatelessWidget {
+  const SpeedButton({super.key, required this.rate, required this.onTap});
+
+  final double rate;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    final label = rate == rate.roundToDouble() ? '${rate.round()}×' : '$rate×';
+    final fast = rate != 1;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+          decoration: BoxDecoration(
+            color: c.accent.withValues(alpha: fast ? 0.16 : 0.08),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Text(
+            label,
+            style: mgTextStyle(
+              c,
+              size: MgType.meta,
+              weight: FontWeight.w600,
+              color: c.accent,
+              height: 1.3,
+            ).copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
+          ),
+        ),
       ),
     );
   }
@@ -310,6 +546,7 @@ class _FileRow extends StatelessWidget {
     required this.subtitle,
     this.title,
     this.titleWidget,
+    this.subtitleTrailing,
     this.meta,
     this.onTap,
   });
@@ -318,6 +555,9 @@ class _FileRow extends StatelessWidget {
   final String? title;
   final Widget? titleWidget;
   final String subtitle;
+
+  /// Right after the subtitle, such as the speed of a playing voice.
+  final Widget? subtitleTrailing;
   final Widget? meta;
   final VoidCallback? onTap;
 
@@ -343,7 +583,7 @@ class _FileRow extends StatelessWidget {
               const SizedBox(height: 2),
               Row(
                 children: [
-                  Expanded(
+                  Flexible(
                     child: Text(
                       subtitle,
                       maxLines: 1,
@@ -351,6 +591,17 @@ class _FileRow extends StatelessWidget {
                       style: MessageMeta.styleOf(c),
                     ),
                   ),
+                  AnimatedSize(
+                    duration: const Duration(milliseconds: 180),
+                    curve: Curves.easeOutCubic,
+                    child: subtitleTrailing == null
+                        ? const SizedBox.shrink()
+                        : Padding(
+                            padding: const EdgeInsets.only(left: 6),
+                            child: subtitleTrailing,
+                          ),
+                  ),
+                  const Spacer(),
                   if (meta != null) ...[const SizedBox(width: 8), meta!],
                 ],
               ),

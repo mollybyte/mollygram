@@ -1,9 +1,14 @@
 import 'dart:async';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' show TdClientClosed;
 
+import '../home/workspace_storage.dart';
+import '../privacy/message_store.dart';
+import '../privacy/privacy_settings.dart';
+import '../settings/preferences.dart';
 import 'sign_in_actions.dart';
 import 'telegram_session_launcher.dart';
 
@@ -25,12 +30,73 @@ final class MissingApiKeys implements Exception {
 final telegramSessionProvider = FutureProvider<TelegramSession>((ref) async {
   final config = ref.watch(telegramApiConfigProvider);
   if (!config.isConfigured) throw const MissingApiKeys();
-  final session = await ref
-      .watch(telegramSessionLauncherProvider)
-      .start(config);
-  ref.onDispose(() => unawaited(session.dispose()));
+  final launcher = ref.watch(telegramSessionLauncherProvider);
+  // The saved privacy extras apply from the first request on.
+  await ref.read(privacySettingsProvider.notifier).loaded;
+  TelegramSession session;
+  for (var attempt = 1; ; attempt++) {
+    try {
+      session = await launcher.start(
+        config,
+        privacy: ref.read(privacySettingsProvider),
+        openStore: ref.read(messageStoreOpenerProvider),
+      );
+      break;
+    } on SessionClosedElsewhere {
+      // Closed as it started; the next client starts signed out.
+      if (attempt == 3) rethrow;
+      await _forgetAccount(ref);
+    }
+  }
+  // Replaced while starting (another account was opened): nothing else
+  // will close this client, and it holds the account's database lock.
+  if (!ref.mounted) {
+    await session.dispose();
+    throw StateError('The session was replaced while it started');
+  }
+  // A switch flipped while the session was starting.
+  session.privacySettings = ref.read(privacySettingsProvider);
+  // The Data and storage switches reach the files as they change.
+  session.files.autoDownloadKinds = ref.read(autoDownloadKindsProvider);
+  ref.listen(
+    autoDownloadKindsProvider,
+    (_, kinds) => session.files.autoDownloadKinds = kinds,
+  );
+  // Online while the window is active, as the official client is.
+  final privacy = session.privacy;
+  final lifecycle = AppLifecycleListener(
+    onStateChange: (state) =>
+        privacy.foreground = state == AppLifecycleState.resumed,
+  );
+  final state = WidgetsBinding.instance.lifecycleState;
+  privacy.foreground = state == null || state == AppLifecycleState.resumed;
+  var disposed = false;
+  ref.onDispose(() {
+    disposed = true;
+    lifecycle.dispose();
+    unawaited(session.dispose());
+  });
+  // Terminated from another device: TDLib has logged out and closed the
+  // client, so a new session starts and the app lands on sign-in.
+  unawaited(
+    session.closedElsewhere.then((_) async {
+      await session.dispose();
+      if (disposed) return;
+      await _forgetAccount(ref);
+      if (!disposed) ref.invalidateSelf();
+    }),
+  );
   return session;
 });
+
+/// Forgets what belonged to an account that was signed out elsewhere: the
+/// saved window layout and the selected folder. The sign-in screen never
+/// sees the old session reach the phone number step, which is where a
+/// sign-out normally clears them.
+Future<void> _forgetAccount(Ref ref) async {
+  await ref.read(workspaceSaverProvider).clear();
+  ref.invalidate(selectedChatListProvider);
+}
 
 /// TDLib's current sign-in step.
 final authorizationStageProvider = StreamProvider<AuthorizationStage>((ref) {
@@ -39,6 +105,12 @@ final authorizationStageProvider = StreamProvider<AuthorizationStage>((ref) {
     session.authorization.currentStage,
     session.authorization.stages,
   );
+});
+
+/// How the connection to Telegram is doing, for the status in the window.
+final connectionStatusProvider = StreamProvider<ConnectionStatus>((ref) {
+  final connection = ref.watch(telegramSessionProvider).requireValue.connection;
+  return _startWith(connection.current, connection.changes);
 });
 
 /// Sends what the user typed on the sign-in screen to TDLib.

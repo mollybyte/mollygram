@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>B Compact — main window</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="base.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#0071E3}a:hover{color:#0058B0}
+</style>
+</helmet>
+<div class="pair">
+<sc-for list="{{themes}}" as="t" hint-placeholder-count="2">
+<div class="win {{t.cls}}">
+
+  <!-- Narrow sidebar island, dense rows -->
+  <aside class="glass" aria-label="Chats" style="position: absolute; z-index: 3; top: 8px; left: 8px; bottom: 8px; width: 284px; border-radius: 14px; display: flex; flex-direction: column; overflow: hidden">
+    <div style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 8px 0 14px">
+      <span class="lights" aria-hidden="true"><span></span><span></span><span></span></span>
+      <span style="flex: 1"></span>
+      <button class="ib" aria-label="New message" style="width: 26px; height: 26px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6"></path><path d="M17.5 3.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4z"></path></svg></button>
+    </div>
+    <div style="padding: 0 10px 6px">
+      <label class="search" style="height: 26px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg><input type="search" placeholder="Search" aria-label="Search"></label>
+    </div>
+    <div style="margin: 0 10px 6px; display: flex; padding: 2px; border-radius: 7px; background: var(--field); gap: 2px" role="tablist" aria-label="Folders">
+      <button class="tab" role="tab" style="flex: 1; height: 20px; border-radius: 5px; font-size: 11.5px; padding: 0">All</button>
+      <button class="tab" role="tab" aria-selected="true" style="flex: 1; height: 20px; border-radius: 5px; font-size: 11.5px; padding: 0; background: var(--solid2); color: var(--fg); box-shadow: 0 1px 2px rgba(0,0,0,.12)">Personal</button>
+      <button class="tab" role="tab" style="flex: 1; height: 20px; border-radius: 5px; font-size: 11.5px; padding: 0">Bots</button>
+      <button class="tab" role="tab" style="flex: 1; height: 20px; border-radius: 5px; font-size: 11.5px; padding: 0">Groups</button>
+      <button class="tab" role="tab" style="flex: 1; height: 20px; border-radius: 5px; font-size: 11.5px; padding: 0">HG</button>
+    </div>
+    <div style="flex: 1; padding: 0 6px; display: flex; flex-direction: column; overflow: hidden">
+      <button class="row" style="padding: 5px 8px; border-radius: 7px; gap: 8px"><span class="av" style="width: 30px; height: 30px; font-size: 11px">A</span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="display: flex; justify-content: space-between; gap: 8px"><span class="nm" style="font-size: 12.5px">alina --verbose</span><span class="tm" style="font-size: 11px">Wed</span></span><span class="sub" style="font-size: 12px">You: Photo, https://raskurvdodo.ru/</span></span></button>
+      <button class="row" style="padding: 5px 8px; border-radius: 7px; gap: 8px"><span class="av" style="width: 30px; height: 30px; font-size: 11px">КБ</span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="display: flex; justify-content: space-between; gap: 8px"><span class="nm" style="font-size: 12.5px">котики без пятерочки</span><span class="tm" style="font-size: 11px">17:39</span></span><span style="display: flex; justify-content: space-between; gap: 8px"><span class="sub" style="font-size: 12px">норм такая</span><span class="badge" style="height: 16px; min-width: 16px; font-size: 10px">3</span></span></span></button>
+      <button class="row on" style="padding: 5px 8px; border-radius: 7px; gap: 8px"><span class="av" style="width: 30px; height: 30px; font-size: 11px">P</span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="display: flex; justify-content: space-between; gap: 8px"><span class="nm" style="font-size: 12.5px">powershell</span><span class="tm" style="font-size: 11px">18:01</span></span><span class="sub" style="font-size: 12px">You: давай</span></span></button>
+      <button class="row" style="padding: 5px 8px; border-radius: 7px; gap: 8px"><span class="av" style="width: 30px; height: 30px; font-size: 11px">12</span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="display: flex; justify-content: space-between; gap: 8px"><span class="nm" style="font-size: 12.5px">1212</span><span class="tm" style="font-size: 11px">17:47</span></span><span class="sub" style="font-size: 12px">Photo</span></span></button>
+      <button class="row" style="padding: 5px 8px; border-radius: 7px; gap: 8px"><span class="av" style="width: 30px; height: 30px; font-size: 11px">PC</span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="display: flex; justify-content: space-between; gap: 8px"><span class="nm" style="font-size: 12.5px">pink color</span><span class="tm" style="font-size: 11px">17:46</span></span><span class="sub" style="font-size: 12px">шизоид</span></span></button>
+      <button class="row" style="padding: 5px 8px; border-radius: 7px; gap: 8px"><span class="av" style="width: 30px; height: 30px; font-size: 11px">Н</span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="display: flex; justify-content: space-between; gap: 8px"><span class="nm" style="font-size: 12.5px">наташа</span><span class="tm" style="font-size: 11px">17:45</span></span><span class="sub" style="font-size: 12px">You: avito type shit user</span></span></button>
+      <button class="row" style="padding: 5px 8px; border-radius: 7px; gap: 8px"><span class="av" style="width: 30px; height: 30px; font-size: 11px">WC</span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="display: flex; justify-content: space-between; gap: 8px"><span class="nm" style="font-size: 12.5px">white color</span><span class="tm" style="font-size: 11px">17:25</span></span><span style="display: flex; justify-content: space-between; gap: 8px"><span class="sub" style="font-size: 12px">чехол реально топ</span><span class="badge m" style="height: 16px; min-width: 16px; font-size: 10px">12</span></span></span></button>
+      <button class="row" style="padding: 5px 8px; border-radius: 7px; gap: 8px"><span class="av" style="width: 30px; height: 30px; font-size: 11px">Á</span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="display: flex; justify-content: space-between; gap: 8px"><span class="nm" style="font-size: 12.5px">á</span><span class="tm" style="font-size: 11px">16:50</span></span><span class="sub" style="font-size: 12px">Video message</span></span></button>
+      <button class="row" style="padding: 5px 8px; border-radius: 7px; gap: 8px"><span class="av" style="width: 30px; height: 30px; font-size: 11px">N</span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="display: flex; justify-content: space-between; gap: 8px"><span class="nm" style="font-size: 12.5px">Nikolay</span><span class="tm" style="font-size: 11px">16:37</span></span><span class="sub" style="font-size: 12px">You: спасибо за фидбек</span></span></button>
+      <button class="row" style="padding: 5px 8px; border-radius: 7px; gap: 8px"><span class="av" style="width: 30px; height: 30px; font-size: 11px">M</span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="display: flex; justify-content: space-between; gap: 8px"><span class="nm" style="font-size: 12.5px">Mollygram Dev</span><span class="tm" style="font-size: 11px">15:28</span></span><span class="sub" style="font-size: 12px">Release 0.1.0 notes</span></span></button>
+      <button class="row" style="padding: 5px 8px; border-radius: 7px; gap: 8px"><span class="av" style="width: 30px; height: 30px; font-size: 11px">D</span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="display: flex; justify-content: space-between; gap: 8px"><span class="nm" style="font-size: 12.5px">Design</span><span class="tm" style="font-size: 11px">12:59</span></span><span class="sub" style="font-size: 12px">https://vt.tiktok.com/ZSgR98Bjq/</span></span></button>
+      <button class="row" style="padding: 5px 8px; border-radius: 7px; gap: 8px"><span class="av" style="width: 30px; height: 30px; font-size: 11px">S</span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="display: flex; justify-content: space-between; gap: 8px"><span class="nm" style="font-size: 12.5px">Saved Messages</span><span class="tm" style="font-size: 11px">Mon</span></span><span class="sub" style="font-size: 12px">fvm flutter run -d macos</span></span></button>
+      <button class="row" style="padding: 5px 8px; border-radius: 7px; gap: 8px"><span class="av" style="width: 30px; height: 30px; font-size: 11px">T</span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="display: flex; justify-content: space-between; gap: 8px"><span class="nm" style="font-size: 12.5px">Telegram</span><span class="tm" style="font-size: 11px">Sun</span></span><span class="sub" style="font-size: 12px">Login code: 48213</span></span></button>
+    </div>
+    <div class="hr"></div>
+    <div style="height: 36px; display: flex; align-items: center; gap: 6px; padding: 0 10px">
+      <span class="av" style="width: 22px; height: 22px; font-size: 9px">A</span>
+      <span style="font-size: 12px; font-weight: 500">alina</span>
+      <span style="flex: 1"></span>
+      <button class="ib" aria-label="Archive" style="width: 26px; height: 26px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="5" rx="1.5"></rect><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9M10 13h4"></path></svg></button>
+      <button class="ib" aria-label="Settings" style="width: 26px; height: 26px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg></button>
+    </div>
+  </aside>
+
+  <!-- Thin header strip: tabs + chat title in one line -->
+  <header class="glass" style="position: absolute; z-index: 3; top: 8px; left: 300px; right: 8px; height: 38px; border-radius: 12px; display: flex; align-items: center; gap: 6px; padding: 0 6px 0 8px; box-sizing: border-box">
+    <span class="chip on" style="height: 24px"><span class="av" style="width: 16px; height: 16px; font-size: 8px; background: rgba(255,255,255,.3)">P</span>powershell</span>
+    <span class="chip" style="height: 24px"><span class="av" style="width: 16px; height: 16px; font-size: 8px">КБ</span>котики без пятерочки</span>
+    <span class="chip" style="height: 24px"><span class="av" style="width: 16px; height: 16px; font-size: 8px">D</span>Design</span>
+    <button class="ib" aria-label="New tab" style="width: 24px; height: 24px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button>
+    <span style="flex: 1"></span>
+    <span class="st">online</span>
+    <span style="width: 1px; height: 16px; background: var(--sep); margin: 0 4px"></span>
+    <button class="ib" aria-label="Search in chat" style="width: 26px; height: 26px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg></button>
+    <button class="ib" aria-label="Call" style="width: 26px; height: 26px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"></path></svg></button>
+    <button class="ib" aria-label="Split view" style="width: 26px; height: 26px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"></rect><path d="M12 4v16"></path></svg></button>
+    <button class="ib" aria-label="Chat info" style="width: 26px; height: 26px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5M12 8h.01"></path></svg></button>
+  </header>
+
+  <!-- Messages: tighter rhythm, 30px avatars -->
+  <main style="position: absolute; left: 300px; right: 8px; top: 54px; bottom: 62px; padding: 6px 16px 0 16px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end">
+    <div class="msgs" style="gap: 1px">
+      <span class="datepill" style="font-size: 11px; padding: 2px 9px">Today</span>
+      <div class="m" style="grid-template-columns: 30px 1fr auto; margin-top: 6px; padding: 2px 0"><span class="av" style="width: 30px; height: 30px; font-size: 11px">A</span><div><div class="who a" style="font-size: 12.5px; line-height: 16px">aliné</div><div class="txt" style="font-size: 13px; line-height: 17px">бля чот</div></div><span class="meta" style="line-height: 16px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 13 4 4L15 9"></path><path d="m10 17 10-10"></path></svg>17:29</span></div>
+      <div class="m f" style="grid-template-columns: 30px 1fr auto; padding: 2px 0"><div class="txt" style="font-size: 13px; line-height: 17px">PI в сети</div><span class="meta" style="line-height: 16px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 13 4 4L15 9"></path><path d="m10 17 10-10"></path></svg>17:29</span></div>
+      <div class="m f" style="grid-template-columns: 30px 1fr auto; padding: 2px 0"><div class="txt" style="font-size: 13px; line-height: 17px">ой</div><span class="meta" style="line-height: 16px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 13 4 4L15 9"></path><path d="m10 17 10-10"></path></svg>17:29</span></div>
+      <div class="m f" style="grid-template-columns: 30px 1fr auto; padding: 2px 0"><div class="txt" style="font-size: 13px; line-height: 17px">тоесть лампа горит но не отвечает</div><span class="meta" style="line-height: 16px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 13 4 4L15 9"></path><path d="m10 17 10-10"></path></svg>17:29</span></div>
+      <div class="m f" style="grid-template-columns: 30px 1fr auto; padding: 2px 0"><div class="txt" style="font-size: 13px; line-height: 17px">походу питания не хватает</div><span class="meta" style="line-height: 16px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 13 4 4L15 9"></path><path d="m10 17 10-10"></path></svg>17:29</span></div>
+      <div class="m" style="grid-template-columns: 30px 1fr auto; margin-top: 6px; padding: 2px 0"><span class="av" style="width: 30px; height: 30px; font-size: 11px">P</span><div><div class="who b" style="font-size: 12.5px; line-height: 16px">powershell</div><div class="txt" style="font-size: 13px; line-height: 17px">как оно?</div></div><span class="meta" style="line-height: 16px">17:52</span></div>
+      <div class="m" style="grid-template-columns: 30px 1fr auto; margin-top: 6px; padding: 2px 0"><span class="av" style="width: 30px; height: 30px; font-size: 11px">A</span><div><div class="who a" style="font-size: 12.5px; line-height: 16px">aliné</div><div class="txt" style="font-size: 13px; line-height: 17px">все завел рпи ща вг подыму</div></div><span class="meta" style="line-height: 16px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 13 4 4L15 9"></path><path d="m10 17 10-10"></path></svg>17:52</span></div>
+      <div class="m f" style="grid-template-columns: 30px 1fr auto; padding: 2px 0"><div style="width: 320px; height: 160px; border-radius: 8px; background: linear-gradient(135deg, var(--av1), var(--av2)); display: grid; place-items: center; color: rgba(255,255,255,.85); font-size: 12px">screenshot.png</div><span class="meta" style="line-height: 16px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 13 4 4L15 9"></path><path d="m10 17 10-10"></path></svg>18:00</span></div>
+      <div class="m" style="grid-template-columns: 30px 1fr auto; margin-top: 6px; padding: 2px 0"><span class="av" style="width: 30px; height: 30px; font-size: 11px">P</span><div><div class="who b" style="font-size: 12.5px; line-height: 16px">powershell</div><div class="txt" style="font-size: 13px; line-height: 17px">ну вроде все норм</div></div><span class="meta" style="line-height: 16px">18:00</span></div>
+      <div class="m f" style="grid-template-columns: 30px 1fr auto; padding: 2px 0"><div class="txt" style="font-size: 13px; line-height: 17px">ща проверю</div><span class="meta" style="line-height: 16px">18:01</span></div>
+      <div class="m" style="grid-template-columns: 30px 1fr auto; margin-top: 6px; padding: 2px 0"><span class="av" style="width: 30px; height: 30px; font-size: 11px">A</span><div><div class="who a" style="font-size: 12.5px; line-height: 16px">aliné</div><div class="txt" style="font-size: 13px; line-height: 17px">давай</div></div><span class="meta" style="line-height: 16px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 13 4 4L15 9"></path><path d="m10 17 10-10"></path></svg>18:01</span></div>
+    </div>
+  </main>
+
+  <!-- Composer: flush full-width glass bar, square-ish corners -->
+  <form class="glass comp" style="position: absolute; z-index: 3; left: 300px; right: 8px; bottom: 8px; height: 44px; border-radius: 12px; padding: 0 8px 0 12px; box-sizing: border-box; gap: 6px">
+    <button class="ib" type="button" aria-label="Attach" style="width: 26px; height: 26px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 12-8.5 8.5a5.5 5.5 0 0 1-7.8-7.8L13 4.4a3.7 3.7 0 0 1 5.2 5.2L9.9 18a1.8 1.8 0 0 1-2.6-2.6L15 7.7"></path></svg></button>
+    <button class="ib" type="button" aria-label="Formatting" style="width: 26px; height: 26px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M5 4h14M12 4v16M8 20h8"></path></svg></button>
+    <input type="text" placeholder="Message" aria-label="Message" style="font-size: 13px">
+    <button class="ib" type="button" aria-label="Emoji" style="width: 26px; height: 26px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0M9 10h.01M15 10h.01"></path></svg></button>
+    <button class="ib" type="button" aria-label="Record" style="width: 26px; height: 26px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg></button>
+  </form>
+
+</div>
+</sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":2400,"height":740}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { themes: [{ cls: 'light' }, { cls: 'dark' }] };
+  }
+}
+</script>
+</body>
+</html>

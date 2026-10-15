@@ -119,10 +119,9 @@ void main() {
     Future<List<Map<String, Object?>>> render(
       PluginInstance p,
       String text,
-    ) async => ((await p.dispatch(
-      PluginEvent.messageRenderText,
-      msg(text),
-    )) as EventHandled).ui;
+    ) async => (_check(
+      await p.dispatch(PluginEvent.messageRenderText, msg(text)),
+    ) as EventHandled).ui;
 
     test(
       'offers a translation for another language, sends nothing yet',
@@ -152,6 +151,29 @@ void main() {
       final again = await render(p, german);
       expect(again.first['text'], 'translated to ru');
       expect(services.calls, isNot(contains('messages.translate')));
+    });
+
+    test('a translation longer than the message is shown whole', () async {
+      final long = 'Guten Morgen ${'und so weiter ' * 290}'.trim();
+      expect(long.length, greaterThan(4000));
+      services.translation = 'Доброе утро ${'и так далее ' * 700}';
+      final p = await start('translate', settings: {'auto': true});
+      for (var i = 0; i < 4; i++) {
+        final ui = await render(p, long);
+        expect(ui.first['text'], services.translation);
+      }
+      expect(p.status, PluginStatus.running);
+    });
+
+    test('a full cache lets the oldest translations go', () async {
+      services.maxValues = 5;
+      final p = await start('translate', settings: {'auto': true});
+      for (var i = 0; i < 8; i++) {
+        final ui = await render(p, '$german $i');
+        expect(ui.first['text'], 'translated to en');
+      }
+      expect(services.storage.length, lessThanOrEqualTo(5));
+      expect(p.logs.where((l) => l.contains('cache write failed')), isEmpty);
     });
 
     test('an edited message is translated again', () async {
@@ -202,4 +224,120 @@ void main() {
       );
     });
   });
+
+  group('Code highlight', () {
+    Future<List<CodeSpan>?> highlight(
+      PluginInstance p,
+      String code, {
+      String? language,
+    }) async {
+      final r = await p.dispatch(PluginEvent.messageRenderCode, {
+        'code': code,
+        'language': ?language,
+      });
+      if (r is! EventHandled) fail('$r');
+      return codeSpansFor(r.ui, code);
+    }
+
+    String tokenOf(List<CodeSpan> spans, String text) =>
+        spans.firstWhere((s) => s.text.trim() == text).token;
+
+    test('asks for nothing', () async {
+      final bundle = await PluginBundle.load(
+        Directory('builtin/code_highlight'),
+      );
+      expect(
+        bundle.manifest.permissions.escalationsFrom(PermissionSet.none),
+        isEmpty,
+      );
+      expect(bundle.manifest.hooks, ['message.render.code']);
+    });
+
+    test('colors keywords, strings, numbers, comments and calls', () async {
+      final p = await start('code_highlight');
+      const code = 'final n = max(42, "a\\"b"); // done\nclass Box {}';
+      final spans = (await highlight(p, code, language: 'dart'))!;
+      expect(spans.map((s) => s.text).join(), code);
+      expect(tokenOf(spans, 'final'), 'keyword');
+      expect(tokenOf(spans, 'max'), 'function');
+      expect(tokenOf(spans, '42'), 'number');
+      expect(tokenOf(spans, '"a\\"b"'), 'string');
+      expect(tokenOf(spans, '// done'), 'comment');
+      expect(tokenOf(spans, 'Box'), 'type');
+    });
+
+    test('follows the language', () async {
+      final p = await start('code_highlight');
+      final python = (await highlight(p, 'def f(): # note', language: 'py'))!;
+      expect(tokenOf(python, 'def'), 'keyword');
+      expect(tokenOf(python, '# note'), 'comment');
+      final sql = (await highlight(p, 'SELECT id FROM t', language: 'sql'))!;
+      expect(tokenOf(sql, 'SELECT'), 'keyword');
+      // Without a language the common keywords still stand out.
+      final plain = (await highlight(p, 'return x'))!;
+      expect(tokenOf(plain, 'return'), 'keyword');
+    });
+
+    test('keeps an unclosed string or comment to the end', () async {
+      final p = await start('code_highlight');
+      for (final code in ['x = "open', '/* never closed', "s = '''multi"]) {
+        final spans = await highlight(p, code, language: 'js');
+        expect(spans?.map((s) => s.text).join(), code, reason: code);
+      }
+    });
+
+    test('a block that is one long comment stays valid', () async {
+      final p = await start('code_highlight');
+      for (final code in ['// ${'x' * 4090}', '/* ${'y' * 4092}']) {
+        final spans = (await highlight(p, code, language: 'js'))!;
+        expect(spans.map((s) => s.text).join(), code);
+        expect(spans.every((s) => s.text.length <= 4000), isTrue);
+      }
+      expect(p.status, PluginStatus.running);
+    });
+
+    test('nested templates, lifetimes and # stay in their place', () async {
+      final p = await start('code_highlight');
+      final js = (await highlight(
+        p,
+        r'const s = `a ${f(`b ${c}`)} d`; x',
+        language: 'ts',
+      ))!;
+      expect(tokenOf(js, r'`a ${f(`b ${c}`)} d`'), 'string');
+      expect(js.last, (text: ' x', token: 'plain'));
+
+      final rust = (await highlight(
+        p,
+        "fn f<'a>(s: &'a str) -> char { 'x' }",
+        language: 'rust',
+      ))!;
+      expect(tokenOf(rust, "'x'"), 'string');
+      // The lifetime is not the start of a string.
+      expect(rust.where((s) => s.token == 'string').map((s) => s.text), [
+        "'x'",
+      ]);
+
+      final c = (await highlight(p, '#include <stdio.h>\n# note'))!;
+      expect(tokenOf(c, '#include'), 'plain');
+      expect(tokenOf(c, '# note'), 'comment');
+      final css = (await highlight(p, 'a { color: #fff; }', language: 'css'))!;
+      expect(css.where((s) => s.token == 'comment'), isEmpty);
+    });
+
+    test('highlights the longest message within the time budget', () async {
+      final p = await start('code_highlight');
+      // A message holds at most 4096 characters.
+      final code = List.filled(
+        128,
+        'if (a < 10) { call("x", 1.5); }',
+      ).join('\n');
+      expect(await highlight(p, code, language: 'js'), isNotNull);
+      expect(p.status, PluginStatus.running);
+    });
+  });
+}
+
+EventOutcome _check(EventOutcome o) {
+  if (o is EventSkipped) fail('skipped: ${o.reason}');
+  return o;
 }

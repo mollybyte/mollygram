@@ -1,0 +1,548 @@
+import 'dart:async';
+import 'dart:collection';
+import 'dart:convert';
+
+import 'package:mollygram_core/mollygram_core.dart';
+import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
+import 'package:test/test.dart';
+
+void main() {
+  late _FakeTdJson json;
+  late td.Td tdlib;
+  late PrivacySettingsController privacy;
+
+  setUp(() async {
+    json = _FakeTdJson();
+    tdlib = td.Td.custom(json, td.InlineTdEventSource(json));
+    privacy = PrivacySettingsController(tdlib.createClient());
+    await privacy.start();
+  });
+
+  tearDown(() async {
+    await privacy.dispose();
+    await tdlib.close();
+  });
+
+  Future<void> drain() async {
+    for (var i = 0; i < 5; i++) {
+      await Future<void>.delayed(Duration.zero);
+    }
+  }
+
+  Map<String, Object?> sent(String type) =>
+      json.sent.lastWhere((r) => r['@type'] == type);
+
+  List<String> rulesSent() => [
+    for (final rule
+        in ((sent('setUserPrivacySettingRules')['rules']! as Map)['rules']!
+            as List))
+      (rule as Map)['@type']! as String,
+  ];
+
+  group('choice', () {
+    PrivacyChoice read(List<Map<String, Object?>> rules) =>
+        PrivacyChoice.fromTd(
+          td.UserPrivacySettingRules.fromJson({
+            '@type': 'userPrivacySettingRules',
+            'rules': rules,
+          }),
+        );
+
+    test('reads the audience and the exceptions', () {
+      final choice = read([
+        _users('userPrivacySettingRuleAllowUsers', [5, 6]),
+        _chats('userPrivacySettingRuleRestrictChatMembers', [20]),
+        {'@type': 'userPrivacySettingRuleAllowContacts'},
+        {'@type': 'userPrivacySettingRuleRestrictAll'},
+      ]);
+      expect(choice.audience, PrivacyAudience.contacts);
+      expect(choice.alwaysUsers, [5, 6]);
+      expect(choice.neverChats, [20]);
+      expect(choice.alwaysCount, 2);
+      expect(choice.neverCount, 1);
+    });
+
+    test('reads no rules as nobody and allow all as everybody', () {
+      expect(read([]).audience, PrivacyAudience.nobody);
+      expect(
+        read([
+          _users('userPrivacySettingRuleRestrictUsers', [7]),
+          {'@type': 'userPrivacySettingRuleAllowAll'},
+        ]).audience,
+        PrivacyAudience.everybody,
+      );
+    });
+
+    test('writes exceptions before the audience and keeps other rules', () {
+      final choice = read([
+        {'@type': 'userPrivacySettingRuleAllowPremiumUsers'},
+        _users('userPrivacySettingRuleAllowUsers', [5]),
+        _users('userPrivacySettingRuleRestrictUsers', [6]),
+        {'@type': 'userPrivacySettingRuleAllowContacts'},
+      ]);
+      expect(
+        [for (final r in choice.toTd().rules) r.tdType],
+        [
+          'userPrivacySettingRuleAllowUsers',
+          'userPrivacySettingRuleRestrictUsers',
+          'userPrivacySettingRuleAllowPremiumUsers',
+          'userPrivacySettingRuleAllowContacts',
+          'userPrivacySettingRuleRestrictAll',
+        ],
+      );
+
+      // Everybody makes "always allow" moot, so it isn't sent.
+      final open = choice.copyWith(audience: PrivacyAudience.everybody);
+      expect(open.alwaysCount, 0);
+      expect(open.neverCount, 1);
+      expect(
+        [for (final r in open.toTd().rules) r.tdType],
+        [
+          'userPrivacySettingRuleRestrictUsers',
+          'userPrivacySettingRuleAllowPremiumUsers',
+          'userPrivacySettingRuleAllowAll',
+        ],
+      );
+      // The lists are kept for when the audience changes back.
+      expect(open.alwaysUsers, [5]);
+    });
+
+    test('people named one by one come before groups', () {
+      const choice = PrivacyChoice(
+        audience: PrivacyAudience.contacts,
+        alwaysUsers: [5],
+        neverUsers: [6],
+        alwaysChats: [20],
+        neverChats: [21],
+      );
+      expect(
+        [for (final r in choice.toTd().rules) r.tdType],
+        [
+          'userPrivacySettingRuleAllowUsers',
+          'userPrivacySettingRuleRestrictUsers',
+          'userPrivacySettingRuleAllowChatMembers',
+          'userPrivacySettingRuleRestrictChatMembers',
+          'userPrivacySettingRuleAllowContacts',
+          'userPrivacySettingRuleRestrictAll',
+        ],
+      );
+    });
+
+    test('someone moved to one list leaves the other', () {
+      final choice = read([
+        _users('userPrivacySettingRuleAllowUsers', [5, 6]),
+        {'@type': 'userPrivacySettingRuleAllowContacts'},
+      ]).copyWith(neverUsers: [6, 7]);
+      expect(choice.alwaysUsers, [5]);
+      expect(choice.neverUsers, [6, 7]);
+    });
+
+    test('finding by phone and invites cannot be closed to everyone', () {
+      expect(
+        PrivacyRule.invites.audiences,
+        isNot(contains(PrivacyAudience.nobody)),
+      );
+      expect(PrivacyRule.findByPhoneNumber.hasExceptions, isFalse);
+      expect(PrivacyRule.lastSeen.audiences, PrivacyAudience.values);
+      expect(
+        PrivacyRule.of(const td.UserPrivacySettingShowBirthdate()),
+        PrivacyRule.birthday,
+      );
+    });
+  });
+
+  test('a setting that fails to load leaves the others', () async {
+    json.failingSetting = 'userPrivacySettingShowBirthdate';
+    final all = await privacy.choices();
+    expect(all, hasLength(PrivacyRule.values.length - 1));
+    expect(all.containsKey(PrivacyRule.birthday), isFalse);
+
+    json.failing.add('getUserPrivacySettingRules');
+    await expectLater(privacy.choices(), throwsA(isA<td.TdException>()));
+  });
+
+  test('asks for every setting', () async {
+    final all = await privacy.choices();
+    expect(all.keys, PrivacyRule.values);
+    expect(all[PrivacyRule.lastSeen]!.audience, PrivacyAudience.contacts);
+    expect(all[PrivacyRule.phoneNumber]!.audience, PrivacyAudience.nobody);
+    expect(
+      privacy.cached(PrivacyRule.calls)!.audience,
+      PrivacyAudience.everybody,
+    );
+  });
+
+  test('saves a setting and says so', () async {
+    final changed = <PrivacyRule>[];
+    privacy.changes.listen(changed.add);
+    await privacy.setChoice(
+      PrivacyRule.lastSeen,
+      const PrivacyChoice(audience: PrivacyAudience.nobody, alwaysUsers: [5]),
+    );
+    expect(sent('setUserPrivacySettingRules')['setting'], {
+      '@type': 'userPrivacySettingShowStatus',
+    });
+    expect(rulesSent(), [
+      'userPrivacySettingRuleAllowUsers',
+      'userPrivacySettingRuleRestrictAll',
+    ]);
+    expect(changed, [PrivacyRule.lastSeen]);
+    expect(
+      privacy.cached(PrivacyRule.lastSeen)!.audience,
+      PrivacyAudience.nobody,
+    );
+  });
+
+  test('a failed save keeps the setting and rethrows', () async {
+    await privacy.choice(PrivacyRule.lastSeen);
+    json.failing.add('setUserPrivacySettingRules');
+    await expectLater(
+      privacy.setChoice(
+        PrivacyRule.lastSeen,
+        const PrivacyChoice(audience: PrivacyAudience.nobody),
+      ),
+      throwsA(isA<td.TdException>()),
+    );
+    expect(
+      privacy.cached(PrivacyRule.lastSeen)!.audience,
+      PrivacyAudience.contacts,
+    );
+  });
+
+  test('follows changes made on another device', () async {
+    final changed = <PrivacyRule>[];
+    privacy.changes.listen(changed.add);
+    json.push({
+      '@type': 'updateUserPrivacySettingRules',
+      'setting': {'@type': 'userPrivacySettingShowBio'},
+      'rules': {
+        '@type': 'userPrivacySettingRules',
+        'rules': [
+          {'@type': 'userPrivacySettingRuleRestrictAll'},
+        ],
+      },
+    });
+    await privacy.blocked(); // Any request lets the updates through.
+    await drain();
+    expect(changed, [PrivacyRule.bio]);
+    expect(privacy.cached(PrivacyRule.bio)!.audience, PrivacyAudience.nobody);
+  });
+
+  test('names people and groups, leaving out unknown ones', () async {
+    final peers = await privacy.describe(userIds: [5, 99], chatIds: [20]);
+    expect([for (final p in peers) p.name], ['U5', 'Flutter']);
+    expect(peers.last.isChat, isTrue);
+  });
+
+  test('lists, blocks and unblocks', () async {
+    var changes = 0;
+    privacy.blockedChanges.listen((_) => changes++);
+
+    final page = await privacy.blocked(limit: 4);
+    // 99 is unknown to TDLib: left out, but the next page starts after it.
+    expect([for (final p in page.peers) p.name], ['U5', 'U6', 'Flutter']);
+    expect(page.peers[1].isBot, isTrue);
+    expect(page.nextOffset, 4);
+    expect(page.hasMore, isTrue);
+    expect(sent('getBlockedMessageSenders')['limit'], 4);
+
+    final last = await privacy.blocked(offset: 4);
+    expect(sent('getBlockedMessageSenders')['offset'], 4);
+    expect([for (final p in last.peers) p.name], ['U7']);
+    expect(last.nextOffset, 5);
+    expect(last.hasMore, isFalse);
+
+    await privacy.block(7);
+    expect(
+      sent('setMessageSenderBlockList'),
+      containsPair('block_list', {'@type': 'blockListMain'}),
+    );
+    await privacy.unblock(page.peers.last);
+    final unblock = sent('setMessageSenderBlockList');
+    expect(unblock['sender_id'], {'@type': 'messageSenderChat', 'chat_id': 20});
+    expect(unblock['block_list'], isNull);
+    expect(changes, 2);
+
+    json.push({'@type': 'updateChatBlockList', 'chat_id': 5});
+    await privacy.blocked();
+    await drain();
+    expect(changes, 3);
+  });
+
+  group('two-step verification', () {
+    test('reads the state', () async {
+      final state = await privacy.twoStep();
+      expect(state.hasPassword, isFalse);
+      expect(state.awaitsEmailCode, isFalse);
+    });
+
+    test('sets a password with a hint and a recovery email', () async {
+      final state = await privacy.setPassword(
+        oldPassword: '',
+        newPassword: 'secret',
+        hint: ' cat ',
+        email: ' a@mail.com ',
+      );
+      final request = sent('setPassword');
+      expect(request['new_password'], 'secret');
+      expect(request['new_hint'], 'cat');
+      expect(request['set_recovery_email_address'], isTrue);
+      expect(request['new_recovery_email_address'], 'a@mail.com');
+      expect(state.hasPassword, isFalse);
+      expect(state.pendingEmailPattern, 'a***@mail.com');
+      expect(state.codeLength, 6);
+
+      final confirmed = await privacy.checkEmailCode(' 123456 ');
+      expect(sent('checkRecoveryEmailAddressCode')['code'], '123456');
+      expect(confirmed.awaitsEmailCode, isFalse);
+      expect(confirmed.hasRecoveryEmail, isTrue);
+    });
+
+    test('a password without an email leaves the email alone', () async {
+      await privacy.setPassword(oldPassword: 'old', newPassword: 'new');
+      final request = sent('setPassword');
+      expect(request['old_password'], 'old');
+      expect(request['set_recovery_email_address'], isFalse);
+    });
+
+    test('removes the password', () async {
+      final state = await privacy.removePassword('secret');
+      expect(sent('setPassword')['new_password'], '');
+      expect(state.hasPassword, isFalse);
+    });
+
+    test('recovers a forgotten password through the email', () async {
+      expect(await privacy.requestPasswordRecovery(), 'a***@mail.com');
+      final state = await privacy.recoverPassword(
+        code: ' 111111 ',
+        newPassword: 'fresh',
+        hint: ' dog ',
+      );
+      final request = sent('recoverPassword');
+      expect(request['recovery_code'], '111111');
+      expect(request['new_password'], 'fresh');
+      expect(request['new_hint'], 'dog');
+      expect(state.hasPassword, isTrue);
+    });
+
+    test('a reset without the email waits', () async {
+      final reset = await privacy.resetPassword();
+      expect(
+        reset,
+        isA<PasswordResetPending>().having(
+          (r) => r.date,
+          'date',
+          DateTime.fromMillisecondsSinceEpoch(1800000000 * 1000),
+        ),
+      );
+    });
+
+    test('a wrong password is an error', () async {
+      json.failing.add('setRecoveryEmailAddress');
+      await expectLater(
+        privacy.setRecoveryEmail('wrong', 'b@mail.com'),
+        throwsA(isA<td.TdException>()),
+      );
+    });
+  });
+
+  test('reads and sets how long an unused account lives', () async {
+    expect(await privacy.accountTtl(), 180);
+    await privacy.setAccountTtl(365);
+    expect(sent('setAccountTtl')['ttl'], {'@type': 'accountTtl', 'days': 365});
+    expect(accountTtlChoices, [30, 90, 180, 365]);
+  });
+
+  test('a failed unblock is not reported as done', () async {
+    var changes = 0;
+    privacy.blockedChanges.listen((_) => changes++);
+    json.failing.add('setMessageSenderBlockList');
+    await expectLater(
+      privacy.unblock(const PrivacyPeer(id: 5, name: 'U5')),
+      throwsA(isA<td.TdException>()),
+    );
+    expect(changes, 0);
+  });
+}
+
+Map<String, Object?> _users(String type, List<int> ids) => {
+  '@type': type,
+  'user_ids': ids,
+};
+
+Map<String, Object?> _chats(String type, List<int> ids) => {
+  '@type': type,
+  'chat_ids': ids,
+};
+
+Map<String, Object?> _rules(List<String> types) => {
+  '@type': 'userPrivacySettingRules',
+  'rules': [
+    for (final type in types) {'@type': type},
+  ],
+};
+
+Map<String, Object?> _password({
+  required bool has,
+  bool pending = false,
+  bool email = false,
+}) => {
+  '@type': 'passwordState',
+  'has_password': has,
+  'password_hint': '',
+  'has_recovery_email_address': email,
+  'has_passport_data': false,
+  'recovery_email_address_code_info': pending
+      ? {
+          '@type': 'emailAddressAuthenticationCodeInfo',
+          'email_address_pattern': 'a***@mail.com',
+          'length': 6,
+        }
+      : null,
+  'login_email_address_pattern': '',
+  'pending_reset_date': 0,
+};
+
+Map<String, Object?> _user(int id, {bool bot = false}) => {
+  '@type': 'user',
+  'id': id,
+  'first_name': 'U$id',
+  'last_name': '',
+  'phone_number': '',
+  'status': {'@type': 'userStatusEmpty'},
+  'type': bot
+      ? {'@type': 'userTypeBot', 'inline_query_placeholder': ''}
+      : {'@type': 'userTypeRegular'},
+};
+
+final class _FakeTdJson implements td.TdJson {
+  final _queue = Queue<String>();
+  final sent = <Map<String, Object?>>[];
+  final failing = <String>{};
+
+  /// A setting whose rules fail to load.
+  String? failingSetting;
+  var _nextClientId = 0;
+
+  static const _blocked = [
+    {'@type': 'messageSenderUser', 'user_id': 5},
+    {'@type': 'messageSenderUser', 'user_id': 6},
+    {'@type': 'messageSenderChat', 'chat_id': 20},
+    {'@type': 'messageSenderUser', 'user_id': 99},
+    {'@type': 'messageSenderUser', 'user_id': 7},
+  ];
+
+  void push(Map<String, Object?> update) =>
+      _queue.add(jsonEncode({...update, '@client_id': 1}));
+
+  @override
+  int createClientId() => ++_nextClientId;
+
+  @override
+  String? execute(String request) => null;
+
+  @override
+  String? receive(double timeout) =>
+      _queue.isEmpty ? null : _queue.removeFirst();
+
+  Map<String, Object?> _rulesOf(Object? setting) =>
+      switch ((setting! as Map)['@type']) {
+        'userPrivacySettingShowStatus' => _rules([
+          'userPrivacySettingRuleAllowContacts',
+        ]),
+        'userPrivacySettingShowPhoneNumber' => _rules([
+          'userPrivacySettingRuleRestrictAll',
+        ]),
+        _ => _rules(['userPrivacySettingRuleAllowAll']),
+      };
+
+  @override
+  void send(int clientId, String request) {
+    final decoded = jsonDecode(request) as Map<String, Object?>;
+    final type = decoded['@type']! as String;
+    if (type != 'close') sent.add(decoded);
+    final failed =
+        failing.contains(type) ||
+        (type == 'getUserPrivacySettingRules' &&
+            (decoded['setting']! as Map)['@type'] == failingSetting);
+    final Map<String, Object?> response = failed
+        ? {'@type': 'error', 'code': 400, 'message': 'Failed'}
+        : switch (type) {
+            'getUserPrivacySettingRules' => _rulesOf(decoded['setting']),
+            'getUser' => switch (decoded['user_id']) {
+              5 || 7 => _user(decoded['user_id']! as int),
+              6 => _user(6, bot: true),
+              _ => {'@type': 'error', 'code': 404, 'message': 'Not found'},
+            },
+            'getChat' => {
+              '@type': 'chat',
+              'id': 20,
+              'type': {
+                '@type': 'chatTypeSupergroup',
+                'supergroup_id': 3,
+                'is_channel': false,
+              },
+              'title': 'Flutter',
+              'permissions': {'@type': 'chatPermissions'},
+              'notification_settings': {'@type': 'chatNotificationSettings'},
+              'available_reactions': {
+                '@type': 'chatAvailableReactionsAll',
+                'max_reaction_count': 11,
+              },
+              'video_chat': {'@type': 'videoChat'},
+            },
+            'getBlockedMessageSenders' => {
+              '@type': 'messageSenders',
+              'total_count': _blocked.length,
+              'senders': _blocked
+                  .skip(decoded['offset']! as int)
+                  .take(decoded['limit']! as int)
+                  .toList(),
+            },
+            'getPasswordState' => _password(has: false),
+            // With a new email, TDLib keeps the password until the code
+            // is confirmed.
+            'setPassword' => _password(
+              has:
+                  decoded['new_password'] != '' &&
+                  decoded['set_recovery_email_address'] != true,
+              pending: decoded['set_recovery_email_address'] == true,
+            ),
+            'requestPasswordRecovery' => {
+              '@type': 'emailAddressAuthenticationCodeInfo',
+              'email_address_pattern': 'a***@mail.com',
+              'length': 6,
+            },
+            'recoverPassword' => _password(
+              has: decoded['new_password'] != '',
+              email: true,
+            ),
+            'resetPassword' => {
+              '@type': 'resetPasswordResultPending',
+              'pending_reset_date': 1800000000,
+            },
+            'checkRecoveryEmailAddressCode' => _password(
+              has: true,
+              email: true,
+            ),
+            'getAccountTtl' => {'@type': 'accountTtl', 'days': 180},
+            _ => {'@type': 'ok'},
+          };
+    _queue.add(
+      jsonEncode({
+        ...response,
+        '@client_id': clientId,
+        '@extra': decoded['@extra'],
+      }),
+    );
+    if (type == 'close') {
+      _queue.add(
+        jsonEncode({
+          '@type': 'updateAuthorizationState',
+          'authorization_state': {'@type': 'authorizationStateClosed'},
+          '@client_id': 1,
+        }),
+      );
+    }
+  }
+}

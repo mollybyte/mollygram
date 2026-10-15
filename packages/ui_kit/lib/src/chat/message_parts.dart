@@ -109,26 +109,199 @@ class ReplyHeader extends StatelessWidget {
   }
 }
 
-/// "Forwarded from …" over a forwarded message.
-class ForwardHeader extends StatelessWidget {
-  const ForwardHeader(this.text, {super.key});
+/// A forwarded message: a rounded bar in the source's colour down its
+/// left side, with the source's name and the original date at the top,
+/// as in Telegram for macOS.
+class ForwardedBlock extends StatelessWidget {
+  const ForwardedBlock({
+    super.key,
+    required this.source,
+    required this.child,
+    this.date,
+    this.color,
+    this.onSourceTap,
+  });
 
-  final String text;
+  final String source;
+
+  /// When the original was posted, already formatted.
+  final String? date;
+
+  /// The source's name colour; the accent when unknown.
+  final Color? color;
+  final VoidCallback? onSourceTap;
+  final Widget child;
+
+  static const double barWidth = 2.5;
+  static const double indent = 10;
 
   @override
   Widget build(BuildContext context) {
     final c = MgColors.of(context);
-    return Text(
-      text,
+    final tint = color ?? c.accent;
+    final title = Text.rich(
+      TextSpan(
+        children: [
+          TextSpan(
+            text: source,
+            style: mgTextStyle(c, weight: FontWeight.w500, color: tint),
+          ),
+          if (date case final date?)
+            TextSpan(
+              text: '  $date',
+              style: mgTextStyle(c, size: MgType.small, color: c.fg2),
+            ),
+        ],
+      ),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: mgTextStyle(
-        c,
-        size: MgType.small,
-        weight: FontWeight.w500,
-        color: c.accent,
-        height: 1.3,
+    );
+    return CustomPaint(
+      painter: _BarPainter(tint),
+      child: Padding(
+        padding: const EdgeInsets.only(left: indent, top: 1, bottom: 2),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 2),
+              child: onSourceTap == null
+                  ? title
+                  : MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: GestureDetector(onTap: onSourceTap, child: title),
+                    ),
+            ),
+            child,
+          ],
+        ),
       ),
+    );
+  }
+}
+
+class _BarPainter extends CustomPainter {
+  const _BarPainter(this.color);
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.drawRRect(
+      RRect.fromLTRBR(
+        0,
+        0,
+        ForwardedBlock.barWidth,
+        size.height,
+        const Radius.circular(ForwardedBlock.barWidth / 2),
+      ),
+      Paint()..color = color,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_BarPainter old) => old.color != color;
+}
+
+/// The comments row under a channel post: the latest commenters' avatars
+/// and how many comments there are, or an invitation to leave the first.
+class CommentsRow extends StatefulWidget {
+  const CommentsRow({
+    super.key,
+    required this.label,
+    this.avatars = const [],
+    this.unread = false,
+    this.onTap,
+  });
+
+  final String label;
+
+  /// Up to three small avatars, newest last.
+  final List<Widget> avatars;
+
+  /// Comments the user has not read yet: an accent dot after the label.
+  final bool unread;
+  final VoidCallback? onTap;
+
+  @override
+  State<CommentsRow> createState() => _CommentsRowState();
+}
+
+class _CommentsRowState extends State<CommentsRow> {
+  var _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    final avatars = widget.avatars.take(3).toList();
+    const side = 22.0;
+    final row = Container(
+      constraints: const BoxConstraints(maxWidth: 420),
+      padding: const EdgeInsets.only(top: 7, bottom: 2),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: c.separator, width: 0.5)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (avatars.isEmpty)
+            MgIcon(MgIcons.comment, size: 18, color: c.accent)
+          else
+            SizedBox(
+              width: side + (avatars.length - 1) * (side - 7),
+              height: side,
+              child: Stack(
+                children: [
+                  for (final (i, avatar) in avatars.indexed)
+                    Positioned(
+                      left: i * (side - 7),
+                      child: Container(
+                        width: side,
+                        height: side,
+                        padding: const EdgeInsets.all(1.5),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: c.windowBackground,
+                        ),
+                        child: ClipOval(child: avatar),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          const SizedBox(width: 8),
+          Text(
+            widget.label,
+            style: mgTextStyle(
+              c,
+              weight: FontWeight.w500,
+              color: c.accent.withValues(alpha: _hover ? 0.75 : 1),
+            ),
+          ),
+          if (widget.unread)
+            Padding(
+              padding: const EdgeInsets.only(left: 6),
+              child: Container(
+                key: const ValueKey('unreadComments'),
+                width: 7,
+                height: 7,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: c.accent,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+    final onTap = widget.onTap;
+    if (onTap == null) return row;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(onTap: onTap, child: row),
     );
   }
 }
@@ -142,10 +315,17 @@ class ReactionChip extends StatelessWidget {
     required this.count,
     required this.chosen,
     this.onTap,
+    this.icon,
   });
 
-  /// The emoji; custom emoji are drawn by their fallback emoji for now.
+  /// The emoji, or the semantics of [icon].
   final String emoji;
+
+  /// Drawn in place of the [emoji], [iconSize] wide: a custom emoji's
+  /// sticker.
+  final Widget? icon;
+
+  static const double iconSize = 16;
   final int count;
   final bool chosen;
   final VoidCallback? onTap;
@@ -168,7 +348,7 @@ class ReactionChip extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(emoji, style: mgTextStyle(c, size: 13, height: 1.2)),
+              icon ?? Text(emoji, style: mgTextStyle(c, size: 13, height: 1.2)),
               if (count > 0) ...[
                 const SizedBox(width: 4),
                 Text(

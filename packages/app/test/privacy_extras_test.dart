@@ -1,0 +1,513 @@
+import 'dart:async';
+import 'dart:collection';
+import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mollygram/l10n/app_localizations.dart';
+import 'package:mollygram/src/home/workspace_storage.dart';
+import 'package:mollygram/src/privacy/ghost_mode_capsule.dart';
+import 'package:mollygram/src/privacy/message_store.dart';
+import 'package:mollygram/src/privacy/privacy_settings.dart';
+import 'package:mollygram/src/session/providers.dart';
+import 'package:mollygram/src/session/telegram_session_launcher.dart';
+import 'package:mollygram/src/settings/privacy_extras_page.dart';
+import 'package:mollygram/src/settings/settings_style.dart';
+import 'package:mollygram_core/mollygram_core.dart';
+import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
+import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
+
+void main() {
+  group('persistence', () {
+    late MemoryPrivacySettingsStorage storage;
+    late List<_FakeTdJson> clients;
+
+    /// [gate] holds TDLib's start until it completes.
+    /// [store] puts a real store there instead of one in memory.
+    ProviderContainer create(
+      Object? saved, {
+      Future<void>? gate,
+      (MessageStoreLocation, SecretStore)? store,
+    }) {
+      storage = MemoryPrivacySettingsStorage(saved);
+      clients = [];
+      final container = ProviderContainer(
+        overrides: [
+          privacySettingsStorageProvider.overrideWithValue(storage),
+          if (store == null)
+            messageStoreOpenerProvider.overrideWithValue(
+              () => MessageStore.memory(),
+            )
+          else ...[
+            messageStoreLocationProvider.overrideWith((ref) async => store.$1),
+            messageStoreSecretsProvider.overrideWithValue(store.$2),
+          ],
+          telegramApiConfigProvider.overrideWithValue(
+            const TelegramApiConfig(
+              apiId: 12345,
+              apiHash: '0123456789abcdef0123456789abcdef',
+            ),
+          ),
+          workspaceStorageProvider.overrideWithValue(MemoryWorkspaceStorage()),
+          telegramSessionLauncherProvider.overrideWithValue(
+            TelegramSessionLauncher(
+              startTdlib: (_) async {
+                await gate;
+                final json = _FakeTdJson();
+                clients.add(json);
+                return td.Td.custom(json, td.InlineTdEventSource(json));
+              },
+              loadParameters: _parameters,
+            ),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      return container;
+    }
+
+    test('the session starts with the saved switches', () async {
+      final container = create(const PrivacySettings.ghost().toJson());
+      final subscription = container.listen(telegramSessionProvider, (_, _) {});
+      addTearDown(subscription.close);
+
+      final session = await container.read(telegramSessionProvider.future);
+
+      expect(session.privacy.settings, const PrivacySettings.ghost());
+      expect(clients, hasLength(1));
+    });
+
+    test('a switch flipped while the session starts is not lost', () async {
+      final release = Completer<void>();
+      final container = create(null, gate: release.future);
+      final subscription = container.listen(telegramSessionProvider, (_, _) {});
+      addTearDown(subscription.close);
+      await container.read(privacySettingsProvider.notifier).loaded;
+      await Future<void>.delayed(Duration.zero);
+
+      container.read(privacySettingsProvider.notifier).setGhost(true);
+      release.complete();
+      final session = await container.read(telegramSessionProvider.future);
+
+      expect(session.privacy.settings.isGhost, isTrue);
+    });
+
+    test('the keep switches reach the capture', () async {
+      final container = create(
+        const PrivacySettings(keepDeletedMessages: true).toJson(),
+      );
+      final subscription = container.listen(telegramSessionProvider, (_, _) {});
+      addTearDown(subscription.close);
+      final session = await container.read(telegramSessionProvider.future);
+      expect(session.capture.keepDeleted, isTrue);
+      expect(session.capture.keepEdits, isFalse);
+      expect(session.capture.store, isNotNull);
+
+      container
+          .read(privacySettingsProvider.notifier)
+          .update((s) => s.copyWith(keepEditHistory: true));
+      expect(session.capture.keepEdits, isTrue);
+    });
+
+    test('a store whose key is lost reads as unreadable until reset', () async {
+      final dir = await Directory.systemTemp.createTemp('store');
+      addTearDown(() => dir.delete(recursive: true));
+      final location = MessageStoreLocation(
+        slot: 0,
+        path: messageStorePathFor(dir.path, 0),
+      );
+      // Written with a key the keychain no longer has.
+      final old = await MessageStore.open(
+        path: location.path,
+        key: List.filled(32, 7),
+      );
+      await old.close();
+      final secrets = _MemorySecrets();
+      final container = create(
+        const PrivacySettings(keepDeletedMessages: true).toJson(),
+        store: (location, secrets),
+      );
+      final subscription = container.listen(
+        storedMessagesStatusProvider,
+        (_, _) {},
+      );
+      addTearDown(subscription.close);
+
+      final lost = await container.read(storedMessagesStatusProvider.future);
+      expect(lost.unreadable, isTrue);
+      expect(lost.size, greaterThan(0));
+      expect(secrets.values, isEmpty, reason: 'no new key for an old file');
+
+      await container.read(resetStoredMessagesProvider)();
+      final fresh = await container.read(storedMessagesStatusProvider.future);
+      expect(fresh.unreadable, isFalse);
+      expect(fresh.size, 0);
+      expect(File(location.path).existsSync(), isFalse);
+
+      // The next store starts with a new key.
+      final session = await container.read(telegramSessionProvider.future);
+      final store = await session.capture.store!;
+      expect(await store.count(), 0);
+      expect(secrets.values, hasLength(1));
+    });
+
+    test('a change reaches the running session and is saved', () async {
+      final container = create(null);
+      final subscription = container.listen(telegramSessionProvider, (_, _) {});
+      addTearDown(subscription.close);
+      final session = await container.read(telegramSessionProvider.future);
+      expect(session.privacy.settings, const PrivacySettings());
+
+      container
+          .read(privacySettingsProvider.notifier)
+          .update((s) => s.copyWith(stayOffline: true));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(session.privacy.settings.stayOffline, isTrue);
+      expect(
+        PrivacySettings.fromJson(storage.saved),
+        const PrivacySettings(stayOffline: true),
+      );
+    });
+
+    test('reading a chat silently is remembered per chat', () async {
+      final container = create(null);
+      final notifier = container.read(privacySettingsProvider.notifier);
+      await notifier.loaded;
+
+      notifier.setSilentRead(7, true);
+      await Future<void>.delayed(Duration.zero);
+      expect(PrivacySettings.fromJson(storage.saved).silentReadChats, {7});
+
+      notifier.setSilentRead(7, false);
+      await Future<void>.delayed(Duration.zero);
+      expect(PrivacySettings.fromJson(storage.saved).silentReadChats, isEmpty);
+    });
+
+    test('a broken file reads as every switch off', () async {
+      final container = create('not a map');
+      await container.read(privacySettingsProvider.notifier).loaded;
+      expect(container.read(privacySettingsProvider), const PrivacySettings());
+    });
+  });
+
+  group('page and capsule', () {
+    late MemoryPrivacySettingsStorage storage;
+    var stored = const StoredMessagesStatus();
+    var cleared = 0;
+    var reset = 0;
+
+    setUp(() {
+      stored = const StoredMessagesStatus();
+      cleared = 0;
+      reset = 0;
+    });
+
+    Future<ProviderContainer> pump(WidgetTester tester, Widget child) async {
+      storage = MemoryPrivacySettingsStorage();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            privacySettingsStorageProvider.overrideWithValue(storage),
+            // No session: the switches only go to disk.
+            telegramSessionProvider.overrideWith(
+              (ref) => Completer<TelegramSession>().future,
+            ),
+            storedMessagesStatusProvider.overrideWith((ref) async => stored),
+            clearStoredMessagesProvider.overrideWithValue(() async {
+              cleared++;
+            }),
+            resetStoredMessagesProvider.overrideWithValue(() async {
+              reset++;
+            }),
+          ],
+          child: MaterialApp(
+            theme: buildMgTheme(MgColors.light),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Material(child: child),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      return ProviderScope.containerOf(tester.element(find.byWidget(child)));
+    }
+
+    bool switchOn(WidgetTester tester, String title) {
+      final row = find.ancestor(
+        of: find.text(title),
+        matching: find.byWidgetPredicate(
+          (w) => w is Semantics && w.properties.toggled != null,
+        ),
+      );
+      return (tester.widget<Semantics>(row.first)).properties.toggled!;
+    }
+
+    const titles = [
+      "Don't send read receipts",
+      "Don't show typing",
+      'Stay offline',
+      "Don't mark voice and video messages as played",
+    ];
+
+    testWidgets('every switch starts off', (tester) async {
+      await pump(tester, const PrivacyExtrasPage());
+
+      expect(switchOn(tester, 'Ghost mode'), isFalse);
+      for (final title in titles) {
+        expect(switchOn(tester, title), isFalse, reason: title);
+      }
+    });
+
+    testWidgets('ghost mode flips every switch', (tester) async {
+      final container = await pump(tester, const PrivacyExtrasPage());
+
+      await tester.tap(find.text('Ghost mode'));
+      await tester.pumpAndSettle();
+      for (final title in titles) {
+        expect(switchOn(tester, title), isTrue, reason: title);
+      }
+      expect(container.read(privacySettingsProvider).isGhost, isTrue);
+      expect(PrivacySettings.fromJson(storage.saved).isGhost, isTrue);
+
+      // One switch off is no longer ghost mode.
+      await tester.tap(find.text('Stay offline'));
+      await tester.pumpAndSettle();
+      expect(switchOn(tester, 'Ghost mode'), isFalse);
+      final mixed = container.read(privacySettingsProvider);
+      expect(mixed.stayOffline, isFalse);
+      expect(mixed.hideReadReceipts && mixed.hideTyping, isTrue);
+
+      await tester.tap(find.text('Stay offline'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Ghost mode'));
+      await tester.pumpAndSettle();
+      expect(container.read(privacySettingsProvider), const PrivacySettings());
+    });
+
+    testWidgets('ghost mode off brings back the earlier mix', (tester) async {
+      final container = await pump(tester, const PrivacyExtrasPage());
+
+      await tester.tap(find.text("Don't show typing"));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Ghost mode'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Ghost mode'));
+      await tester.pumpAndSettle();
+
+      final settings = container.read(privacySettingsProvider);
+      expect(settings.hideTyping, isTrue);
+      expect(settings.hideReadReceipts, isFalse);
+      expect(settings.stayOffline, isFalse);
+      expect(settings.hideContentOpened, isFalse);
+      expect(switchOn(tester, "Don't show typing"), isTrue);
+    });
+
+    testWidgets('keeping messages is off by default and not ghost mode', (
+      tester,
+    ) async {
+      final container = await pump(tester, const PrivacyExtrasPage());
+      expect(switchOn(tester, 'Keep deleted messages'), isFalse);
+      expect(switchOn(tester, 'Keep edit history'), isFalse);
+
+      await tester.tap(find.text('Ghost mode'));
+      await tester.pumpAndSettle();
+      expect(switchOn(tester, 'Keep deleted messages'), isFalse);
+
+      await tester.ensureVisible(find.text('Keep edit history'));
+      await tester.tap(find.text('Keep edit history'));
+      await tester.pumpAndSettle();
+      final settings = container.read(privacySettingsProvider);
+      expect(settings.keepEditHistory, isTrue);
+      expect(settings.isGhost, isTrue);
+      expect(PrivacySettings.fromJson(storage.saved).keepEditHistory, isTrue);
+    });
+
+    testWidgets('clears the stored data after asking', (tester) async {
+      stored = const StoredMessagesStatus(size: 4200, count: 3);
+      await pump(tester, const PrivacyExtrasPage());
+      final button = find.byKey(const ValueKey('clearStoredData'));
+      await tester.ensureVisible(button);
+      expect(find.text('4.2 KB'), findsOneWidget);
+
+      await tester.tap(button);
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          'Clear the deleted messages and edit history saved on this '
+          'computer?',
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Clear').last);
+      await tester.pumpAndSettle();
+
+      expect(cleared, 1);
+    });
+
+    testWidgets('nothing to clear while nothing is kept', (tester) async {
+      stored = const StoredMessagesStatus(size: 8192);
+      await pump(tester, const PrivacyExtrasPage());
+      final button = find.byKey(const ValueKey('clearStoredData'));
+      await tester.ensureVisible(button);
+
+      expect(tester.widget<SettingsButton>(button).onPressed, isNull);
+    });
+
+    testWidgets('a store whose key is lost can be reset', (tester) async {
+      stored = const StoredMessagesStatus(size: 8192, unreadable: true);
+      await pump(tester, const PrivacyExtrasPage());
+      final button = find.byKey(const ValueKey('resetStoredData'));
+      await tester.ensureVisible(button);
+      expect(find.text("Stored data can't be read"), findsOneWidget);
+      expect(find.byKey(const ValueKey('clearStoredData')), findsNothing);
+
+      await tester.tap(button);
+      await tester.pumpAndSettle();
+      expect(
+        find.text("Delete the stored data that can't be read and start again?"),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Reset').last);
+      await tester.pumpAndSettle();
+
+      expect(reset, 1);
+    });
+
+    testWidgets('secret chat screenshots stay blocked until allowed', (
+      tester,
+    ) async {
+      final container = await pump(tester, const PrivacyExtrasPage());
+      const title = 'Allow screenshots in secret chats';
+      await tester.ensureVisible(find.text(title));
+      expect(switchOn(tester, title), isFalse);
+      expect(find.textContaining('Risky'), findsNothing);
+
+      await tester.tap(find.text('Ghost mode'));
+      await tester.pumpAndSettle();
+      expect(switchOn(tester, title), isFalse, reason: 'not ghost mode');
+
+      await tester.ensureVisible(find.text(title));
+      await tester.tap(find.text(title));
+      await tester.pumpAndSettle();
+      expect(
+        container.read(privacySettingsProvider).allowSecretScreenshots,
+        true,
+      );
+      expect(
+        PrivacySettings.fromJson(storage.saved).allowSecretScreenshots,
+        isTrue,
+      );
+      expect(find.textContaining('Risky'), findsOneWidget);
+    });
+
+    testWidgets('each switch turns on only itself', (tester) async {
+      final container = await pump(tester, const PrivacyExtrasPage());
+
+      await tester.tap(find.text("Don't show typing"));
+      await tester.pumpAndSettle();
+
+      expect(
+        container.read(privacySettingsProvider),
+        const PrivacySettings(hideTyping: true),
+      );
+    });
+
+    testWidgets('the capsule shows while any extra is on', (tester) async {
+      var taps = 0;
+      final capsule = GhostModeCapsule(onTap: () => taps++);
+      final container = await pump(tester, Center(child: capsule));
+      double opacity() => tester
+          .widget<AnimatedOpacity>(find.byType(AnimatedOpacity).first)
+          .opacity;
+
+      expect(opacity(), 0);
+      expect(find.bySemanticsLabel('Ghost mode is on'), findsNothing);
+      await tester.tap(find.byType(GhostModeCapsule), warnIfMissed: false);
+      expect(taps, 0);
+
+      // One extra on: the ghost shows, dimmed.
+      container
+          .read(privacySettingsProvider.notifier)
+          .update((s) => s.copyWith(hideTyping: true));
+      await tester.pumpAndSettle();
+      expect(opacity(), 1);
+      expect(
+        find.bySemanticsLabel('Some privacy extras are on'),
+        findsOneWidget,
+      );
+
+      container.read(privacySettingsProvider.notifier).setGhost(true);
+      await tester.pumpAndSettle();
+      expect(opacity(), 1);
+      expect(find.bySemanticsLabel('Ghost mode is on'), findsOneWidget);
+      await tester.tap(find.byType(GhostModeCapsule));
+      expect(taps, 1);
+    });
+  });
+}
+
+Future<TdlibParameters> _parameters(TelegramApiConfig api) async =>
+    TdlibParameters(
+      api: api,
+      databaseDirectory: '/tmp/mollygram/database',
+      filesDirectory: '/tmp/mollygram/files',
+      databaseEncryptionKey: Uint8List.fromList([1, 2, 3]),
+      systemLanguageCode: 'en',
+      deviceModel: 'Mac',
+      applicationVersion: '0.1.0',
+    );
+
+final class _FakeTdJson implements td.TdJson {
+  final _queue = Queue<String>();
+
+  @override
+  int createClientId() => 1;
+
+  @override
+  String? execute(String request) => null;
+
+  @override
+  String? receive(double timeout) =>
+      _queue.isEmpty ? null : _queue.removeFirst();
+
+  @override
+  void send(int clientId, String request) {
+    final decoded = jsonDecode(request) as Map<String, Object?>;
+    final response = decoded['@type'] == 'getAuthorizationState'
+        ? {'@type': 'authorizationStateWaitPhoneNumber'}
+        : {'@type': 'ok'};
+    _queue.add(
+      jsonEncode({
+        ...response,
+        '@client_id': clientId,
+        '@extra': decoded['@extra'],
+      }),
+    );
+    if (decoded['@type'] == 'close') {
+      _queue.add(
+        jsonEncode({
+          '@type': 'updateAuthorizationState',
+          'authorization_state': {'@type': 'authorizationStateClosed'},
+          '@client_id': clientId,
+        }),
+      );
+    }
+  }
+}
+
+final class _MemorySecrets implements SecretStore {
+  final values = <String, String>{};
+
+  @override
+  Future<String?> read(String key) async => values[key];
+
+  @override
+  Future<void> write(String key, String value) async => values[key] = value;
+
+  @override
+  Future<void> delete(String key) async => values.remove(key);
+}

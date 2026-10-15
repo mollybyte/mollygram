@@ -38,6 +38,7 @@ class AudioTrackPlayer {
   final _position = ValueNotifier(Duration.zero);
   final _duration = ValueNotifier(Duration.zero);
   final _playing = ValueNotifier(false);
+  final _rate = ValueNotifier(1.0);
 
   /// The key of the track that is loaded, as given to [play]; null when
   /// nothing is.
@@ -45,6 +46,23 @@ class AudioTrackPlayer {
   ValueListenable<Duration> get position => _position;
   ValueListenable<Duration> get duration => _duration;
   ValueListenable<bool> get playing => _playing;
+
+  /// The playback speed; it carries over to the next track, as in
+  /// Telegram.
+  ValueListenable<double> get rate => _rate;
+
+  /// The speeds a click on the speed button steps through.
+  static const rates = [1.0, 1.5, 2.0];
+
+  /// Called with the key of a track that played to its end, after the
+  /// player unloaded it. The app uses it to go on to the next voice
+  /// message, as Telegram does.
+  void Function(Object key)? onCompleted;
+
+  Future<void> setRate(double rate) async {
+    _rate.value = rate;
+    await _instance?.setRate(rate);
+  }
 
   /// Plays the file at [path], identified by [key]. Playing the loaded
   /// track again resumes it.
@@ -54,9 +72,13 @@ class AudioTrackPlayer {
     _position.value = Duration.zero;
     _duration.value = Duration.zero;
     await _player.open(Media(Uri.file(path).toString()));
+    if (_rate.value != 1) await _player.setRate(_rate.value);
   }
 
   Future<void> pause() async => _instance?.pause();
+
+  /// Goes on playing the loaded track after [pause].
+  Future<void> resume() async => _instance?.play();
 
   Future<void> seek(Duration position) async => _instance?.seek(position);
 
@@ -68,9 +90,28 @@ class AudioTrackPlayer {
   }
 
   void _onCompleted() {
+    final key = _track.value;
     _track.value = null;
     _position.value = Duration.zero;
     _playing.value = false;
+    if (key != null) onCompleted?.call(key);
+  }
+
+  /// Acts as if the loaded track reached its end.
+  @visibleForTesting
+  void debugComplete() => _onCompleted();
+
+  /// Acts as if [play] loaded [key] and it is playing, without libmpv.
+  @visibleForTesting
+  void debugLoad(
+    Object key, {
+    Duration duration = Duration.zero,
+    Duration position = Duration.zero,
+  }) {
+    _track.value = key;
+    _duration.value = duration;
+    _position.value = position;
+    _playing.value = true;
   }
 
   Future<void> dispose() async {
@@ -82,5 +123,6 @@ class AudioTrackPlayer {
     _position.dispose();
     _duration.dispose();
     _playing.dispose();
+    _rate.dispose();
   }
 }

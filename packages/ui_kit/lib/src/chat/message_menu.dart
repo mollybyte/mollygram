@@ -64,6 +64,27 @@ Future<void> showMgMenu(
   );
 }
 
+/// Shows [child] at [position], flipped to the left or upwards when there
+/// is no room, as a menu does. Closes on a click outside, with no
+/// animation and no dimming.
+Future<void> showMgPopover(
+  BuildContext context, {
+  required Offset position,
+  required Widget child,
+}) {
+  return showGeneralDialog<void>(
+    context: context,
+    barrierDismissible: true,
+    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+    barrierColor: const Color(0x00000000),
+    transitionDuration: Duration.zero,
+    pageBuilder: (context, _, _) => CustomSingleChildLayout(
+      delegate: _MenuLayout(position),
+      child: Material(type: MaterialType.transparency, child: child),
+    ),
+  );
+}
+
 /// The menu and, while an item with a submenu is hovered, that submenu.
 class _MenuRoot extends StatefulWidget {
   const _MenuRoot({required this.position, required this.items, this.header});
@@ -342,23 +363,36 @@ abstract final class MgDestructive {
   static const Color color = Color(0xFFE5484D);
 }
 
+/// Draws a reaction that is not an emoji, such as a custom emoji's
+/// sticker, [size] wide; null for one drawn as its text.
+typedef ReactionIconBuilder = Widget? Function(String reaction, double size);
+
 /// The quick reactions at the top of a message menu. [chosen] reactions
-/// get a filled circle; picking one again takes it back.
+/// get a filled circle; picking one again takes it back. With [onMore] a
+/// round chevron at the end closes the menu and opens the full picker.
 class ReactionBar extends StatelessWidget {
   const ReactionBar({
     super.key,
     required this.reactions,
     required this.onPick,
     this.chosen = const {},
+    this.onMore,
+    this.moreTooltip,
+    this.icons,
   });
 
+  /// Emoji, or keys of reactions that [icons] draws.
   final List<String> reactions;
   final Set<String> chosen;
   final ValueChanged<String> onPick;
+  final VoidCallback? onMore;
+  final String? moreTooltip;
+  final ReactionIconBuilder? icons;
 
   @override
   Widget build(BuildContext context) {
     final c = MgColors.of(context);
+    final onMore = this.onMore;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
       child: Row(
@@ -375,6 +409,22 @@ class ReactionBar extends StatelessWidget {
                 Navigator.of(context).maybePop();
                 onPick(emoji);
               },
+              child: icons?.call(emoji, _ReactionButton.iconSize),
+            ),
+          if (onMore != null)
+            _ReactionButton(
+              label: moreTooltip ?? '',
+              chosen: false,
+              fill: c.field,
+              hover: c.hover,
+              onTap: () {
+                Navigator.of(context).maybePop();
+                onMore();
+              },
+              child: RotatedBox(
+                quarterTurns: 2,
+                child: MgIcon(MgIcons.chevronUp, size: 15, color: c.fg2),
+              ),
             ),
         ],
       ),
@@ -382,20 +432,94 @@ class ReactionBar extends StatelessWidget {
   }
 }
 
+/// Every reaction the user may pick, in rows of eight, shown with
+/// [showMgPopover] from the chevron of a [ReactionBar].
+class ReactionGrid extends StatelessWidget {
+  const ReactionGrid({
+    super.key,
+    required this.reactions,
+    required this.onPick,
+    this.chosen = const {},
+    this.icons,
+  });
+
+  /// Emoji, or keys of reactions that [icons] draws.
+  final List<String> reactions;
+  final Set<String> chosen;
+  final ValueChanged<String> onPick;
+  final ReactionIconBuilder? icons;
+
+  static const int columns = 8;
+  static const double cell = 36;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    return Glass(
+      radius: 14,
+      padding: const EdgeInsets.all(6),
+      child: SizedBox(
+        width: cell * columns,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: cell * 7),
+          child: GridView.builder(
+            shrinkWrap: true,
+            padding: EdgeInsets.zero,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: columns,
+            ),
+            itemCount: reactions.length,
+            itemBuilder: (context, index) {
+              final emoji = reactions[index];
+              final picked = chosen.contains(emoji);
+              return _ReactionButton(
+                emoji: emoji,
+                chosen: picked,
+                fill: c.field,
+                hover: c.hover,
+                size: cell - 2,
+                onTap: () {
+                  Navigator.of(context).maybePop();
+                  onPick(emoji);
+                },
+                child: icons?.call(emoji, _ReactionButton.iconSize),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _ReactionButton extends StatefulWidget {
   const _ReactionButton({
-    required this.emoji,
+    this.emoji = '',
+    this.label,
+    this.child,
     required this.chosen,
     required this.fill,
     required this.hover,
     required this.onTap,
+    this.size = 32,
   });
 
   final String emoji;
+
+  /// What an icon drawn in place of the emoji measures, matching the
+  /// emoji's glyph.
+  static const double iconSize = 22;
+
+  /// What the button is for when it has no [emoji], such as "More".
+  final String? label;
+
+  /// Drawn in place of the [emoji].
+  final Widget? child;
   final bool chosen;
   final Color fill;
   final Color hover;
   final VoidCallback onTap;
+  final double size;
 
   @override
   State<_ReactionButton> createState() => _ReactionButtonState();
@@ -406,10 +530,11 @@ class _ReactionButtonState extends State<_ReactionButton> {
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
+    final label = widget.label;
+    final button = Semantics(
       button: true,
       selected: widget.chosen,
-      label: widget.emoji,
+      label: label ?? widget.emoji,
       onTap: widget.onTap,
       excludeSemantics: true,
       child: MouseRegion(
@@ -419,8 +544,8 @@ class _ReactionButtonState extends State<_ReactionButton> {
         child: GestureDetector(
           onTap: widget.onTap,
           child: Container(
-            width: 32,
-            height: 32,
+            width: widget.size,
+            height: widget.size,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
@@ -430,13 +555,21 @@ class _ReactionButtonState extends State<_ReactionButton> {
                   ? widget.hover
                   : const Color(0x00000000),
             ),
-            child: Text(
-              widget.emoji,
-              style: const TextStyle(fontSize: 19, height: 1.1),
-            ),
+            child:
+                widget.child ??
+                Text(
+                  widget.emoji,
+                  style: const TextStyle(fontSize: 19, height: 1.1),
+                ),
           ),
         ),
       ),
+    );
+    if (label == null || label.isEmpty) return button;
+    return Tooltip(
+      message: label,
+      waitDuration: const Duration(milliseconds: 600),
+      child: button,
     );
   }
 }
@@ -614,48 +747,22 @@ class _ConfirmState extends State<_Confirm> {
                   ],
                   if (widget.option != null) ...[
                     const SizedBox(height: 10),
-                    MergeSemantics(
-                      child: MouseRegion(
-                        cursor: SystemMouseCursors.click,
-                        child: GestureDetector(
-                          onTap: () => setState(() => _checked = !_checked),
-                          child: Row(
-                            children: [
-                              SizedBox.square(
-                                dimension: 18,
-                                child: Checkbox(
-                                  value: _checked,
-                                  activeColor: c.accent,
-                                  materialTapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                  visualDensity: VisualDensity.compact,
-                                  onChanged: (value) =>
-                                      setState(() => _checked = value ?? false),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  widget.option!,
-                                  style: mgTextStyle(c),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                    MgCheckRow(
+                      label: widget.option!,
+                      value: _checked,
+                      onChanged: (value) => setState(() => _checked = value),
                     ),
                   ],
                   const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      _DialogButton(
+                      MgDialogButton(
                         label: widget.cancelLabel,
                         onTap: () => Navigator.of(context).pop(),
                       ),
                       const SizedBox(width: 8),
-                      _DialogButton(
+                      MgDialogButton(
                         label: widget.confirmLabel,
                         filled: true,
                         color: widget.destructive
@@ -675,8 +782,11 @@ class _ConfirmState extends State<_Confirm> {
   }
 }
 
-class _DialogButton extends StatelessWidget {
-  const _DialogButton({
+/// A button of an alert: filled with [color] for the main action, grey
+/// otherwise.
+class MgDialogButton extends StatelessWidget {
+  const MgDialogButton({
+    super.key,
     required this.label,
     required this.onTap,
     this.filled = false,
@@ -718,6 +828,255 @@ class _DialogButton extends StatelessWidget {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A checkbox with its label, the whole row clickable, as in the confirm
+/// dialog and the forward picker.
+class MgCheckRow extends StatelessWidget {
+  const MgCheckRow({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String label;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    return MergeSemantics(
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: () => onChanged(!value),
+          child: Row(
+            children: [
+              SizedBox.square(
+                dimension: 18,
+                child: Checkbox(
+                  value: value,
+                  activeColor: c.accent,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  visualDensity: VisualDensity.compact,
+                  onChanged: (checked) => onChanged(checked ?? false),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(child: Text(label, style: mgTextStyle(c))),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A row at the top of a message menu that tells who saw the message or
+/// reacted to it, with their avatars on the right, as in Telegram for
+/// macOS. A click closes the menu and runs [onSelected], which shows the
+/// list.
+class MgMenuInfoRow extends StatefulWidget {
+  const MgMenuInfoRow({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.avatars,
+    this.onSelected,
+  });
+
+  final MgIconData icon;
+  final String label;
+
+  /// Up to three small avatars, drawn overlapping.
+  final List<Widget> avatars;
+  final VoidCallback? onSelected;
+
+  @override
+  State<MgMenuInfoRow> createState() => _MgMenuInfoRowState();
+}
+
+class _MgMenuInfoRowState extends State<MgMenuInfoRow> {
+  var _hover = false;
+
+  void _select() {
+    final onSelected = widget.onSelected;
+    if (onSelected == null) return;
+    Navigator.of(context).pop();
+    onSelected();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    final enabled = widget.onSelected != null;
+    final lit = _hover && enabled;
+    final color = lit ? c.onAccent : c.fg;
+    return Semantics(
+      button: enabled,
+      label: widget.label,
+      onTap: enabled ? _select : null,
+      excludeSemantics: true,
+      child: MouseRegion(
+        cursor: enabled ? SystemMouseCursors.click : MouseCursor.defer,
+        onEnter: (_) => setState(() => _hover = true),
+        onExit: (_) => setState(() => _hover = false),
+        child: GestureDetector(
+          onTap: enabled ? _select : null,
+          child: Container(
+            height: 26,
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            decoration: BoxDecoration(
+              color: lit ? c.accent : const Color(0x00000000),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Row(
+              children: [
+                MgIcon(widget.icon, size: 14, color: color),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    widget.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: mgTextStyle(c, color: color),
+                  ),
+                ),
+                if (widget.avatars.isNotEmpty) ...[
+                  const SizedBox(width: 10),
+                  SizedBox(
+                    width: 18 + 12.0 * (widget.avatars.length - 1),
+                    height: 18,
+                    child: Stack(
+                      children: [
+                        for (var i = 0; i < widget.avatars.length; i++)
+                          Positioned(
+                            left: 12.0 * i,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: lit ? c.accent : c.glassSolid,
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: ClipOval(
+                                child: SizedBox.square(
+                                  dimension: 18,
+                                  child: widget.avatars[i],
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// One person of an [MgPeopleList]: avatar, name and what they did on the
+/// right, such as a reaction or when they read the message.
+@immutable
+class MgPerson {
+  const MgPerson({required this.avatar, required this.name, this.trailing});
+
+  final Widget avatar;
+  final String name;
+  final String? trailing;
+}
+
+/// The people who saw a message or reacted to it, in a glass panel shown
+/// with [showMgPopover].
+class MgPeopleList extends StatelessWidget {
+  const MgPeopleList({super.key, required this.title, required this.people});
+
+  final String title;
+  final List<MgPerson> people;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 220, maxWidth: 300),
+      child: Glass(
+        radius: 12,
+        padding: const EdgeInsets.all(5),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(10, 5, 10, 6),
+              child: Text(
+                title,
+                style: mgTextStyle(
+                  c,
+                  size: MgType.caption,
+                  weight: FontWeight.w600,
+                  color: c.fg2,
+                ),
+              ),
+            ),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 320),
+              child: ListView(
+                shrinkWrap: true,
+                padding: EdgeInsets.zero,
+                children: [
+                  for (final person in people)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      child: Row(
+                        children: [
+                          ClipOval(
+                            child: SizedBox.square(
+                              dimension: 24,
+                              child: person.avatar,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              person.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: mgTextStyle(c),
+                            ),
+                          ),
+                          if (person.trailing case final trailing?) ...[
+                            const SizedBox(width: 10),
+                            Text(
+                              trailing,
+                              style: mgTextStyle(
+                                c,
+                                size: MgType.caption,
+                                color: c.fg2,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

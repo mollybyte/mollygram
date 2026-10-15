@@ -1,23 +1,40 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mollygram_core/mollygram_core.dart';
+import 'package:mollygram_media_editor/mollygram_media_editor.dart';
+import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../media/native_video_engine.dart';
+import '../secret/secret_chat.dart' show selfDestructLabel;
 import 'describe.dart';
+import 'schedule_picker.dart';
+import 'sticker_picker.dart';
 
 /// What the user confirmed in [showAttachmentPreview].
-typedef AttachmentChoice = ({List<OutgoingFile> files, String caption});
+/// What the preview sends back: the files, their caption, and whether
+/// they go without sound or at a later time.
+typedef AttachmentChoice = ({
+  List<OutgoingFile> files,
+  String caption,
+  bool silent,
+  td.MessageSchedulingState? schedule,
+});
 
 /// Shows the files about to be sent, with a caption field and, for photos
-/// and videos, the choice to send them untouched as files. [caption]
+/// and videos, the choice to send them untouched as files or hidden
+/// behind a spoiler, and in a private chat a self-destruct timer. [caption]
 /// starts with the composer's draft. Completes with null when cancelled.
 Future<AttachmentChoice?> showAttachmentPreview(
   BuildContext context, {
   required List<String> paths,
   String caption = '',
+  bool allowSelfDestruct = false,
+  bool allowSendWhenOnline = false,
 }) => showGeneralDialog<AttachmentChoice>(
   context: context,
   barrierDismissible: true,
@@ -33,16 +50,30 @@ Future<AttachmentChoice?> showAttachmentPreview(
             OutgoingFile(path: path, kind: outgoingKindOf(path)),
         ],
         caption: caption,
+        allowSelfDestruct: allowSelfDestruct,
+        allowSendWhenOnline: allowSendWhenOnline,
       ),
     ),
   ),
 );
 
 class _Preview extends StatefulWidget {
-  const _Preview({required this.files, required this.caption});
+  const _Preview({
+    required this.files,
+    required this.caption,
+    required this.allowSelfDestruct,
+    required this.allowSendWhenOnline,
+  });
 
   final List<OutgoingFile> files;
   final String caption;
+
+  /// Whether a self-destruct timer is offered: in private chats only.
+  final bool allowSelfDestruct;
+
+  /// Whether the send menu offers "Send when online": private chats with
+  /// a person.
+  final bool allowSendWhenOnline;
 
   @override
   State<_Preview> createState() => _PreviewState();
@@ -52,6 +83,16 @@ class _PreviewState extends State<_Preview> {
   late final _caption = TextEditingController(text: widget.caption);
   final _focus = FocusNode();
   var _asFiles = false;
+  var _spoiler = false;
+  var _selfDestruct = 0;
+
+  /// The timers offered, in seconds; view once first after Off.
+  static const _timers = [0, OutgoingFile.viewOnce, 3, 5, 10, 30, 60];
+
+  /// Photos and videos the user edited, by their original path.
+  final _edited = <String, MediaEditResult>{};
+  final _editedVideos = <String, VideoEditResult>{};
+  static const _videoEngine = NativeVideoEngine();
 
   @override
   void initState() {
@@ -68,11 +109,128 @@ class _PreviewState extends State<_Preview> {
 
   List<OutgoingFile> get _files => [
     for (final file in widget.files)
-      _asFiles && file.isMedia ? file.asDocument() : file,
+      _asFiles && file.isMedia
+          ? file.asDocument()
+          : _withEdit(file).copyWith(
+              spoiler: _spoiler && file.isMedia,
+              selfDestruct: file.isMedia ? _selfDestruct : 0,
+            ),
   ];
 
-  void _send() =>
-      Navigator.of(context).pop((files: _files, caption: _caption.text));
+  String _timerLabel(AppLocalizations l10n, int seconds) => switch (seconds) {
+    OutgoingFile.viewOnce => l10n.viewOnce,
+    _ => selfDestructLabel(seconds, l10n),
+  };
+
+  Future<void> _pickTimer(BuildContext anchor) async {
+    final l10n = AppLocalizations.of(context);
+    final box = anchor.findRenderObject()! as RenderBox;
+    await showMgMenu(
+      context,
+      position: box.localToGlobal(Offset(0, box.size.height)),
+      items: [
+        for (final seconds in _timers)
+          MgMenuItem(
+            label: _timerLabel(l10n, seconds),
+            onSelected: () => setState(() => _selfDestruct = seconds),
+          ),
+      ],
+    );
+  }
+
+  OutgoingFile _withEdit(OutgoingFile file) {
+    final video = _editedVideos[file.path];
+    if (video != null && video.isEdited) {
+      return file.copyWith(
+        path: video.path,
+        width: video.width,
+        height: video.height,
+        duration: video.duration.inSeconds,
+        thumbnail: video.thumbnailPath,
+        cover: video.coverPath,
+      );
+    }
+    final edit = _edited[file.path];
+    if (edit == null || !edit.isEdited) return file;
+    return OutgoingFile(
+      path: edit.path,
+      kind: file.kind,
+      width: edit.width,
+      height: edit.height,
+    );
+  }
+
+  Future<void> _edit(OutgoingFile file) async {
+    if (file.kind == OutgoingKind.video) {
+      final previous = _editedVideos[file.path];
+      final result = await showVideoEditor(
+        context,
+        path: file.path,
+        engine: _videoEngine,
+        initial: previous?.edit ?? const VideoEdit(),
+      );
+      if (result == null || !mounted) return;
+      setState(() => _editedVideos[file.path] = result);
+      _focus.requestFocus();
+      return;
+    }
+    final previous = _edited[file.path];
+    final result = await showMediaEditor(
+      context,
+      path: file.path,
+      initial: previous?.edit ?? const MediaEdit(),
+      stickerPicker: showStickerPicker,
+    );
+    if (result == null || !mounted) return;
+    setState(() => _edited[file.path] = result);
+    _focus.requestFocus();
+  }
+
+  void _send({bool silent = false, td.MessageSchedulingState? schedule}) =>
+      Navigator.of(context).pop((
+        files: _files,
+        caption: _caption.text,
+        silent: silent,
+        schedule: schedule,
+      ));
+
+  /// A right click on Send: without sound, or at a day and time, as the
+  /// composer's send button offers.
+  Future<void> _sendMenu(Offset position) async {
+    final l10n = AppLocalizations.of(context);
+    await showMgMenu(
+      context,
+      position: position,
+      items: [
+        MgMenuItem(
+          label: l10n.sendWithoutSound,
+          onSelected: () => _send(silent: true),
+        ),
+        MgMenuItem(
+          label: l10n.scheduleMessage,
+          onSelected: () => unawaited(_schedule()),
+        ),
+        if (widget.allowSendWhenOnline)
+          MgMenuItem(
+            label: l10n.sendWhenOnline,
+            onSelected: () => _send(
+              schedule: const td.MessageSchedulingStateSendWhenOnline(),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Future<void> _schedule() async {
+    final when = await pickScheduleTime(context);
+    if (when == null || !mounted) return;
+    _send(
+      schedule: td.MessageSchedulingStateSendAtDate(
+        sendDate: when.millisecondsSinceEpoch ~/ 1000,
+        repeatPeriod: 0,
+      ),
+    );
+  }
 
   KeyEventResult _onKey(FocusNode node, KeyEvent event) {
     if (event is KeyDownEvent &&
@@ -115,38 +273,62 @@ class _PreviewState extends State<_Preview> {
                   spacing: 6,
                   runSpacing: 6,
                   children: [
-                    for (final file in files)
-                      file.kind == OutgoingKind.photo
-                          ? _Thumbnail(path: file.path)
-                          : _FileLine(file: file),
+                    for (final (i, file) in files.indexed)
+                      switch (file.kind) {
+                        OutgoingKind.photo => _Thumbnail(
+                          key: ValueKey(file.path),
+                          image: Image.file(
+                            File(file.path),
+                            fit: BoxFit.cover,
+                            cacheWidth: 250,
+                            errorBuilder: (context, _, _) =>
+                                ColoredBox(color: c.field),
+                          ),
+                          onEdit: () => _edit(widget.files[i]),
+                        ),
+                        OutgoingKind.video => _VideoThumbnail(
+                          key: ValueKey(file.path),
+                          path: file.path,
+                          engine: _videoEngine,
+                          onEdit: () => _edit(widget.files[i]),
+                        ),
+                        _ => _FileLine(file: file),
+                      },
                   ],
                 ),
               ),
             ),
             if (anyMedia) ...[
               const SizedBox(height: 10),
-              MergeSemantics(
-                child: Row(
-                  children: [
-                    SizedBox.square(
-                      dimension: 18,
-                      child: Checkbox(
-                        value: _asFiles,
-                        activeColor: c.accent,
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        visualDensity: VisualDensity.compact,
-                        onChanged: (value) =>
-                            setState(() => _asFiles = value ?? false),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: () => setState(() => _asFiles = !_asFiles),
-                      child: Text(l10n.sendAsFiles, style: mgTextStyle(c)),
-                    ),
-                  ],
-                ),
+              _CheckRow(
+                label: l10n.sendAsFiles,
+                value: _asFiles,
+                onChanged: (value) => setState(() => _asFiles = value),
               ),
+              // A file can't hide behind a spoiler or burn; only media can.
+              if (!_asFiles) ...[
+                const SizedBox(height: 6),
+                _CheckRow(
+                  label: l10n.hideWithSpoiler,
+                  value: _spoiler,
+                  onChanged: (value) => setState(() => _spoiler = value),
+                ),
+                if (widget.allowSelfDestruct) ...[
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Text(l10n.selfDestructTitle, style: mgTextStyle(c)),
+                      const Spacer(),
+                      Builder(
+                        builder: (anchor) => MgTextButton(
+                          label: _timerLabel(l10n, _selfDestruct),
+                          onPressed: () => _pickTimer(anchor),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
             ],
             const SizedBox(height: 12),
             Container(
@@ -181,7 +363,15 @@ class _PreviewState extends State<_Preview> {
                   onPressed: () => Navigator.of(context).pop(),
                 ),
                 const SizedBox(width: 10),
-                MgPrimaryButton(label: l10n.send, height: 28, onPressed: _send),
+                GestureDetector(
+                  onSecondaryTapUp: (details) =>
+                      unawaited(_sendMenu(details.globalPosition)),
+                  child: MgPrimaryButton(
+                    label: l10n.send,
+                    height: 28,
+                    onPressed: _send,
+                  ),
+                ),
               ],
             ),
           ],
@@ -191,25 +381,177 @@ class _PreviewState extends State<_Preview> {
   }
 }
 
-class _Thumbnail extends StatelessWidget {
-  const _Thumbnail({required this.path});
+/// A photo with an edit button that appears on hover.
+/// A small checkbox with its label; the label toggles it too.
+class _CheckRow extends StatelessWidget {
+  const _CheckRow({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
 
-  final String path;
+  final String label;
+  final bool value;
+  final ValueChanged<bool> onChanged;
 
   @override
-  Widget build(BuildContext context) => ClipRRect(
-    borderRadius: BorderRadius.circular(8),
-    child: SizedBox.square(
-      dimension: 125,
-      child: Image.file(
-        File(path),
-        fit: BoxFit.cover,
-        cacheWidth: 250,
-        errorBuilder: (context, _, _) =>
-            ColoredBox(color: MgColors.of(context).field),
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    return MergeSemantics(
+      child: Row(
+        children: [
+          SizedBox.square(
+            dimension: 18,
+            child: Checkbox(
+              value: value,
+              activeColor: c.accent,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
+              onChanged: (value) => onChanged(value ?? false),
+            ),
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: () => onChanged(!value),
+            child: Text(label, style: mgTextStyle(c)),
+          ),
+        ],
       ),
-    ),
-  );
+    );
+  }
+}
+
+class _Thumbnail extends StatefulWidget {
+  const _Thumbnail({
+    super.key,
+    required this.image,
+    required this.onEdit,
+    this.badge,
+  });
+
+  final Widget image;
+
+  /// Null hides the edit button.
+  final VoidCallback? onEdit;
+
+  /// Shown in the bottom left corner, such as a play mark on a video.
+  final Widget? badge;
+
+  @override
+  State<_Thumbnail> createState() => _ThumbnailState();
+}
+
+class _ThumbnailState extends State<_Thumbnail> {
+  var _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: SizedBox.square(
+          dimension: 125,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              widget.image,
+              if (widget.badge != null)
+                Positioned(left: 6, bottom: 6, child: widget.badge!),
+              if (widget.onEdit != null)
+                Positioned(
+                  right: 6,
+                  top: 6,
+                  child: AnimatedOpacity(
+                    opacity: _hover ? 1 : 0,
+                    duration: const Duration(milliseconds: 120),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: c.mediaPill,
+                        shape: BoxShape.circle,
+                      ),
+                      child: MgIconButton(
+                        icon: EditorIcons.edit,
+                        tooltip: MediaEditorStrings.of(context).edit,
+                        onPressed: widget.onEdit,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A video's first frame with a play mark; the edit button appears once
+/// the frame is read, since the editor needs the same engine.
+class _VideoThumbnail extends StatefulWidget {
+  const _VideoThumbnail({
+    super.key,
+    required this.path,
+    required this.engine,
+    required this.onEdit,
+  });
+
+  final String path;
+  final VideoEngine engine;
+  final VoidCallback onEdit;
+
+  @override
+  State<_VideoThumbnail> createState() => _VideoThumbnailState();
+}
+
+class _VideoThumbnailState extends State<_VideoThumbnail> {
+  Uint8List? _frame;
+  var _failed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final frame = await widget.engine.frame(
+        widget.path,
+        Duration.zero,
+        maxSide: 320,
+      );
+      if (mounted) setState(() => _frame = frame);
+    } on Object {
+      if (mounted) setState(() => _failed = true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    final frame = _frame;
+    return _Thumbnail(
+      image: frame == null
+          ? ColoredBox(
+              color: c.field,
+              child: _failed
+                  ? Center(child: MgIcon(MgIcons.video, size: 24, color: c.fg2))
+                  : null,
+            )
+          : Image.memory(frame, fit: BoxFit.cover, gaplessPlayback: true),
+      onEdit: frame == null ? null : widget.onEdit,
+      badge: Container(
+        width: 24,
+        height: 24,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(color: c.mediaPill, shape: BoxShape.circle),
+        child: MgIcon(MgIcons.play, size: 12, color: Colors.white),
+      ),
+    );
+  }
 }
 
 class _FileLine extends StatelessWidget {

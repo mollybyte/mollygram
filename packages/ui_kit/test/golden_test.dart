@@ -22,6 +22,11 @@ const _labels = ComposerLabels(
   send: 'Send',
 );
 
+const _folderAll = MgIconData(
+  'folderAll',
+  '<path d="M4 6h16M4 12h16M4 18h16"/>',
+);
+
 /// The main window from design/Main.dc.html, built from the kit.
 class _Window extends StatelessWidget {
   const _Window({this.blur = true});
@@ -141,6 +146,29 @@ class _Window extends StatelessWidget {
             bottom: 8,
             width: SidebarIsland.width,
             child: SidebarIsland(
+              rail: FolderRail(
+                trailing: [
+                  MgIconButton(
+                    icon: MgIcons.settings,
+                    tooltip: 'Settings',
+                    onPressed: () {},
+                  ),
+                ],
+                children: const [
+                  FolderRailItem(
+                    icon: _folderAll,
+                    label: 'All',
+                    selected: true,
+                  ),
+                  FolderRailItem(
+                    icon: MgIcons.chat,
+                    label: 'Personal',
+                    count: 2,
+                  ),
+                  FolderRailItem(icon: MgIcons.file, label: 'Work', count: 3),
+                  FolderRailItem(icon: MgIcons.volume, label: 'Channels'),
+                ],
+              ),
               actions: [
                 MgIconButton(
                   icon: MgIcons.compose,
@@ -149,14 +177,6 @@ class _Window extends StatelessWidget {
                 ),
               ],
               search: const MgSearchField(hintText: 'Search'),
-              folders: const FolderTabBar(
-                children: [
-                  FolderTab(label: 'All', selected: true),
-                  FolderTab(label: 'Personal', count: 2),
-                  FolderTab(label: 'Work', count: 3),
-                  FolderTab(label: 'Channels'),
-                ],
-              ),
               body: ListView(
                 padding: const EdgeInsets.fromLTRB(6, 0, 6, 8),
                 children: const [
@@ -401,7 +421,184 @@ void main() {
         ),
         colors,
         'icons_$theme',
-        size: const Size(380, 120),
+        size: const Size(380, 236),
+      );
+    });
+
+    testWidgets('emoji panel $theme', skip: _skip, (tester) async {
+      tester.view.physicalSize = const Size(480, 460);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        themed(
+          Stack(
+            children: [
+              const Positioned.fill(child: Wallpaper()),
+              Positioned(
+                right: 24,
+                bottom: 24,
+                child: EmojiPanel(
+                  tabs: const ['Emoji', 'Stickers'],
+                  children: [
+                    EmojiTab(
+                      labels: const EmojiTabLabels(
+                        search: 'Search emoji',
+                        recent: 'Recently used',
+                        noResults: 'No emoji found',
+                        groups: {EmojiGroup.smileys: 'Smileys'},
+                      ),
+                      recent: const ['a', 'b', 'c'],
+                      onPick: (_) {},
+                    ),
+                    const SizedBox.shrink(),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          colors: colors,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await expectLater(
+        find.byType(EmojiPanel),
+        matchesGoldenFile('goldens/emoji_panel_$theme.png'),
+      );
+    });
+
+    testWidgets('pinned bar $theme', skip: _skip, (tester) async {
+      tester.view.physicalSize = const Size(520, 160);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        themed(
+          Stack(
+            children: [
+              const Positioned.fill(child: Wallpaper()),
+              Positioned(
+                left: 14,
+                right: 14,
+                top: 20,
+                child: PinnedBar(
+                  title: 'Pinned message #2',
+                  text: 'Release notes for 0.1.0 are in the channel',
+                  index: 1,
+                  count: 3,
+                  onTap: () {},
+                  closeTooltip: 'Hide pinned messages',
+                  onClose: () {},
+                ),
+              ),
+              Positioned(
+                left: 14,
+                right: 14,
+                top: 80,
+                child: PinnedBar(
+                  title: 'Pinned message',
+                  text: 'Photo',
+                  index: 0,
+                  count: 1,
+                  thumbnail: const ColoredBox(color: Color(0xFF6BA587)),
+                  onTap: () {},
+                  closeTooltip: 'Hide pinned messages',
+                  onClose: () {},
+                ),
+              ),
+            ],
+          ),
+          colors: colors,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await expectLater(
+        find.byType(Stack).first,
+        matchesGoldenFile('goldens/pinned_bar_$theme.png'),
+      );
+    });
+
+    testWidgets('calendar $theme', skip: _skip, (tester) async {
+      tester.view.physicalSize = const Size(320, 300);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        themed(
+          Stack(
+            children: [
+              const Positioned.fill(child: Wallpaper()),
+              Positioned(
+                left: 24,
+                top: 20,
+                child: MgCalendar(
+                  month: DateTime(2026, 10),
+                  today: DateTime(2026, 10, 15),
+                  first: DateTime(2026, 10, 3),
+                  onPick: (_) {},
+                  monthTitle: (_) => 'October 2026',
+                  weekdays: const ['M', 'T', 'W', 'T', 'F', 'S', 'S'],
+                  previousTooltip: 'Previous month',
+                  nextTooltip: 'Next month',
+                ),
+              ),
+            ],
+          ),
+          colors: colors,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await expectLater(
+        find.byType(Stack).first,
+        matchesGoldenFile('goldens/calendar_$theme.png'),
+      );
+    });
+
+    testWidgets('selection bar $theme', skip: _skip, (tester) async {
+      tester.view.physicalSize = const Size(640, 140);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        themed(
+          Stack(
+            children: [
+              const Positioned.fill(child: Wallpaper()),
+              Positioned(
+                left: 24,
+                right: 24,
+                top: 20,
+                child: SelectionBar(
+                  countLabel: '3 selected',
+                  closeTooltip: 'Clear selection',
+                  onClose: () {},
+                  actions: [
+                    SelectionBarAction(label: 'Copy', onPressed: () {}),
+                    const SelectionBarAction(label: 'Forward', onPressed: null),
+                    SelectionBarAction(
+                      label: 'Delete',
+                      destructive: true,
+                      onPressed: () {},
+                    ),
+                  ],
+                ),
+              ),
+              const Positioned(
+                left: 24,
+                top: 84,
+                child: Row(
+                  spacing: 12,
+                  children: [
+                    SelectCheck(selected: false),
+                    SelectCheck(selected: true),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          colors: colors,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await expectLater(
+        find.byType(Stack).first,
+        matchesGoldenFile('goldens/selection_bar_$theme.png'),
       );
     });
 

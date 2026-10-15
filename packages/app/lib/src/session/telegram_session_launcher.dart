@@ -30,7 +30,13 @@ final class TelegramSessionLauncher {
   final TdlibStarter _startTdlib;
   final TdlibParameterLoader _loadParameters;
 
-  Future<TelegramSession> start(TelegramApiConfig api) async {
+  /// Starts TDLib and its session, with [privacy] in place before the
+  /// first request.
+  Future<TelegramSession> start(
+    TelegramApiConfig api, {
+    PrivacySettings privacy = const PrivacySettings(),
+    MessageStoreOpener? openStore,
+  }) async {
     if (!api.isConfigured) {
       throw StateError('Telegram API credentials have not been configured.');
     }
@@ -39,6 +45,8 @@ final class TelegramSessionLauncher {
       return await TelegramSession.attach(
         tdlib,
         parameters: await _loadParameters(api),
+        privacy: privacy,
+        openStore: openStore,
       );
     } catch (_) {
       await tdlib.close();

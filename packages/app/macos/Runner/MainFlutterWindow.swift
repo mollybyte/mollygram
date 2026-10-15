@@ -11,6 +11,11 @@ class MainFlutterWindow: NSWindow {
   private static let buttonsLeft: CGFloat = 23
   private static let buttonsSpacing: CGFloat = 20
 
+  private var notifications: NotificationsChannel?
+  private var voiceCapture: VoiceCaptureChannel?
+  private var videoNoteCapture: VideoNoteCaptureChannel?
+  private var videoEdit: VideoEditChannel?
+
   override func awakeFromNib() {
     let flutterViewController = FlutterViewController()
     self.contentViewController = flutterViewController
@@ -38,10 +43,26 @@ class MainFlutterWindow: NSWindow {
       case "zoom":
         self.zoom(nil)
         result(nil)
+      case "setContentProtection":
+        // Kept out of screenshots and screen recordings (secret chats).
+        let protect = call.arguments as? Bool ?? false
+        self.sharingType = protect ? .none : .readOnly
+        result(nil)
       default:
         result(FlutterMethodNotImplemented)
       }
     }
+
+    // Set up before launch finishes, so a notification tap that launched
+    // the app is not lost.
+    notifications = NotificationsChannel(
+      messenger: flutterViewController.engine.binaryMessenger, window: self)
+
+    voiceCapture = VoiceCaptureChannel(messenger: flutterViewController.engine.binaryMessenger)
+    videoNoteCapture = VideoNoteCaptureChannel(
+      messenger: flutterViewController.engine.binaryMessenger,
+      textures: flutterViewController.registrar(forPlugin: "VideoNoteCapture").textures)
+    videoEdit = VideoEditChannel(messenger: flutterViewController.engine.binaryMessenger)
 
     RegisterGeneratedPlugins(registry: flutterViewController)
 

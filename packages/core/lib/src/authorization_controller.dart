@@ -25,6 +25,15 @@ final class AuthorizationController {
   /// The latest stage received from TDLib, if [start] has completed.
   AuthorizationStage? get currentStage => _currentStage;
 
+  /// Completes when TDLib reports this client closed.
+  Future<void> get closed => _closed.future;
+
+  /// Whether this app asked TDLib to log out. A close it didn't ask for
+  /// comes from elsewhere, such as the session being terminated on another
+  /// device.
+  bool get logOutRequested => _logOutRequested;
+  var _logOutRequested = false;
+
   /// Starts observing TDLib and publishes its current authorization state.
   Future<void> start() async {
     if (_subscription != null) return;
@@ -47,16 +56,36 @@ final class AuthorizationController {
   /// authorization and closes this client. The caller then starts a new
   /// session, which begins at the phone number step.
   ///
-  /// Completes once TDLib reports the client closed, or after [timeout].
+  /// Completes once TDLib reports the client closed, or after [timeout]:
+  /// nothing of value is lost here, so a slow close is not an error.
   Future<void> abandonQrCode({
     Duration timeout = const Duration(seconds: 10),
   }) async {
     try {
+      await logOut(timeout: timeout);
+    } on TimeoutException {
+      // Best effort: the caller starts a new session either way.
+    }
+  }
+
+  /// Signs out of the account. TDLib then closes this client and deletes
+  /// the local data; the caller starts a new session for the next sign-in.
+  ///
+  /// Completes once TDLib reports the client closed. Throws a
+  /// [TimeoutException] when it has not closed within [timeout]: the
+  /// account may still be signed in, so the caller must not drop it.
+  Future<void> logOut({Duration timeout = const Duration(seconds: 10)}) async {
+    _logOutRequested = true;
+    try {
       await _client.send(const td.LogOut());
     } on td.TdClientClosed {
       return;
+    } on td.TdException {
+      // Still signed in: a close from now on was not asked for here.
+      _logOutRequested = false;
+      rethrow;
     }
-    await _closed.future.timeout(timeout, onTimeout: () {});
+    await _closed.future.timeout(timeout);
   }
 
   Future<void> submitCode(String code) =>

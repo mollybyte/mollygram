@@ -21,7 +21,9 @@ class WorkspaceShell extends StatefulWidget {
     this.sidebarWidth = 0,
     this.strings,
     this.commands = const [],
+    this.commandSource,
     this.onOpenMessage,
+    this.shortcuts,
   });
 
   final WorkspaceController controller;
@@ -41,7 +43,16 @@ class WorkspaceShell extends StatefulWidget {
   /// shell's own tab and split commands.
   final List<PaletteCommand> commands;
 
+  /// Where the palette reads its commands each time it is built, such as
+  /// the app's command registry. When set, it replaces [commands] and the
+  /// shell's own commands, so it lists those itself (see [shellCommands]).
+  final List<PaletteCommand> Function()? commandSource;
+
   final void Function(MessageHit message, OpenTarget target)? onOpenMessage;
+
+  /// The keys of the shell's actions (see [shellShortcutActions]) as the
+  /// user set them. Without it the defaults apply.
+  final ShortcutResolver? shortcuts;
 
   @override
   State<WorkspaceShell> createState() => WorkspaceShellState();
@@ -78,18 +89,24 @@ class WorkspaceShellState extends State<WorkspaceShell> {
 
   Map<ShortcutActivator, VoidCallback> _bindings() {
     final c = widget.controller;
+    final resolve = widget.shortcuts;
+    final actions = <String, VoidCallback>{
+      'shell.palette': () => _paletteOpen ? closePalette() : openPalette(),
+      'shell.newTab': c.newTab,
+      'shell.closeTab': c.closeFocused,
+      'shell.split': c.toggleSplit,
+      'shell.swapPanes': c.swapPanes,
+      'shell.nextTab': c.nextTab,
+      'shell.previousTab': c.previousTab,
+      'shell.closeOtherTabs': () => c.closeOtherTabs(c.value.active),
+      'shell.focusLeft': () => c.focusPane(0),
+      'shell.focusRight': () => c.focusPane(1),
+      for (var n = 1; n <= 9; n++) 'shell.tab.$n': () => c.selectTabByNumber(n),
+    };
     return {
-      ShellShortcuts.palette: () =>
-          _paletteOpen ? closePalette() : openPalette(),
-      ShellShortcuts.newTab: c.newTab,
-      ShellShortcuts.close: c.closeFocused,
-      ShellShortcuts.split: c.toggleSplit,
-      ShellShortcuts.nextTab: c.nextTab,
-      ShellShortcuts.previousTab: c.previousTab,
-      ShellShortcuts.focusLeft: () => c.focusPane(0),
-      ShellShortcuts.focusRight: () => c.focusPane(1),
-      for (var n = 1; n <= 9; n++)
-        ShellShortcuts.tab(n): () => c.selectTabByNumber(n),
+      for (final action in shellShortcutActions(_strings))
+        ?(resolve == null ? action.shortcut : resolve(action.id)):
+            actions[action.id]!,
     };
   }
 
@@ -151,10 +168,12 @@ class WorkspaceShellState extends State<WorkspaceShell> {
                     child: _PalettePlacement(
                       child: CommandPalette(
                         directory: widget.directory,
-                        commands: [
-                          ...widget.commands,
-                          ...shellCommands(widget.controller, strings),
-                        ],
+                        commands:
+                            widget.commandSource?.call() ??
+                            [
+                              ...widget.commands,
+                              ...shellCommands(widget.controller, strings),
+                            ],
                         strings: strings,
                         initialQuery: _paletteQuery,
                         onOpenChat: (chat, target) =>
@@ -298,5 +317,68 @@ List<PaletteCommand> shellCommands(
         glyph: PaletteGlyph.closeTab,
         run: () => controller.closeOtherTabs(controller.value.active),
       ),
+  ];
+}
+
+/// Finds the key of an action by its id; null when it has none.
+typedef ShortcutResolver = SingleActivator? Function(String id);
+
+/// An action a key can be bound to, with the key it has by default.
+@immutable
+class ShortcutAction {
+  const ShortcutAction({
+    required this.id,
+    required this.title,
+    this.shortcut,
+    this.keywords = const [],
+  });
+
+  final String id;
+  final String title;
+  final SingleActivator? shortcut;
+  final List<String> keywords;
+}
+
+/// Palette commands that share the key of another action: closing split
+/// view is the same key as opening it.
+const shellShortcutAliases = {'shell.closeSplit': 'shell.split'};
+
+/// Every action of the shell that takes a key, whatever the layout, in
+/// the order a list of shortcuts shows them.
+List<ShortcutAction> shellShortcutActions(ShellStrings s) {
+  final other = identical(s, ShellStrings.ru)
+      ? ShellStrings.en
+      : ShellStrings.ru;
+  ShortcutAction action(
+    String id,
+    String Function(ShellStrings s) title, [
+    SingleActivator? shortcut,
+  ]) => ShortcutAction(
+    id: id,
+    title: title(s),
+    keywords: [title(other)],
+    shortcut: shortcut,
+  );
+  return [
+    action('shell.palette', (s) => s.palette, ShellShortcuts.palette),
+    action('shell.newTab', (s) => s.cmdNewTab, ShellShortcuts.newTab),
+    action('shell.closeTab', (s) => s.cmdCloseTab, ShellShortcuts.close),
+    action('shell.closeOtherTabs', (s) => s.cmdCloseOtherTabs),
+    action('shell.nextTab', (s) => s.cmdNextTab, ShellShortcuts.nextTab),
+    action(
+      'shell.previousTab',
+      (s) => s.cmdPreviousTab,
+      ShellShortcuts.previousTab,
+    ),
+    action('shell.split', (s) => s.cmdSplit, ShellShortcuts.split),
+    action('shell.swapPanes', (s) => s.cmdSwapPanes),
+    action('shell.focusLeft', (s) => s.cmdFocusLeft, ShellShortcuts.focusLeft),
+    action(
+      'shell.focusRight',
+      (s) => s.cmdFocusRight,
+      ShellShortcuts.focusRight,
+    ),
+    for (var n = 1; n <= 9; n++)
+      action('shell.tab.$n', (s) => s.cmdTab(n), ShellShortcuts.tab(n)),
   ];
 }

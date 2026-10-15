@@ -5,6 +5,7 @@ import '../badge.dart';
 import '../chat/status_text.dart';
 import '../icons.dart';
 import '../theme/colors.dart';
+import '../theme/metrics.dart';
 import '../theme/theme.dart';
 
 /// A row of the chat list (`.row`). Rows are solid, never glass; the
@@ -108,6 +109,7 @@ class _ChatListTileState extends State<ChatListTile> {
   @override
   Widget build(BuildContext context) {
     final c = MgColors.of(context);
+    final metrics = MgMetrics.of(context);
     final on = widget.selected;
     final sub = on ? c.onAccentSecondary : c.fg2;
     final activity = widget.activity;
@@ -154,7 +156,10 @@ class _ChatListTileState extends State<ChatListTile> {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 120),
             margin: const EdgeInsets.only(bottom: 1),
-            padding: const EdgeInsets.all(8),
+            padding: EdgeInsets.symmetric(
+              horizontal: 8,
+              vertical: metrics.rowPadding,
+            ),
             decoration: BoxDecoration(
               color: on
                   ? c.accent
@@ -182,7 +187,7 @@ class _ChatListTileState extends State<ChatListTile> {
                   online: widget.online,
                   selected: on,
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 11),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -209,7 +214,8 @@ class _ChatListTileState extends State<ChatListTile> {
                                     style: mgTextStyle(
                                       c,
                                       size: MgType.title,
-                                      weight: FontWeight.w600,
+                                      weight: MgWeight.medium,
+                                      height: 1.3,
                                       color: on ? c.onAccent : c.fg,
                                     ),
                                   ),
@@ -236,12 +242,13 @@ class _ChatListTileState extends State<ChatListTile> {
                                 c,
                                 size: MgType.caption,
                                 color: sub,
+                                height: 1.3,
                               ),
                             ),
                           ],
                         ],
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 3),
                       Row(
                         children: [
                           Expanded(

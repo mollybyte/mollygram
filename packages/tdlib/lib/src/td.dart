@@ -151,6 +151,10 @@ final class Td {
   }
 }
 
+/// Looks at a request before it is sent. Returns null to send it, or the
+/// response to answer it with instead of sending it.
+typedef TdRequestFilter = TdObject? Function(TdFunction<TdObject> request);
+
 /// A single TDLib client, usually one account.
 final class TdClient {
   TdClient._(this._td, this.id);
@@ -161,6 +165,10 @@ final class TdClient {
   final int id;
 
   final _updates = StreamController<TdObject>.broadcast(sync: true);
+  final _requests = StreamController<TdFunction<TdObject>>.broadcast(
+    sync: true,
+  );
+  final _responses = StreamController<TdObject>.broadcast(sync: true);
   final _pending = <int, _Pending<TdObject>>{};
   Completer<void>? _closing;
   var _closed = false;
@@ -168,16 +176,43 @@ final class TdClient {
   /// Updates and other objects without `@extra`.
   Stream<TdObject> get updates => _updates.stream;
 
+  /// Sees every request first, such as to keep some of them from TDLib;
+  /// see [TdRequestFilter].
+  TdRequestFilter? filter;
+
+  /// Requests as they go to TDLib, after [filter]: for watching what the
+  /// app asks for, such as which messages it deletes itself.
+  Stream<TdFunction<TdObject>> get requests => _requests.stream;
+
+  /// Successful responses from TDLib as they arrive, before the caller
+  /// gets them: for keeping what any part of the app loads, such as
+  /// messages.
+  Stream<TdObject> get responses => _responses.stream;
+
   /// Sends a request and waits for the response.
   ///
   /// A TDLib error arrives as a [TdException]; closing the client before the
   /// response arrives completes with a [TdClientClosed].
   Future<R> send<R extends TdObject>(TdFunction<R> function) {
     if (_closed) return Future.error(const TdClientClosed());
+    final TdObject? answer;
+    try {
+      answer = filter?.call(function);
+    } catch (error, stack) {
+      return Future.error(error, stack);
+    }
+    if (answer != null) {
+      return answer is R
+          ? Future.value(answer)
+          : Future.error(
+              TdDecodeException('$R expected, got ${answer.tdType}'),
+            );
+    }
     final requestId = _td._requestId();
     final pending = _Pending<R>();
     _pending[requestId] = pending;
     final request = function.toJson()..['@extra'] = requestId;
+    _requests.add(function);
     _td._json.send(id, jsonEncode(request));
     return pending.completer.future;
   }
@@ -207,7 +242,12 @@ final class TdClient {
   void _handle(TdEvent event) {
     final requestId = event.requestId;
     if (requestId != null) {
-      _pending.remove(requestId)?.complete(event);
+      final pending = _pending.remove(requestId);
+      if (pending == null) return;
+      if (event case TdReceived(:final object) when object is! TdError) {
+        _responses.add(object);
+      }
+      pending.complete(event);
       return;
     }
     if (event is! TdReceived) return;
@@ -228,6 +268,8 @@ final class TdClient {
     }
     _pending.clear();
     unawaited(_updates.close());
+    unawaited(_requests.close());
+    unawaited(_responses.close());
     (_closing ??= Completer<void>()).complete();
   }
 }

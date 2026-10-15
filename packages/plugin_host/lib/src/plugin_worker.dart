@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:isolate';
 
 import 'manifest.dart';
@@ -11,6 +12,10 @@ import 'plugin_instance.dart';
 /// budget on every event does not drop the frame rate. Services are called
 /// in the app isolate: the worker forwards only calls that are already
 /// authorized.
+/// What the isolate sends when it exits; a plain string, as exit
+/// messages must be.
+const _exited = 'mg.worker.exited';
+
 final class PluginWorker {
   PluginWorker._(this.manifest, this._services);
 
@@ -26,6 +31,14 @@ final class PluginWorker {
   PluginStatus _status = PluginStatus.stopped;
   String? _disabledReason;
   final _statusChanges = StreamController<PluginStatus>.broadcast();
+  final _logs = ListQueue<String>();
+  final _logLines = StreamController<String>.broadcast();
+
+  /// The plugin's last [PluginInstance.maxLogLines] log lines.
+  List<String> get logs => List.unmodifiable(_logs);
+
+  /// Each line as the plugin logs it.
+  Stream<String> get logLines => _logLines.stream;
 
   PluginStatus get status => _status;
   String? get disabledReason => _disabledReason;
@@ -59,6 +72,9 @@ final class PluginWorker {
       debugName: 'plugin ${manifest.id}',
       errorsAreFatal: false,
     );
+    // An isolate that dies (a crash in native code it survived, a kill)
+    // must not leave callers waiting.
+    w._isolate.addOnExitListener(w._receive.sendPort, response: _exited);
     w._send = await ready.future;
     await w._request((id) => ('start', id, null));
     return w;
@@ -81,18 +97,29 @@ final class PluginWorker {
   Future<void> updateSetting(String key, Object? value) =>
       _request((id) => ('setting', id, (key, value)));
 
+  var _stopped = false;
+
   void stop() {
+    if (_stopped) return;
+    _stopped = true;
     _send.send(('stop', 0, null));
     _isolate.kill(priority: Isolate.beforeNextEvent);
     _receive.close();
+    _failPending('plugin stopped');
+    _setStatus(PluginStatus.stopped, null);
+    unawaited(_statusChanges.close());
+    unawaited(_logLines.close());
+  }
+
+  void _failPending(String why) {
     for (final c in _replies.values) {
-      c.completeError(StateError('plugin stopped'));
+      c.completeError(StateError(why));
     }
     _replies.clear();
-    _setStatus(PluginStatus.stopped, null);
   }
 
   Future<Object?> _request((String, int, Object?) Function(int id) build) {
+    if (_stopped) return Future.error(StateError('plugin stopped'));
     final id = _nextId++;
     final c = _replies[id] = Completer<Object?>();
     _send.send(build(id));
@@ -100,7 +127,7 @@ final class PluginWorker {
   }
 
   void _setStatus(PluginStatus s, String? reason) {
-    if (s == _status) return;
+    if (s == _status || _statusChanges.isClosed) return;
     _status = s;
     _disabledReason = reason;
     _statusChanges.add(s);
@@ -110,12 +137,25 @@ final class PluginWorker {
     switch (msg) {
       case final SendPort port:
         ready.complete(port);
+      case _exited:
+        if (_stopped) return;
+        if (!ready.isCompleted) {
+          ready.completeError(StateError('worker exited'));
+        }
+        _failPending('worker exited');
+        _setStatus(PluginStatus.disabled, 'the plugin process exited');
       case ('reply', final int id, final Object? value, final Object? error):
         final c = _replies.remove(id);
         if (c == null) return;
         error == null ? c.complete(value) : c.completeError(error);
       case ('status', final PluginStatus s, final String? reason):
         _setStatus(s, reason);
+      case ('logs', final List<String> lines):
+        for (final line in lines) {
+          _logs.add(line);
+          if (_logs.length > PluginInstance.maxLogLines) _logs.removeFirst();
+          if (!_logLines.isClosed) _logLines.add(line);
+        }
       case (
         'service',
         final int id,
@@ -173,10 +213,46 @@ final class _RemoteServices implements PluginServices {
   }
 }
 
+/// Sends log lines to the app isolate in batches, at most every
+/// [_LogBatcher.interval], keeping the last [PluginInstance.maxLogLines]:
+/// a plugin logging in a loop cannot flood the app.
+final class _LogBatcher {
+  _LogBatcher(this._port);
+
+  static const interval = Duration(milliseconds: 100);
+
+  final SendPort _port;
+  final _lines = ListQueue<String>();
+  var _dropped = 0;
+  Timer? _timer;
+
+  void add(String line) {
+    _lines.add(line);
+    if (_lines.length > PluginInstance.maxLogLines) {
+      _lines.removeFirst();
+      _dropped++;
+    }
+    _timer ??= Timer(interval, flush);
+  }
+
+  void flush() {
+    _timer?.cancel();
+    _timer = null;
+    if (_lines.isEmpty) return;
+    _port.send((
+      'logs',
+      [if (_dropped > 0) '… $_dropped lines skipped', ..._lines],
+    ));
+    _lines.clear();
+    _dropped = 0;
+  }
+}
+
 void _workerMain(_WorkerArgs args) {
   final port = args.port;
   final inbox = ReceivePort();
   final services = _RemoteServices(port);
+  final logs = _LogBatcher(port);
   final plugin = PluginInstance(
     manifest: args.manifest,
     services: services,
@@ -184,11 +260,13 @@ void _workerMain(_WorkerArgs args) {
     policy: args.policy,
     locale: args.locale,
     settings: args.settings,
+    onLog: logs.add,
   );
   var lastStatus = plugin.status;
   Isolate.current.addErrorListener(port);
 
   void reportStatus() {
+    logs.flush();
     if (plugin.status == lastStatus) return;
     lastStatus = plugin.status;
     port.send(('status', plugin.status, plugin.disabledReason));

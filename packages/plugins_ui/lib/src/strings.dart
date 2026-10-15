@@ -1,5 +1,7 @@
 import 'package:plugin_host/plugin_host.dart';
 
+import 'controller.dart';
+
 /// Texts of the plugins screen in English and Russian.
 ///
 /// Third-party plugins show their manifest texts as is; our own plugins are
@@ -28,6 +30,12 @@ final class PluginsStrings {
   String get options => _t('Options', 'Параметры');
   String get commands => _t('Commands', 'Команды');
   String get manifest => _t('Manifest', 'Манифест');
+  String get log => _t('Log', 'Журнал');
+  String get logEmpty => _t(
+    'Nothing logged since the app started.',
+    'С запуска приложения записей нет.',
+  );
+  String get copyLog => _t('Copy', 'Скопировать');
   String get uninstall => _t('Uninstall plugin…', 'Удалить плагин…');
   String get off => _t('off', 'выкл');
   String get installedGroup => _t('Installed', 'Установленные');
@@ -44,6 +52,38 @@ final class PluginsStrings {
       _t('It will be able to use:', 'Плагин получит доступ:');
   String get newAccess =>
       _t('New access in this version:', 'Новый доступ в этой версии:');
+
+  String get uninstallConfirm => _t('Uninstall', 'Удалить');
+  String get uninstallMessage => _t(
+    'Its settings are removed with it.',
+    'Его настройки будут удалены вместе с ним.',
+  );
+  String uninstallTitle(String name) =>
+      _t('Uninstall “$name”?', 'Удалить «$name»?');
+
+  /// Why a picked file was not offered for install.
+  String installFailed(InstallFailure f) => switch (f.problem) {
+    InstallProblem.invalid => _t(
+      'This is not a valid plugin: ${f.details.join('; ')}',
+      'Это не плагин или он повреждён: ${f.details.join('; ')}',
+    ),
+    InstallProblem.older => _t(
+      'A newer version of this plugin is already installed.',
+      'Уже установлена более новая версия этого плагина.',
+    ),
+    InstallProblem.sameVersion => _t(
+      'This version is already installed.',
+      'Эта версия уже установлена.',
+    ),
+    InstallProblem.notSaved => _t(
+      'Could not install the plugin: ${f.details.join('; ')}',
+      'Не удалось установить плагин: ${f.details.join('; ')}',
+    ),
+    InstallProblem.builtIn => _t(
+      'This plugin uses the id of a built-in plugin.',
+      'Этот плагин использует идентификатор встроенного плагина.',
+    ),
+  };
 
   String updated(String when) => _t('Updated $when', 'Обновлён $when');
   String installTitle(String name) =>
@@ -279,6 +319,12 @@ const _ruPlugins = {
       'auto': 'Переводить автоматически',
       'skip': 'Не переводить, коды языков',
     },
+  ),
+  'dev.mollygram.codehighlight': PluginTexts(
+    name: 'Подсветка кода',
+    description:
+        'Раскрашивает блоки кода в сообщениях по синтаксису. Работает на '
+        'устройстве и не получает доступа к сообщениям, сети или хранилищу.',
   ),
   'dev.mollygram.transcribe': PluginTexts(
     name: 'Расшифровка',

@@ -137,6 +137,72 @@ void main() {
     expect(r, isA<EventSkipped>());
   });
 
+  group('message.render.code', () {
+    const source = '''
+      mg.on("message.render.code", ({message, code}) => [
+        {type: "text", text: JSON.stringify(message ?? null)},
+        {type: "code", spans: [{text: code, token: "plain"}]},
+      ]);
+    ''';
+    final payload = {
+      'message': {'chatId': 10, 'id': 7, 'text': 'secret words', 'senderId': 2},
+      'language': 'dart',
+      'code': 'main() {}',
+    };
+
+    test('needs no permission and sees only the ids', () async {
+      final p = load(source, m: manifest(hooks: '  - message.render.code'));
+      final r = await p.dispatch(PluginEvent.messageRenderCode, payload);
+      final ui = (r as EventHandled).ui;
+      expect(ui.first['text'], '{"chatId":10,"id":7}');
+      expect(codeSpansFor(ui, 'main() {}'), [
+        (text: 'main() {}', token: 'plain'),
+      ]);
+    });
+
+    test('with messages.read the whole message is passed', () async {
+      final p = load(
+        source,
+        m: manifest(
+          permissions: '  messages.read: all',
+          hooks: '  - message.render.code',
+        ),
+      );
+      final r = await p.dispatch(PluginEvent.messageRenderCode, payload);
+      expect((r as EventHandled).ui.first['text'], contains('secret words'));
+    });
+
+    test('spans that change the code are not used', () async {
+      final p = load(
+        'mg.on("message.render.code", () => '
+        '[{type: "code", spans: [{text: "rm -rf /", token: "plain"}]}])',
+        m: manifest(hooks: '  - message.render.code'),
+      );
+      final r = await p.dispatch(PluginEvent.messageRenderCode, payload);
+      expect(codeSpansFor((r as EventHandled).ui, 'main() {}'), isNull);
+    });
+
+    test('spans that are not a list are invalid UI', () async {
+      final p = load(
+        'mg.on("message.render.code", () => [{type: "code", spans: "x"}])',
+        m: manifest(hooks: '  - message.render.code'),
+      );
+      final r = await p.dispatch(PluginEvent.messageRenderCode, payload);
+      expect(r, isA<EventSkipped>());
+      expect(p.logs.last, contains('spans'));
+    });
+
+    test('too many spans are invalid UI', () async {
+      final p = load(
+        'mg.on("message.render.code", () => [{type: "code", spans: '
+        'Array.from({length: ${maxCodeSpans + 1}}, () => ({text: "x"}))}])',
+        m: manifest(hooks: '  - message.render.code'),
+      );
+      final r = await p.dispatch(PluginEvent.messageRenderCode, payload);
+      expect(r, isA<EventSkipped>());
+    });
+  });
+
   test('three failures in a row disable the plugin', () async {
     final p = load('mg.on("ui.action", () => { throw new Error("no") })');
     for (var i = 0; i < 3; i++) {
@@ -300,5 +366,39 @@ void main() {
       expect(await p.runCommand('/tr', args: 6), 'permission_denied');
       expect(await p.runCommand('/lang'), 'de:en');
     });
+
+    test(
+      'on_command translates only the chat of the running command',
+      () async {
+        final p = load(
+          '''
+        mg.command("/tr", async (chat) => {
+          try { return (await mg.messages.translate(chat, 1, {to: "en"})).text; }
+          catch (e) { return e.code; }
+        });
+        mg.on("ui.action", async () => {
+          try { return [{type: "text", text: (await mg.messages.translate(5, 1, {to: "en"})).text}]; }
+          catch (e) { return [{type: "text", text: e.code}]; }
+        });
+      ''',
+          m: manifest(
+            sdk: '^1.1',
+            permissions: '  messages.read: on_command',
+            extra: 'commands:\n  - { name: /tr, title: Tr }',
+          ),
+        );
+        expect(
+          await p.runCommand('/tr', chatId: 5, args: 5),
+          'translated to en',
+        );
+        expect(
+          await p.runCommand('/tr', chatId: 5, args: 6),
+          'permission_denied',
+        );
+        // Outside a command, nothing.
+        final r = await p.dispatch(PluginEvent.uiAction, {});
+        expect((r as EventHandled).ui.single['text'], 'permission_denied');
+      },
+    );
   });
 }

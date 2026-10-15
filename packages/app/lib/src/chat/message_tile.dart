@@ -1,14 +1,22 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
+import 'package:intl/intl.dart';
 import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../home/format.dart';
+import '../links/link_router.dart';
+import '../plugins/message_hooks.dart';
+import '../settings/stickers/sticker_options.dart';
+import '../settings/stickers/sticker_set_sheet.dart';
+import 'bot_keyboard.dart';
 import 'concealed.dart';
+import 'custom_emoji.dart';
 import 'describe.dart';
 import 'file_content.dart';
 import 'formatted_text.dart';
@@ -48,6 +56,9 @@ class MessageRowContext {
     required this.startsRun,
     required this.endsRun,
     required this.lastReadOutbox,
+    this.startsForwards = false,
+    this.selecting = false,
+    this.selected = false,
   });
 
   /// Incoming messages show the sender's name and avatar.
@@ -60,8 +71,19 @@ class MessageRowContext {
   /// The last one: it gets the avatar.
   final bool endsRun;
 
+  /// The first of forwarded messages in a row: "Forwarded messages" goes
+  /// above it.
+  final bool startsForwards;
+
   /// Outgoing messages up to this id are read by the other side.
   final int lastReadOutbox;
+
+  /// Messages are being selected: a check shows at the left of each row
+  /// and a click picks the row instead of acting on its content.
+  final bool selecting;
+
+  /// This row is among the selected ones.
+  final bool selected;
 }
 
 /// Callbacks of a message row.
@@ -72,6 +94,15 @@ class MessageRowActions {
     required this.onNeedReplied,
     this.onMenu,
     this.onOpen,
+    this.onViewMedia,
+    this.onJump,
+    this.onSelectToggle,
+    this.onTextSelected,
+    this.onPollVote,
+    this.onPollVoters,
+    this.onChecklistToggle,
+    this.onInlineButton,
+    this.onComments,
   });
 
   /// Adds the reaction, or takes it back when the user had chosen it.
@@ -90,6 +121,50 @@ class MessageRowActions {
 
   /// The user revealed self-destructing media, which starts its timer.
   final void Function(ConversationMessage message)? onOpen;
+
+  /// A click on a photo, video or GIF, which opens the media viewer.
+  final void Function(ConversationMessage message)? onViewMedia;
+
+  /// A click on a reply's quote, which scrolls to the message it answers.
+  final void Function(int messageId)? onJump;
+
+  /// A click on a row while selecting: the row joins or leaves the
+  /// selection.
+  final void Function(MessageRow row)? onSelectToggle;
+
+  /// The text selection within a message changed; null once nothing of
+  /// it is selected. Turns on text selection in the timeline.
+  final void Function(ConversationMessage message, QuoteSelection? quote)?
+  onTextSelected;
+
+  /// A vote in a poll for the options with [optionIds]; an empty list
+  /// takes the vote back.
+  final void Function(ConversationMessage message, List<int> optionIds)?
+  onPollVote;
+
+  /// A click on an option's results in a public poll, at [position]:
+  /// lists who voted for it.
+  final void Function(
+    ConversationMessage message,
+    int optionIndex,
+    Offset position,
+  )?
+  onPollVoters;
+
+  /// A click on a task of the checklist in [message], marking it done or
+  /// not done.
+  final void Function(ConversationMessage message, int taskId, bool done)?
+  onChecklistToggle;
+
+  /// A press on one of a bot's buttons under [message].
+  final void Function(
+    ConversationMessage message,
+    td.InlineKeyboardButton button,
+  )?
+  onInlineButton;
+
+  /// A click on the comments row under a channel post, which opens them.
+  final void Function(ConversationMessage message)? onComments;
 }
 
 /// A message, or an album, in Telegram's flat layout: no bubbles, the
@@ -127,27 +202,154 @@ class MessageTile extends StatelessWidget {
     };
   }
 
+  Widget _replierAvatar(AppLocalizations l10n, td.MessageSender sender) {
+    final id = MessageSenderId.of(sender);
+    return SenderAvatar(
+      name: nameOfSender(l10n, store, id),
+      photo: store.photoOf(id),
+      size: 19,
+    );
+  }
+
   @override
-  Widget build(BuildContext buildContext) {
+  Widget build(BuildContext buildContext) =>
+      PluginFilteredMessage(message: row.primary, child: _build(buildContext));
+
+  Widget _build(BuildContext buildContext) {
     final l10n = AppLocalizations.of(buildContext);
     final c = MgColors.of(buildContext);
     final message = row.primary;
     if (message.isService) {
-      return ServiceMessage(
-        describeService(l10n, store, message, isChannel: context.isChannel),
+      final service = SelectionContainer.disabled(
+        child: ServiceMessage(
+          describeService(l10n, store, message, isChannel: context.isChannel),
+        ),
       );
+      // Chat events can't be selected; while selecting they just sit there.
+      return context.selecting ? IgnorePointer(child: service) : service;
     }
     final locale = Localizations.localeOf(buildContext).toLanguageTag();
+    final info = message.message.interactionInfo;
+    final isPost = message.message.isChannelPost;
+    final compact = NumberFormat.compact(locale: locale);
     final meta = MessageMeta(
       time: formatMessageTime(message.date, locale),
       status: _status,
       label: message.editDate > 0 ? l10n.edited : null,
+      views: isPost && info != null && info.viewCount > 0
+          ? compact.format(info.viewCount)
+          : null,
+      forwards: isPost && info != null && info.forwardCount > 0
+          ? compact.format(info.forwardCount)
+          : null,
+      tooltip: [
+        formatFullDate(message.date, locale),
+        if (message.editDate > 0)
+          l10n.editedAt(formatFullDate(message.editDate, locale)),
+      ].join('\n'),
     );
-    final reactions = message.message.interactionInfo?.reactions?.reactions;
+    final reactions = info?.reactions?.reactions;
+    // A channel post carries its comments; a group message with replies,
+    // the thread of those replies.
+    final replyInfo = info?.replyInfo;
+    final comments = isPost || (replyInfo?.replyCount ?? 0) > 0
+        ? replyInfo
+        : null;
+    final forward = message.message.forwardInfo;
+    Widget content = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _MessageBody(row: row, store: store, actions: actions),
+        if (message.message.replyMarkup case td.ReplyMarkupInlineKeyboard(
+          :final rows,
+        ))
+          SelectionContainer.disabled(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: InlineKeyboard(
+                  rows: rows,
+                  onPressed: switch (actions.onInlineButton) {
+                    null => null,
+                    final press => (button) => press(message, button),
+                  },
+                ),
+              ),
+            ),
+          ),
+        if (reactions != null && reactions.isNotEmpty)
+          SelectionContainer.disabled(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 5),
+              child: Wrap(
+                spacing: 4,
+                runSpacing: 4,
+                children: [
+                  for (final reaction in reactions)
+                    ReactionChip(
+                      emoji: reactionKey(reaction.type),
+                      icon: customReactionIcon(
+                        reactionKey(reaction.type),
+                        ReactionChip.iconSize,
+                      ),
+                      count: reaction.totalCount,
+                      chosen: reaction.isChosen,
+                      onTap: reaction.type is td.ReactionTypePaid
+                          ? null
+                          : () => actions.onReaction(
+                              message,
+                              reaction.type,
+                              reaction.isChosen,
+                            ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        if (comments != null)
+          SelectionContainer.disabled(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: CommentsRow(
+                label: comments.replyCount == 0
+                    ? l10n.leaveComment
+                    : isPost
+                    ? l10n.commentCount(comments.replyCount)
+                    : l10n.replyCount(comments.replyCount),
+                avatars: [
+                  for (final sender in comments.recentReplierIds.take(3))
+                    _replierAvatar(l10n, sender),
+                ],
+                unread:
+                    comments.lastMessageId > comments.lastReadInboxMessageId,
+                onTap: actions.onComments == null
+                    ? null
+                    : () => actions.onComments!(message),
+              ),
+            ),
+          ),
+      ],
+    );
+    if (forward != null) {
+      final source = originSender(forward.origin);
+      content = ForwardedBlock(
+        source: forwardOriginName(l10n, store, forward.origin),
+        date: formatChatTime(forward.date, locale),
+        color: source == null ? null : peerNameColor(c, store.colorOf(source)),
+        child: content,
+      );
+    }
     final name = nameOfSender(l10n, store, message.sender);
     final onMenu = actions.onMenu;
+    final metrics = MgMetrics.of(buildContext);
     final tile = Padding(
-      padding: EdgeInsets.only(top: context.startsRun ? 10 : 4),
+      padding: EdgeInsets.only(
+        top: context.startsRun
+            ? (metrics.compact ? 6 : 10)
+            : metrics.messageGap,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -168,53 +370,119 @@ class MessageTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (context.startsRun)
-                  Text(
-                    name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: mgTextStyle(
-                      c,
-                      weight: FontWeight.w600,
-                      color: peerNameColor(c, store.colorOf(message.sender)),
+                  SelectionContainer.disabled(
+                    child: Text(
+                      name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: mgTextStyle(
+                        c,
+                        weight: MgWeight.medium,
+                        color: peerNameColor(c, store.colorOf(message.sender)),
+                        height: 1.35,
+                      ),
                     ),
                   ),
-                _MessageBody(row: row, store: store, actions: actions),
-                if (reactions != null && reactions.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 5),
-                    child: Wrap(
-                      spacing: 4,
-                      runSpacing: 4,
-                      children: [
-                        for (final reaction in reactions)
-                          ReactionChip(
-                            emoji: _reactionEmoji(reaction.type),
-                            count: reaction.totalCount,
-                            chosen: reaction.isChosen,
-                            onTap: reaction.type is td.ReactionTypePaid
-                                ? null
-                                : () => actions.onReaction(
-                                    message,
-                                    reaction.type,
-                                    reaction.isChosen,
-                                  ),
-                          ),
-                      ],
+                if (context.startsForwards)
+                  SelectionContainer.disabled(
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 3),
+                      child: Text(
+                        l10n.forwardedMessages,
+                        style: mgTextStyle(c, color: c.fg2),
+                      ),
                     ),
                   ),
+                content,
               ],
             ),
           ),
           const SizedBox(width: 12),
-          Padding(padding: const EdgeInsets.only(top: 1), child: meta),
+          SelectionContainer.disabled(
+            child: Padding(padding: const EdgeInsets.only(top: 1), child: meta),
+          ),
         ],
       ),
     );
-    if (onMenu == null) return tile;
+    final onSelectToggle = actions.onSelectToggle;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onSecondaryTapUp: (details) => onMenu(row, details.globalPosition),
-      child: tile,
+      onSecondaryTapUp: onMenu == null
+          ? null
+          : (details) => onMenu(row, details.globalPosition),
+      onTap: context.selecting && onSelectToggle != null
+          ? () => onSelectToggle(row)
+          : null,
+      child: _Selectable(
+        selecting: context.selecting,
+        selected: context.selected,
+        // The check sits level with the first line of the row.
+        top: context.startsRun ? 9 : 3,
+        child: tile,
+      ),
+    );
+  }
+}
+
+/// The check column that slides in at the left while selecting, and the
+/// accent tint over a selected row. The row's own controls stop taking
+/// clicks, which go to the selection instead.
+class _Selectable extends StatelessWidget {
+  const _Selectable({
+    required this.selecting,
+    required this.selected,
+    required this.top,
+    required this.child,
+  });
+
+  final bool selecting;
+  final bool selected;
+  final double top;
+  final Widget child;
+
+  static const double _column = SelectCheck.size + 12;
+  static const _duration = Duration(milliseconds: 200);
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    return AnimatedContainer(
+      duration: _duration,
+      curve: Curves.easeOutCubic,
+      decoration: BoxDecoration(
+        color: selected
+            ? c.accent.withValues(alpha: 0.12)
+            : const Color(0x00000000),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      // The check is laid over the row rather than beside it, so a short
+      // row keeps its height while selecting.
+      child: Stack(
+        children: [
+          AnimatedPadding(
+            duration: _duration,
+            curve: Curves.easeOutCubic,
+            padding: EdgeInsets.only(left: selecting ? _column : 0),
+            child: AbsorbPointer(absorbing: selecting, child: child),
+          ),
+          Positioned(
+            left: 4,
+            top: top,
+            child: IgnorePointer(
+              child: AnimatedSlide(
+                duration: _duration,
+                curve: Curves.easeOutCubic,
+                offset: selecting ? Offset.zero : const Offset(-1.3, 0),
+                child: AnimatedOpacity(
+                  duration: _duration,
+                  opacity: selecting ? 1 : 0,
+                  child: SelectCheck(selected: selected),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -259,13 +527,6 @@ class SenderAvatar extends StatelessWidget {
   }
 }
 
-String _reactionEmoji(td.ReactionType type) => switch (type) {
-  td.ReactionTypeEmoji(:final emoji) => emoji,
-  td.ReactionTypePaid() => '⭐',
-  // Custom emoji need their stickers; a sparkle stands in until then.
-  _ => '✨',
-};
-
 /// What a message shows under its sender's name: "Forwarded from", the
 /// reply quote, then the content.
 class _MessageBody extends StatelessWidget {
@@ -281,13 +542,80 @@ class _MessageBody extends StatelessWidget {
 
   ConversationMessage get message => row.primary;
 
+  /// The text of [of] reports its selection for a quote.
+  FormattedTextView _text(td.FormattedText text, {ConversationMessage? of}) {
+    final onTextSelected = actions.onTextSelected;
+    final owner = of ?? message;
+    // Bot commands in it go to this chat, meant for the bot that sent it.
+    return FormattedTextView(
+      text: text,
+      chatId: owner.chatId,
+      senderUserId: owner.sender.isChat ? null : owner.sender.id,
+      onSelection: onTextSelected == null
+          ? null
+          : (quote) => onTextSelected(owner, quote),
+    );
+  }
+
+  /// Up to three of the poll's latest voters, overlapping a little, as
+  /// Telegram shows them next to a public poll's kind.
+  Widget? _recentVoters(
+    BuildContext context,
+    AppLocalizations l10n,
+    List<td.MessageSender> ids,
+  ) {
+    if (ids.isEmpty) return null;
+    final shown = ids.take(3).toList();
+    const size = 16.0;
+    const step = 11.0;
+    return SizedBox(
+      width: size + step * (shown.length - 1),
+      height: size,
+      child: Stack(
+        children: [
+          for (final (i, sender) in shown.indexed.toList().reversed)
+            Positioned(
+              left: step * i,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: MgColors.of(context).windowBackground,
+                    width: 1.5,
+                  ),
+                ),
+                child: _senderAvatar(l10n, sender, size - 3),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _senderAvatar(
+    AppLocalizations l10n,
+    td.MessageSender sender,
+    double size,
+  ) {
+    final id = MessageSenderId.of(sender);
+    return SenderAvatar(
+      name: nameOfSender(l10n, store, id),
+      photo: store.photoOf(id),
+      size: size,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [..._headers(l10n), _content(context, l10n)],
+      children: [
+        ..._headers(l10n),
+        _content(context, l10n),
+        PluginMessageExtras(message: message),
+      ],
     );
   }
 
@@ -306,16 +634,47 @@ class _MessageBody extends StatelessWidget {
     }
     switch (content) {
       case td.MessageSticker(:final sticker):
-        return StickerContent(sticker: sticker);
+        return _TimelineSticker(sticker);
       case td.MessageAnimatedEmoji(:final animatedEmoji, :final emoji):
         final sticker = animatedEmoji.sticker;
         if (sticker == null) return _BigEmoji(emoji);
-        return SizedBox.square(
-          dimension: 120,
-          child: FittedBox(child: StickerContent(sticker: sticker)),
-        );
-      case td.MessageDice(:final emoji):
-        return _BigEmoji(emoji);
+        return _LargeSticker(sticker);
+      case td.MessageDice(
+        :final initialState,
+        :final finalState,
+        :final emoji,
+        :final value,
+      ):
+        // The thrown value is a sticker of its own; before the server has
+        // picked one (the message just went out) the dice is shown rolling.
+        final state = value > 0 ? finalState ?? initialState : initialState;
+        return switch (state) {
+          td.DiceStickersRegular(:final sticker) => _LargeSticker(sticker),
+          td.DiceStickersSlotMachine(
+            :final background,
+            :final lever,
+            :final leftReel,
+            :final centerReel,
+            :final rightReel,
+          ) =>
+            SizedBox.square(
+              dimension: _LargeSticker.side,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  for (final part in [
+                    background,
+                    leftReel,
+                    centerReel,
+                    rightReel,
+                    lever,
+                  ])
+                    FittedBox(child: StickerContent(sticker: part)),
+                ],
+              ),
+            ),
+          null => _BigEmoji(emoji),
+        };
       case td.MessageVideoNote(:final videoNote):
         final note = VideoNoteContent(
           chatId: message.chatId,
@@ -334,14 +693,14 @@ class _MessageBody extends StatelessWidget {
         );
       case td.MessageText(:final text, linkPreview: null)
           when text.entities.isEmpty && isEmojiOnly(text.text):
-        return _BigEmoji(text.text);
+        return LargeEmoji(big: _BigEmoji(text.text), small: _text(text));
       case td.MessageText(:final text, :final linkPreview):
-        if (linkPreview == null) return FormattedTextView(text: text);
+        if (linkPreview == null) return _text(text);
         return Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (!linkPreview.showAboveText) FormattedTextView(text: text),
+            if (!linkPreview.showAboveText) _text(text),
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 420),
               child: _LinkPreview(linkPreview),
@@ -349,12 +708,18 @@ class _MessageBody extends StatelessWidget {
             if (linkPreview.showAboveText)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
-                child: FormattedTextView(text: text),
+                child: _text(text),
               ),
           ],
         );
       case td.MessageDocument(:final document):
-        return _withCaption(DocumentContent(document: document));
+        return _withCaption(
+          DocumentContent(
+            chatId: message.chatId,
+            messageId: message.id,
+            document: document,
+          ),
+        );
       case td.MessageVoiceNote(:final voiceNote):
         return _withCaption(
           VoiceNoteContent(
@@ -373,20 +738,22 @@ class _MessageBody extends StatelessWidget {
         );
       default:
     }
-    final visual = _visualFor(row, actions.onOpen);
+    final visual = _visualFor(row, actions);
     if (visual != null) {
       final caption = _caption(row);
       final media = Padding(
         padding: const EdgeInsets.only(top: 2),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(
+            MgMetrics.of(context).mediaRadius,
+          ),
           child: visual.widget,
         ),
       );
       if (caption == null) return media;
       final text = ConstrainedBox(
         constraints: BoxConstraints(maxWidth: math.max(visual.width, 420)),
-        child: FormattedTextView(text: caption.text),
+        child: _text(caption.text, of: caption.of),
       );
       return Column(
         mainAxisSize: MainAxisSize.min,
@@ -396,7 +763,29 @@ class _MessageBody extends StatelessWidget {
             : [media, const SizedBox(height: 4), text],
       );
     }
-    return otherContent(context, content, isOutgoing: message.isOutgoing) ??
+    final onPollVote = actions.onPollVote;
+    final onPollVoters = actions.onPollVoters;
+    final onChecklistToggle = actions.onChecklistToggle;
+    return otherContent(
+          context,
+          content,
+          isOutgoing: message.isOutgoing,
+          chatId: message.chatId,
+          sender: message.message.senderId,
+          onPollVote: onPollVote == null
+              ? null
+              : (optionIds) => onPollVote(message, optionIds),
+          onPollVoters: onPollVoters == null
+              ? null
+              : (index, position) => onPollVoters(message, index, position),
+          recentVoters: content is td.MessagePoll
+              ? _recentVoters(context, l10n, content.poll.recentVoterIds)
+              : null,
+          onChecklistToggle: onChecklistToggle == null
+              ? null
+              : (taskId, done) => onChecklistToggle(message, taskId, done),
+          completerAvatar: (sender, size) => _senderAvatar(l10n, sender, size),
+        ) ??
         Text(describeContent(l10n, content));
   }
 
@@ -414,23 +803,15 @@ class _MessageBody extends StatelessWidget {
         if (caption != null && caption.text.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 2),
-            child: FormattedTextView(text: caption),
+            child: _text(caption),
           ),
       ],
     );
   }
 
-  /// "Forwarded from" and the reply quote.
+  /// The reply quote; the source of a forward is drawn around the body.
   List<Widget> _headers(AppLocalizations l10n) {
     final headers = <Widget>[];
-    final forward = message.message.forwardInfo;
-    if (forward != null) {
-      headers.add(
-        ForwardHeader(
-          l10n.forwardedFrom(forwardOriginName(l10n, store, forward.origin)),
-        ),
-      );
-    }
     final reply = message.message.replyTo;
     if (reply is td.MessageReplyToMessage) {
       headers.add(
@@ -438,7 +819,9 @@ class _MessageBody extends StatelessWidget {
           padding: const EdgeInsets.only(top: 2, bottom: 4),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
-            child: _replyHeader(l10n, reply),
+            child: SelectionContainer.disabled(
+              child: _replyHeader(l10n, reply),
+            ),
           ),
         ),
       );
@@ -475,31 +858,24 @@ class _MessageBody extends StatelessWidget {
       text = '';
     }
     if (quote != null && quote.isNotEmpty) text = quote;
+    final jump = actions.onJump;
+    // Only an original of this chat that still exists can be scrolled to.
+    final canJump =
+        jump != null &&
+        reply.chatId == message.chatId &&
+        reply.messageId != 0 &&
+        !store.isMissing(message.chatId, message.id);
     return ReplyHeader(
       author: author,
       text: text,
-      thumbnail: content == null ? null : _replyThumbnail(content),
+      thumbnail: content == null ? null : mediaThumbnail(content),
+      onTap: canJump ? () => jump(reply.messageId) : null,
     );
   }
 
-  Widget? _replyThumbnail(td.MessageContent content) => switch (content) {
-    td.MessagePhoto(:final photo) => TdImage(
-      thumbnail: photo.sizes.isEmpty ? null : photo.sizes.first.photo,
-      minithumbnail: photo.minithumbnail,
-    ),
-    td.MessageVideo(:final video) => TdImage(
-      thumbnail: video.thumbnail?.file,
-      minithumbnail: video.minithumbnail,
-    ),
-    td.MessageAnimation(:final animation) => TdImage(
-      thumbnail: animation.thumbnail?.file,
-      minithumbnail: animation.minithumbnail,
-    ),
-    _ => null,
-  };
-
   /// The caption of a row's media and whether it goes above the media.
-  static ({td.FormattedText text, bool above})? _caption(MessageRow row) {
+  static ({td.FormattedText text, bool above, ConversationMessage of})?
+  _caption(MessageRow row) {
     for (final m in row.messages) {
       final caption = captionOf(m.content);
       if (caption == null || caption.text.isEmpty) continue;
@@ -511,7 +887,7 @@ class _MessageBody extends StatelessWidget {
         ) => showCaptionAboveMedia,
         _ => false,
       };
-      return (text: caption, above: above);
+      return (text: caption, above: above, of: m);
     }
     return null;
   }
@@ -520,25 +896,24 @@ class _MessageBody extends StatelessWidget {
 /// The media of a row and the width it takes.
 typedef _Visual = ({Widget widget, double width});
 
-_Visual? _visualFor(
-  MessageRow row,
-  void Function(ConversationMessage message)? onOpen,
-) {
-  if (row.messages.length > 1) return _album(row, onOpen);
+_Visual? _visualFor(MessageRow row, MessageRowActions actions) {
+  final onOpen = actions.onOpen;
+  if (row.messages.length > 1) return _album(row, actions);
   final message = row.primary;
+  final view = _viewer(message, actions);
   final Widget media;
   final Size size;
   switch (message.content) {
     case td.MessagePhoto(:final photo):
       final largest = photo.sizes.isEmpty ? null : photo.sizes.last;
       size = fitMedia(largest?.width ?? 0, largest?.height ?? 0);
-      media = PhotoContent(photo: photo, size: size);
+      media = PhotoContent(photo: photo, size: size, onTap: view);
     case td.MessageVideo(:final video):
       size = fitMedia(video.width, video.height);
-      media = VideoContent(video: video, size: size);
+      media = VideoContent(video: video, size: size, onTap: view);
     case td.MessageAnimation(:final animation):
       size = fitMedia(animation.width, animation.height);
-      media = AnimationContent(animation: animation, size: size);
+      media = AnimationContent(animation: animation, size: size, onTap: view);
     default:
       return null;
   }
@@ -570,10 +945,13 @@ Widget _concealIfNeeded(
 
 /// Photos and videos sent together, in justified rows: every row is as
 /// wide as the bubble and as tall as its pictures' proportions allow.
-_Visual _album(
-  MessageRow row,
-  void Function(ConversationMessage message)? onOpen,
-) {
+VoidCallback? _viewer(ConversationMessage message, MessageRowActions actions) {
+  final view = actions.onViewMedia;
+  return view == null ? null : () => view(message);
+}
+
+_Visual _album(MessageRow row, MessageRowActions actions) {
+  final onOpen = actions.onOpen;
   const width = kMaxMediaWidth;
   const gap = 2.0;
   final items = row.messages;
@@ -617,7 +995,7 @@ _Visual _album(
                 return _concealIfNeeded(
                   cells[i],
                   size,
-                  _albumCell(cells[i], size),
+                  _albumCell(cells[i], size, _viewer(cells[i], actions)),
                   onOpen,
                 );
               }(),
@@ -643,12 +1021,23 @@ _Visual _album(
   );
 }
 
-Widget _albumCell(ConversationMessage message, Size size) =>
-    switch (message.content) {
-      td.MessagePhoto(:final photo) => PhotoContent(photo: photo, size: size),
-      td.MessageVideo(:final video) => VideoContent(video: video, size: size),
-      _ => SizedBox.fromSize(size: size),
-    };
+Widget _albumCell(
+  ConversationMessage message,
+  Size size,
+  VoidCallback? onTap,
+) => switch (message.content) {
+  td.MessagePhoto(:final photo) => PhotoContent(
+    photo: photo,
+    size: size,
+    onTap: onTap,
+  ),
+  td.MessageVideo(:final video) => VideoContent(
+    video: video,
+    size: size,
+    onTap: onTap,
+  ),
+  _ => SizedBox.fromSize(size: size),
+};
 
 /// How many pictures go in each album row, top to bottom. A wide first
 /// picture of three gets a row of its own.
@@ -680,6 +1069,45 @@ bool isEmojiOnly(String text) {
   final trimmed = text.trim();
   if (trimmed.isEmpty || !_emojiOnly.hasMatch(trimmed)) return false;
   return trimmed.replaceAll(RegExp(r'\s'), '').characters.length <= 3;
+}
+
+/// A sticker message. A click opens its set, as in the official client,
+/// so a set seen in any chat can be added from there. (While selecting,
+/// the row absorbs the click and selects itself, like everywhere else.)
+class _TimelineSticker extends StatelessWidget {
+  const _TimelineSticker(this.sticker);
+
+  final td.Sticker sticker;
+
+  @override
+  Widget build(BuildContext context) {
+    final content = StickerContent(sticker: sticker);
+    if (sticker.setId == 0) return content;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => unawaited(showStickerSetSheetById(context, sticker.setId)),
+        child: content,
+      ),
+    );
+  }
+}
+
+/// An animated emoji or a dice, drawn at the size of a big emoji rather
+/// than a sticker.
+class _LargeSticker extends StatelessWidget {
+  const _LargeSticker(this.sticker);
+
+  final td.Sticker sticker;
+
+  static const double side = 120;
+
+  @override
+  Widget build(BuildContext context) => SizedBox.square(
+    dimension: side,
+    child: FittedBox(child: StickerContent(sticker: sticker)),
+  );
 }
 
 class _BigEmoji extends StatelessWidget {
@@ -717,6 +1145,7 @@ class _LinkPreview extends StatelessWidget {
               child: TdImage(
                 file: photoSizeFor(photo, side * 2)?.photo,
                 minithumbnail: photo.minithumbnail,
+                kind: MediaDownloadKind.photos,
               ),
             )
           : TdImage(
@@ -730,7 +1159,25 @@ class _LinkPreview extends StatelessWidget {
       description: preview.description.text,
       image: image,
       largeImage: large,
-      onTap: () => openLink(preview.url),
+      onTap: () => openLinkFrom(context, preview.url),
     );
   }
 }
+
+/// The small picture of a photo, video or GIF, for a reply's quote and
+/// the pinned bar; null for other content.
+Widget? mediaThumbnail(td.MessageContent content) => switch (content) {
+  td.MessagePhoto(:final photo) => TdImage(
+    thumbnail: photo.sizes.isEmpty ? null : photo.sizes.first.photo,
+    minithumbnail: photo.minithumbnail,
+  ),
+  td.MessageVideo(:final video) => TdImage(
+    thumbnail: video.thumbnail?.file,
+    minithumbnail: video.minithumbnail,
+  ),
+  td.MessageAnimation(:final animation) => TdImage(
+    thumbnail: animation.thumbnail?.file,
+    minithumbnail: animation.minithumbnail,
+  ),
+  _ => null,
+};

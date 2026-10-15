@@ -118,9 +118,38 @@ void main() {
       expect(find.byType(MgSendButton), findsNothing);
 
       await tester.enterText(find.byType(TextField), 'hi');
-      await tester.pump();
+      await tester.pumpAndSettle();
       expect(find.byType(MgSendButton), findsOneWidget);
       expect(find.byTooltip(_labels.record), findsNothing);
+    });
+
+    testWidgets('a replacement covers the field and keeps the record button', (
+      tester,
+    ) async {
+      const button = SizedBox(key: ValueKey('rec'), width: 32, height: 32);
+      await tester.pumpWidget(
+        themed(const Composer(labels: _labels, recordButton: button)),
+      );
+      expect(find.byKey(const ValueKey('rec')), findsOneWidget);
+      final buttonElement = tester.element(find.byKey(const ValueKey('rec')));
+
+      await tester.pumpWidget(
+        themed(
+          const Composer(
+            labels: _labels,
+            recordButton: button,
+            replacement: Text('0:01', key: ValueKey('bar')),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('bar')), findsOneWidget);
+      // The same element: a press on it keeps going.
+      expect(tester.element(find.byKey(const ValueKey('rec'))), buttonElement);
+      // The field is still there for when the recording ends, but takes no
+      // taps.
+      await tester.tap(find.byType(TextField), warnIfMissed: false);
+      expect(tester.testTextInput.isVisible, isFalse);
     });
 
     testWidgets('sends on the button and on Enter, not on Shift+Enter', (
@@ -153,6 +182,42 @@ void main() {
       expect(sent, ['first', 'first']);
       expect(find.byType(MgSendButton), findsNothing);
     });
+  });
+
+  testWidgets('message flash stays still with reduce motion', (tester) async {
+    Widget flash(int n) => themed(
+      MediaQuery(
+        data: const MediaQueryData(disableAnimations: true),
+        child: MessageFlash(
+          flash: n,
+          child: const SizedBox(width: 40, height: 20),
+        ),
+      ),
+    );
+    Color? color() =>
+        (tester
+                    .widgetList<DecoratedBox>(
+                      find.descendant(
+                        of: find.byType(MessageFlash),
+                        matching: find.byType(DecoratedBox),
+                      ),
+                    )
+                    .firstOrNull
+                    ?.decoration
+                as BoxDecoration?)
+            ?.color;
+
+    await tester.pumpWidget(flash(0));
+    expect(color(), isNull);
+    await tester.pumpWidget(flash(1));
+    await tester.pump(const Duration(milliseconds: 10));
+    final early = color();
+    await tester.pump(const Duration(milliseconds: 1200));
+    // Full strength the whole time: no fade in or out.
+    expect(early, isNotNull);
+    expect(color(), early);
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(color(), isNull);
   });
 
   testWidgets('chat list tile shows unread and reports taps', (tester) async {
@@ -384,15 +449,19 @@ void main() {
     final empty = TextEditingController();
     addTearDown(full.dispose);
     addTearDown(empty.dispose);
-    Future<void> pump(TextEditingController c) => tester.pumpWidget(
-      themed(Composer(labels: _labels, controller: c, onSend: (_) {})),
-    );
+    Future<void> pump(TextEditingController c) async {
+      await tester.pumpWidget(
+        themed(Composer(labels: _labels, controller: c, onSend: (_) {})),
+      );
+      await tester.pumpAndSettle();
+    }
+
     await pump(full);
     expect(find.byType(MgSendButton), findsOneWidget);
     await pump(empty);
     expect(find.byType(MgSendButton), findsNothing);
     empty.text = 'x';
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(find.byType(MgSendButton), findsOneWidget);
   });
 
@@ -406,7 +475,8 @@ void main() {
     expect(tester.getSize(find.byType(Glass)).width, Composer.maxWidth);
   });
 
-  testWidgets('header keeps the actions at the right edge', (tester) async {
+  testWidgets('header keeps the title left and the actions at the right '
+      'edge', (tester) async {
     tester.view.physicalSize = const Size(1000, 200);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -415,7 +485,7 @@ void main() {
         const Align(
           alignment: Alignment.topCenter,
           child: ChatHeaderBar(
-            title: SizedBox(width: 120),
+            title: SizedBox(width: 120, key: Key('title')),
             actions: SizedBox(width: 80),
             fill: SizedBox.expand(key: Key('fill')),
           ),
@@ -423,10 +493,60 @@ void main() {
       ),
     );
     final bar = tester.getRect(find.byType(ChatHeaderBar));
+    final title = tester.getRect(find.byKey(const Key('title')));
     final fill = tester.getRect(find.byKey(const Key('fill')));
     expect(bar.width, 1000);
-    expect(fill.left, 120);
+    expect(title.left, 0);
+    expect(fill.left, 0);
     expect(fill.right, 1000 - 80);
+  });
+
+  testWidgets('a wide header title stays clear of the actions', (tester) async {
+    tester.view.physicalSize = const Size(400, 200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      themed(
+        const Align(
+          alignment: Alignment.topCenter,
+          child: ChatHeaderBar(
+            title: SizedBox(width: 300, key: Key('title')),
+            actions: SizedBox(width: 80, key: Key('actions')),
+          ),
+        ),
+      ),
+    );
+    final title = tester.getRect(find.byKey(const Key('title')));
+    final actions = tester.getRect(find.byKey(const Key('actions')));
+    expect(title.left, 0);
+    expect(title.right, lessThanOrEqualTo(actions.left - 8));
+  });
+
+  testWidgets('folder rail item marks the selected folder', (tester) async {
+    var taps = 0;
+    await tester.pumpWidget(
+      themed(
+        FolderRail(
+          children: [
+            const FolderRailItem(
+              icon: MgIcons.chat,
+              label: 'All',
+              selected: true,
+            ),
+            FolderRailItem(
+              icon: MgIcons.file,
+              label: 'Work',
+              count: 4,
+              onTap: () => taps++,
+            ),
+          ],
+        ),
+      ),
+    );
+    expect(find.text('All'), findsOneWidget);
+    expect(find.text('Work'), findsOneWidget);
+    await tester.tap(find.text('Work'));
+    expect(taps, 1);
   });
 
   testWidgets('form buttons expose a semantic tap', (tester) async {
@@ -525,5 +645,120 @@ void main() {
       await tester.tap(find.byType(MgIconButton));
       expect(back, 1);
     });
+  });
+
+  group('EmojiTab', () {
+    const labels = EmojiTabLabels(
+      search: 'Search emoji',
+      recent: 'Recently used',
+      noResults: 'No emoji found',
+      groups: {EmojiGroup.smileys: 'Smileys', EmojiGroup.flags: 'Flags'},
+    );
+
+    Widget tab({
+      List<String> recent = const [],
+      ValueChanged<String>? onPick,
+      Future<List<String>> Function(String)? search,
+    }) => themed(
+      Center(
+        child: EmojiPanel(
+          tabs: const ['Emoji'],
+          children: [
+            EmojiTab(
+              labels: labels,
+              recent: recent,
+              search: search,
+              onPick: onPick ?? (_) {},
+            ),
+          ],
+        ),
+      ),
+    );
+
+    testWidgets('shows recent emoji first and picks one', (tester) async {
+      final picked = <String>[];
+      await tester.pumpWidget(tab(recent: const ['🦊'], onPick: picked.add));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Recently used'), findsOneWidget);
+      await tester.tap(find.text('🦊'));
+      await tester.tap(find.text('😀'));
+      expect(picked, ['🦊', '😀']);
+    });
+
+    testWidgets('jumps to a group from the bar', (tester) async {
+      await tester.pumpWidget(tab());
+      await tester.pumpAndSettle();
+      expect(find.text('Flags'), findsNothing);
+
+      await tester.tap(find.bySemanticsLabel('Flags'));
+      await tester.pump();
+      expect(find.text('Flags'), findsOneWidget);
+      expect(find.text('😀'), findsNothing);
+    });
+
+    testWidgets('searches names and then Telegram keywords', (tester) async {
+      final asked = <String>[];
+      await tester.pumpWidget(
+        tab(
+          search: (query) async {
+            asked.add(query);
+            return ['🐈'];
+          },
+        ),
+      );
+
+      await tester.enterText(find.byType(TextField), 'cat face');
+      await tester.pump();
+      expect(asked, ['cat face']);
+      expect(find.text('🐈'), findsOneWidget);
+      expect(find.text('🐱'), findsOneWidget);
+      // Keyword matches come first.
+      expect(
+        tester.getTopLeft(find.text('🐈')).dx,
+        lessThan(tester.getTopLeft(find.text('🐱')).dx),
+      );
+
+      await tester.enterText(find.byType(TextField), 'zzzz');
+      await tester.pump();
+      expect(find.text('🐈'), findsOneWidget);
+    });
+
+    test('matches every word of the query in the English names', () {
+      expect(EmojiTab.matchNames('grinning face'), contains('😀'));
+      expect(EmojiTab.matchNames('flag ukraine'), ['🇺🇦']);
+      expect(EmojiTab.matchNames('  '), isEmpty);
+    });
+  });
+
+  testWidgets('shows views and the comments row of a channel post', (
+    tester,
+  ) async {
+    var opened = 0;
+    await tester.pumpWidget(
+      themed(
+        Column(
+          children: [
+            const MessageMeta(time: '17:37', views: '1.2K'),
+            CommentsRow(label: '4 comments', onTap: () => opened++),
+            const ForwardedBlock(
+              source: 'Dodo Pizza',
+              date: '12.10.26',
+              child: Text('New secret'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    expect(find.text('1.2K'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate((w) => w is MgIcon && w.icon == MgIcons.views),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('4 comments'));
+    expect(opened, 1);
+    expect(find.textContaining('Dodo Pizza'), findsOneWidget);
+    expect(find.text('New secret'), findsOneWidget);
   });
 }

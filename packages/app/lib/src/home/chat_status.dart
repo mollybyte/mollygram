@@ -182,9 +182,27 @@ String _lastSeen(
 /// The left capsule of the chat header: the chat's name and, under it,
 /// what someone is doing there, or else its status.
 class ChatHeaderTitle extends ConsumerStatefulWidget {
-  const ChatHeaderTitle({super.key, required this.chatId});
+  const ChatHeaderTitle({
+    super.key,
+    required this.chatId,
+    this.titleIcon,
+    this.avatar,
+    this.subtitle,
+    this.onTap,
+  });
 
   final int chatId;
+
+  /// Drawn just before the title, such as a secret chat's lock.
+  final Widget? titleIcon;
+
+  /// Replaces the chat's avatar, such as the Saved Messages list button.
+  final Widget? avatar;
+
+  /// Shown instead of the presence status when not empty, such as a secret
+  /// chat's handshake state.
+  final String? subtitle;
+  final VoidCallback? onTap;
 
   @override
   ConsumerState<ChatHeaderTitle> createState() => _ChatHeaderTitleState();
@@ -231,7 +249,11 @@ class _ChatHeaderTitleState extends ConsumerState<ChatHeaderTitle> {
     final status = ref.watch(chatStatusProvider(widget.chatId)).value;
     final String subtitle;
     final bool accent;
-    if (actors.isNotEmpty) {
+    final fixed = widget.subtitle ?? '';
+    if (fixed.isNotEmpty) {
+      subtitle = fixed;
+      accent = false;
+    } else if (actors.isNotEmpty) {
       subtitle = formatActivity(
         l10n,
         actors,
@@ -247,9 +269,12 @@ class _ChatHeaderTitleState extends ConsumerState<ChatHeaderTitle> {
     }
     return ChatTitleCapsule(
       title: chat?.title ?? '',
+      titleIcon: widget.titleIcon,
+      avatar: widget.avatar,
       subtitle: subtitle,
       subtitleAccent: accent,
-      subtitleActivity: actors.isNotEmpty,
+      subtitleActivity: actors.isNotEmpty && fixed.isEmpty,
+      onTap: widget.onTap,
     );
   }
 }

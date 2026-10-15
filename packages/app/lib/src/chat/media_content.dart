@@ -11,6 +11,7 @@ import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../session/providers.dart';
+import '../settings/stickers/sticker_options.dart';
 import 'describe.dart';
 import 'media_providers.dart';
 import 'media_viewer.dart';
@@ -46,12 +47,19 @@ td.PhotoSize? photoSizeFor(td.Photo photo, double side) {
   return sizes.last;
 }
 
-/// A photo in a bubble or an album cell. Tapping it opens the viewer.
+/// A photo in a bubble or an album cell. Tapping it calls [onTap], which
+/// opens the viewer; without it the photo opens on its own.
 class PhotoContent extends StatelessWidget {
-  const PhotoContent({super.key, required this.photo, required this.size});
+  const PhotoContent({
+    super.key,
+    required this.photo,
+    required this.size,
+    this.onTap,
+  });
 
   final td.Photo photo;
   final Size size;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +67,8 @@ class PhotoContent extends StatelessWidget {
     final full = photoSizeFor(photo, size.width * dpr);
     final small = photo.sizes.isEmpty ? null : photo.sizes.first;
     return _Tappable(
-      onTap: () => showMediaViewer(context, MediaViewerItem.photo(photo)),
+      onTap:
+          onTap ?? () => showMediaViewer(context, MediaViewerItem.photo(photo)),
       child: SizedBox.fromSize(
         size: size,
         child: TdImage(
@@ -67,6 +76,7 @@ class PhotoContent extends StatelessWidget {
           thumbnail: small != null && small != full ? small.photo : null,
           minithumbnail: photo.minithumbnail,
           cacheWidth: (size.width * dpr).round(),
+          kind: MediaDownloadKind.photos,
         ),
       ),
     );
@@ -76,16 +86,23 @@ class PhotoContent extends StatelessWidget {
 /// A video: its cover, the length, and a play button; it plays in the
 /// viewer.
 class VideoContent extends StatelessWidget {
-  const VideoContent({super.key, required this.video, required this.size});
+  const VideoContent({
+    super.key,
+    required this.video,
+    required this.size,
+    this.onTap,
+  });
 
   final td.Video video;
   final Size size;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final c = MgColors.of(context);
     return _Tappable(
-      onTap: () => showMediaViewer(context, MediaViewerItem.video(video)),
+      onTap:
+          onTap ?? () => showMediaViewer(context, MediaViewerItem.video(video)),
       child: SizedBox.fromSize(
         size: size,
         child: Stack(
@@ -123,16 +140,19 @@ class VideoContent extends StatelessWidget {
   }
 }
 
-/// A GIF: downloads on sight and loops without sound.
+/// A GIF: downloads on sight and loops without sound. Tapping it calls
+/// [onTap], which opens it in the viewer.
 class AnimationContent extends StatelessWidget {
   const AnimationContent({
     super.key,
     required this.animation,
     required this.size,
+    this.onTap,
   });
 
   final td.Animation animation;
   final Size size;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -140,28 +160,52 @@ class AnimationContent extends StatelessWidget {
       thumbnail: animation.thumbnail?.file,
       minithumbnail: animation.minithumbnail,
     );
-    return SizedBox.fromSize(
+    final body = SizedBox.fromSize(
       size: size,
       child: TdFileBuilder(
         file: animation.animation,
         download: true,
+        kind: MediaDownloadKind.videos,
         builder: (context, file) {
           final path = downloadedPath(file);
-          if (path == null) return cover;
+          if (path == null) {
+            return TapToDownload(
+              file: file,
+              kind: MediaDownloadKind.videos,
+              child: cover,
+            );
+          }
           return LoopingVideo(path: path, placeholder: cover);
         },
       ),
     );
+    final onTap = this.onTap;
+    return onTap == null ? body : _Tappable(onTap: onTap, child: body);
   }
 }
 
 /// A sticker without a bubble: WebP, animated (TGS) or video (WebM).
+/// With [animate] off, as in the sticker panel until the pointer is over
+/// it, an animated sticker shows its still thumbnail.
 class StickerContent extends StatelessWidget {
-  const StickerContent({super.key, required this.sticker});
+  const StickerContent({
+    super.key,
+    required this.sticker,
+    this.side = defaultSide,
+    this.animate = true,
+    this.lazy = false,
+  });
 
   final td.Sticker sticker;
+  final double side;
+  final bool animate;
 
-  static const double side = 180;
+  /// Whether an animated sticker that isn't playing stays its still (or
+  /// nothing) rather than its first frame, so a grid of them doesn't
+  /// decode every animation.
+  final bool lazy;
+
+  static const double defaultSide = 180;
 
   @override
   Widget build(BuildContext context) {
@@ -170,7 +214,7 @@ class StickerContent extends StatelessWidget {
       sticker.height,
       maxWidth: side,
       maxHeight: side,
-      minSide: 60,
+      minSide: math.min(60, side),
     );
     final thumbnail = sticker.thumbnail;
     final still = thumbnail != null && _isStill(thumbnail.format)
@@ -181,6 +225,11 @@ class StickerContent extends StatelessWidget {
           )
         : const SizedBox.shrink();
     final Widget body = switch (sticker.format) {
+      td.StickerFormatTgs() || td.StickerFormatWebm()
+          when !animate && thumbnail != null && _isStill(thumbnail.format) =>
+        still,
+      td.StickerFormatWebm() when !animate => still,
+      td.StickerFormatTgs() when !animate && lazy => still,
       td.StickerFormatWebp() => TdImage(
         file: sticker.sticker,
         thumbnail: thumbnail?.file,
@@ -195,13 +244,7 @@ class StickerContent extends StatelessWidget {
         builder: (context, file) {
           final path = downloadedPath(file);
           if (path == null) return still;
-          return Lottie.file(
-            File(path),
-            decoder: LottieComposition.decodeGZip,
-            fit: BoxFit.contain,
-            frameRate: FrameRate.max,
-            errorBuilder: (context, error, stack) => still,
-          );
+          return _AnimatedSticker(path: path, animate: animate, still: still);
         },
       ),
       td.StickerFormatWebm() => TdFileBuilder(
@@ -232,6 +275,81 @@ class StickerContent extends StatelessWidget {
     td.ThumbnailFormatPng() => true,
     _ => false,
   };
+}
+
+/// A TGS sticker. It loops with "Loop animated stickers" on; with it off
+/// it plays once each time [animate] turns on, so it replays on hover.
+class _AnimatedSticker extends ConsumerStatefulWidget {
+  const _AnimatedSticker({
+    required this.path,
+    required this.animate,
+    required this.still,
+  });
+
+  final String path;
+  final bool animate;
+  final Widget still;
+
+  @override
+  ConsumerState<_AnimatedSticker> createState() => _AnimatedStickerState();
+}
+
+class _AnimatedStickerState extends ConsumerState<_AnimatedSticker>
+    with SingleTickerProviderStateMixin {
+  late final _controller = AnimationController(vsync: this);
+  var _loaded = false;
+
+  /// Loops, or with [restart] plays once more from the start and rests on
+  /// the last frame; stops where it is when not animating.
+  void _play({required bool loop, bool restart = false}) {
+    if (!_loaded) return;
+    if (!widget.animate) {
+      _controller.stop();
+    } else if (loop) {
+      if (!_controller.isAnimating) unawaited(_controller.repeat());
+    } else if (restart) {
+      unawaited(_controller.forward(from: 0));
+    }
+  }
+
+  @override
+  void didUpdateWidget(_AnimatedSticker old) {
+    super.didUpdateWidget(old);
+    if (old.animate != widget.animate) {
+      _play(loop: ref.read(loopStickersProvider), restart: widget.animate);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen(loopStickersProvider, (_, loop) {
+      // A loop switched off finishes the round it is on.
+      if (!loop && _controller.isAnimating) {
+        unawaited(_controller.forward());
+      } else {
+        _play(loop: loop);
+      }
+    });
+    return Lottie.file(
+      File(widget.path),
+      controller: _controller,
+      decoder: LottieComposition.decodeGZip,
+      fit: BoxFit.contain,
+      frameRate: FrameRate.max,
+      onLoaded: (composition) {
+        _controller.duration = composition.duration;
+        _loaded = true;
+        _play(loop: ref.read(loopStickersProvider), restart: true);
+      },
+      errorBuilder: (context, error, stack) => widget.still,
+    );
+  }
 }
 
 /// A round video message. It plays muted as soon as it is on screen;
@@ -331,6 +449,7 @@ class _VideoNoteContentState extends ConsumerState<VideoNoteContent> {
             TdFileBuilder(
               file: note.video,
               download: true,
+              kind: MediaDownloadKind.videos,
               builder: (context, file) {
                 final path = downloadedPath(file);
                 if (path != null) _attach(path);

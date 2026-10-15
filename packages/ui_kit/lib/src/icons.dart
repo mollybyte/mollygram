@@ -44,6 +44,20 @@ abstract final class MgIcons {
     '<path d="M6 20V10a6 6 0 0 1 12 0v10l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5z"/>'
         '<path d="M10 10h.01M14 10h.01" stroke-width="2.4"/>',
   );
+  static const settings = MgIconData(
+    'settings',
+    '<circle cx="12" cy="12" r="3"/>'
+        '<path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1'
+        'a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1'
+        'a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8'
+        'l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1'
+        'a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8'
+        'l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1'
+        'a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8'
+        'l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4'
+        'h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+    stroke: 1.6,
+  );
   static const panel = MgIconData(
     'panel',
     '<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M15 4v16"/>',
@@ -64,6 +78,19 @@ abstract final class MgIcons {
     'mic',
     '<rect x="9" y="3" width="6" height="11" rx="3"/>'
         '<path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',
+  );
+  static const camera = MgIconData(
+    'camera',
+    '<path d="M3 8h4l2-3h6l2 3h4v11H3z"/><circle cx="12" cy="13" r="3.5"/>',
+  );
+  static const lockOpen = MgIconData(
+    'lockOpen',
+    '<path d="M7 11V8a5 5 0 0 1 9.6-2M5 11h14v9H5z"/>',
+  );
+  static const chevronUp = MgIconData('chevronUp', '<path d="M6 15l6-6 6 6"/>');
+  static const trash = MgIconData(
+    'trash',
+    '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v5M14 11v5"/>',
   );
   static const send = MgIconData(
     'send',
@@ -171,26 +198,132 @@ abstract final class MgIcons {
     '<path d="M9 4h6l-1 6 3 3H7l3-3zM12 13v7"/>',
     stroke: 1.7,
   );
-  static const muted = MgIconData(
-    'muted',
-    '<path d="M4 9h3l5-4v14l-5-4H4zM16 9l5 6M21 9l-5 6"/>',
-    stroke: 1.8,
-  );
   static const archive = MgIconData(
     'archive',
     '<rect x="3" y="4" width="18" height="5" rx="1.5"/>'
         '<path d="M5 9v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9M10 13h4"/>',
     stroke: 1.7,
   );
-  static const heart = MgIconData(
-    'heart',
-    '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',
-    stroke: 2,
-  );
   static const file = MgIconData(
     'file',
     '<path d="M7 3h7l5 5v13H7zM14 3v5h5"/>',
   );
+
+  // Emoji and sticker panel: one per section.
+  static const recent = MgIconData(
+    'recent',
+    '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  );
+  static const favorite = MgIconData(
+    'favorite',
+    '<path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8'
+        '-4.3-4.1 5.9-.9z"/>',
+  );
+  static const animals = MgIconData(
+    'animals',
+    '<circle cx="5.5" cy="10.5" r="1.8"/><circle cx="9.5" cy="6" r="1.8"/>'
+        '<circle cx="14.5" cy="6" r="1.8"/><circle cx="18.5" cy="10.5" r="1.8"/>'
+        '<path d="M12 11.5c-3 0-6 4.3-6 6.7a2.4 2.4 0 0 0 3.4 2.2'
+        'c1.7-.7 3.5-.7 5.2 0a2.4 2.4 0 0 0 3.4-2.2c0-2.4-3-6.7-6-6.7z"/>',
+  );
+  static const food = MgIconData(
+    'food',
+    '<path d="M5 9h12v4a6 6 0 0 1-12 0zM17 10h1a2.5 2.5 0 0 1 0 5h-1.4'
+        'M8.5 3v3M11 3v3M13.5 3v3"/>',
+  );
+  static const travel = MgIconData(
+    'travel',
+    '<path d="M4.5 17v-5l2-5.5h11l2 5.5v5zM4.5 12h15M6.5 17v2.5M17.5 17v2.5"/>'
+        '<path d="M8 14.5h.01M16 14.5h.01" stroke-width="2.4"/>',
+  );
+  static const activities = MgIconData(
+    'activities',
+    '<circle cx="12" cy="12" r="9"/>'
+        '<path d="M5.6 5.6a9 9 0 0 1 0 12.8M18.4 5.6a9 9 0 0 0 0 12.8"/>',
+  );
+  static const objects = MgIconData(
+    'objects',
+    '<path d="M9.5 18h5M10.5 21h3M12 3a6 6 0 0 0-3.6 10.8c.7.5 1.1 1.3 1.1'
+        ' 2.1V16h5v-.1c0-.8.4-1.6 1.1-2.1A6 6 0 0 0 12 3z"/>',
+  );
+  static const symbols = MgIconData(
+    'symbols',
+    '<path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1'
+        ' 7.5 2.6C19.5 15.4 12 20 12 20z"/>',
+  );
+  static const flag = MgIconData(
+    'flag',
+    '<path d="M5.5 21V4M5.5 4.5h12l-2.5 4 2.5 4h-12"/>',
+  );
+  static const sticker = MgIconData(
+    'sticker',
+    '<path d="M20 12.5V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6.5z'
+        'M20 12.5h-4.5a3 3 0 0 0-3 3V20"/>',
+  );
+
+  static const views = MgIconData(
+    'views',
+    '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/>'
+        '<circle cx="12" cy="12" r="3"/>',
+  );
+  static const comment = MgIconData(
+    'comment',
+    '<path d="M12 20a8 8 0 1 0-7.1-4.3L4 20l4.3-.9A8 8 0 0 0 12 20z"/>',
+  );
+  static const list = MgIconData(
+    'list',
+    '<path d="M9 6h12M9 12h12M9 18h12"/>'
+        '<circle cx="4.5" cy="6" r="1"/>'
+        '<circle cx="4.5" cy="12" r="1"/>'
+        '<circle cx="4.5" cy="18" r="1"/>',
+  );
+
+  // Media viewer.
+  static const forward = MgIconData(
+    'forward',
+    '<path d="M14 5l7 7-7 7M21 12h-9a8 8 0 0 0-8 8"/>',
+  );
+  static const copy = MgIconData(
+    'copy',
+    '<rect x="8" y="8" width="12" height="12" rx="2.5"/>'
+        '<path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
+  );
+  static const loop = MgIconData(
+    'loop',
+    '<path d="M17 3l3 3-3 3M20 6H8a4 4 0 0 0-4 4v1M7 21l-3-3 3-3M4 18h12a4 4 0 0 0 4-4v-1"/>',
+  );
+  static const volume = MgIconData(
+    'volume',
+    '<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/>'
+        '<path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/>',
+  );
+  static const muted = MgIconData(
+    'muted',
+    '<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4zM16 9.5l5 5M21 9.5l-5 5"/>',
+  );
+
+  static const arrowDown = MgIconData(
+    'arrowDown',
+    '<path d="M6 9.5l6 6 6-6"/>',
+    stroke: 2,
+  );
+  static const mention = MgIconData(
+    'mention',
+    '<circle cx="12" cy="12" r="3.6"/>'
+        '<path d="M15.6 12v1.4a2.4 2.4 0 0 0 4.8 0V12a8.4 8.4 0 1 0-3.3 6.7"/>',
+  );
+  static const heart = MgIconData(
+    'heart',
+    '<path d="M12 19.5s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 6.9a4.3 4.3 0 0 1 7.5 2.6'
+        'c0 5.4-7.5 10-7.5 10z"/>',
+  );
+
+  // Settings lists.
+  static const check = MgIconData(
+    'check',
+    '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+  );
+  static const plus = MgIconData('plus', '<path d="M12 5v14M5 12h14"/>');
 
   static const List<MgIconData> all = [
     compose,
@@ -201,6 +334,10 @@ abstract final class MgIcons {
     attach,
     emoji,
     mic,
+    camera,
+    lockOpen,
+    chevronUp,
+    trash,
     send,
     download,
     downloadAll,
@@ -231,6 +368,29 @@ abstract final class MgIcons {
     muted,
     archive,
     heart,
+    recent,
+    favorite,
+    animals,
+    food,
+    travel,
+    activities,
+    objects,
+    symbols,
+    flag,
+    sticker,
+    views,
+    comment,
+    list,
+    forward,
+    copy,
+    loop,
+    volume,
+    muted,
+    arrowDown,
+    mention,
+    heart,
+    check,
+    plus,
   ];
 }
 

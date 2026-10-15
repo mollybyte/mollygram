@@ -13,6 +13,7 @@ import 'package:mollygram/src/home/workspace.dart';
 import 'package:mollygram/src/home/workspace_storage.dart';
 import 'package:mollygram/src/session/providers.dart';
 import 'package:mollygram/src/settings/plugins_page.dart';
+import 'package:mollygram/src/settings/settings_window.dart';
 import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_plugins_ui/mollygram_plugins_ui.dart';
 import 'package:mollygram_shell/mollygram_shell.dart';
@@ -219,7 +220,42 @@ void main() {
     expect(container.read(workspaceControllerProvider).value.focusedChat, 3);
   });
 
-  testWidgets('the shortcut opens the plugins and Esc closes them', (
+  testWidgets('a message found in the palette opens its chat at it', (
+    tester,
+  ) async {
+    final container = await pump(tester);
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyK);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await settle(tester);
+    await tester.enterText(
+      find.descendant(
+        of: find.byType(CommandPalette),
+        matching: find.byType(EditableText),
+      ),
+      '#hello',
+    );
+    await settle(tester);
+    final hit = find.descendant(
+      of: find.byType(CommandPalette),
+      matching: find.textContaining('hello there', findRichText: true),
+    );
+    expect(hit, findsOneWidget);
+
+    await tester.tap(hit);
+    await settle(tester);
+    expect(find.byType(CommandPalette), findsNothing);
+    expect(container.read(workspaceControllerProvider).value.focusedChat, 3);
+    // The chat's view loads the history around the message to show it.
+    expect(
+      json.sent.where(
+        (r) => r['@type'] == 'getChatHistory' && r['from_message_id'] == 41,
+      ),
+      isNotEmpty,
+    );
+  });
+
+  testWidgets('the shortcut opens the settings and Esc closes them', (
     tester,
   ) async {
     await pump(tester);
@@ -230,11 +266,15 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.comma);
     await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
     await settle(tester);
-    expect(find.byType(PluginsScreen), findsOneWidget);
+    expect(find.byType(SettingsWindow), findsOneWidget);
+
+    await tester.tap(find.text('Plugins'));
+    await settle(tester);
+    expect(find.byType(PluginsPage), findsOneWidget);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await settle(tester);
-    expect(find.byType(PluginsScreen), findsNothing);
+    expect(find.byType(SettingsWindow), findsNothing);
     // The chat is still where it was.
     expect(header('Anna'), findsOneWidget);
   });
@@ -452,6 +492,9 @@ final class _FakeTdJson implements td.TdJson {
   String? receive(double timeout) =>
       _queue.isEmpty ? null : _queue.removeFirst();
 
+  /// Every request, decoded, in order.
+  final sent = <Map<String, Object?>>[];
+
   @override
   void send(int clientId, String request) {
     final decoded = jsonDecode(request) as Map<String, Object?>;
@@ -459,6 +502,12 @@ final class _FakeTdJson implements td.TdJson {
     final type = decoded['@type'];
     final response = switch (type) {
       'getAuthorizationState' => {'@type': 'authorizationStateReady'},
+      'searchMessages' => {
+        '@type': 'foundMessages',
+        'total_count': 1,
+        'messages': [_message(41, 3, 'hello there').toJson()],
+        'next_offset': '',
+      },
       'getChatHistory' => {
         '@type': 'messages',
         'total_count': 0,
@@ -484,3 +533,38 @@ final class _FakeTdJson implements td.TdJson {
     }
   }
 }
+
+td.Message _message(int id, int chatId, String text) => td.Message(
+  id: id,
+  senderId: const td.MessageSenderUser(userId: 3),
+  chatId: chatId,
+  isOutgoing: false,
+  isPinned: false,
+  isFromOffline: false,
+  canBeSaved: true,
+  hasTimestampedMedia: false,
+  isChannelPost: false,
+  isPaidStarSuggestedPost: false,
+  isPaidGramSuggestedPost: false,
+  containsUnreadMention: false,
+  containsUnreadPollVotes: false,
+  date: 1700000000 + id,
+  editDate: 0,
+  unreadReactions: const [],
+  selfDestructIn: 0,
+  autoDeleteIn: 0,
+  viaBotUserId: 0,
+  senderBusinessBotUserId: 0,
+  senderBoostCount: 0,
+  senderTag: '',
+  paidMessageStarCount: 0,
+  authorSignature: '',
+  mediaAlbumId: 0,
+  effectId: 0,
+  summaryLanguageCode: '',
+  content: td.MessageText(
+    text: td.FormattedText(text: text, entities: const []),
+  ),
+  ephemeralMessageId: 0,
+  chatInstance: 0,
+);
