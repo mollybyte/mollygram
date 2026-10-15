@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mollygram_core/mollygram_core.dart';
@@ -188,9 +189,14 @@ class _Collapsed extends StatelessWidget {
 /// What plugins show under a message's text, such as a translation, with
 /// their buttons working.
 class PluginMessageExtras extends ConsumerStatefulWidget {
-  const PluginMessageExtras({super.key, required this.message});
+  const PluginMessageExtras({super.key, required this.message, this.hovered});
 
   final ConversationMessage message;
+
+  /// Whether the pointer is over the message. An offer that is only
+  /// buttons, such as "Translate", shows quietly and only while it is;
+  /// what a plugin rendered or answered stays in view.
+  final ValueListenable<bool>? hovered;
 
   @override
   ConsumerState<PluginMessageExtras> createState() =>
@@ -227,15 +233,16 @@ class _PluginMessageExtrasState extends ConsumerState<PluginMessageExtras> {
       for (final b in blocks) (b.pluginId, _answers[b.pluginId] ?? b.ui),
     ].where((b) => b.$2.isNotEmpty);
     if (shown.isEmpty) return const SizedBox.shrink();
-    return Column(
+    final column = Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         for (final (id, ui) in shown)
           Padding(
-            padding: const EdgeInsets.only(top: 4),
+            padding: EdgeInsets.only(top: _isOffer(ui) ? 2 : 4),
             child: PluginUiView(
               nodes: ui,
+              compact: _isOffer(ui),
               enabled: !_busy.contains(id),
               onAction: (action, payload) =>
                   unawaited(_act(plugins, id, action, payload, message)),
@@ -243,7 +250,22 @@ class _PluginMessageExtrasState extends ConsumerState<PluginMessageExtras> {
           ),
       ],
     );
+    final hovered = widget.hovered;
+    if (hovered == null || !shown.every((b) => _isOffer(b.$2))) return column;
+    return ValueListenableBuilder<bool>(
+      valueListenable: hovered,
+      builder: (context, over, child) => AnimatedOpacity(
+        opacity: over ? 1 : 0,
+        duration: const Duration(milliseconds: 120),
+        child: IgnorePointer(ignoring: !over, child: child),
+      ),
+      child: column,
+    );
   }
+
+  /// Nothing rendered yet, just a button or two the user may click.
+  static bool _isOffer(List<Map<String, Object?>> ui) =>
+      ui.isNotEmpty && ui.every((n) => n['type'] == 'button');
 
   Future<void> _act(
     AppPlugins plugins,
