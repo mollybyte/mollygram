@@ -207,5 +207,19 @@
   "noStickerSets": "Пока нет стикеров",
   "forwardedMessages": "Пересланные сообщения",
   "leaveComment": "Оставить комментарий",
-  "commentCount": "{count, plural, one{{count} комментарий} few{{count} комментария} other{{count} комментариев}}"
+  "commentCount": "{count, plural, one{{count} комментарий} few{{count} комментария} other{{count} комментариев}}",
+  "mediaSaved": "Сохранено",
+  "mediaSaveFailed": "Не удалось сохранить файл",
+  "mediaCopied": "Скопировано",
+  "mediaCounter": "{index} из {count}",
+  "mediaCopy": "Копировать",
+  "mediaSave": "Сохранить",
+  "mediaPrevious": "Назад",
+  "mediaNext": "Вперёд",
+  "mediaPause": "Пауза",
+  "mediaPlay": "Воспроизвести",
+  "mediaSpeed": "Скорость",
+  "mediaLoop": "Повтор",
+  "mediaUnmute": "Включить звук",
+  "mediaMute": "Выключить звук"
 }

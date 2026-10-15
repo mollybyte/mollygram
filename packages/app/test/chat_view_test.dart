@@ -262,6 +262,32 @@ void main() {
     expect(forward['message_ids'], [12]);
   });
 
+  testWidgets('opens a photo full screen and pages through the chat media', (
+    tester,
+  ) async {
+    json.history = [td.Message.fromJson(_photo(15)), ..._history];
+    await pump(tester);
+
+    await tester.tap(find.byType(PhotoContent));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+
+    final search = json.sent.lastWhere(
+      (r) => r['@type'] == 'searchChatMessages',
+    );
+    expect(search['from_message_id'], 15);
+    expect(find.text('2 of 2'), findsOneWidget);
+    expect(find.text('Boris'), findsWidgets);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+    await tester.pumpAndSettle();
+    expect(find.text('1 of 2'), findsOneWidget);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.text('1 of 2'), findsNothing);
+  });
+
   testWidgets('copies the text of a message', (tester) async {
     String? copied;
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
@@ -517,6 +543,12 @@ final class _FakeTdJson implements td.TdJson {
         'stickers': [_sticker(2, '😸'), _sticker(3, '😺')],
         'emojis': <Object?>[],
       },
+      'searchChatMessages' => {
+        '@type': 'foundChatMessages',
+        'total_count': 2,
+        'messages': [_photo(15), _photo(14)],
+        'next_from_message_id': 0,
+      },
       'downloadFile' => _stickerFile(decoded['file_id']! as int),
       'forwardMessages' => {
         '@type': 'messages',
@@ -571,6 +603,28 @@ final class _FakeTdJson implements td.TdJson {
     }
   }
 }
+
+/// A photo from Boris as TDLib sends it.
+Map<String, Object?> _photo(int id) => {
+  ..._message(id: id, senderId: 2, text: '').toJson(),
+  'content': {
+    '@type': 'messagePhoto',
+    'photo': {
+      '@type': 'photo',
+      'sizes': [
+        {
+          '@type': 'photoSize',
+          'type': 'x',
+          'photo': _stickerFile(400 + id),
+          'width': 800,
+          'height': 600,
+          'progressive_sizes': <Object?>[],
+        },
+      ],
+    },
+    'caption': {'@type': 'formattedText', 'text': '', 'entities': <Object?>[]},
+  },
+};
 
 Map<String, Object?> _sticker(int id, String emoji) => {
   '@type': 'sticker',

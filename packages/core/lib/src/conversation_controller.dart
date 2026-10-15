@@ -203,6 +203,31 @@ final class ConversationController {
     _add(message);
   }
 
+  /// Photos and videos of a chat around [fromMessageId], for the media
+  /// viewer: up to [newer] after it, the message itself when it is one,
+  /// and older ones up to [limit] in all. Oldest first.
+  Future<List<ConversationMessage>> mediaAround(
+    int chatId,
+    int fromMessageId, {
+    int newer = 0,
+    int limit = 30,
+  }) async {
+    final found = await _client.send(
+      td.SearchChatMessages(
+        chatId: chatId,
+        query: '',
+        fromMessageId: fromMessageId,
+        offset: -newer,
+        limit: limit,
+        filter: const td.SearchMessagesFilterPhotoAndVideo(),
+      ),
+    );
+    return [
+      for (final message in found.messages.reversed)
+        ConversationMessage(message),
+    ];
+  }
+
   /// Sends [sticker] on its own, as a reply to [replyTo] when given.
   /// TDLib moves it to the front of the recent stickers.
   Future<void> sendSticker(

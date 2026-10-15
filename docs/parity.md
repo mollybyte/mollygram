@@ -107,8 +107,8 @@ M8 calls and macOS release, M9 after release.
 | Attach photos, videos, files: pick, drop, paste, albums | done | #31 | | |
 | Edit mode and reply panel | done | #30 | | |
 | Drafts saved to the server and synced | partial | Draft is local to the open view; `SetChatDraftMessage` not called | S | M1 |
-| Emoji picker | missing | Button exists, no panel | M | M1 |
-| Sticker panel, recent and favourite stickers, sticker search | missing | `StickersViewController` | L | M1 |
+| Emoji picker | done | #34: groups, recent, keyword search | | |
+| Sticker panel, recent and favourite stickers, sticker search | partial | #34: recent, favourites, installed sets; no search, no set management | S | M1 |
 | GIF panel and GIF search | missing | `GifKeyboardController` | M | M2 |
 | Emoji and sticker suggestions while typing | missing | `InputSwapSuggestionsPanel` | M | M2 |
 | Rich text formatting: bold, italic, code, link, spoiler, quote; Markdown shortcuts | missing | `text_edit.dart` sends plain text | M | M1 |
@@ -122,8 +122,14 @@ M8 calls and macOS release, M9 after release.
 | Polls and quizzes creation | missing | `NewPollController` | M | M2 |
 | Location and venue sending | missing | | M | M2 |
 | Contact sending | missing | | S | M2 |
-| Media editor before sending: crop, rotate, draw, compression toggle | partial | Preview exists; uncompressed default planned | L | M4 |
-| Spoiler and self-destruct on media | missing | `hasSpoiler`, `selfDestructType` | S | M2 |
+| Send preview: caption, send as files, albums | done | #31 | | |
+| Send preview: spoiler, self-destruct timer, compression choice | missing | `hasSpoiler`, `selfDestructType`; uncompressed default planned | S | M2 |
+| Media editor: crop, rotate, flip, aspect presets | missing | `EditImageModalController` | M | M4 |
+| Media editor: drawing (pen, marker, neon, eraser, colours, sizes) | missing | | M | M4 |
+| Media editor: text, stickers and emoji placed on the image | missing | | M | M4 |
+| Media editor: arrows and shapes, blur and pixelate brush | missing | | M | M4 |
+| Media editor: filters and adjustments (brightness, contrast, saturation, warmth, vignette) | missing | | M | M4 |
+| Video editor: trim, mute, cover frame, quality | missing | `VideoEditorModalController` | M | M4 |
 | Slowmode and restriction notices | missing | | S | M2 |
 | Link preview control (remove, above/below) | missing | | S | M2 |
 
@@ -135,8 +141,12 @@ M8 calls and macOS release, M9 after release.
 | Voice messages playback with waveform | done | | | |
 | Video circles playback at 120 fps | done | `packages/media` | | |
 | Files and music: download, open, cancel | done | | | |
-| Fullscreen media viewer | partial | Single item; no gallery navigation, zoom, thumbnails | M | M2 |
-| Gallery: swipe between chat media, zoom, rotate, save, forward | missing | `GalleryViewer` | M | M2 |
+| Fullscreen media viewer on a dimmed backdrop, open and close animation | done | Viewer PR | | |
+| Viewer: arrows and swipe between the chat's photos and videos, thumbnail strip | partial | Viewer PR: arrows and keys over `SearchChatMessages`; no swipe, no thumbnail strip | S | M2 |
+| Viewer: zoom (pinch, scroll, double click) and pan, rotate | partial | Viewer PR: zoom and pan; no rotate | S | M2 |
+| Viewer: video scrubbing, loop, playback speed, volume, fullscreen | partial | Viewer PR: scrubbing, loop, speed, mute; plays once downloaded, no streaming | S | M2 |
+| Viewer: GIFs and video stickers looped | partial | Viewer PR: GIFs looped; video stickers not yet | S | M2 |
+| Viewer: save, copy, forward, delete, show in chat, keyboard shortcuts | partial | Viewer PR: save, copy, forward, Esc, arrows, Space, ⌘S, ⌘C; no delete or show in chat | S | M2 |
 | Global audio player with playlist and header bar | missing | `InlineAudioPlayerView` | M | M2 |
 | Picture-in-picture for video and circles | missing | `PIPVideoWindow` | M | M4 |
 | Voice playback speed and continuous play | missing | | S | M1 |

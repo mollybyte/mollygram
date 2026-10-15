@@ -20,6 +20,7 @@ import '../chat/attachment_preview.dart';
 import '../chat/describe.dart';
 import '../chat/emoji_sticker_panel.dart';
 import '../chat/forward_picker.dart';
+import '../chat/media_viewer.dart';
 import '../chat/message_actions.dart';
 import '../chat/message_tile.dart';
 import '../chat/timeline.dart';
@@ -149,6 +150,14 @@ class _ChatViewState extends ConsumerState<ChatView> {
     onNeedReplied: (reply) =>
         unawaited(_quiet(_conversations.loadReplied(reply.chatId, reply.id))),
     onMenu: (row, position) => unawaited(_showMenu(row, position)),
+    onViewMedia: (message) => unawaited(
+      showChatMediaViewer(
+        context,
+        message: message,
+        conversations: _conversations,
+        onForward: (message) => unawaited(_forward([message])),
+      ),
+    ),
   );
 
   Future<void> _showMenu(MessageRow row, Offset position) {

@@ -354,5 +354,22 @@
   "commentCount": "{count, plural, one{{count} comment} other{{count} comments}}",
   "@commentCount": {
     "placeholders": { "count": { "type": "int" } }
-  }
+  },
+  "mediaSaved": "Saved",
+  "mediaSaveFailed": "Couldn't save the file",
+  "mediaCopied": "Copied",
+  "mediaCounter": "{index} of {count}",
+  "@mediaCounter": {
+    "placeholders": { "index": { "type": "int" }, "count": { "type": "int" } }
+  },
+  "mediaCopy": "Copy",
+  "mediaSave": "Save",
+  "mediaPrevious": "Previous",
+  "mediaNext": "Next",
+  "mediaPause": "Pause",
+  "mediaPlay": "Play",
+  "mediaSpeed": "Playback speed",
+  "mediaLoop": "Loop",
+  "mediaUnmute": "Unmute",
+  "mediaMute": "Mute"
 }
