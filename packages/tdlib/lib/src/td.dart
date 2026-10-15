@@ -151,6 +151,10 @@ final class Td {
   }
 }
 
+/// Looks at a request before it is sent. Returns null to send it, or the
+/// response to answer it with instead of sending it.
+typedef TdRequestFilter = TdObject? Function(TdFunction<TdObject> request);
+
 /// A single TDLib client, usually one account.
 final class TdClient {
   TdClient._(this._td, this.id);
@@ -168,12 +172,29 @@ final class TdClient {
   /// Updates and other objects without `@extra`.
   Stream<TdObject> get updates => _updates.stream;
 
+  /// Sees every request first, such as to keep some of them from TDLib;
+  /// see [TdRequestFilter].
+  TdRequestFilter? filter;
+
   /// Sends a request and waits for the response.
   ///
   /// A TDLib error arrives as a [TdException]; closing the client before the
   /// response arrives completes with a [TdClientClosed].
   Future<R> send<R extends TdObject>(TdFunction<R> function) {
     if (_closed) return Future.error(const TdClientClosed());
+    final TdObject? answer;
+    try {
+      answer = filter?.call(function);
+    } catch (error, stack) {
+      return Future.error(error, stack);
+    }
+    if (answer != null) {
+      return answer is R
+          ? Future.value(answer)
+          : Future.error(
+              TdDecodeException('$R expected, got ${answer.tdType}'),
+            );
+    }
     final requestId = _td._requestId();
     final pending = _Pending<R>();
     _pending[requestId] = pending;

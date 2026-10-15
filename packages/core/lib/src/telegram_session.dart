@@ -10,11 +10,14 @@ import 'chat_list_controller.dart';
 import 'chat_search.dart';
 import 'chat_search_controller.dart';
 import 'connection_status.dart';
+import 'contacts_controller.dart';
 import 'conversation_controller.dart';
 import 'file_controller.dart';
 import 'link_resolver.dart';
+import 'mention_search.dart';
 import 'notification_controller.dart';
 import 'peer_info.dart';
+import 'privacy_guard.dart';
 import 'sticker_library.dart';
 import 'storage_usage.dart';
 import 'tdlib_initializer.dart';
@@ -48,8 +51,11 @@ final class TelegramSession {
     required this.stickers,
     required this.peers,
     required this.account,
+    required this.mentions,
     required this.storage,
     required this.connection,
+    required this.privacy,
+    required this.contacts,
     required this.links,
     required this._initializer,
   });
@@ -73,9 +79,18 @@ final class TelegramSession {
   final AccountSettings account;
   final StorageManager storage;
 
+  /// Group members for @mentions in the composer.
+  final MentionSearch mentions;
+
   /// The connection state, for the "Connecting…" status in the window.
   final ConnectionMonitor connection;
 
+  /// Ghost mode and the other privacy extras: the one filter on what
+  /// this session sends to TDLib.
+  final PrivacyGuard privacy;
+
+  /// Contacts and the users TDLib has sent.
+  final ContactsController contacts;
   final LinkResolver links;
   final _errors = StreamController<Object>.broadcast(sync: true);
   final _closedElsewhere = Completer<void>();
@@ -90,14 +105,22 @@ final class TelegramSession {
   static Future<TelegramSession> attach(
     td.Td tdlib, {
     required TdlibParameters parameters,
+    PrivacySettings privacy = const PrivacySettings(),
   }) async {
     final client = tdlib.createClient();
+    // First, so that nothing reaches TDLib before the filter is in place.
+    final guard = PrivacyGuard(client, settings: privacy);
     final authorization = AuthorizationController(client);
     final conversations = ConversationController(client);
     final files = FileController(client);
+    final mentions = MentionSearch(client);
     final peers = PeerInfoController(client);
     final connection = ConnectionMonitor(client);
-    final notifications = NotificationController(client);
+    final notifications = NotificationController(
+      client,
+      deliberately: guard.deliberately,
+    );
+    final contacts = ContactsController(client);
     final folders = ChatFoldersController(client);
     final session = TelegramSession._(
       tdlib: tdlib,
@@ -112,8 +135,11 @@ final class TelegramSession {
       stickers: StickerLibrary(client),
       peers: peers,
       account: AccountSettings(client),
+      mentions: mentions,
       storage: StorageManager(client),
       connection: connection,
+      privacy: guard,
+      contacts: contacts,
       links: LinkResolver(client),
       initializer: TdlibInitializer(client, parameters: parameters),
     );
@@ -127,8 +153,10 @@ final class TelegramSession {
     try {
       await conversations.start();
       await files.start();
+      await mentions.start();
       await peers.start();
       await connection.start();
+      await contacts.start();
       await notifications.start();
       await folders.start();
       await authorization.start();
@@ -196,12 +224,16 @@ final class TelegramSession {
     await chatLists.dispose();
     await conversations.dispose();
     await files.dispose();
+    await mentions.dispose();
     await peers.dispose();
     await connection.dispose();
+    await contacts.dispose();
     await notifications.dispose();
     await folders.dispose();
     await authorization.dispose();
     await _tdlib.close();
+    // After close: requests sent while the client closes stay filtered.
+    await privacy.dispose();
     await _errors.close();
   }
 }

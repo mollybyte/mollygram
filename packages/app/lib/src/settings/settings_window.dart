@@ -10,6 +10,7 @@ import 'account_page.dart';
 import 'appearance_page.dart';
 import 'folders_page.dart';
 import 'plugins_page.dart';
+import 'privacy_extras_page.dart';
 import 'sessions_page.dart';
 import 'settings_style.dart';
 import 'storage_page.dart';
@@ -53,6 +54,9 @@ class SettingsSection {
 /// The account card at the top of the source list opens this page.
 const accountSectionId = 'account';
 
+/// Ghost mode and the other privacy extras.
+const privacyExtrasSectionId = 'privacyExtras';
+
 /// Every page of the source list below the account card, in order.
 final settingsSections = <SettingsSection>[
   SettingsSection(
@@ -74,6 +78,20 @@ final settingsSections = <SettingsSection>[
       l10n.terminateOthers,
     ],
     builder: (context) => const PrivacyPage(),
+  ),
+  SettingsSection(
+    id: privacyExtrasSectionId,
+    icon: MgIcons.ghost,
+    tint: const Color(0xFF6E6E80),
+    title: (l10n) => l10n.privacyExtras,
+    keywords: (l10n) => [
+      l10n.ghostMode,
+      l10n.hideReadReceipts,
+      l10n.hideTyping,
+      l10n.stayOffline,
+      l10n.hideContentOpened,
+    ],
+    builder: (context) => const PrivacyExtrasPage(),
   ),
   SettingsSection(
     id: 'data',

@@ -148,6 +148,110 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nothingFound => 'Nothing found';
 
   @override
+  String get newMessage => 'New message';
+
+  @override
+  String get contacts => 'Contacts';
+
+  @override
+  String get peopleSearchHint => 'Name or username';
+
+  @override
+  String get recentChats => 'Recent';
+
+  @override
+  String get globalSearch => 'Global search';
+
+  @override
+  String get noContacts => 'No contacts yet';
+
+  @override
+  String get presenceOnline => 'online';
+
+  @override
+  String get presenceJustNow => 'last seen just now';
+
+  @override
+  String presenceMinutes(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'last seen $count minutes ago',
+      one: 'last seen $count minute ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String presenceToday(Object time) {
+    return 'last seen today at $time';
+  }
+
+  @override
+  String presenceYesterday(Object time) {
+    return 'last seen yesterday at $time';
+  }
+
+  @override
+  String presenceDate(Object date) {
+    return 'last seen $date';
+  }
+
+  @override
+  String get presenceRecently => 'last seen recently';
+
+  @override
+  String get presenceLastWeek => 'last seen within a week';
+
+  @override
+  String get presenceLastMonth => 'last seen within a month';
+
+  @override
+  String get presenceLongAgo => 'last seen a long time ago';
+
+  @override
+  String get presenceBot => 'bot';
+
+  @override
+  String get addContact => 'Add contact';
+
+  @override
+  String get contactFirstName => 'First name';
+
+  @override
+  String get contactLastName => 'Last name (optional)';
+
+  @override
+  String get contactPhone => 'Phone number';
+
+  @override
+  String get contactAdd => 'Add';
+
+  @override
+  String get contactFirstNameRequired => 'Enter a first name';
+
+  @override
+  String get contactPhoneRequired => 'Enter a phone number';
+
+  @override
+  String get contactNotOnTelegram => 'This number is not on Telegram';
+
+  @override
+  String get contactAddFailed =>
+      'Couldn\'t add the contact. Check the connection and try again.';
+
+  @override
+  String get deleteContact => 'Delete contact';
+
+  @override
+  String deleteContactTitle(Object name) {
+    return 'Delete $name from contacts?';
+  }
+
+  @override
+  String get deleteContactFailed => 'Couldn\'t delete the contact';
+
+  @override
   String get selectChat => 'Select a chat to start messaging';
 
   @override
@@ -186,6 +290,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get voiceSendFailed => 'Couldn\'t send the voice message';
+
+  @override
+  String get videoHoldToRecord => 'Hold to record a video message';
+
+  @override
+  String get videoCameraDenied => 'Mollygram has no access to the camera.';
 
   @override
   String previewYou(String text) {
@@ -343,6 +453,42 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cancel => 'Cancel';
+
+  @override
+  String get formatBold => 'Bold';
+
+  @override
+  String get formatItalic => 'Italic';
+
+  @override
+  String get formatUnderline => 'Underline';
+
+  @override
+  String get formatStrikethrough => 'Strikethrough';
+
+  @override
+  String get formatMonospace => 'Monospace';
+
+  @override
+  String get formatSpoiler => 'Spoiler';
+
+  @override
+  String get formatQuote => 'Quote';
+
+  @override
+  String get formatLink => 'Link…';
+
+  @override
+  String get formatPlain => 'Plain text';
+
+  @override
+  String get linkTitle => 'Add link';
+
+  @override
+  String get linkHint => 'URL';
+
+  @override
+  String get linkApply => 'Apply';
 
   @override
   String get deleteMessageTitle => 'Delete message?';
@@ -1512,6 +1658,57 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatActionFailed => 'Couldn\'t do that, try again';
 
   @override
+  String get privacyExtras => 'Privacy extras';
+
+  @override
+  String get privacyExtrasAbout =>
+      'These switches decide what others see while you use Mollygram on this Mac. Everything you read and send works as usual.';
+
+  @override
+  String get privacyExtrasOnlineNote =>
+      'Some things still show: sending a message puts you online for a moment and marks the chat read, files you send show as uploading, and a reaction shows you saw the message.';
+
+  @override
+  String get ghostMode => 'Ghost mode';
+
+  @override
+  String get ghostModeHint => 'Turns on everything below at once';
+
+  @override
+  String get ghostModeIsOn => 'Ghost mode is on';
+
+  @override
+  String get privacyExtrasAreOn => 'Some privacy extras are on';
+
+  @override
+  String get hideReadReceipts => 'Don\'t send read receipts';
+
+  @override
+  String get hideReadReceiptsHint =>
+      'Senders won\'t see that you\'ve read their messages';
+
+  @override
+  String get hideTyping => 'Don\'t show typing';
+
+  @override
+  String get hideTypingHint => 'Also hides recording voice and video messages';
+
+  @override
+  String get stayOffline => 'Stay offline';
+
+  @override
+  String get stayOfflineHint =>
+      'You won\'t appear online while the app is open';
+
+  @override
+  String get hideContentOpened =>
+      'Don\'t mark voice and video messages as played';
+
+  @override
+  String get hideContentOpenedHint =>
+      'Senders won\'t see that you\'ve played them';
+
+  @override
   String get menuSelect => 'Select';
 
   @override
@@ -1665,5 +1862,42 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String folderChatsCounter(int count, int max) {
     return '$count of $max';
+  }
+
+  @override
+  String get previousMonth => 'Previous month';
+
+  @override
+  String get nextMonth => 'Next month';
+
+  @override
+  String get pinnedList => 'Pinned messages';
+
+  @override
+  String pinnedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count pinned messages',
+      one: '$count pinned message',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get backToChat => 'Back to the chat';
+
+  @override
+  String get unpinAll => 'Unpin all messages';
+
+  @override
+  String unpinAllTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Unpin all $count messages?',
+      one: 'Unpin $count message?',
+    );
+    return '$_temp0';
   }
 }

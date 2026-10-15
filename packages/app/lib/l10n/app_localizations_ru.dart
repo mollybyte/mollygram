@@ -149,6 +149,112 @@ class AppLocalizationsRu extends AppLocalizations {
   String get nothingFound => 'Ничего не найдено';
 
   @override
+  String get newMessage => 'Новое сообщение';
+
+  @override
+  String get contacts => 'Контакты';
+
+  @override
+  String get peopleSearchHint => 'Имя или имя пользователя';
+
+  @override
+  String get recentChats => 'Недавние';
+
+  @override
+  String get globalSearch => 'Глобальный поиск';
+
+  @override
+  String get noContacts => 'Контактов пока нет';
+
+  @override
+  String get presenceOnline => 'в сети';
+
+  @override
+  String get presenceJustNow => 'был(а) только что';
+
+  @override
+  String presenceMinutes(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'был(а) $count минуты назад',
+      many: 'был(а) $count минут назад',
+      few: 'был(а) $count минуты назад',
+      one: 'был(а) $count минуту назад',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String presenceToday(Object time) {
+    return 'был(а) сегодня в $time';
+  }
+
+  @override
+  String presenceYesterday(Object time) {
+    return 'был(а) вчера в $time';
+  }
+
+  @override
+  String presenceDate(Object date) {
+    return 'был(а) $date';
+  }
+
+  @override
+  String get presenceRecently => 'был(а) недавно';
+
+  @override
+  String get presenceLastWeek => 'был(а) на этой неделе';
+
+  @override
+  String get presenceLastMonth => 'был(а) в этом месяце';
+
+  @override
+  String get presenceLongAgo => 'был(а) давно';
+
+  @override
+  String get presenceBot => 'бот';
+
+  @override
+  String get addContact => 'Добавить контакт';
+
+  @override
+  String get contactFirstName => 'Имя';
+
+  @override
+  String get contactLastName => 'Фамилия (необязательно)';
+
+  @override
+  String get contactPhone => 'Номер телефона';
+
+  @override
+  String get contactAdd => 'Добавить';
+
+  @override
+  String get contactFirstNameRequired => 'Введите имя';
+
+  @override
+  String get contactPhoneRequired => 'Введите номер телефона';
+
+  @override
+  String get contactNotOnTelegram => 'Этого номера нет в Telegram';
+
+  @override
+  String get contactAddFailed =>
+      'Не удалось добавить контакт. Проверьте соединение и попробуйте ещё раз.';
+
+  @override
+  String get deleteContact => 'Удалить контакт';
+
+  @override
+  String deleteContactTitle(Object name) {
+    return 'Удалить $name из контактов?';
+  }
+
+  @override
+  String get deleteContactFailed => 'Не удалось удалить контакт';
+
+  @override
   String get selectChat => 'Выберите чат, чтобы начать общение';
 
   @override
@@ -186,6 +292,12 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get voiceSendFailed => 'Не удалось отправить голосовое';
+
+  @override
+  String get videoHoldToRecord => 'Удерживайте, чтобы записать видеосообщение';
+
+  @override
+  String get videoCameraDenied => 'У Mollygram нет доступа к камере.';
 
   @override
   String previewYou(String text) {
@@ -343,6 +455,42 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get cancel => 'Отмена';
+
+  @override
+  String get formatBold => 'Жирный';
+
+  @override
+  String get formatItalic => 'Курсив';
+
+  @override
+  String get formatUnderline => 'Подчёркнутый';
+
+  @override
+  String get formatStrikethrough => 'Зачёркнутый';
+
+  @override
+  String get formatMonospace => 'Моноширинный';
+
+  @override
+  String get formatSpoiler => 'Спойлер';
+
+  @override
+  String get formatQuote => 'Цитата';
+
+  @override
+  String get formatLink => 'Ссылка…';
+
+  @override
+  String get formatPlain => 'Обычный текст';
+
+  @override
+  String get linkTitle => 'Добавить ссылку';
+
+  @override
+  String get linkHint => 'Адрес';
+
+  @override
+  String get linkApply => 'Применить';
 
   @override
   String get deleteMessageTitle => 'Удалить сообщение?';
@@ -1527,6 +1675,57 @@ class AppLocalizationsRu extends AppLocalizations {
   String get chatActionFailed => 'Не получилось, попробуйте ещё раз';
 
   @override
+  String get privacyExtras => 'Дополнительная приватность';
+
+  @override
+  String get privacyExtrasAbout =>
+      'Эти переключатели определяют, что видят другие, пока вы пользуетесь Mollygram на этом Mac. Читать и отправлять сообщения можно как обычно.';
+
+  @override
+  String get privacyExtrasOnlineNote =>
+      'Кое-что всё равно видно: отправка сообщения ненадолго показывает вас в сети и отмечает чат прочитанным, при отправке файлов видна загрузка, а реакция показывает, что вы видели сообщение.';
+
+  @override
+  String get ghostMode => 'Режим призрака';
+
+  @override
+  String get ghostModeHint => 'Включает всё, что ниже, разом';
+
+  @override
+  String get ghostModeIsOn => 'Режим призрака включён';
+
+  @override
+  String get privacyExtrasAreOn => 'Включена часть дополнительной приватности';
+
+  @override
+  String get hideReadReceipts => 'Не отправлять отметки о прочтении';
+
+  @override
+  String get hideReadReceiptsHint =>
+      'Отправители не увидят, что вы прочитали их сообщения';
+
+  @override
+  String get hideTyping => 'Не показывать набор текста';
+
+  @override
+  String get hideTypingHint => 'И запись голосовых и видеосообщений тоже';
+
+  @override
+  String get stayOffline => 'Оставаться не в сети';
+
+  @override
+  String get stayOfflineHint =>
+      'Пока приложение открыто, другие не увидят вас в сети';
+
+  @override
+  String get hideContentOpened =>
+      'Не отмечать голосовые и видеосообщения прослушанными';
+
+  @override
+  String get hideContentOpenedHint =>
+      'Отправители не увидят, что вы их прослушали';
+
+  @override
   String get menuSelect => 'Выбрать';
 
   @override
@@ -1681,5 +1880,44 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String folderChatsCounter(int count, int max) {
     return '$count из $max';
+  }
+
+  @override
+  String get previousMonth => 'Предыдущий месяц';
+
+  @override
+  String get nextMonth => 'Следующий месяц';
+
+  @override
+  String get pinnedList => 'Закреплённые сообщения';
+
+  @override
+  String pinnedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count закреплённых сообщений',
+      few: '$count закреплённых сообщения',
+      one: '$count закреплённое сообщение',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get backToChat => 'Назад в чат';
+
+  @override
+  String get unpinAll => 'Открепить все';
+
+  @override
+  String unpinAllTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Открепить все $count сообщений?',
+      few: 'Открепить все $count сообщения?',
+      one: 'Открепить $count сообщение?',
+    );
+    return '$_temp0';
   }
 }

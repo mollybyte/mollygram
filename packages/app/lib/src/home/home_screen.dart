@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,8 +8,10 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../commands/command_registry.dart';
+import '../contacts/people_sheet.dart';
 import '../links/link_host.dart';
 import '../notifications/notification_service.dart';
+import '../privacy/ghost_mode_capsule.dart';
 import '../profile/peer_info_host.dart';
 import '../session/connection_status_capsule.dart';
 import '../settings/appearance.dart';
@@ -22,6 +26,10 @@ import 'workspace.dart';
 /// glass panels one shared backdrop read.
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
+
+  /// ⌘N (Ctrl+N off macOS): write to someone.
+  static SingleActivator get newMessageShortcut =>
+      primaryShortcut(LogicalKeyboardKey.keyN);
 
   /// ⌘, (Ctrl+, off macOS), the usual settings shortcut.
   static SingleActivator get settingsShortcut =>
@@ -42,6 +50,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       setState(() => _settings = section);
 
   void _closeSettings() => setState(() => _settings = null);
+
+  void _newMessage() => unawaited(showPeopleSheet(context));
 
   @override
   void initState() {
@@ -82,6 +92,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         run: _openSettings,
       ),
       PaletteCommand(
+        id: 'app.newMessage',
+        title: l10n.newMessage,
+        keywords: [other.newMessage],
+        shortcut: HomeScreen.newMessageShortcut,
+        run: _newMessage,
+      ),
+      PaletteCommand(
+        id: 'app.contacts',
+        title: l10n.contacts,
+        keywords: [other.contacts],
+        run: () =>
+            unawaited(showPeopleSheet(context, mode: PeopleSheetMode.contacts)),
+      ),
+      PaletteCommand(
         id: 'app.plugins',
         title: l10n.plugins,
         keywords: [other.plugins, l10n.settings, other.settings],
@@ -115,19 +139,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 controller: workspace,
                 directory: directory,
                 commandSource: () => _registry.commands,
-                sidebar: const Padding(
-                  padding: EdgeInsets.all(8),
+                sidebar: Padding(
+                  padding: const EdgeInsets.all(8),
                   child: Stack(
                     children: [
-                      Positioned.fill(child: Sidebar()),
-                      // In the island's title bar, right of the window
-                      // buttons.
-                      Positioned(
+                      const Positioned.fill(child: Sidebar()),
+                      // In the island's title bar, between the window
+                      // buttons and the ghost.
+                      const Positioned(
                         top: 0,
                         left: 76,
-                        right: 8,
+                        right: 48,
                         height: SidebarIsland.titleBarHeight,
                         child: ConnectionStatusCapsule(),
+                      ),
+                      // At the title bar's right end, clear of the
+                      // centered connection status.
+                      Positioned(
+                        top: 0,
+                        right: 12,
+                        height: SidebarIsland.titleBarHeight,
+                        child: GhostModeCapsule(
+                          onTap: () => _openSettings(privacyExtrasSectionId),
+                        ),
                       ),
                     ],
                   ),

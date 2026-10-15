@@ -356,6 +356,180 @@ abstract class AppLocalizations {
   /// **'Nothing found'**
   String get nothingFound;
 
+  /// No description provided for @newMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'New message'**
+  String get newMessage;
+
+  /// No description provided for @contacts.
+  ///
+  /// In en, this message translates to:
+  /// **'Contacts'**
+  String get contacts;
+
+  /// No description provided for @peopleSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Name or username'**
+  String get peopleSearchHint;
+
+  /// No description provided for @recentChats.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent'**
+  String get recentChats;
+
+  /// No description provided for @globalSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Global search'**
+  String get globalSearch;
+
+  /// No description provided for @noContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'No contacts yet'**
+  String get noContacts;
+
+  /// No description provided for @presenceOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'online'**
+  String get presenceOnline;
+
+  /// No description provided for @presenceJustNow.
+  ///
+  /// In en, this message translates to:
+  /// **'last seen just now'**
+  String get presenceJustNow;
+
+  /// No description provided for @presenceMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{last seen {count} minute ago} other{last seen {count} minutes ago}}'**
+  String presenceMinutes(num count);
+
+  /// No description provided for @presenceToday.
+  ///
+  /// In en, this message translates to:
+  /// **'last seen today at {time}'**
+  String presenceToday(Object time);
+
+  /// No description provided for @presenceYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'last seen yesterday at {time}'**
+  String presenceYesterday(Object time);
+
+  /// No description provided for @presenceDate.
+  ///
+  /// In en, this message translates to:
+  /// **'last seen {date}'**
+  String presenceDate(Object date);
+
+  /// No description provided for @presenceRecently.
+  ///
+  /// In en, this message translates to:
+  /// **'last seen recently'**
+  String get presenceRecently;
+
+  /// No description provided for @presenceLastWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'last seen within a week'**
+  String get presenceLastWeek;
+
+  /// No description provided for @presenceLastMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'last seen within a month'**
+  String get presenceLastMonth;
+
+  /// No description provided for @presenceLongAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'last seen a long time ago'**
+  String get presenceLongAgo;
+
+  /// No description provided for @presenceBot.
+  ///
+  /// In en, this message translates to:
+  /// **'bot'**
+  String get presenceBot;
+
+  /// No description provided for @addContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Add contact'**
+  String get addContact;
+
+  /// No description provided for @contactFirstName.
+  ///
+  /// In en, this message translates to:
+  /// **'First name'**
+  String get contactFirstName;
+
+  /// No description provided for @contactLastName.
+  ///
+  /// In en, this message translates to:
+  /// **'Last name (optional)'**
+  String get contactLastName;
+
+  /// No description provided for @contactPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone number'**
+  String get contactPhone;
+
+  /// No description provided for @contactAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get contactAdd;
+
+  /// No description provided for @contactFirstNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a first name'**
+  String get contactFirstNameRequired;
+
+  /// No description provided for @contactPhoneRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a phone number'**
+  String get contactPhoneRequired;
+
+  /// No description provided for @contactNotOnTelegram.
+  ///
+  /// In en, this message translates to:
+  /// **'This number is not on Telegram'**
+  String get contactNotOnTelegram;
+
+  /// No description provided for @contactAddFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t add the contact. Check the connection and try again.'**
+  String get contactAddFailed;
+
+  /// No description provided for @deleteContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete contact'**
+  String get deleteContact;
+
+  /// No description provided for @deleteContactTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {name} from contacts?'**
+  String deleteContactTitle(Object name);
+
+  /// No description provided for @deleteContactFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t delete the contact'**
+  String get deleteContactFailed;
+
   /// No description provided for @selectChat.
   ///
   /// In en, this message translates to:
@@ -433,6 +607,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t send the voice message'**
   String get voiceSendFailed;
+
+  /// No description provided for @videoHoldToRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold to record a video message'**
+  String get videoHoldToRecord;
+
+  /// No description provided for @videoCameraDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Mollygram has no access to the camera.'**
+  String get videoCameraDenied;
 
   /// No description provided for @previewYou.
   ///
@@ -733,6 +919,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cancel'**
   String get cancel;
+
+  /// No description provided for @formatBold.
+  ///
+  /// In en, this message translates to:
+  /// **'Bold'**
+  String get formatBold;
+
+  /// No description provided for @formatItalic.
+  ///
+  /// In en, this message translates to:
+  /// **'Italic'**
+  String get formatItalic;
+
+  /// No description provided for @formatUnderline.
+  ///
+  /// In en, this message translates to:
+  /// **'Underline'**
+  String get formatUnderline;
+
+  /// No description provided for @formatStrikethrough.
+  ///
+  /// In en, this message translates to:
+  /// **'Strikethrough'**
+  String get formatStrikethrough;
+
+  /// No description provided for @formatMonospace.
+  ///
+  /// In en, this message translates to:
+  /// **'Monospace'**
+  String get formatMonospace;
+
+  /// No description provided for @formatSpoiler.
+  ///
+  /// In en, this message translates to:
+  /// **'Spoiler'**
+  String get formatSpoiler;
+
+  /// No description provided for @formatQuote.
+  ///
+  /// In en, this message translates to:
+  /// **'Quote'**
+  String get formatQuote;
+
+  /// No description provided for @formatLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Link…'**
+  String get formatLink;
+
+  /// No description provided for @formatPlain.
+  ///
+  /// In en, this message translates to:
+  /// **'Plain text'**
+  String get formatPlain;
+
+  /// No description provided for @linkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add link'**
+  String get linkTitle;
+
+  /// No description provided for @linkHint.
+  ///
+  /// In en, this message translates to:
+  /// **'URL'**
+  String get linkHint;
+
+  /// No description provided for @linkApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get linkApply;
 
   /// No description provided for @deleteMessageTitle.
   ///
@@ -2570,6 +2828,96 @@ abstract class AppLocalizations {
   /// **'Couldn\'t do that, try again'**
   String get chatActionFailed;
 
+  /// No description provided for @privacyExtras.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy extras'**
+  String get privacyExtras;
+
+  /// No description provided for @privacyExtrasAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'These switches decide what others see while you use Mollygram on this Mac. Everything you read and send works as usual.'**
+  String get privacyExtrasAbout;
+
+  /// No description provided for @privacyExtrasOnlineNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Some things still show: sending a message puts you online for a moment and marks the chat read, files you send show as uploading, and a reaction shows you saw the message.'**
+  String get privacyExtrasOnlineNote;
+
+  /// No description provided for @ghostMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Ghost mode'**
+  String get ghostMode;
+
+  /// No description provided for @ghostModeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Turns on everything below at once'**
+  String get ghostModeHint;
+
+  /// No description provided for @ghostModeIsOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Ghost mode is on'**
+  String get ghostModeIsOn;
+
+  /// No description provided for @privacyExtrasAreOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Some privacy extras are on'**
+  String get privacyExtrasAreOn;
+
+  /// No description provided for @hideReadReceipts.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t send read receipts'**
+  String get hideReadReceipts;
+
+  /// No description provided for @hideReadReceiptsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Senders won\'t see that you\'ve read their messages'**
+  String get hideReadReceiptsHint;
+
+  /// No description provided for @hideTyping.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t show typing'**
+  String get hideTyping;
+
+  /// No description provided for @hideTypingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Also hides recording voice and video messages'**
+  String get hideTypingHint;
+
+  /// No description provided for @stayOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Stay offline'**
+  String get stayOffline;
+
+  /// No description provided for @stayOfflineHint.
+  ///
+  /// In en, this message translates to:
+  /// **'You won\'t appear online while the app is open'**
+  String get stayOfflineHint;
+
+  /// No description provided for @hideContentOpened.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t mark voice and video messages as played'**
+  String get hideContentOpened;
+
+  /// No description provided for @hideContentOpenedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Senders won\'t see that you\'ve played them'**
+  String get hideContentOpenedHint;
+
   /// No description provided for @menuSelect.
   ///
   /// In en, this message translates to:
@@ -2839,6 +3187,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} of {max}'**
   String folderChatsCounter(int count, int max);
+
+  /// No description provided for @previousMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous month'**
+  String get previousMonth;
+
+  /// No description provided for @nextMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Next month'**
+  String get nextMonth;
+
+  /// No description provided for @pinnedList.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinned messages'**
+  String get pinnedList;
+
+  /// No description provided for @pinnedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} pinned message} other{{count} pinned messages}}'**
+  String pinnedCount(int count);
+
+  /// No description provided for @backToChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to the chat'**
+  String get backToChat;
+
+  /// No description provided for @unpinAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpin all messages'**
+  String get unpinAll;
+
+  /// No description provided for @unpinAllTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{Unpin {count} message?} other{Unpin all {count} messages?}}'**
+  String unpinAllTitle(int count);
 }
 
 class _AppLocalizationsDelegate

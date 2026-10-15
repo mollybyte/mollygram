@@ -100,4 +100,9 @@ abstract final class EditorIcons {
     'pixelate',
     '<path d="M4 4h5v5H4zM9 9h5v5H9zM14 4h5v5h-5zM4 14h5v5H4zM14 14h5v5h-5z"/>',
   );
+  static const adjust = MgIconData(
+    'adjust',
+    '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/>'
+        '<circle cx="16" cy="7" r="2.2"/><circle cx="10" cy="17" r="2.2"/>',
+  );
 }

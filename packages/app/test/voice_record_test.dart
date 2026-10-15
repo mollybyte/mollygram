@@ -54,11 +54,28 @@ void main() {
   late Directory dir;
   late FakeCapture capture;
   late List<RecordedVoice> sent;
+  late List<RecordedVideoNote> sentVideo;
+  late List<MethodCall> videoCalls;
 
   setUp(() {
     dir = Directory.systemTemp.createTempSync('voice');
     capture = FakeCapture();
     sent = [];
+    sentVideo = [];
+    videoCalls = [];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel('mollygram/video_note_capture'),
+          (call) async {
+            videoCalls.add(call);
+            return switch (call.method) {
+              'permission' => 'granted',
+              'start' => {'textureId': 1, 'width': 1280, 'height': 720},
+              'stop' => {'path': '${dir.path}/v.mp4', 'durationMs': 2400},
+              _ => null,
+            };
+          },
+        );
   });
   tearDown(() => dir.deleteSync(recursive: true));
 
@@ -82,6 +99,8 @@ void main() {
                 capture: capture,
               ),
               onRecorded: (voice) async => sent.add(voice),
+              videoRecorder: VideoNoteRecorder(directory: () async => dir.path),
+              onRecordedVideo: (note) async => sentVideo.add(note),
               builder: (context, button, bar) => Composer(
                 labels: const ComposerLabels(
                   hint: 'Message',
@@ -141,15 +160,65 @@ void main() {
     expect(find.textContaining('0:01,'), findsNothing);
   });
 
-  testWidgets('a click shows how to record instead', (tester) async {
+  Finder camera() => find
+      .byWidgetPredicate((w) => w is MgIcon && w.icon == MgIcons.camera)
+      .first;
+
+  testWidgets('a click switches between voice and video', (tester) async {
     await tester.pumpWidget(host());
     await tester.tap(mic());
     await tester.pump(const Duration(milliseconds: 300));
     expect(capture.started, isFalse);
+    expect(find.text('Hold to record a video message'), findsOneWidget);
+    expect(camera(), findsOneWidget);
+
+    await tester.tap(camera());
+    await tester.pump(const Duration(milliseconds: 300));
     expect(find.text('Hold to record a voice message'), findsOneWidget);
+    expect(mic(), findsOneWidget);
     await tester.pump(const Duration(seconds: 3));
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.text('Hold to record a voice message'), findsNothing);
+  });
+
+  testWidgets('a video message records with the camera above the composer', (
+    tester,
+  ) async {
+    await tester.pumpWidget(host());
+    await tester.tap(mic());
+    await tester.pump(const Duration(milliseconds: 300));
+
+    final gesture = await tester.startGesture(tester.getCenter(camera()));
+    await tester.pump(const Duration(milliseconds: 200));
+    await io(tester);
+    expect(videoCalls.map((c) => c.method), ['permission', 'start']);
+    expect(find.byType(Texture), findsOneWidget);
+    await tester.pump(const Duration(seconds: 2));
+    expect(find.textContaining('0:02,'), findsOneWidget);
+
+    await gesture.up();
+    await io(tester);
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(sentVideo.single.side, 640);
+    expect(sentVideo.single.duration, const Duration(milliseconds: 2400));
+    expect(sent, isEmpty);
+    expect(find.byType(Texture), findsNothing);
+    await tester.pump(const Duration(seconds: 3));
+  });
+
+  testWidgets('a video message stops at 60 seconds', (tester) async {
+    await tester.pumpWidget(host());
+    await tester.tap(mic());
+    await tester.pump(const Duration(milliseconds: 300));
+    final gesture = await tester.startGesture(tester.getCenter(camera()));
+    await tester.pump(const Duration(milliseconds: 200));
+    await io(tester);
+    await tester.pump(const Duration(seconds: 61));
+    await io(tester);
+    expect(sentVideo, hasLength(1));
+    await gesture.up();
+    await tester.pump(const Duration(seconds: 3));
+    expect(sentVideo, hasLength(1));
   });
 
   testWidgets('a very short recording is dropped', (tester) async {
@@ -257,6 +326,28 @@ void main() {
       await gesture.up();
       await io(tester);
       await tester.pump(const Duration(milliseconds: 400));
+    });
+
+    testWidgets('video recording $name', skip: !Platform.isLinux, (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(620, 420);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(host(colors: colors));
+      await tester.tap(mic());
+      await tester.pump(const Duration(seconds: 3));
+      final gesture = await tester.startGesture(tester.getCenter(camera()));
+      await tester.pump(const Duration(milliseconds: 200));
+      await io(tester);
+      await tester.pump(const Duration(seconds: 12));
+      await expectLater(
+        find.byType(MaterialApp),
+        matchesGoldenFile('goldens/video_recording_$name.png'),
+      );
+      await gesture.up();
+      await io(tester);
+      await tester.pump(const Duration(seconds: 3));
     });
   }
 }

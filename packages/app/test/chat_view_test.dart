@@ -333,6 +333,43 @@ void main() {
     expect(find.byType(PinnedBar), findsNothing);
   });
 
+  testWidgets('lists the pinned messages and unpins them all', (tester) async {
+    json.chat = [for (var id = 1; id <= 60; id++) id];
+    json.pinned = [50, 20];
+    json.push(_chat(lastRead: 60, unread: 0, last: 60));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await pump(tester);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Pinned messages'));
+    await tester.pumpAndSettle();
+    expect(find.text('2 pinned messages'), findsOneWidget);
+    expect(find.byType(PinnedBar), findsNothing);
+    expect(find.byType(Composer), findsNothing);
+    // Only the pinned messages are in the list.
+    expect(find.text('Message 20'), findsOneWidget);
+    expect(find.text('Message 50'), findsOneWidget);
+    expect(find.text('Message 49'), findsNothing);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.byType(Composer), findsOneWidget);
+    expect(find.byType(PinnedBar), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Pinned messages'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Unpin all messages'));
+    await tester.pumpAndSettle();
+    expect(find.text('Unpin all 2 messages?'), findsOneWidget);
+    await tester.tap(find.text('Unpin all messages').last);
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+
+    expect(requests(), contains('unpinAllChatMessages'));
+    expect(find.byType(Composer), findsOneWidget);
+    expect(find.byType(PinnedBar), findsNothing);
+  });
+
   testWidgets('pins and unpins a message from its menu', (tester) async {
     await pump(tester);
 
@@ -608,6 +645,40 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(SelectionBar), findsNothing);
     expect(find.byType(Composer), findsOneWidget);
+  });
+
+  testWidgets('opens a calendar from a date pill and jumps to the day', (
+    tester,
+  ) async {
+    await pump(tester);
+
+    // The date pill above the first message comes once the start of the
+    // chat is known, a page later.
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    // The history is from October 2025.
+    await tester.tap(find.byType(DatePill).first);
+    await tester.pump();
+    expect(find.text('October 2025'), findsOneWidget);
+    // Days after today can't be picked; the month can't go past it.
+    expect(find.byType(MgCalendar), findsOneWidget);
+
+    await tester.tap(find.text('9'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(MgCalendar), findsNothing);
+    final request = json.sent.lastWhere(
+      (r) => r['@type'] == 'getChatMessageByDate',
+    );
+    expect(request['chat_id'], 7);
+    expect(
+      request['date'],
+      DateTime(2025, 10, 10).millisecondsSinceEpoch ~/ 1000 - 1,
+    );
+    expect(tester.widget<TimelineView>(find.byType(TimelineView)).anchor, 11);
   });
 
   testWidgets('opens a photo full screen and pages through the chat media', (
@@ -1026,6 +1097,11 @@ final class _FakeTdJson implements td.TdJson {
       },
       'downloadFile' => _stickerFile(decoded['file_id']! as int),
       'joinChat' => {'@type': 'chatJoinResultSuccess'},
+      'getChatMessageByDate' => _message(
+        id: 11,
+        senderId: 2,
+        text: 'Boris again',
+      ).toJson(),
       'forwardMessages' => {
         '@type': 'messages',
         'total_count': 0,

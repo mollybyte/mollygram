@@ -22,6 +22,8 @@ class PinnedBar extends StatelessWidget {
     required this.closeTooltip,
     required this.onClose,
     this.thumbnail,
+    this.listTooltip,
+    this.onList,
   });
 
   final String title;
@@ -34,6 +36,11 @@ class PinnedBar extends StatelessWidget {
   final String closeTooltip;
   final VoidCallback onClose;
   final Widget? thumbnail;
+
+  /// The list button, which opens all the pinned messages; shown when
+  /// both are given.
+  final String? listTooltip;
+  final VoidCallback? onList;
 
   static const double height = 40;
 
@@ -125,6 +132,13 @@ class PinnedBar extends StatelessWidget {
                 ),
               ),
             ),
+            if (onList != null && listTooltip != null)
+              MgIconButton(
+                icon: MgIcons.list,
+                tooltip: listTooltip!,
+                iconSize: 15,
+                onPressed: onList,
+              ),
             MgIconButton(
               icon: MgIcons.close,
               tooltip: closeTooltip,
