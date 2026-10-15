@@ -11,6 +11,7 @@ import 'connection_status.dart';
 import 'conversation_controller.dart';
 import 'file_controller.dart';
 import 'notification_controller.dart';
+import 'peer_info.dart';
 import 'sticker_library.dart';
 import 'tdlib_initializer.dart';
 
@@ -39,6 +40,7 @@ final class TelegramSession {
     required this.files,
     required this.notifications,
     required this.stickers,
+    required this.peers,
     required this.account,
     required this.connection,
     required this._initializer,
@@ -53,6 +55,7 @@ final class TelegramSession {
   final FileController files;
   final NotificationController notifications;
   final StickerLibrary stickers;
+  final PeerInfoController peers;
   final AccountSettings account;
 
   /// The connection state, for the "Connecting…" status in the window.
@@ -75,6 +78,7 @@ final class TelegramSession {
     final authorization = AuthorizationController(client);
     final conversations = ConversationController(client);
     final files = FileController(client);
+    final peers = PeerInfoController(client);
     final connection = ConnectionMonitor(client);
     final notifications = NotificationController(client);
     final session = TelegramSession._(
@@ -86,6 +90,7 @@ final class TelegramSession {
       files: files,
       notifications: notifications,
       stickers: StickerLibrary(client),
+      peers: peers,
       account: AccountSettings(client),
       connection: connection,
       initializer: TdlibInitializer(client, parameters: parameters),
@@ -100,6 +105,7 @@ final class TelegramSession {
     try {
       await conversations.start();
       await files.start();
+      await peers.start();
       await connection.start();
       await notifications.start();
       await authorization.start();
@@ -167,6 +173,7 @@ final class TelegramSession {
     await chatLists.dispose();
     await conversations.dispose();
     await files.dispose();
+    await peers.dispose();
     await connection.dispose();
     await notifications.dispose();
     await authorization.dispose();
