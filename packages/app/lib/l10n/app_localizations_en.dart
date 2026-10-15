@@ -680,6 +680,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sendAsFiles => 'Send as files';
 
   @override
+  String get hideWithSpoiler => 'Hide with a spoiler';
+
+  @override
   String get captionHint => 'Add a caption';
 
   @override

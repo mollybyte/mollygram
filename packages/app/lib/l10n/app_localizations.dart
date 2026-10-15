@@ -1256,6 +1256,12 @@ abstract class AppLocalizations {
   /// **'Send as files'**
   String get sendAsFiles;
 
+  /// No description provided for @hideWithSpoiler.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide with a spoiler'**
+  String get hideWithSpoiler;
+
   /// No description provided for @captionHint.
   ///
   /// In en, this message translates to:

@@ -13,6 +13,7 @@ final class OutgoingFile {
     this.height = 0,
     this.duration = 0,
     this.forceFile = false,
+    this.spoiler = false,
     this.thumbnail,
     this.cover,
   });
@@ -32,6 +33,9 @@ final class OutgoingFile {
   /// song in it.
   final bool forceFile;
 
+  /// A photo, video or animation hidden behind a spoiler until tapped.
+  final bool spoiler;
+
   /// A small JPEG shown for a video before it downloads, at most 320 px
   /// a side; null lets TDLib make one.
   final String? thumbnail;
@@ -47,6 +51,7 @@ final class OutgoingFile {
     int? height,
     int? duration,
     bool? forceFile,
+    bool? spoiler,
     String? thumbnail,
     String? cover,
   }) => OutgoingFile(
@@ -56,6 +61,7 @@ final class OutgoingFile {
     height: height ?? this.height,
     duration: duration ?? this.duration,
     forceFile: forceFile ?? this.forceFile,
+    spoiler: spoiler ?? this.spoiler,
     thumbnail: thumbnail ?? this.thumbnail,
     cover: cover ?? this.cover,
   );
@@ -144,7 +150,7 @@ td.InputMessageContent inputContentOf(
       ),
       caption: caption,
       showCaptionAboveMedia: false,
-      hasSpoiler: false,
+      hasSpoiler: file.spoiler,
     ),
     OutgoingKind.video => td.InputMessageVideo(
       video: td.InputVideo(
@@ -166,7 +172,7 @@ td.InputMessageContent inputContentOf(
       ),
       caption: caption,
       showCaptionAboveMedia: false,
-      hasSpoiler: false,
+      hasSpoiler: file.spoiler,
     ),
     OutgoingKind.animation => td.InputMessageAnimation(
       animation: td.InputAnimation(
@@ -178,7 +184,7 @@ td.InputMessageContent inputContentOf(
       ),
       caption: caption,
       showCaptionAboveMedia: false,
-      hasSpoiler: false,
+      hasSpoiler: file.spoiler,
     ),
     OutgoingKind.audio => td.InputMessageAudio(
       audio: td.InputAudio(

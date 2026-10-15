@@ -53,6 +53,15 @@ void main() {
     expect(document, isA<td.InputMessageDocument>());
   });
 
+  test('hides a photo behind a spoiler, never a document', () {
+    final photo = inputContentOf(_file('/a.jpg').copyWith(spoiler: true));
+    expect((photo as td.InputMessagePhoto).hasSpoiler, isTrue);
+    final document = inputContentOf(
+      _file('/a.jpg').copyWith(spoiler: true).asDocument(),
+    );
+    expect(document, isA<td.InputMessageDocument>());
+  });
+
   test('sends an edited video with its thumbnail and cover', () {
     final video = inputContentOf(
       const OutgoingFile(
