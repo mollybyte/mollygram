@@ -1219,6 +1219,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No stickers yet'**
   String get noStickerSets;
+
+  /// No description provided for @forwardedMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Forwarded messages'**
+  String get forwardedMessages;
+
+  /// No description provided for @leaveComment.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave a comment'**
+  String get leaveComment;
+
+  /// No description provided for @commentCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} comment} other{{count} comments}}'**
+  String commentCount(int count);
 }
 
 class _AppLocalizationsDelegate

@@ -59,6 +59,7 @@ class MessageMeta extends StatelessWidget {
     required this.time,
     this.status = MessageStatus.none,
     this.label,
+    this.views,
     this.color,
   });
 
@@ -66,12 +67,17 @@ class MessageMeta extends StatelessWidget {
   final MessageStatus status;
   final String? label;
 
+  /// How many people saw a channel post, already formatted ("1.2K").
+  final String? views;
+
   /// Defaults to the secondary text color.
   final Color? color;
 
   static const double _tickSize = 14;
   static const double _tickGap = 2;
   static const double _labelGap = 12;
+  static const double _viewsIcon = 13;
+  static const double _viewsGap = 3;
 
   static MgIconData? _tick(MessageStatus status) => switch (status) {
     MessageStatus.none => null,
@@ -93,6 +99,7 @@ class MessageMeta extends StatelessWidget {
     required String time,
     MessageStatus status = MessageStatus.none,
     String? label,
+    String? views,
   }) {
     final style = styleOf(MgColors.of(context));
     final scaler = MediaQuery.textScalerOf(context);
@@ -112,6 +119,9 @@ class MessageMeta extends StatelessWidget {
     var width = measure(time);
     if (_tick(status) != null) width += _tickGap + _tickSize;
     if (label != null) width += measure(label) + _labelGap;
+    if (views != null) {
+      width += _viewsIcon + _viewsGap + measure(views) + _labelGap;
+    }
     return width;
   }
 
@@ -125,6 +135,12 @@ class MessageMeta extends StatelessWidget {
       children: [
         if (label != null) ...[
           Text(label!, style: style),
+          const SizedBox(width: _labelGap),
+        ],
+        if (views != null) ...[
+          MgIcon(MgIcons.views, size: _viewsIcon, color: style.color),
+          const SizedBox(width: _viewsGap),
+          Text(views!, style: style),
           const SizedBox(width: _labelGap),
         ],
         Text(time, style: style),

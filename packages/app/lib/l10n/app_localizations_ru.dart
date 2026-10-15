@@ -729,4 +729,22 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get noStickerSets => 'Пока нет стикеров';
+
+  @override
+  String get forwardedMessages => 'Пересланные сообщения';
+
+  @override
+  String get leaveComment => 'Оставить комментарий';
+
+  @override
+  String commentCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count комментариев',
+      few: '$count комментария',
+      one: '$count комментарий',
+    );
+    return '$_temp0';
+  }
 }

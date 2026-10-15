@@ -610,4 +610,35 @@ void main() {
       expect(EmojiTab.matchNames('  '), isEmpty);
     });
   });
+
+  testWidgets('shows views and the comments row of a channel post', (
+    tester,
+  ) async {
+    var opened = 0;
+    await tester.pumpWidget(
+      themed(
+        Column(
+          children: [
+            const MessageMeta(time: '17:37', views: '1.2K'),
+            CommentsRow(label: '4 comments', onTap: () => opened++),
+            const ForwardedBlock(
+              source: 'Dodo Pizza',
+              date: '12.10.26',
+              child: Text('New secret'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    expect(find.text('1.2K'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate((w) => w is MgIcon && w.icon == MgIcons.views),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('4 comments'));
+    expect(opened, 1);
+    expect(find.textContaining('Dodo Pizza'), findsOneWidget);
+    expect(find.text('New secret'), findsOneWidget);
+  });
 }

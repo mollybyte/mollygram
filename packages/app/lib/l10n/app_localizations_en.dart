@@ -726,4 +726,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noStickerSets => 'No stickers yet';
+
+  @override
+  String get forwardedMessages => 'Forwarded messages';
+
+  @override
+  String get leaveComment => 'Leave a comment';
+
+  @override
+  String commentCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count comments',
+      one: '$count comment',
+    );
+    return '$_temp0';
+  }
 }

@@ -779,11 +779,12 @@ class _Messages extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).toLanguageTag();
+    final isChannel = store.isChannel(chatId);
     final items = timelineItems(
       messages,
       reachedStart: store.reachedStart(chatId),
+      isChannel: isChannel,
     );
-    final isChannel = store.isChannel(chatId);
     final lastReadOutbox = store.lastReadOutbox(chatId);
     return ListView.builder(
       reverse: true,
@@ -802,24 +803,31 @@ class _Messages extends StatelessWidget {
         final item = items[i];
         final Widget child = switch (item) {
           TimelineDate(:final day) => DatePill(formatDay(l10n, day, locale)),
-          TimelineRow(:final row, :final startsRun, :final endsRun) => () {
-            row.messages.forEach(onShown);
-            return Padding(
-              padding: EdgeInsets.only(top: startsRun ? 6 : 2),
-              child: MessageTile(
-                row: row,
-                store: store,
-                context: MessageRowContext(
-                  isGroup: isGroup,
-                  isChannel: isChannel,
-                  startsRun: startsRun,
-                  endsRun: endsRun,
-                  lastReadOutbox: lastReadOutbox,
+          TimelineRow(
+            :final row,
+            :final startsRun,
+            :final endsRun,
+            :final startsForwards,
+          ) =>
+            () {
+              row.messages.forEach(onShown);
+              return Padding(
+                padding: EdgeInsets.only(top: startsRun ? 6 : 2),
+                child: MessageTile(
+                  row: row,
+                  store: store,
+                  context: MessageRowContext(
+                    isGroup: isGroup,
+                    isChannel: isChannel,
+                    startsRun: startsRun,
+                    endsRun: endsRun,
+                    startsForwards: startsForwards,
+                    lastReadOutbox: lastReadOutbox,
+                  ),
+                  actions: actions,
                 ),
-                actions: actions,
-              ),
-            );
-          }(),
+              );
+            }(),
         };
         return Padding(
           key: ValueKey<Object>(item.key),
