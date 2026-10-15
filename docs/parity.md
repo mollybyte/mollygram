@@ -199,8 +199,8 @@ M8 calls and macOS release, M9 after release.
 |---|---|---|---|---|
 | Sign in: QR, phone, code, 2FA password | done | #16, #24 | | |
 | Sign up (new account), email code, account reset | partial | Unsupported steps show a notice | M | M6 |
-| Contacts list, add and edit contact | missing | `ContactsController` | M | M6 |
-| New message / compose (pick a user) | missing | `ComposeViewController` | S | M1 |
+| Contacts list, add and edit contact | partial | Contacts sheet: list with status, add by phone, delete; editing a contact's name is not there yet | S | M6 |
+| New message / compose (pick a user) | done | ⌘N sheet: recent chats, contacts, username search | | |
 | Edit own profile: name, bio, username, photo, birthday | partial | Name, username and bio in Settings; photo and birthday missing | M | M6 |
 | Multiple accounts and switching | missing | Several TDLib clients | L | M6 |
 | Log out | done | Settings, My profile, Log out | | |
