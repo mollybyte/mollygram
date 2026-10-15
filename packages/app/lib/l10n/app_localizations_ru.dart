@@ -911,7 +911,7 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get leave => 'Покинуть';
+  String get leave => 'Выйти';
 
   @override
   String deleteAndLeaveTitle(String name) {
@@ -919,7 +919,7 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get chatActionFailed => 'Не получилось. Попробуйте ещё раз.';
+  String get chatActionFailed => 'Не получилось, попробуйте ещё раз';
 
   @override
   String get editFailed => 'Не удалось сохранить изменения';
@@ -988,9 +988,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get peerInfo => 'Информация';
 
   @override
-  String get statusOnline => 'в сети';
-
-  @override
   String get lastSeenJustNow => 'был(а) только что';
 
   @override
@@ -1031,9 +1028,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get lastSeenLongAgo => 'был(а) давно';
-
-  @override
-  String get statusBot => 'бот';
 
   @override
   String get deletedAccount => 'Удалённый аккаунт';
@@ -1930,9 +1924,6 @@ class AppLocalizationsRu extends AppLocalizations {
       'Медиа останутся в облаке Telegram и загрузятся снова, когда вы их откроете.';
 
   @override
-  String get clear => 'Очистить';
-
-  @override
   String get clearCacheFailed => 'Не удалось очистить кэш.';
 
   @override
@@ -2238,12 +2229,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get linkCannotSend => 'Не удалось отправить команду.';
 
   @override
-  String get menuPin => 'Закрепить';
-
-  @override
-  String get menuUnpin => 'Открепить';
-
-  @override
   String get pinnedMessage => 'Закреплённое сообщение';
 
   @override
@@ -2384,9 +2369,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String slowModeWait(String time) {
     return 'Медленный режим, следующее сообщение через $time';
   }
-
-  @override
-  String get chatActionFailed => 'Не получилось, попробуйте ещё раз';
 
   @override
   String get privacyExtras => 'Дополнительная приватность';
@@ -2933,9 +2915,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get remove => 'Удалить';
-
-  @override
-  String get leave => 'Выйти';
 
   @override
   String get newGroup => 'Новая группа';

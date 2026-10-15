@@ -476,7 +476,6 @@ class _Host extends ConsumerWidget {
 
 final class _FakeTdJson implements td.TdJson {
   final _queue = Queue<String>();
-  final sent = <Map<String, Object?>>[];
   var _nextClientId = 0;
 
   void push(Map<String, Object?> update) =>

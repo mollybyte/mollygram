@@ -1655,7 +1655,7 @@ abstract class AppLocalizations {
   /// No description provided for @chatActionFailed.
   ///
   /// In en, this message translates to:
-  /// **'Couldn\'t do that. Try again.'**
+  /// **'Couldn\'t do that, try again'**
   String get chatActionFailed;
 
   /// No description provided for @editFailed.
@@ -1754,12 +1754,6 @@ abstract class AppLocalizations {
   /// **'Info'**
   String get peerInfo;
 
-  /// No description provided for @statusOnline.
-  ///
-  /// In en, this message translates to:
-  /// **'online'**
-  String get statusOnline;
-
   /// No description provided for @lastSeenJustNow.
   ///
   /// In en, this message translates to:
@@ -1813,12 +1807,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'last seen a long time ago'**
   String get lastSeenLongAgo;
-
-  /// No description provided for @statusBot.
-  ///
-  /// In en, this message translates to:
-  /// **'bot'**
-  String get statusBot;
 
   /// No description provided for @deletedAccount.
   ///
@@ -3200,12 +3188,6 @@ abstract class AppLocalizations {
   /// **'Media stays in the Telegram cloud and downloads again when you open it.'**
   String get clearCacheMessage;
 
-  /// No description provided for @clear.
-  ///
-  /// In en, this message translates to:
-  /// **'Clear'**
-  String get clear;
-
   /// No description provided for @clearCacheFailed.
   ///
   /// In en, this message translates to:
@@ -3698,18 +3680,6 @@ abstract class AppLocalizations {
   /// **'Couldn\'t send the command.'**
   String get linkCannotSend;
 
-  /// No description provided for @menuPin.
-  ///
-  /// In en, this message translates to:
-  /// **'Pin'**
-  String get menuPin;
-
-  /// No description provided for @menuUnpin.
-  ///
-  /// In en, this message translates to:
-  /// **'Unpin'**
-  String get menuUnpin;
-
   /// No description provided for @pinnedMessage.
   ///
   /// In en, this message translates to:
@@ -3973,12 +3943,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Slowmode is on, next message in {time}'**
   String slowModeWait(String time);
-
-  /// No description provided for @chatActionFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Couldn\'t do that, try again'**
-  String get chatActionFailed;
 
   /// No description provided for @privacyExtras.
   ///
@@ -4909,12 +4873,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Remove'**
   String get remove;
-
-  /// No description provided for @leave.
-  ///
-  /// In en, this message translates to:
-  /// **'Leave'**
-  String get leave;
 
   /// No description provided for @newGroup.
   ///

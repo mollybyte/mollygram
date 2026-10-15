@@ -916,7 +916,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get chatActionFailed => 'Couldn\'t do that. Try again.';
+  String get chatActionFailed => 'Couldn\'t do that, try again';
 
   @override
   String get editFailed => 'Couldn\'t save the changes';
@@ -983,9 +983,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get peerInfo => 'Info';
 
   @override
-  String get statusOnline => 'online';
-
-  @override
   String get lastSeenJustNow => 'last seen just now';
 
   @override
@@ -1025,9 +1022,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lastSeenLongAgo => 'last seen a long time ago';
-
-  @override
-  String get statusBot => 'bot';
 
   @override
   String get deletedAccount => 'Deleted account';
@@ -1915,9 +1909,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Media stays in the Telegram cloud and downloads again when you open it.';
 
   @override
-  String get clear => 'Clear';
-
-  @override
   String get clearCacheFailed => 'Couldn\'t clear the cache.';
 
   @override
@@ -2217,12 +2208,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get linkCannotSend => 'Couldn\'t send the command.';
 
   @override
-  String get menuPin => 'Pin';
-
-  @override
-  String get menuUnpin => 'Unpin';
-
-  @override
   String get pinnedMessage => 'Pinned message';
 
   @override
@@ -2363,9 +2348,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String slowModeWait(String time) {
     return 'Slowmode is on, next message in $time';
   }
-
-  @override
-  String get chatActionFailed => 'Couldn\'t do that, try again';
 
   @override
   String get privacyExtras => 'Privacy extras';
@@ -2903,9 +2885,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get remove => 'Remove';
-
-  @override
-  String get leave => 'Leave';
 
   @override
   String get newGroup => 'New group';
