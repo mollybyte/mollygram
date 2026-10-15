@@ -45,6 +45,9 @@ abstract interface class ShellStrings {
   String get cmdSplit;
   String get cmdCloseSplit;
   String get cmdSwapPanes;
+  String get cmdFocusLeft;
+  String get cmdFocusRight;
+  String cmdTab(int number);
 }
 
 class _En implements ShellStrings {
@@ -111,6 +114,12 @@ class _En implements ShellStrings {
   String get cmdCloseSplit => 'Close split view';
   @override
   String get cmdSwapPanes => 'Swap chats in split view';
+  @override
+  String get cmdFocusLeft => 'Focus left chat';
+  @override
+  String get cmdFocusRight => 'Focus right chat';
+  @override
+  String cmdTab(int number) => 'Go to tab $number';
 }
 
 class _Ru implements ShellStrings {
@@ -182,4 +191,10 @@ class _Ru implements ShellStrings {
   String get cmdCloseSplit => 'Закрыть сплит';
   @override
   String get cmdSwapPanes => 'Поменять чаты местами';
+  @override
+  String get cmdFocusLeft => 'Перейти в левый чат';
+  @override
+  String get cmdFocusRight => 'Перейти в правый чат';
+  @override
+  String cmdTab(int number) => 'Перейти на вкладку $number';
 }

@@ -1043,5 +1043,30 @@
   "proxyShowSecret": "Show secret",
   "proxyHideSecret": "Hide secret",
   "pluginShowMessage": "Show",
-  "pluginFilteredMessage": "Filtered by a plugin"
+  "pluginFilteredMessage": "Filtered by a plugin",
+  "keyboardShortcuts": "Keyboard shortcuts",
+  "shortcutsSearch": "Search shortcuts",
+  "shortcutsHint": "Click a shortcut, then press the new keys. Esc cancels, Delete removes the shortcut.",
+  "shortcutsGroupApp": "App",
+  "shortcutsGroupChat": "Chat",
+  "shortcutsGroupNavigation": "Navigation",
+  "shortcutsGroupAccounts": "Accounts",
+  "shortcutsGroupPlugins": "Plugins",
+  "shortcutNone": "None",
+  "shortcutRecording": "Type a shortcut",
+  "shortcutChange": "Change shortcut",
+  "shortcutNeedsModifier": "Add Ctrl or Alt to the key",
+  "shortcutNeedsModifierMac": "Add ⌘, ⌃ or ⌥ to the key",
+  "shortcutReserved": "Used by the system",
+  "shortcutReservedMac": "Used by macOS",
+  "shortcutUsedBy": "Already used by “{title}”",
+  "@shortcutUsedBy": {
+    "placeholders": { "title": { "type": "String" } }
+  },
+  "shortcutReplace": "Replace",
+  "shortcutRestore": "Restore default",
+  "shortcutsRestoreAll": "Restore defaults",
+  "shortcutsRestoreAllTitle": "Restore all shortcuts?",
+  "shortcutsRestoreAllMessage": "Every shortcut you changed goes back to its default.",
+  "shortcutsRestoreConfirm": "Restore"
 }

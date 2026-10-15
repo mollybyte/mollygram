@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mollygram_shell/mollygram_shell.dart';
 
 import '../commands/command_registry.dart';
+import '../commands/shortcut_key.dart';
 import '../home/workspace.dart';
 import 'app_plugins.dart';
 
@@ -22,6 +23,11 @@ final pluginCommandsProvider = Provider.autoDispose<void>((ref) {
         title: command.title,
         subtitle: plugin.manifest.name,
         keywords: [command.name, plugin.manifest.name],
+        // The manifest's key, unless the app or the shell has it already.
+        shortcut: switch (command.shortcut) {
+          final text? => ShortcutKey.parse(text)?.activator,
+          null => null,
+        },
         run: () => unawaited(
           plugins.runCommand(
             plugin.id,

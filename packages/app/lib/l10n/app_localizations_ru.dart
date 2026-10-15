@@ -2711,4 +2711,74 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get pluginFilteredMessage => 'Скрыто плагином';
+
+  @override
+  String get keyboardShortcuts => 'Сочетания клавиш';
+
+  @override
+  String get shortcutsSearch => 'Поиск сочетаний';
+
+  @override
+  String get shortcutsHint =>
+      'Нажмите на сочетание, затем новые клавиши. Esc отменяет, Delete убирает сочетание.';
+
+  @override
+  String get shortcutsGroupApp => 'Приложение';
+
+  @override
+  String get shortcutsGroupChat => 'Чат';
+
+  @override
+  String get shortcutsGroupNavigation => 'Навигация';
+
+  @override
+  String get shortcutsGroupAccounts => 'Аккаунты';
+
+  @override
+  String get shortcutsGroupPlugins => 'Плагины';
+
+  @override
+  String get shortcutNone => 'Нет';
+
+  @override
+  String get shortcutRecording => 'Нажмите сочетание';
+
+  @override
+  String get shortcutChange => 'Изменить сочетание';
+
+  @override
+  String get shortcutNeedsModifier => 'Добавьте к клавише Ctrl или Alt';
+
+  @override
+  String get shortcutNeedsModifierMac => 'Добавьте к клавише ⌘, ⌃ или ⌥';
+
+  @override
+  String get shortcutReserved => 'Используется системой';
+
+  @override
+  String get shortcutReservedMac => 'Используется macOS';
+
+  @override
+  String shortcutUsedBy(String title) {
+    return 'Уже используется: «$title»';
+  }
+
+  @override
+  String get shortcutReplace => 'Заменить';
+
+  @override
+  String get shortcutRestore => 'Вернуть по умолчанию';
+
+  @override
+  String get shortcutsRestoreAll => 'Сбросить все';
+
+  @override
+  String get shortcutsRestoreAllTitle => 'Вернуть все сочетания по умолчанию?';
+
+  @override
+  String get shortcutsRestoreAllMessage =>
+      'Все изменённые сочетания вернутся к исходным.';
+
+  @override
+  String get shortcutsRestoreConfirm => 'Вернуть';
 }
