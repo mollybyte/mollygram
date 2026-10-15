@@ -9,8 +9,10 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../chat/formatted_text.dart';
+import '../chat/forward_picker.dart';
 import '../chat/media_viewer.dart';
 import '../chat/message_tile.dart' show SenderAvatar;
+import '../chat/report.dart';
 import '../secret/secret_chat.dart';
 import '../session/providers.dart';
 import '../window_drag_area.dart';
@@ -468,10 +470,32 @@ class _Content extends ConsumerWidget {
             const SizedBox(height: 12),
             _Group(
               children: [
+                if (info.phone.isNotEmpty)
+                  _NavRow(
+                    label: l10n.infoShareContact,
+                    onTap: () => unawaited(_shareContact(context, ref)),
+                  ),
                 _ActionRow(
                   label: info.isBlocked ? l10n.unblockUser : l10n.blockUser,
                   color: info.isBlocked ? c.accent : MgDestructive.color,
                   onTap: () => unawaited(_toggleBlock(context, peers)),
+                ),
+                _ActionRow(
+                  label: l10n.menuReport,
+                  color: MgDestructive.color,
+                  onTap: () => unawaited(_report(context, ref)),
+                ),
+              ],
+            ),
+          ],
+          if (canAct && !info.isUser) ...[
+            const SizedBox(height: 12),
+            _Group(
+              children: [
+                _ActionRow(
+                  label: l10n.menuReport,
+                  color: MgDestructive.color,
+                  onTap: () => unawaited(_report(context, ref)),
                 ),
               ],
             ),
@@ -509,6 +533,43 @@ class _Content extends ConsumerWidget {
           ],
         ],
       ),
+    );
+  }
+
+  /// Sends the person as a contact card to a chat the user picks.
+  Future<void> _shareContact(BuildContext context, WidgetRef ref) async {
+    final target = await pickForwardTarget(context);
+    if (target == null || !context.mounted) return;
+    final session = ref.read(telegramSessionProvider).asData?.value;
+    if (session == null) return;
+    try {
+      await session.conversations.sendContact(
+        target.chatId,
+        td.Contact(
+          phoneNumber: info.phone,
+          firstName: info.firstName,
+          lastName: info.lastName,
+          vcard: '',
+          userId: info.userId,
+        ),
+      );
+    } on td.TdException {
+      if (context.mounted) {
+        showMgToast(context, AppLocalizations.of(context).sendFailed);
+      }
+    }
+  }
+
+  /// Reports the chat: the server's reasons, then details when asked.
+  Future<void> _report(BuildContext context, WidgetRef ref) {
+    final session = ref.read(telegramSessionProvider).asData?.value;
+    if (session == null) return Future.value();
+    return reportMessages(
+      context,
+      conversations: session.conversations,
+      chatId: info.chatId,
+      messageIds: const [],
+      isShown: () => context.mounted,
     );
   }
 

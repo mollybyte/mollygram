@@ -38,6 +38,8 @@ final class PeerInfo {
     required this.kind,
     required this.title,
     this.photo,
+    this.firstName = '',
+    this.lastName = '',
     this.userId = 0,
     this.status,
     this.bio,
@@ -62,6 +64,10 @@ final class PeerInfo {
 
   /// The big (640 px) profile or chat photo, if there is one.
   final td.File? photo;
+
+  /// A user's name in two parts, as a contact card carries it.
+  final String firstName;
+  final String lastName;
 
   /// The user of a private chat; 0 for groups and channels.
   final int userId;
@@ -177,6 +183,8 @@ final class PeerInfoController {
           kind: user?.type is td.UserTypeBot ? PeerKind.bot : PeerKind.user,
           title: chat.title,
           photo: user?.profilePhoto?.big ?? chat.photo?.big,
+          firstName: user?.firstName ?? '',
+          lastName: user?.lastName ?? '',
           userId: userId,
           status: _statuses[userId] ?? user?.status,
           bio: full?.bio,
