@@ -384,12 +384,15 @@ final class ConversationController {
   }
 
   /// Sends [text] with its formatting [entities], as a reply to [replyTo]
-  /// when it is set.
+  /// when it is set, quoting [quote] of its text at [quotePosition] when
+  /// that is given.
   Future<void> sendText(
     int chatId,
     String text, {
     int? replyTo,
     List<td.TextEntity> entities = const [],
+    String? quote,
+    int quotePosition = 0,
   }) async {
     if (text.trim().isEmpty) {
       throw ArgumentError.value(
@@ -405,6 +408,12 @@ final class ConversationController {
             ? null
             : td.InputMessageReplyToMessage(
                 messageId: replyTo,
+                quote: quote == null || quote.isEmpty
+                    ? null
+                    : td.InputTextQuote(
+                        text: td.FormattedText(text: quote, entities: const []),
+                        position: quotePosition,
+                      ),
                 checklistTaskId: 0,
                 pollOptionId: '',
               ),

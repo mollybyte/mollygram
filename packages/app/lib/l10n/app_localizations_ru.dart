@@ -439,6 +439,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get menuReply => 'Ответить';
 
   @override
+  String get menuQuote => 'Цитировать';
+
+  @override
   String get menuEdit => 'Изменить';
 
   @override
@@ -1753,6 +1756,142 @@ class AppLocalizationsRu extends AppLocalizations {
   String get copy => 'Копировать';
 
   @override
+  String get chatFolders => 'Папки с чатами';
+
+  @override
+  String get chatFoldersHint =>
+      'Распределите чаты по папкам и переключайтесь между ними в боковой панели.';
+
+  @override
+  String get createFolder => 'Создать папку';
+
+  @override
+  String get newFolder => 'Новая папка';
+
+  @override
+  String get editFolder => 'Изменить папку';
+
+  @override
+  String get folderName => 'Название папки';
+
+  @override
+  String get folderIcon => 'Значок папки';
+
+  @override
+  String get folderIncluded => 'Добавленные чаты';
+
+  @override
+  String get folderExcluded => 'Исключённые чаты';
+
+  @override
+  String get folderAddChats => 'Добавить чаты';
+
+  @override
+  String get folderExcludeChats => 'Исключить чаты';
+
+  @override
+  String get folderIncludedHint =>
+      'Выберите чаты или типы чатов, которые будут в этой папке.';
+
+  @override
+  String get folderExcludedHint =>
+      'Выберите чаты или типы чатов, которых никогда не будет в этой папке.';
+
+  @override
+  String get folderContacts => 'Контакты';
+
+  @override
+  String get folderNonContacts => 'Не контакты';
+
+  @override
+  String get folderGroups => 'Группы';
+
+  @override
+  String get folderChannels => 'Каналы';
+
+  @override
+  String get folderBots => 'Боты';
+
+  @override
+  String get folderMuted => 'Без уведомлений';
+
+  @override
+  String get folderRead => 'Прочитанные';
+
+  @override
+  String get folderArchived => 'Архивированные';
+
+  @override
+  String get folderChatTypes => 'Типы чатов';
+
+  @override
+  String get folderChats => 'Чаты';
+
+  @override
+  String get folderBot => 'бот';
+
+  @override
+  String get folderGroup => 'группа';
+
+  @override
+  String get folderChannel => 'канал';
+
+  @override
+  String get folderSavedMessages => 'Избранное';
+
+  @override
+  String get folderRemove => 'Убрать';
+
+  @override
+  String get folderAdd => 'Добавить';
+
+  @override
+  String get folderReorder => 'Перетащите, чтобы изменить порядок';
+
+  @override
+  String get folderReorderHint =>
+      'Потяните за маркер, чтобы изменить порядок папок.';
+
+  @override
+  String get recommendedFolders => 'Рекомендуемые папки';
+
+  @override
+  String get deleteFolder => 'Удалить папку';
+
+  @override
+  String get deleteFolderMessage => 'Чаты из неё не будут удалены.';
+
+  @override
+  String get deleteFolderLeave =>
+      'Чаты из неё не будут удалены. Можно также покинуть чаты, которыми с вами поделились через эту папку:';
+
+  @override
+  String get delete => 'Удалить';
+
+  @override
+  String get save => 'Сохранить';
+
+  @override
+  String deleteFolderTitle(String name) {
+    return 'Удалить «$name»?';
+  }
+
+  @override
+  String folderLimit(int count) {
+    return 'Максимум папок: $count.';
+  }
+
+  @override
+  String folderChatsLimit(int count) {
+    return 'Максимум чатов в папке: $count.';
+  }
+
+  @override
+  String folderChatsCounter(int count, int max) {
+    return '$count из $max';
+  }
+
+  @override
   String get previousMonth => 'Предыдущий месяц';
 
   @override
@@ -1790,4 +1929,7 @@ class AppLocalizationsRu extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get folderDeletedChat => 'Удалённый чат';
 }
