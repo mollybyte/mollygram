@@ -86,12 +86,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   child: Stack(
                     children: [
                       const Positioned.fill(child: Sidebar()),
-                      // In the island's title bar, right of the window
-                      // buttons.
+                      // In the island's title bar, between the window
+                      // buttons and the ghost.
                       const Positioned(
                         top: 0,
                         left: 76,
-                        right: 8,
+                        right: 48,
                         height: SidebarIsland.titleBarHeight,
                         child: ConnectionStatusCapsule(),
                       ),

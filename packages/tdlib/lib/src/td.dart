@@ -182,7 +182,13 @@ final class TdClient {
   /// response arrives completes with a [TdClientClosed].
   Future<R> send<R extends TdObject>(TdFunction<R> function) {
     if (_closed) return Future.error(const TdClientClosed());
-    if (filter?.call(function) case final answer?) {
+    final TdObject? answer;
+    try {
+      answer = filter?.call(function);
+    } catch (error, stack) {
+      return Future.error(error, stack);
+    }
+    if (answer != null) {
       return answer is R
           ? Future.value(answer)
           : Future.error(

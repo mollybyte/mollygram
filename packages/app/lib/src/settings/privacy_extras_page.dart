@@ -89,61 +89,8 @@ class _SwitchRow extends StatelessWidget {
     child: SettingsRow(
       title: title,
       subtitle: subtitle,
-      trailing: _Switch(value: value),
+      trailing: ExcludeSemantics(child: MgSwitch(value: value)),
       onTap: () => onChanged(!value),
     ),
   );
-}
-
-/// A macOS switch, 34×20, as on the notifications page.
-class _Switch extends StatelessWidget {
-  const _Switch({required this.value});
-
-  final bool value;
-
-  static const _duration = Duration(milliseconds: 220);
-  static const _curve = Cubic(0.23, 1, 0.32, 1);
-
-  @override
-  Widget build(BuildContext context) {
-    final c = MgColors.of(context);
-    final duration = MediaQuery.disableAnimationsOf(context)
-        ? Duration.zero
-        : _duration;
-    return AnimatedContainer(
-      duration: duration,
-      curve: _curve,
-      width: 34,
-      height: 20,
-      padding: const EdgeInsets.all(2),
-      decoration: BoxDecoration(
-        color: value
-            ? c.accent
-            : c.isDark
-            ? const Color(0xFF48484C)
-            : const Color(0xFFD9D9DE),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: AnimatedAlign(
-        duration: duration,
-        curve: _curve,
-        alignment: value ? Alignment.centerRight : Alignment.centerLeft,
-        child: Container(
-          width: 16,
-          height: 16,
-          decoration: const BoxDecoration(
-            color: Color(0xFFFFFFFF),
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Color(0x40000000),
-                blurRadius: 2,
-                offset: Offset(0, 1),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }

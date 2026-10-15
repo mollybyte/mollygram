@@ -89,7 +89,10 @@ final class TelegramSession {
     final files = FileController(client);
     final peers = PeerInfoController(client);
     final connection = ConnectionMonitor(client);
-    final notifications = NotificationController(client);
+    final notifications = NotificationController(
+      client,
+      deliberately: guard.deliberately,
+    );
     final session = TelegramSession._(
       tdlib: tdlib,
       authorization: authorization,
@@ -185,10 +188,11 @@ final class TelegramSession {
     await files.dispose();
     await peers.dispose();
     await connection.dispose();
-    await privacy.dispose();
     await notifications.dispose();
     await authorization.dispose();
     await _tdlib.close();
+    // After close: requests sent while the client closes stay filtered.
+    await privacy.dispose();
     await _errors.close();
   }
 }

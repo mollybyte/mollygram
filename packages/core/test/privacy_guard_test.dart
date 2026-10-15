@@ -164,37 +164,72 @@ void main() {
     expect(changed, [7]);
   });
 
-  test('goes offline once signed in, and when the switch turns on', () async {
-    final offline = PrivacyGuard(
-      tdlib.createClient(),
-      settings: const PrivacySettings(stayOffline: true),
-    );
-    addTearDown(offline.dispose);
-    json.push(2, {
+  group('online status', () {
+    void ready() => json.push(1, {
       '@type': 'updateAuthorizationState',
       'authorization_state': {'@type': 'authorizationStateReady'},
     });
-    json.push(1, {
-      '@type': 'updateAuthorizationState',
-      'authorization_state': {'@type': 'authorizationStateReady'},
-    });
-    await Future<void>.delayed(const Duration(milliseconds: 5));
-    expect(json.sent, hasLength(1));
-    expect(json.sent.single['@client'], 2);
-    expect(json.sent.single['name'], 'online');
-    expect(json.sent.single['value'], {
-      '@type': 'optionValueBoolean',
-      'value': false,
+    Future<void> settle() =>
+        Future<void>.delayed(const Duration(milliseconds: 5));
+    List<Object?> sentOnline() => [
+      for (final r in json.sent)
+        if (r['name'] == 'online') (r['value']! as Map)['value'],
+    ];
+
+    test('online once signed in and in the foreground', () async {
+      ready();
+      await settle();
+      expect(sentOnline(), [true]);
     });
 
-    guard.settings = const PrivacySettings(stayOffline: true);
-    await Future<void>.delayed(const Duration(milliseconds: 5));
-    expect(json.sent.last['@client'], 1);
-    expect(json.sent.last['name'], 'online');
-    expect(json.sent.last['value'], {
-      '@type': 'optionValueBoolean',
-      'value': false,
+    test('offline from the start with stay offline', () async {
+      guard.settings = const PrivacySettings(stayOffline: true);
+      ready();
+      await settle();
+      expect(sentOnline(), [false]);
     });
+
+    test('follows the switch and the foreground', () async {
+      ready();
+      await settle();
+      guard.settings = const PrivacySettings(stayOffline: true);
+      await settle();
+      guard.settings = const PrivacySettings();
+      await settle();
+      guard.foreground = false;
+      await settle();
+      // Unchanged: nothing is sent again.
+      guard.settings = const PrivacySettings(hideTyping: true);
+      guard.foreground = false;
+      await settle();
+      guard.foreground = true;
+      await settle();
+      expect(sentOnline(), [true, false, true, false, true]);
+    });
+
+    test('nothing before signing in', () async {
+      guard.settings = const PrivacySettings(stayOffline: true);
+      guard.foreground = false;
+      await settle();
+      expect(sentOnline(), isEmpty);
+    });
+  });
+
+  test('what the user asks for on purpose passes', () async {
+    guard.settings = const PrivacySettings.ghost();
+    json.sent.clear();
+    for (final request in _all) {
+      await guard.deliberately(() => client.send(request));
+    }
+    expect([for (final r in json.sent) r['@type']], typesOf(_all));
+  });
+
+  test('the filter stays after dispose, while the client closes', () async {
+    guard.settings = const PrivacySettings.ghost();
+    await guard.dispose();
+    json.sent.clear();
+    await client.send(_typing);
+    expect(json.sent, isEmpty);
   });
 
   group('PrivacySettings', () {
@@ -222,8 +257,21 @@ void main() {
     test('ghost mode is every switch at once', () {
       const ghost = PrivacySettings.ghost();
       expect(ghost.isGhost, isTrue);
+      expect(ghost.anyOn, isTrue);
+      expect(const PrivacySettings().anyOn, isFalse);
       expect(ghost.copyWith(hideTyping: false).isGhost, isFalse);
       expect(ghost.withGhost(false), const PrivacySettings());
+    });
+
+    test('ghost mode off brings back the switches from before', () {
+      const mix = PrivacySettings(hideTyping: true, stayOffline: true);
+      final ghost = mix.withGhost(true);
+      expect(ghost.isGhost, isTrue);
+
+      final back = PrivacySettings.fromJson(
+        jsonDecode(jsonEncode(ghost.toJson())),
+      ).withGhost(false);
+      expect(back, mix);
     });
   });
 }

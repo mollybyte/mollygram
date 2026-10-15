@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -29,10 +30,18 @@ final class FilePrivacySettingsStorage implements PrivacySettingsStorage {
 
   @override
   Future<Object?> read() async {
+    final file = await _file();
+    if (!await file.exists()) return null;
     try {
-      return jsonDecode(await (await _file()).readAsString());
-    } on Object {
-      // Missing or broken: every switch off.
+      return jsonDecode(await file.readAsString());
+    } on Object catch (error, stack) {
+      // Broken: every switch off.
+      developer.log(
+        'Could not read ${file.path}',
+        name: 'mollygram.privacy',
+        error: error,
+        stackTrace: stack,
+      );
       return null;
     }
   }
@@ -89,7 +98,13 @@ class PrivacySettingsNotifier extends Notifier<PrivacySettings> {
     Object? saved;
     try {
       saved = await ref.read(privacySettingsStorageProvider).read();
-    } on Object {
+    } on Object catch (error, stack) {
+      developer.log(
+        'Could not read the privacy extras',
+        name: 'mollygram.privacy',
+        error: error,
+        stackTrace: stack,
+      );
       saved = null;
     }
     // A switch flipped before the file was read wins.
@@ -106,7 +121,14 @@ class PrivacySettingsNotifier extends Notifier<PrivacySettings> {
     final json = next.toJson();
     _saving = _saving
         .then((_) => storage.write(json))
-        .catchError((Object _) {});
+        .catchError(
+          (Object error, StackTrace stack) => developer.log(
+            'Could not save the privacy extras',
+            name: 'mollygram.privacy',
+            error: error,
+            stackTrace: stack,
+          ),
+        );
   }
 
   void setGhost(bool on) => update((s) => s.withGhost(on));

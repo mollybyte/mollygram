@@ -11,6 +11,7 @@ final class PrivacySettings {
     this.stayOffline = false,
     this.hideContentOpened = false,
     this.silentReadChats = const {},
+    this.beforeGhost,
   });
 
   /// All switches on.
@@ -38,16 +39,42 @@ final class PrivacySettings {
   /// says.
   final Set<int> silentReadChats;
 
+  /// The switches as they were before ghost mode turned them all on, as a
+  /// mask of [_switchBits]; ghost mode off puts them back.
+  final int? beforeGhost;
+
+  static const _readBit = 1, _typingBit = 2, _offlineBit = 4, _openedBit = 8;
+
+  int get _switchBits =>
+      (hideReadReceipts ? _readBit : 0) |
+      (hideTyping ? _typingBit : 0) |
+      (stayOffline ? _offlineBit : 0) |
+      (hideContentOpened ? _openedBit : 0);
+
   bool get isGhost =>
       hideReadReceipts && hideTyping && stayOffline && hideContentOpened;
 
-  /// Ghost mode on turns every switch on; off turns every switch off.
-  PrivacySettings withGhost(bool on) => PrivacySettings(
-    hideReadReceipts: on,
-    hideTyping: on,
-    stayOffline: on,
-    hideContentOpened: on,
+  /// Whether any switch is on.
+  bool get anyOn => _switchBits != 0;
+
+  /// Ghost mode on turns every switch on and remembers the ones that were
+  /// on; off brings that mix back, or turns every switch off.
+  PrivacySettings withGhost(bool on) {
+    if (on) {
+      if (isGhost) return this;
+      return _withBits(15, beforeGhost: _switchBits);
+    }
+    final restore = beforeGhost ?? 0;
+    return _withBits(restore == 15 ? 0 : restore);
+  }
+
+  PrivacySettings _withBits(int bits, {int? beforeGhost}) => PrivacySettings(
+    hideReadReceipts: bits & _readBit != 0,
+    hideTyping: bits & _typingBit != 0,
+    stayOffline: bits & _offlineBit != 0,
+    hideContentOpened: bits & _openedBit != 0,
     silentReadChats: silentReadChats,
+    beforeGhost: beforeGhost,
   );
 
   PrivacySettings copyWith({
@@ -62,6 +89,7 @@ final class PrivacySettings {
     stayOffline: stayOffline ?? this.stayOffline,
     hideContentOpened: hideContentOpened ?? this.hideContentOpened,
     silentReadChats: silentReadChats ?? this.silentReadChats,
+    beforeGhost: beforeGhost,
   );
 
   /// The same settings with [chatId] read silently or not.
@@ -77,6 +105,7 @@ final class PrivacySettings {
     'stay_offline': stayOffline,
     'hide_content_opened': hideContentOpened,
     'silent_read_chats': [...silentReadChats],
+    'before_ghost': ?beforeGhost,
   };
 
   /// Reads what [toJson] wrote; anything unexpected reads as off.
@@ -84,6 +113,7 @@ final class PrivacySettings {
     if (json is! Map<String, Object?>) return const PrivacySettings();
     bool flag(String key) => json[key] == true;
     final chats = json['silent_read_chats'];
+    final before = json['before_ghost'];
     return PrivacySettings(
       hideReadReceipts: flag('hide_read_receipts'),
       hideTyping: flag('hide_typing'),
@@ -94,6 +124,7 @@ final class PrivacySettings {
           for (final id in chats)
             if (id is int) id,
       },
+      beforeGhost: before is int && before >= 0 && before <= 15 ? before : null,
     );
   }
 
@@ -104,6 +135,7 @@ final class PrivacySettings {
       other.hideTyping == hideTyping &&
       other.stayOffline == stayOffline &&
       other.hideContentOpened == hideContentOpened &&
+      other.beforeGhost == beforeGhost &&
       other.silentReadChats.length == silentReadChats.length &&
       other.silentReadChats.containsAll(silentReadChats);
 
@@ -113,6 +145,7 @@ final class PrivacySettings {
     hideTyping,
     stayOffline,
     hideContentOpened,
+    beforeGhost,
     Object.hashAllUnordered(silentReadChats),
   );
 }
@@ -128,12 +161,20 @@ final class PrivacySettings {
 /// | [PrivacySettings.stayOffline] | `setOption online=true` |
 /// | [PrivacySettings.hideContentOpened] | `openMessageContent` |
 ///
-/// Everything else passes untouched. Messages kept from being marked read
-/// stay unread in TDLib; [readUpTo] remembers what the user has seen, for
-/// the UI.
+/// Everything else passes untouched, and so does what the user asks for
+/// on purpose through [deliberately], such as "Mark as read" on a
+/// notification. Messages kept from being marked read stay unread in
+/// TDLib; [readUpTo] remembers what the user has seen, for the chat and
+/// sidebar to use.
 ///
-/// Telegram's servers still show the account online for a moment when it
-/// sends a message; no client can prevent that.
+/// The guard also owns the `online` option: online while the app is in
+/// the foreground ([foreground]), offline in the background, and always
+/// offline with [PrivacySettings.stayOffline].
+///
+/// What no client filter can hide: Telegram shows the account online for a
+/// moment when it sends a message, sending a message marks the chat read on
+/// the server, TDLib sends its own upload chat actions while media goes
+/// out, and reactions show that a message was seen.
 final class PrivacyGuard {
   PrivacyGuard(this._client, {this._settings = const PrivacySettings()}) {
     _client.filter = _filter;
@@ -143,16 +184,42 @@ final class PrivacyGuard {
   final td.TdClient _client;
   late final StreamSubscription<td.TdObject> _subscription;
   final _seen = <int, int>{};
-  final _seenChanges = StreamController<int>.broadcast(sync: true);
+  // Not sync: a listener must not run inside the filter, where a request
+  // of its own would re-enter send().
+  final _seenChanges = StreamController<int>.broadcast();
   PrivacySettings _settings;
   var _ready = false;
+  var _foreground = true;
+  var _deliberate = 0;
+
+  /// The online status last sent, so an unchanged one is not sent again.
+  bool? _sentOnline;
 
   PrivacySettings get settings => _settings;
 
   set settings(PrivacySettings value) {
-    final goOffline = value.stayOffline && !_settings.stayOffline;
     _settings = value;
-    if (goOffline && _ready) _sendOffline();
+    _syncOnline();
+  }
+
+  /// Whether the app is in the foreground. The account is online then,
+  /// unless [PrivacySettings.stayOffline] is on.
+  bool get foreground => _foreground;
+
+  set foreground(bool value) {
+    _foreground = value;
+    _syncOnline();
+  }
+
+  /// Sends what [send] sends past the filter: for what the user asks for
+  /// on purpose, such as "Mark as read" on a notification.
+  Future<R> deliberately<R>(Future<R> Function() send) {
+    _deliberate++;
+    try {
+      return send();
+    } finally {
+      _deliberate--;
+    }
   }
 
   /// The newest message the user saw in [chatId] while its read receipts
@@ -163,6 +230,7 @@ final class PrivacyGuard {
   Stream<int> get seenChanges => _seenChanges.stream;
 
   td.TdObject? _filter(td.TdFunction<td.TdObject> request) {
+    if (_deliberate > 0) return null;
     final s = _settings;
     switch (request) {
       case td.ViewMessages(:final chatId, :final messageIds)
@@ -208,23 +276,31 @@ final class PrivacyGuard {
       authorizationState: td.AuthorizationStateReady(),
     )) {
       _ready = true;
-      if (_settings.stayOffline) _sendOffline();
+      _syncOnline();
     }
   }
 
-  void _sendOffline() => unawaited(
-    _client
-        .send(
-          const td.SetOption(
+  /// Tells TDLib whether the account is online, when that changed.
+  void _syncOnline() {
+    if (!_ready) return;
+    final online = _foreground && !_settings.stayOffline;
+    if (online == _sentOnline) return;
+    _sentOnline = online;
+    unawaited(
+      deliberately(
+        () => _client.send(
+          td.SetOption(
             name: 'online',
-            value: td.OptionValueBoolean(value: false),
+            value: td.OptionValueBoolean(value: online),
           ),
-        )
-        .then<void>((_) {}, onError: (Object _) {}),
-  );
+        ),
+      ).then<void>((_) {}, onError: (Object _) {}),
+    );
+  }
 
+  /// Stops following the session. The filter stays on the client, so
+  /// nothing slips through while it closes.
   Future<void> dispose() async {
-    _client.filter = null;
     await _subscription.cancel();
     await _seenChanges.close();
   }

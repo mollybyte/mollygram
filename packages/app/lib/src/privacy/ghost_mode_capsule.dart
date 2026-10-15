@@ -6,26 +6,36 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 import '../../l10n/app_localizations.dart';
 import 'privacy_settings.dart';
 
-/// A small ghost in the sidebar's title bar while ghost mode is on, so it
-/// is never on by surprise. Clicking it opens the privacy extras.
+/// A small ghost in the sidebar's title bar while any privacy extra is
+/// on, dimmed unless it is full ghost mode, so none is on by surprise.
+/// Clicking it opens the privacy extras.
 class GhostModeCapsule extends ConsumerWidget {
   const GhostModeCapsule({super.key, this.onTap});
 
   final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) => GhostModeView(
-    on: ref.watch(privacySettingsProvider.select((s) => s.isGhost)),
-    onTap: onTap,
-  );
+  Widget build(BuildContext context, WidgetRef ref) {
+    final (anyOn, ghost) = ref.watch(
+      privacySettingsProvider.select((s) => (s.anyOn, s.isGhost)),
+    );
+    return GhostModeView(on: anyOn, partial: !ghost, onTap: onTap);
+  }
 }
 
 /// The ghost capsule itself: fades and scales in when [on], and takes no
-/// clicks and no space in the accessibility tree while off.
+/// clicks and no space in the accessibility tree while off. [partial]
+/// dims the ghost: some extras are on, not all of them.
 class GhostModeView extends StatelessWidget {
-  const GhostModeView({super.key, required this.on, this.onTap});
+  const GhostModeView({
+    super.key,
+    required this.on,
+    this.partial = false,
+    this.onTap,
+  });
 
   final bool on;
+  final bool partial;
   final VoidCallback? onTap;
 
   static const _duration = Duration(milliseconds: 220);
@@ -37,6 +47,7 @@ class GhostModeView extends StatelessWidget {
     final duration = MediaQuery.disableAnimationsOf(context)
         ? Duration.zero
         : _duration;
+    final label = partial ? l10n.privacyExtrasAreOn : l10n.ghostModeIsOn;
     return Center(
       child: IgnorePointer(
         ignoring: !on,
@@ -51,11 +62,11 @@ class GhostModeView extends StatelessWidget {
               duration: duration,
               curve: Curves.easeOutCubic,
               child: Tooltip(
-                message: l10n.ghostModeIsOn,
+                message: label,
                 excludeFromSemantics: true,
                 child: Semantics(
                   button: onTap != null,
-                  label: l10n.ghostModeIsOn,
+                  label: label,
                   child: MouseRegion(
                     cursor: onTap == null
                         ? MouseCursor.defer
@@ -72,7 +83,15 @@ class GhostModeView extends StatelessWidget {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            MgIcon(MgIcons.ghost, size: 13, color: c.fg2),
+                            AnimatedOpacity(
+                              opacity: partial ? 0.5 : 1,
+                              duration: duration,
+                              child: MgIcon(
+                                MgIcons.ghost,
+                                size: 13,
+                                color: c.fg2,
+                              ),
+                            ),
                           ],
                         ),
                       ),

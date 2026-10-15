@@ -1232,7 +1232,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get privacyExtrasOnlineNote =>
-      'При отправке сообщения вы всё равно ненадолго появитесь в сети: так Telegram работает в любом приложении.';
+      'Кое-что всё равно видно: отправка сообщения ненадолго показывает вас в сети и отмечает чат прочитанным, при отправке файлов видна загрузка, а реакция показывает, что вы видели сообщение.';
 
   @override
   String get ghostMode => 'Режим призрака';
@@ -1242,6 +1242,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get ghostModeIsOn => 'Режим призрака включён';
+
+  @override
+  String get privacyExtrasAreOn => 'Включена часть дополнительной приватности';
 
   @override
   String get hideReadReceipts => 'Не отправлять отметки о прочтении';

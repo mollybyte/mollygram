@@ -1222,7 +1222,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get privacyExtrasOnlineNote =>
-      'Sending a message still shows you online for a moment; Telegram does that for every app.';
+      'Some things still show: sending a message puts you online for a moment and marks the chat read, files you send show as uploading, and a reaction shows you saw the message.';
 
   @override
   String get ghostMode => 'Ghost mode';
@@ -1232,6 +1232,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ghostModeIsOn => 'Ghost mode is on';
+
+  @override
+  String get privacyExtrasAreOn => 'Some privacy extras are on';
 
   @override
   String get hideReadReceipts => 'Don\'t send read receipts';

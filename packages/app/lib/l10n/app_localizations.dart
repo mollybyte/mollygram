@@ -2081,7 +2081,7 @@ abstract class AppLocalizations {
   /// No description provided for @privacyExtrasOnlineNote.
   ///
   /// In en, this message translates to:
-  /// **'Sending a message still shows you online for a moment; Telegram does that for every app.'**
+  /// **'Some things still show: sending a message puts you online for a moment and marks the chat read, files you send show as uploading, and a reaction shows you saw the message.'**
   String get privacyExtrasOnlineNote;
 
   /// No description provided for @ghostMode.
@@ -2101,6 +2101,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Ghost mode is on'**
   String get ghostModeIsOn;
+
+  /// No description provided for @privacyExtrasAreOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Some privacy extras are on'**
+  String get privacyExtrasAreOn;
 
   /// No description provided for @hideReadReceipts.
   ///

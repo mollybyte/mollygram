@@ -178,4 +178,17 @@ void main() {
       throwsA(isA<TdDecodeException>()),
     );
   });
+
+  test('a filter that throws fails the request, not the caller', () {
+    final client = td.createClient();
+    client.filter = (request) =>
+        request is TestCallString ? throw StateError('filter') : null;
+
+    late Future<TestString> sent;
+    expect(
+      () => sent = client.send(const TestCallString(x: 'a')),
+      returnsNormally,
+    );
+    expect(sent, throwsA(isA<StateError>()));
+  });
 }

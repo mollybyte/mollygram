@@ -17,6 +17,7 @@ export 'src/chat/message_parts.dart';
 export 'src/chat/pinned_bar.dart';
 export 'src/chat/timeline_parts.dart';
 export 'src/forms/buttons.dart';
+export 'src/forms/switch.dart';
 export 'src/forms/underline_field.dart';
 export 'src/glass/glass.dart';
 export 'src/icon_button.dart';

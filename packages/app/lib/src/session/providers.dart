@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' show TdClientClosed;
@@ -44,9 +45,20 @@ final telegramSessionProvider = FutureProvider<TelegramSession>((ref) async {
       await _forgetAccount(ref);
     }
   }
+  // A switch flipped while the session was starting.
+  session.privacy.settings = ref.read(privacySettingsProvider);
+  // Online while the window is active, as the official client is.
+  final privacy = session.privacy;
+  final lifecycle = AppLifecycleListener(
+    onStateChange: (state) =>
+        privacy.foreground = state == AppLifecycleState.resumed,
+  );
+  final state = WidgetsBinding.instance.lifecycleState;
+  privacy.foreground = state == null || state == AppLifecycleState.resumed;
   var disposed = false;
   ref.onDispose(() {
     disposed = true;
+    lifecycle.dispose();
     unawaited(session.dispose());
   });
   // Terminated from another device: TDLib has logged out and closed the
