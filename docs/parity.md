@@ -66,7 +66,7 @@ M8 calls and macOS release, M9 after release.
 | Header status: online, last seen, members, typing | done (#40) | | S | M1 |
 | Join and mute buttons for channels and groups you are not in | done | Join in place of the composer; Mute and Unmute in channels you only read | | |
 | Open `t.me` and `tg://` links, usernames, hashtags, bot commands | done | `links/`: links, mentions and mentions by name, invites, `tg://user?id=`, `t.me/s/` previews, message links jump to the message; hashtags open the ⌘K message search, bot commands are sent to the chat | | |
-| Link previews in messages | partial | Check `MessageText.linkPreview` rendering | M | M1 |
+| Link previews in messages | done | Site name, title, description and picture, large or as a thumbnail, opening the link; the draft's preview above the composer can go above the text or be dropped | M | M1 |
 | Text selection across messages | done | Mouse selection over the timeline, copy with the shortcut | M | M2 |
 | Multi-select mode: forward, delete, copy several | done | Select from the menu, click rows, bar in place of the composer; no shift-click range yet | M | M2 |
 | Forum topics: topic list, topic chat, create and close topics | missing | Service messages render only | L | M2 |
@@ -124,7 +124,7 @@ M8 calls and macOS release, M9 after release.
 | Location and venue sending | missing | | M | M2 |
 | Contact sending | done | Contact… under the attach button opens a searchable list of contacts; the message shows the monogram, name and number and opens the person | S | M2 |
 | Send preview: caption, send as files, albums | done | #31 | | |
-| Send preview: spoiler, self-destruct timer, compression choice | missing | `hasSpoiler`, `selfDestructType`; uncompressed default planned | S | M2 |
+| Send preview: spoiler, self-destruct timer, compression choice | partial | Hide with a spoiler and Send as files in the preview; self-destruct timer and a quality choice pending | S | M2 |
 | Media editor: crop, rotate, flip, aspect presets | done | `packages/media_editor` | | |
 | Media editor: drawing (pen, marker, arrow, eraser, colours, thickness) | done | `packages/media_editor` | | |
 | Media editor: text, stickers and emoji placed on the image | done | `packages/media_editor`; stickers from the user’s packs through the app’s picker (animated ones as stills) | | |

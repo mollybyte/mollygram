@@ -15,7 +15,8 @@ import 'sticker_picker.dart';
 typedef AttachmentChoice = ({List<OutgoingFile> files, String caption});
 
 /// Shows the files about to be sent, with a caption field and, for photos
-/// and videos, the choice to send them untouched as files. [caption]
+/// and videos, the choice to send them untouched as files or hidden
+/// behind a spoiler. [caption]
 /// starts with the composer's draft. Completes with null when cancelled.
 Future<AttachmentChoice?> showAttachmentPreview(
   BuildContext context, {
@@ -55,6 +56,7 @@ class _PreviewState extends State<_Preview> {
   late final _caption = TextEditingController(text: widget.caption);
   final _focus = FocusNode();
   var _asFiles = false;
+  var _spoiler = false;
 
   /// Photos and videos the user edited, by their original path.
   final _edited = <String, MediaEditResult>{};
@@ -76,7 +78,9 @@ class _PreviewState extends State<_Preview> {
 
   List<OutgoingFile> get _files => [
     for (final file in widget.files)
-      _asFiles && file.isMedia ? file.asDocument() : _withEdit(file),
+      _asFiles && file.isMedia
+          ? file.asDocument()
+          : _withEdit(file).copyWith(spoiler: _spoiler && file.isMedia),
   ];
 
   OutgoingFile _withEdit(OutgoingFile file) {
@@ -198,28 +202,20 @@ class _PreviewState extends State<_Preview> {
             ),
             if (anyMedia) ...[
               const SizedBox(height: 10),
-              MergeSemantics(
-                child: Row(
-                  children: [
-                    SizedBox.square(
-                      dimension: 18,
-                      child: Checkbox(
-                        value: _asFiles,
-                        activeColor: c.accent,
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        visualDensity: VisualDensity.compact,
-                        onChanged: (value) =>
-                            setState(() => _asFiles = value ?? false),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: () => setState(() => _asFiles = !_asFiles),
-                      child: Text(l10n.sendAsFiles, style: mgTextStyle(c)),
-                    ),
-                  ],
-                ),
+              _CheckRow(
+                label: l10n.sendAsFiles,
+                value: _asFiles,
+                onChanged: (value) => setState(() => _asFiles = value),
               ),
+              // A file can't hide behind a spoiler; only media can.
+              if (!_asFiles) ...[
+                const SizedBox(height: 6),
+                _CheckRow(
+                  label: l10n.hideWithSpoiler,
+                  value: _spoiler,
+                  onChanged: (value) => setState(() => _spoiler = value),
+                ),
+              ],
             ],
             const SizedBox(height: 12),
             Container(
@@ -265,6 +261,45 @@ class _PreviewState extends State<_Preview> {
 }
 
 /// A photo with an edit button that appears on hover.
+/// A small checkbox with its label; the label toggles it too.
+class _CheckRow extends StatelessWidget {
+  const _CheckRow({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String label;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    return MergeSemantics(
+      child: Row(
+        children: [
+          SizedBox.square(
+            dimension: 18,
+            child: Checkbox(
+              value: value,
+              activeColor: c.accent,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
+              onChanged: (value) => onChanged(value ?? false),
+            ),
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: () => onChanged(!value),
+            child: Text(label, style: mgTextStyle(c)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _Thumbnail extends StatefulWidget {
   const _Thumbnail({
     super.key,

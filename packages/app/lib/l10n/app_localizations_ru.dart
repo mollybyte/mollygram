@@ -687,6 +687,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get sendAsFiles => 'Отправить как файлы';
 
   @override
+  String get hideWithSpoiler => 'Скрыть спойлером';
+
+  @override
   String get captionHint => 'Добавить подпись';
 
   @override

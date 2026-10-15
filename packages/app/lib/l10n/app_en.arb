@@ -235,6 +235,7 @@
     "placeholders": { "count": { "type": "int" } }
   },
   "sendAsFiles": "Send as files",
+  "hideWithSpoiler": "Hide with a spoiler",
   "captionHint": "Add a caption",
   "dropFiles": "Drop files here to send them",
   "attachFailed": "Couldn't send the files",

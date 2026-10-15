@@ -81,6 +81,23 @@ void main() {
     expect(choice!.caption, 'As is');
   });
 
+  testWidgets('hides photos behind a spoiler when asked', (tester) async {
+    await open(tester, ['sea.jpg', 'notes.pdf']);
+    await tester.tap(find.text('Hide with a spoiler'));
+    await tester.pump();
+    await tester.tap(find.text('Send'));
+    await tester.pump();
+
+    expect([for (final file in choice!.files) file.spoiler], [true, false]);
+  });
+
+  testWidgets('files offer no spoiler', (tester) async {
+    await open(tester, ['sea.jpg']);
+    await tester.tap(find.text('Send as files'));
+    await tester.pump();
+    expect(find.text('Hide with a spoiler'), findsNothing);
+  });
+
   testWidgets('cancel sends nothing', (tester) async {
     await open(tester, ['notes.pdf']);
     await tester.tap(find.text('Cancel'));
