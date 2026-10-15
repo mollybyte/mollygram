@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mollygram/l10n/app_localizations.dart';
 import 'package:mollygram/src/links/join_sheet.dart';
@@ -8,7 +9,7 @@ import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 void main() {
-  int? opened;
+  JoinSheetResult? opened;
   var closed = false;
   late int joins;
 
@@ -21,8 +22,9 @@ void main() {
   Future<void> open(
     WidgetTester tester,
     ChatJoinPreview preview,
-    JoinResult result,
-  ) async {
+    JoinResult result, {
+    Future<void>? until,
+  }) async {
     await tester.pumpWidget(
       MaterialApp(
         theme: buildMgTheme(MgColors.light),
@@ -36,6 +38,7 @@ void main() {
                 preview: preview,
                 join: () async {
                   joins++;
+                  await until;
                   return result;
                 },
               );
@@ -72,7 +75,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(joins, 1);
     expect(closed, isTrue);
-    expect(opened, 8);
+    expect(opened, (chatId: 8, joined: true));
   });
 
   testWidgets('opens a public chat without joining', (tester) async {
@@ -84,7 +87,7 @@ void main() {
     await tester.tap(find.text('View group'));
     await tester.pumpAndSettle();
     expect(joins, 0);
-    expect(opened, 5);
+    expect(opened, (chatId: 5, joined: false));
   });
 
   testWidgets('a private invite can only be joined', (tester) async {
@@ -134,6 +137,76 @@ void main() {
     await tester.pumpAndSettle();
     expect(closed, isTrue);
     expect(opened, isNull);
+  });
+
+  testWidgets('stays open while the join is on its way', (tester) async {
+    final answer = Completer<void>();
+    await open(
+      tester,
+      const ChatJoinPreview(title: 'Talk', isChannel: false, chatId: 5),
+      const ChatJoined(5),
+      until: answer.future,
+    );
+    await tester.tap(find.text('Join group'));
+    await tester.pump();
+    await tester.tapAt(const Offset(5, 5));
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(closed, isFalse);
+    expect(find.text('Talk'), findsOneWidget);
+
+    answer.complete();
+    await tester.pumpAndSettle();
+    expect(opened, (chatId: 5, joined: true));
+  });
+
+  group('join bar', () {
+    Future<void> bar(WidgetTester tester, JoinResult result) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildMgTheme(MgColors.light),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Material(
+            child: Center(
+              child: SizedBox(
+                width: 400,
+                child: JoinBar(
+                  preview: const ChatJoinPreview(
+                    title: 'News',
+                    isChannel: true,
+                    chatId: 8,
+                  ),
+                  join: () async {
+                    joins++;
+                    return result;
+                  },
+                  onDone: () => closed = true,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    testWidgets('joins and goes away', (tester) async {
+      await bar(tester, const ChatJoined(8));
+      await tester.tap(find.text('Join channel'));
+      await tester.pump();
+      expect(joins, 1);
+      expect(closed, isTrue);
+    });
+
+    testWidgets('says when joining failed and can be closed', (tester) async {
+      await bar(tester, const JoinFailed('CHANNELS_TOO_MUCH'));
+      await tester.tap(find.text('Join channel'));
+      await tester.pumpAndSettle();
+      expect(find.text("Couldn't join. Try again later."), findsOneWidget);
+      expect(closed, isFalse);
+      await tester.tap(find.byTooltip('Close'));
+      expect(closed, isTrue);
+    });
   });
 
   testWidgets('a notice closes with Done', (tester) async {

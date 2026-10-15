@@ -944,4 +944,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get done => 'Готово';
+
+  @override
+  String get linkForbidden => 'Вы не можете просматривать этот чат.';
 }

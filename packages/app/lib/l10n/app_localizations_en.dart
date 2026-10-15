@@ -936,4 +936,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get done => 'Done';
+
+  @override
+  String get linkForbidden => 'You can\'t view this chat.';
 }

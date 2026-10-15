@@ -71,6 +71,42 @@ void main() {
     expect(preview.canPreview, isTrue);
   });
 
+  test(
+    'previews a group the user is restricted in but not a member of',
+    () async {
+      json.linkType = {
+        '@type': 'internalLinkTypePublicChat',
+        'chat_username': 'talk',
+      };
+      json.chat = _chat(9, 'Talk', supergroup: 90);
+      json.memberStatusJson = {
+        '@type': 'chatMemberStatusRestricted',
+        'is_member': false,
+        'permissions': {'@type': 'chatPermissions'},
+      };
+      expect(await links.resolve('t.me/talk'), isA<JoinLinkTarget>());
+      json.memberStatusJson = {
+        '@type': 'chatMemberStatusRestricted',
+        'is_member': true,
+        'permissions': {'@type': 'chatPermissions'},
+      };
+      expect(
+        (await links.resolve('t.me/talk'))! as ChatLinkTarget,
+        isA<ChatLinkTarget>(),
+      );
+    },
+  );
+
+  test('refuses a chat the user was banned from', () async {
+    json.linkType = {
+      '@type': 'internalLinkTypePublicChat',
+      'chat_username': 'club',
+    };
+    json.chat = _chat(9, 'Club', supergroup: 90);
+    json.memberStatus = 'chatMemberStatusBanned';
+    expect(await links.resolve('t.me/club'), isA<ForbiddenLinkTarget>());
+  });
+
   test('opens a private chat by username', () async {
     json.linkType = {
       '@type': 'internalLinkTypePublicChat',
@@ -248,6 +284,7 @@ final class _FakeTdJson implements td.TdJson {
   Map<String, Object?>? linkType;
   Map<String, Object?>? chat;
   String memberStatus = 'chatMemberStatusLeft';
+  Map<String, Object?>? memberStatusJson;
   int inviteChatId = 0;
   bool inviteExpired = false;
   int messageChatId = 0;
@@ -274,7 +311,7 @@ final class _FakeTdJson implements td.TdJson {
       'getSupergroup' => {
         '@type': 'supergroup',
         'id': 1,
-        'status': {'@type': memberStatus},
+        'status': memberStatusJson ?? {'@type': memberStatus},
         'member_count': 1200,
       },
       'getSupergroupFullInfo' => {

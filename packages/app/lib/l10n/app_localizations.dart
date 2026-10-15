@@ -1561,6 +1561,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Done'**
   String get done;
+
+  /// No description provided for @linkForbidden.
+  ///
+  /// In en, this message translates to:
+  /// **'You can\'t view this chat.'**
+  String get linkForbidden;
 }
 
 class _AppLocalizationsDelegate

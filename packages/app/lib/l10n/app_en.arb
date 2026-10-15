@@ -399,5 +399,6 @@
   "linkJoinFailed": "Couldn't join. Try again later.",
   "linkMissing": "This link is invalid or has expired.",
   "linkUnsupported": "Mollygram can't open this kind of link yet.",
-  "done": "Done"
+  "done": "Done",
+  "linkForbidden": "You can't view this chat."
 }

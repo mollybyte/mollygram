@@ -144,6 +144,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
     final covered = _page != null;
     return LinkHost(
+      contentLeft: SidebarIsland.width + 16,
+      covered: covered,
       child: NotificationsHost(
         child: Stack(
           children: [

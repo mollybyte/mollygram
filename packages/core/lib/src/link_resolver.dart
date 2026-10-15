@@ -42,6 +42,11 @@ final class MissingLinkTarget extends LinkTarget {
   const MissingLinkTarget();
 }
 
+/// A chat the user was banned from: it can be neither opened nor joined.
+final class ForbiddenLinkTarget extends LinkTarget {
+  const ForbiddenLinkTarget();
+}
+
 /// A Telegram link the app cannot handle yet, such as a sticker set or a
 /// theme. [webFallback] is the https form, to open in the browser, if any.
 final class UnsupportedLinkTarget extends LinkTarget {
@@ -170,17 +175,22 @@ final class LinkResolver {
       final group = await _client.send(
         td.GetSupergroup(supergroupId: supergroupId),
       );
-      if (group.status is td.ChatMemberStatusLeft) {
-        return JoinLinkTarget(
-          ChatJoinPreview(
-            chatId: chat.id,
-            title: chat.title,
-            isChannel: isChannel,
-            username: username,
-            memberCount: group.memberCount,
-            description: await _description(supergroupId),
-          ),
-        );
+      switch (group.status) {
+        case td.ChatMemberStatusBanned():
+          return const ForbiddenLinkTarget();
+        case td.ChatMemberStatusLeft() ||
+            td.ChatMemberStatusRestricted(isMember: false):
+          return JoinLinkTarget(
+            ChatJoinPreview(
+              chatId: chat.id,
+              title: chat.title,
+              isChannel: isChannel,
+              username: username,
+              memberCount: group.memberCount,
+              description: await _description(supergroupId),
+            ),
+          );
+        default:
       }
     }
     return ChatLinkTarget(chat.id);

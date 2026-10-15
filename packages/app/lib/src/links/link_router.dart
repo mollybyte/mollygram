@@ -28,6 +28,9 @@ enum LinkNotice {
 
   /// A `tg://` link to something the app cannot show yet.
   unsupported,
+
+  /// A chat the user was banned from.
+  forbidden,
 }
 
 /// Opens what a link points at: a chat in the workspace, the join sheet
@@ -98,6 +101,8 @@ class LinkRouter {
         }
       case MissingLinkTarget():
         presenter?.showNotice(LinkNotice.missing);
+      case ForbiddenLinkTarget():
+        presenter?.showNotice(LinkNotice.forbidden);
       case UnsupportedLinkTarget(:final webFallback):
         if (webFallback != null) {
           await _launch(webFallback);

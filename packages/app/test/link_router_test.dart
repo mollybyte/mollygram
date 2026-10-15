@@ -101,15 +101,18 @@ void main() {
 
   test('explains missing and unsupported links', () async {
     targets['t.me/nobody'] = const MissingLinkTarget();
+    targets['t.me/club'] = const ForbiddenLinkTarget();
     targets['tg://addstickers'] = const UnsupportedLinkTarget();
     targets['t.me/addstickers/x'] = UnsupportedLinkTarget(
       webFallback: Uri.parse('https://t.me/addstickers/x'),
     );
     await router.open('t.me/nobody');
+    await router.open('t.me/club');
     await router.open('tg://addstickers');
     await router.open('t.me/addstickers/x');
     expect(log, [
       'notice missing',
+      'notice forbidden',
       'notice unsupported',
       'launch https://t.me/addstickers/x',
     ]);
