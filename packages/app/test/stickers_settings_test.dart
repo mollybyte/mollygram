@@ -134,6 +134,36 @@ void main() {
     expect(find.text('Cats'), findsNothing);
   });
 
+  testWidgets('asks before removing a set', (tester) async {
+    await pump(tester, const StickersPage());
+    Future<void> openRemove() async {
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.text('Cats')),
+        kind: PointerDeviceKind.mouse,
+        buttons: kSecondaryMouseButton,
+      );
+      await gesture.up();
+      await settle(tester);
+      await tester.tap(find.text('Remove'));
+      await settle(tester);
+      expect(find.text('Remove this sticker set?'), findsOneWidget);
+    }
+
+    await openRemove();
+    await tester.tap(find.text('Cancel'));
+    await settle(tester);
+    expect(json.sent.where((r) => r['@type'] == 'changeStickerSet'), isEmpty);
+    expect(find.text('Cats'), findsOneWidget);
+
+    await openRemove();
+    await tester.tap(find.text('Remove').last);
+    await settle(tester);
+    final request = sent('changeStickerSet');
+    expect(request['set_id'], '1');
+    expect(request['is_installed'], isFalse);
+    expect(find.text('Cats'), findsNothing);
+  });
+
   testWidgets('switches change the preferences and TDLib', (tester) async {
     await pump(tester, const StickersPage());
     await tester.tap(find.byKey(const ValueKey('largeEmoji')));
@@ -169,6 +199,24 @@ void main() {
     expect(request['is_installed'], isTrue);
   });
 
+  testWidgets('tells a failed lookup from a missing set', (tester) async {
+    await pump(tester, const StickersPage());
+    final field = find.byKey(const ValueKey(('link', StickerSetKind.stickers)));
+    await tester.enterText(field, 't.me/addstickers/Nope/');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await settle(tester);
+    expect(sent('searchStickerSet')['name'], 'Nope');
+    expect(find.text('There is no set at this link.'), findsOneWidget);
+
+    await tester.enterText(field, 'Offline');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await settle(tester);
+    expect(
+      find.text("Couldn't open the set. Check your connection and try again."),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('restores an archived set', (tester) async {
     await pump(
       tester,
@@ -191,6 +239,44 @@ void main() {
     await tester.tap(find.text('Add'));
     await settle(tester);
     expect(sent('changeStickerSet')['set_id'], '5');
+    expect(find.text('Remove'), findsOneWidget);
+  });
+
+  testWidgets('pages trending sets and marks them seen', (tester) async {
+    json.manyTrending = true;
+    await pump(
+      tester,
+      const StickerSetListPage(kind: StickerSetKind.stickers, archived: false),
+    );
+    List<Object?> offsets() => [
+      for (final r in json.sent)
+        if (r['@type'] == 'getTrendingStickerSets') r['offset'],
+    ];
+    expect(offsets(), [0]);
+    expect(
+      json.sent.where((r) => r['@type'] == 'viewTrendingStickerSets'),
+      isEmpty,
+    );
+    await tester.drag(find.byType(ListView), const Offset(0, -4000));
+    await settle(tester);
+    expect(offsets(), [0, 50]);
+    expect(find.text('Last', skipOffstage: false), findsOneWidget);
+    expect(sent('viewTrendingStickerSets')['sticker_set_ids'], ['100']);
+  });
+
+  testWidgets('Add in a trending set\'s sheet updates its row', (tester) async {
+    await pump(
+      tester,
+      const StickerSetListPage(kind: StickerSetKind.emoji, archived: false),
+    );
+    await tester.tap(find.text('Hearts'));
+    await settle(tester);
+    await tester.tap(find.byKey(const ValueKey('toggleSet')));
+    await settle(tester);
+    expect(sent('changeStickerSet')['set_id'], '5');
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await settle(tester);
+    expect(find.byKey(const ValueKey('toggleSet')), findsNothing);
     expect(find.text('Remove'), findsOneWidget);
   });
 
@@ -234,6 +320,9 @@ Map<String, Object?> _info(
 final class _FakeTdJson implements td.TdJson {
   final _queue = Queue<String>();
   final sent = <Map<String, Object?>>[];
+
+  /// A full first page of trending stickers, then one more set.
+  var manyTrending = false;
   var _nextClientId = 0;
 
   @override
@@ -267,6 +356,17 @@ final class _FakeTdJson implements td.TdJson {
         'total_count': 1,
         'sets': [_info(4, 'Old', archived: true)],
       },
+      'getTrendingStickerSets' when manyTrending && !emoji => {
+        '@type': 'trendingStickerSets',
+        'total_count': 51,
+        'sets': decoded['offset'] == 0
+            ? [
+                for (var i = 0; i < 50; i++)
+                  {..._info(10 + i, 'Set $i'), 'is_viewed': true},
+              ]
+            : [_info(100, 'Last')],
+        'is_premium': false,
+      },
       'getTrendingStickerSets' => {
         '@type': 'trendingStickerSets',
         'total_count': 1,
@@ -281,6 +381,18 @@ final class _FakeTdJson implements td.TdJson {
         'is_installed': false,
         'stickers': <Object?>[],
         'emojis': <Object?>[],
+      },
+      'searchStickerSet' when decoded['name'] == 'Hearts' => {
+        ..._info(5, 'Hearts', emoji: true, size: 40),
+        '@type': 'stickerSet',
+        'is_installed': false,
+        'stickers': <Object?>[],
+        'emojis': <Object?>[],
+      },
+      'searchStickerSet' when decoded['name'] == 'Offline' => {
+        '@type': 'error',
+        'code': 500,
+        'message': 'Request aborted',
       },
       'searchStickerSet' => {
         '@type': 'error',

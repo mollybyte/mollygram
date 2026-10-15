@@ -11,11 +11,28 @@ import '../../../l10n/app_localizations.dart';
 import '../../chat/media_content.dart';
 import '../../folders/folder_sheet.dart';
 import '../../session/providers.dart';
+import '../settings_style.dart';
+
+/// What became of looking up a set for [showStickerSetSheet].
+enum StickerSetLookup {
+  /// The sheet was shown and has closed.
+  shown,
+
+  /// Telegram has no set by that name.
+  notFound,
+
+  /// The request failed, as without a connection.
+  failed,
+}
 
 /// Looks up the set named [name], as `t.me/addstickers/<name>` or
 /// `tg://addstickers?set=<name>` give it, and shows it in a sheet with Add
-/// or Remove. Returns false when there is no such set.
-Future<bool> showStickerSetSheet(BuildContext context, String name) async {
+/// or Remove. [onInstalled] hears each Add or Remove made in the sheet.
+Future<StickerSetLookup> showStickerSetSheet(
+  BuildContext context,
+  String name, {
+  ValueChanged<bool>? onInstalled,
+}) async {
   final td.StickerSet set;
   try {
     final session = ProviderScope.containerOf(
@@ -23,20 +40,29 @@ Future<bool> showStickerSetSheet(BuildContext context, String name) async {
       listen: false,
     ).read(telegramSessionProvider).requireValue;
     set = await session.stickerSets.byName(name);
+  } on td.TdException catch (e) {
+    // TDLib answers 400 STICKERSET_INVALID for a name with no set.
+    return e.code == 400 ? StickerSetLookup.notFound : StickerSetLookup.failed;
   } on Object {
-    return false;
+    return StickerSetLookup.failed;
   }
-  if (!context.mounted) return true;
-  await showFolderSheet<void>(context, StickerSetSheet(set: set));
-  return true;
+  if (!context.mounted) return StickerSetLookup.shown;
+  await showFolderSheet<void>(
+    context,
+    StickerSetSheet(set: set, onInstalled: onInstalled),
+  );
+  return StickerSetLookup.shown;
 }
 
 /// A set's stickers in a grid, animated under the pointer, and the button
 /// that adds or removes the set.
 class StickerSetSheet extends ConsumerStatefulWidget {
-  const StickerSetSheet({super.key, required this.set});
+  const StickerSetSheet({super.key, required this.set, this.onInstalled});
 
   final td.StickerSet set;
+
+  /// Hears each Add (true) or Remove (false) made here.
+  final ValueChanged<bool>? onInstalled;
 
   @override
   ConsumerState<StickerSetSheet> createState() => _StickerSetSheetState();
@@ -65,6 +91,7 @@ class _StickerSetSheetState extends ConsumerState<StickerSetSheet> {
       } else {
         await sets.install(set.id, kind);
       }
+      widget.onInstalled?.call(!_installed);
       if (!mounted) return;
       setState(() {
         _installed = !_installed;
@@ -205,12 +232,17 @@ td.StickerSetInfo _infoOf(td.StickerSet set) => td.StickerSetInfo(
   covers: const [],
 );
 
-/// A sticker that plays while the pointer is over it.
+/// A sticker that plays once the pointer has rested on it for a moment,
+/// showing its still until then, so a page of cells doesn't decode every
+/// animation. With reduced motion it stays still.
 class _Cell extends StatefulWidget {
   const _Cell({super.key, required this.sticker, required this.side});
 
   final td.Sticker sticker;
   final double side;
+
+  /// How long the pointer rests before the sticker plays.
+  static const playDelay = Duration(milliseconds: 80);
 
   @override
   State<_Cell> createState() => _CellState();
@@ -218,15 +250,41 @@ class _Cell extends StatefulWidget {
 
 class _CellState extends State<_Cell> {
   var _hover = false;
+  var _play = false;
+  Timer? _timer;
+
+  void _enter() {
+    setState(() => _hover = true);
+    _timer?.cancel();
+    if (MediaQuery.disableAnimationsOf(context)) return;
+    _timer = Timer(_Cell.playDelay, () {
+      if (mounted && _hover) setState(() => _play = true);
+    });
+  }
+
+  void _exit() {
+    _timer?.cancel();
+    setState(() {
+      _hover = false;
+      _play = false;
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final c = MgColors.of(context);
+    final play = _play && !MediaQuery.disableAnimationsOf(context);
     return MouseRegion(
-      onEnter: (_) => setState(() => _hover = true),
-      onExit: (_) => setState(() => _hover = false),
+      onEnter: (_) => _enter(),
+      onExit: (_) => _exit(),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 120),
+        duration: settingsMotionOf(context),
         margin: const EdgeInsets.all(2),
         decoration: BoxDecoration(
           color: _hover ? c.hover : const Color(0x00000000),
@@ -236,7 +294,8 @@ class _CellState extends State<_Cell> {
         child: StickerContent(
           sticker: widget.sticker,
           side: widget.side,
-          animate: _hover,
+          animate: play,
+          lazy: true,
         ),
       ),
     );

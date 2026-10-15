@@ -52,7 +52,7 @@ void main() {
     );
   });
 
-  test('reorders at once and puts the order back on failure', () async {
+  test('reorders at once and loads the order again on failure', () async {
     await sets.installed(StickerSetKind.stickers);
     final changes = <void>[];
     sets.changes.listen(changes.add);
@@ -68,11 +68,36 @@ void main() {
       sets.reorder(StickerSetKind.stickers, 0, 2),
       throwsA(anything),
     );
-    expect(ids(StickerSetKind.stickers), [3, 1, 2]);
+    expect(sets.installedOf(StickerSetKind.stickers), isNull);
     expect(changes, hasLength(3));
+    await sets.installed(StickerSetKind.stickers);
+    expect(ids(StickerSetKind.stickers), [3, 1, 2]);
   });
 
-  test('archives and removes at once, restoring on failure', () async {
+  test('a failure does not undo a change that succeeded after it', () async {
+    final installed = await sets.installed(StickerSetKind.stickers);
+    json.failing.add('reorderInstalledStickerSets');
+    final reorder = sets.reorder(StickerSetKind.stickers, 0, 2);
+    final archive = sets.archive(installed[1]);
+    await expectLater(reorder, throwsA(anything));
+    await archive;
+    await sets.installed(StickerSetKind.stickers);
+    expect(ids(StickerSetKind.stickers), [1, 3]);
+  });
+
+  test('a list loaded while an update arrives is not kept', () async {
+    json.updateWhileLoading = true;
+    final changes = <void>[];
+    sets.changes.listen(changes.add);
+    await sets.installed(StickerSetKind.stickers);
+    expect(sets.installedOf(StickerSetKind.stickers), isNull);
+    expect(changes, hasLength(1));
+    json.updateWhileLoading = false;
+    await sets.installed(StickerSetKind.stickers);
+    expect(ids(StickerSetKind.stickers), [1, 2, 3]);
+  });
+
+  test('archives and removes at once, reloading on failure', () async {
     final installed = await sets.installed(StickerSetKind.stickers);
     await sets.archive(installed[1]);
     expect(ids(StickerSetKind.stickers), [1, 3]);
@@ -83,8 +108,10 @@ void main() {
 
     json.failing.add('changeStickerSet');
     await expectLater(sets.remove(installed[0]), throwsA(anything));
-    expect(ids(StickerSetKind.stickers), [1, 3]);
+    expect(sets.installedOf(StickerSetKind.stickers), isNull);
     json.failing.clear();
+    await sets.installed(StickerSetKind.stickers);
+    expect(ids(StickerSetKind.stickers), [1, 3]);
 
     await sets.remove(installed[0]);
     expect(ids(StickerSetKind.stickers), [3]);
@@ -119,6 +146,9 @@ void main() {
     expect(trending.single.title, 'New');
     expect(sent('getTrendingStickerSets')['offset'], 50);
 
+    await sets.viewTrending([4, 5]);
+    expect(sent('viewTrendingStickerSets')['sticker_set_ids'], ['4', '5']);
+
     final set = await sets.byName('CatsPack');
     expect(set.title, 'CatsPack');
   });
@@ -139,6 +169,8 @@ void main() {
     expect(stickerSetNameOf('tg://addstickers?set=Dogs'), 'Dogs');
     expect(stickerSetNameOf('tg://addemoji?set=Love'), 'Love');
     expect(stickerSetNameOf('  Birds '), 'Birds');
+    expect(stickerSetNameOf('https://t.me/addstickers/Cats/'), 'Cats');
+    expect(stickerSetNameOf('t.me/addstickers/'), isNull);
     expect(stickerSetNameOf('https://t.me/joinchat/abc'), isNull);
     expect(stickerSetNameOf('https://example.com/addstickers/x'), isNull);
     expect(stickerSetNameOf('two words'), isNull);
@@ -169,10 +201,31 @@ final class _FakeTdJson implements td.TdJson {
   final sent = <Map<String, Object?>>[];
   final failing = <String>{};
   var animatedEmojiOff = false;
+
+  /// Sends an updateInstalledStickerSets ahead of the installed list.
+  var updateWhileLoading = false;
+
+  /// The installed stickers, as TDLib keeps them.
+  var stickers = [1, 2, 3];
+  static const _titles = {1: 'Cats', 2: 'Dogs', 3: 'Birds'};
   var _nextClientId = 0;
 
   void push(Map<String, Object?> update) =>
       _queue.add(jsonEncode({...update, '@client_id': 1}));
+
+  void _apply(String type, Map<String, Object?> r, {required bool emoji}) {
+    if (emoji) return;
+    switch (type) {
+      case 'reorderInstalledStickerSets':
+        stickers = [
+          for (final id in r['sticker_set_ids']! as List) int.parse('$id'),
+        ];
+      case 'changeStickerSet':
+        final id = int.parse('${r['set_id']}');
+        stickers.remove(id);
+        if (r['is_installed'] == true) stickers.insert(0, id);
+    }
+  }
 
   @override
   int createClientId() => ++_nextClientId;
@@ -199,7 +252,10 @@ final class _FakeTdJson implements td.TdJson {
               'total_count': emoji ? 1 : 3,
               'sets': emoji
                   ? [_info(7, 'Hearts', emoji: true)]
-                  : [_info(1, 'Cats'), _info(2, 'Dogs'), _info(3, 'Birds')],
+                  : [
+                      for (final id in stickers)
+                        _info(id, _titles[id] ?? 'Set'),
+                    ],
             },
             'getArchivedStickerSets' => {
               '@type': 'stickerSets',
@@ -224,6 +280,14 @@ final class _FakeTdJson implements td.TdJson {
                   : {'@type': 'optionValueEmpty'},
             _ => {'@type': 'ok'},
           };
+    if (!failing.contains(type)) _apply(type, decoded, emoji: emoji);
+    if (updateWhileLoading && type == 'getInstalledStickerSets') {
+      push({
+        '@type': 'updateInstalledStickerSets',
+        'sticker_type': decoded['sticker_type'],
+        'sticker_set_ids': <Object?>[],
+      });
+    }
     _queue.add(
       jsonEncode({
         ...response,

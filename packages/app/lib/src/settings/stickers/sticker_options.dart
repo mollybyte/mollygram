@@ -16,9 +16,8 @@ class LargeEmoji extends ConsumerWidget {
       ref.watch(preferencesProvider.select((p) => p.largeEmoji)) ? big : small;
 }
 
-/// Whether animated stickers drawn now play on ("Loop animated stickers").
-/// Read when a sticker is built: one already playing keeps going.
-bool loopStickersOf(BuildContext context) => ProviderScope.containerOf(
-  context,
-  listen: false,
-).read(preferencesProvider).loopStickers;
+/// Whether animated stickers play on ("Loop animated stickers"). Watched,
+/// so the stickers on screen follow the switch.
+final loopStickersProvider = Provider<bool>(
+  (ref) => ref.watch(preferencesProvider.select((p) => p.loopStickers)),
+);

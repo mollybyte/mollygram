@@ -38,14 +38,35 @@ StickerSetsController stickerSetsOf(WidgetRef ref) =>
     ref.read(telegramSessionProvider).requireValue.stickerSets;
 
 /// The installed sets of a kind in the user's order, following changes.
+/// A failed load shows as an error until the next change loads again.
 final installedSetsProvider = StreamProvider.autoDispose
-    .family<List<td.StickerSetInfo>, StickerSetKind>((ref, kind) async* {
-      final sets = (await ref.watch(telegramSessionProvider.future))
-          .stickerSets;
-      yield await sets.installed(kind);
-      await for (final _ in sets.changes) {
-        yield sets.installedOf(kind) ?? await sets.installed(kind);
+    .family<List<td.StickerSetInfo>, StickerSetKind>((ref, kind) {
+      final out = StreamController<List<td.StickerSetInfo>>();
+      ref.onDispose(out.close);
+      // Only the latest load may answer, so a slow one can't bring back an
+      // older list.
+      var latest = 0;
+      Future<void> load(StickerSetsController sets) async {
+        final known = sets.installedOf(kind);
+        final mine = ++latest;
+        try {
+          final list = known ?? await sets.installed(kind);
+          if (mine == latest && !out.isClosed) out.add(list);
+        } on Object catch (error, stack) {
+          if (mine == latest && !out.isClosed) out.addError(error, stack);
+        }
       }
+
+      unawaited(
+        ref.watch(telegramSessionProvider.future).then((session) async {
+          if (out.isClosed) return;
+          final sets = session.stickerSets;
+          final changes = sets.changes.listen((_) => unawaited(load(sets)));
+          out.onCancel = changes.cancel;
+          await load(sets);
+        }, onError: out.addError),
+      );
+      return out.stream;
     });
 
 /// Whether single emoji play as animations (a TDLib option).
@@ -59,19 +80,49 @@ final animatedEmojiProvider = FutureProvider.autoDispose<bool>(
 /// the options, trending and archived sets, adding a set by its link, and
 /// the installed sets, dragged to reorder. Custom emoji sets have a page of
 /// their own with the same parts.
-class StickersPage extends ConsumerWidget {
+class StickersPage extends ConsumerStatefulWidget {
   const StickersPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<StickersPage> createState() => _StickersPageState();
+}
+
+class _StickersPageState extends ConsumerState<StickersPage> {
+  /// The animated emoji switch as flipped, ahead of TDLib's answer.
+  bool? _animated;
+  var _failed = false;
+
+  Future<void> _setAnimated(bool on) async {
+    setState(() {
+      _animated = on;
+      _failed = false;
+    });
+    try {
+      await stickerSetsOf(ref).setAnimatedEmoji(on);
+      ref.invalidate(animatedEmojiProvider);
+    } on Object {
+      if (mounted) {
+        setState(() {
+          _animated = null;
+          _failed = true;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final prefs = ref.watch(preferencesProvider);
     final notifier = ref.read(preferencesProvider.notifier);
-    final animated = ref.watch(animatedEmojiProvider).value;
+    final animated = _animated ?? ref.watch(animatedEmojiProvider).value;
     return SettingsPage(
       children: [
         SettingsGroup(
-          footer: SettingsFooter(l10n.largeEmojiHint),
+          footer: SettingsFooter(
+            _failed ? l10n.saveFailed : l10n.largeEmojiHint,
+            error: _failed,
+          ),
           children: [
             SettingsSwitchRow(
               key: const ValueKey('largeEmoji'),
@@ -93,10 +144,7 @@ class StickersPage extends ConsumerWidget {
               value: animated ?? true,
               onChanged: animated == null
                   ? null
-                  : (v) async {
-                      await stickerSetsOf(ref).setAnimatedEmoji(v);
-                      ref.invalidate(animatedEmojiProvider);
-                    },
+                  : (v) => unawaited(_setAnimated(v)),
             ),
           ],
         ),
@@ -152,6 +200,16 @@ class _StickerSetsBodyState extends ConsumerState<StickerSetsBody> {
     }
   }
 
+  Future<void> _remove(td.StickerSetInfo set) async {
+    final sets = stickerSetsOf(ref);
+    final go = await confirmStickerSetRemoval(
+      context,
+      title: set.title,
+      emoji: _emoji,
+    );
+    if (go && mounted) await _try(() => sets.remove(set));
+  }
+
   Future<void> _menu(td.StickerSetInfo set, Offset position) {
     final l10n = AppLocalizations.of(context);
     final sets = stickerSetsOf(ref);
@@ -166,7 +224,7 @@ class _StickerSetsBodyState extends ConsumerState<StickerSetsBody> {
         MgMenuItem(
           label: l10n.remove,
           destructive: true,
-          onSelected: () => unawaited(_try(() => sets.remove(set))),
+          onSelected: () => unawaited(_remove(set)),
         ),
       ],
     );
@@ -280,12 +338,15 @@ class _LinkFieldState extends State<_LinkField> {
     }
     setState(() => _error = null);
     unawaited(
-      showStickerSetSheet(context, name).then((found) {
+      showStickerSetSheet(context, name).then((lookup) {
         if (!mounted) return;
-        if (found) {
-          _text.clear();
-        } else {
-          setState(() => _error = l10n.stickerSetNotFound);
+        switch (lookup) {
+          case StickerSetLookup.shown:
+            _text.clear();
+          case StickerSetLookup.notFound:
+            setState(() => _error = l10n.stickerSetNotFound);
+          case StickerSetLookup.failed:
+            setState(() => _error = l10n.stickerSetLookupFailed);
         }
       }),
     );

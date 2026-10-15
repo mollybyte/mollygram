@@ -1063,5 +1063,8 @@
   "emojiCount": "{count, plural, one{{count} emoji} other{{count} emoji}}",
   "@emojiCount": {
     "placeholders": { "count": { "type": "int" } }
-  }
+  },
+  "removeStickerSetTitle": "Remove this sticker set?",
+  "removeEmojiSetTitle": "Remove this emoji set?",
+  "stickerSetLookupFailed": "Couldn't open the set. Check your connection and try again."
 }

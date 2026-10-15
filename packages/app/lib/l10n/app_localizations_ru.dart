@@ -2775,4 +2775,14 @@ class AppLocalizationsRu extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get removeStickerSetTitle => 'Удалить набор стикеров?';
+
+  @override
+  String get removeEmojiSetTitle => 'Удалить набор эмодзи?';
+
+  @override
+  String get stickerSetLookupFailed =>
+      'Не удалось открыть набор. Проверьте подключение и попробуйте ещё раз.';
 }

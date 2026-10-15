@@ -543,10 +543,7 @@ class _MessageBody extends StatelessWidget {
         );
       case td.MessageText(:final text, linkPreview: null)
           when text.entities.isEmpty && isEmojiOnly(text.text):
-        return LargeEmoji(
-          big: _BigEmoji(text.text),
-          small: FormattedTextView(text: text),
-        );
+        return LargeEmoji(big: _BigEmoji(text.text), small: _text(text));
       case td.MessageText(:final text, :final linkPreview):
         if (linkPreview == null) return _text(text);
         return Column(

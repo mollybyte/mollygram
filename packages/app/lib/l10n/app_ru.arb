@@ -763,5 +763,8 @@
   "noArchivedSets": "В архиве пусто",
   "stickerSetLoadFailed": "Не удалось загрузить наборы.",
   "stickerCount": "{count, plural, one{{count} стикер} few{{count} стикера} other{{count} стикеров}}",
-  "emojiCount": "{count, plural, other{{count} эмодзи}}"
+  "emojiCount": "{count, plural, other{{count} эмодзи}}",
+  "removeStickerSetTitle": "Удалить набор стикеров?",
+  "removeEmojiSetTitle": "Удалить набор эмодзи?",
+  "stickerSetLookupFailed": "Не удалось открыть набор. Проверьте подключение и попробуйте ещё раз."
 }

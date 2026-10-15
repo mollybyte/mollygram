@@ -12,18 +12,8 @@ import 'sticker_set_sheet.dart';
 import 'sticker_set_tile.dart';
 import 'stickers_page.dart';
 
-/// Archived sets, newest first, or the sets Telegram features now.
-final stickerSetListProvider = FutureProvider.autoDispose
-    .family<List<td.StickerSetInfo>, (StickerSetKind, bool)>((ref, key) async {
-      final (kind, archived) = key;
-      final sets = (await ref.watch(telegramSessionProvider.future))
-          .stickerSets;
-      return archived
-          ? sets.archived(kind, limit: 100)
-          : sets.trending(kind, limit: 100);
-    });
-
-/// Archived or trending sets of [kind], each with Restore, Add or Remove.
+/// Archived or trending sets of [kind], each with Restore, Add or Remove,
+/// a page at a time: the next one loads as the list nears its end.
 class StickerSetListPage extends ConsumerStatefulWidget {
   const StickerSetListPage({
     super.key,
@@ -34,15 +24,83 @@ class StickerSetListPage extends ConsumerStatefulWidget {
   final StickerSetKind kind;
   final bool archived;
 
+  /// Sets asked for at a time.
+  static const pageSize = 50;
+
   @override
   ConsumerState<StickerSetListPage> createState() => _StickerSetListPageState();
 }
 
 class _StickerSetListPageState extends ConsumerState<StickerSetListPage> {
-  /// Sets added or removed here, by id: true when installed now.
+  /// The sets loaded so far, in Telegram's order.
+  final _sets = <td.StickerSetInfo>[];
+  var _loading = false;
+  var _done = false;
+  var _loadFailed = false;
+
+  /// Sets added or removed here or in their sheet, by id: true when
+  /// installed now.
   final _changed = <int, bool>{};
   final _busy = <int>{};
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_loadMore());
+  }
+
+  /// Loads the next page, unless one is loading or there are no more.
+  Future<void> _loadMore() async {
+    if (_loading || _done) return;
+    setState(() {
+      _loading = true;
+      _loadFailed = false;
+    });
+    try {
+      final sets = (await ref.read(telegramSessionProvider.future)).stickerSets;
+      final page = widget.archived
+          ? await sets.archived(
+              widget.kind,
+              after: _sets.isEmpty ? 0 : _sets.last.id,
+              limit: StickerSetListPage.pageSize,
+            )
+          : await sets.trending(
+              widget.kind,
+              offset: _sets.length,
+              limit: StickerSetListPage.pageSize,
+            );
+      if (!mounted) return;
+      if (!widget.archived) {
+        // Seen now, so Telegram stops counting them as new.
+        final unseen = [
+          for (final s in page)
+            if (!s.isViewed) s.id,
+        ];
+        unawaited(sets.viewTrending(unseen).catchError((Object _) {}));
+      }
+      setState(() {
+        final known = {for (final s in _sets) s.id};
+        _sets.addAll(page.where((s) => !known.contains(s.id)));
+        _done = page.length < StickerSetListPage.pageSize;
+        _loading = false;
+      });
+    } on Object {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _loadFailed = true;
+        });
+      }
+    }
+  }
+
+  bool _onScroll(ScrollMetrics metrics) {
+    if (metrics.axis == Axis.vertical && metrics.extentAfter < 400) {
+      unawaited(_loadMore());
+    }
+    return false;
+  }
 
   Future<void> _toggle(td.StickerSetInfo set, bool install) async {
     setState(() {
@@ -64,10 +122,8 @@ class _StickerSetListPageState extends ConsumerState<StickerSetListPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final key = (widget.kind, widget.archived);
-    final list = ref.watch(stickerSetListProvider(key));
     final sets = [
-      for (final s in list.value ?? const <td.StickerSetInfo>[])
+      for (final s in _sets)
         // A restored set leaves the archive.
         if (!(widget.archived && _changed[s.id] == true)) s,
     ];
@@ -86,36 +142,58 @@ class _StickerSetListPageState extends ConsumerState<StickerSetListPage> {
       );
     }
 
-    return SettingsPage(
-      children: [
-        SettingsGroup(
-          footer: _error != null || list.hasError
-              ? SettingsFooter(_error ?? l10n.stickerSetLoadFailed, error: true)
-              : null,
+    const spinner = SizedBox(
+      height: 40,
+      child: Center(child: SettingsSpinner()),
+    );
+    return NotificationListener<ScrollMetricsNotification>(
+      // Also when a page leaves the list too short to scroll.
+      onNotification: (n) => _onScroll(n.metrics),
+      child: NotificationListener<ScrollUpdateNotification>(
+        onNotification: (n) => _onScroll(n.metrics),
+        child: SettingsPage(
           children: [
-            if (list.isLoading)
-              const SizedBox(
-                height: 40,
-                child: Center(child: SettingsSpinner()),
-              )
-            else if (sets.isEmpty)
-              SettingsRow(
-                title: widget.archived
-                    ? l10n.noArchivedSets
-                    : l10n.noStickerSets,
-              )
-            else
-              for (final set in sets)
-                StickerSetRow(
-                  key: ValueKey(set.id),
-                  set: set,
-                  trailing: button(set),
-                  onTap: () =>
-                      unawaited(showStickerSetSheet(context, set.name)),
-                ),
+            SettingsGroup(
+              footer: _error != null || _loadFailed
+                  ? SettingsFooter(
+                      _error ?? l10n.stickerSetLoadFailed,
+                      error: true,
+                    )
+                  : null,
+              children: [
+                if (sets.isEmpty && (_loading || !_done && !_loadFailed))
+                  spinner
+                else if (sets.isEmpty)
+                  SettingsRow(
+                    title: widget.archived
+                        ? l10n.noArchivedSets
+                        : l10n.noStickerSets,
+                  )
+                else ...[
+                  for (final set in sets)
+                    StickerSetRow(
+                      key: ValueKey(set.id),
+                      set: set,
+                      trailing: button(set),
+                      onTap: () => unawaited(
+                        showStickerSetSheet(
+                          context,
+                          set.name,
+                          onInstalled: (installed) {
+                            if (mounted) {
+                              setState(() => _changed[set.id] = installed);
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                  if (_loading) spinner,
+                ],
+              ],
+            ),
           ],
         ),
-      ],
+      ),
     );
   }
 }

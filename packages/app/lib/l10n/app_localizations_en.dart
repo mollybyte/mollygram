@@ -2746,4 +2746,14 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get removeStickerSetTitle => 'Remove this sticker set?';
+
+  @override
+  String get removeEmojiSetTitle => 'Remove this emoji set?';
+
+  @override
+  String get stickerSetLookupFailed =>
+      'Couldn\'t open the set. Check your connection and try again.';
 }

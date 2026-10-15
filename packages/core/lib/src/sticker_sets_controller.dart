@@ -31,7 +31,10 @@ String? stickerSetNameOf(String text) {
         ? uri.queryParameters['set']
         : null;
   } else {
-    final segments = uri.pathSegments;
+    final segments = [
+      for (final segment in uri.pathSegments)
+        if (segment.isNotEmpty) segment,
+    ];
     final telegram = {'t.me', 'telegram.me', 'telegram.dog'}.contains(uri.host);
     name =
         telegram &&
@@ -57,7 +60,7 @@ List<int> movedId(List<int> ids, int from, int to) {
 ///
 /// The installed lists are kept in memory, follow
 /// `updateInstalledStickerSets`, and change at once on a reorder or an
-/// archive, going back if TDLib refuses.
+/// archive, loading again from TDLib if it refuses.
 final class StickerSetsController {
   StickerSetsController(this._client);
 
@@ -65,7 +68,15 @@ final class StickerSetsController {
   final _changes = StreamController<void>.broadcast(sync: true);
   StreamSubscription<td.TdObject>? _subscription;
   final _installed = <StickerSetKind, List<td.StickerSetInfo>>{};
-  final _loading = <StickerSetKind, Future<List<td.StickerSetInfo>>>{};
+  final _loading =
+      <
+        StickerSetKind,
+        ({int generation, Future<List<td.StickerSetInfo>> sets})
+      >{};
+
+  /// Bumped whenever a kind's list goes stale, so a load that was already
+  /// under way isn't kept.
+  final _generations = <StickerSetKind, int>{};
 
   /// Fires after an installed list changes.
   Stream<void> get changes => _changes.stream;
@@ -76,10 +87,16 @@ final class StickerSetsController {
 
   void _onUpdate(td.TdObject update) {
     if (update case td.UpdateInstalledStickerSets(:final stickerType)) {
-      final kind = StickerSetKind.of(stickerType);
       // Loaded again with the new sets' details on the next look.
-      if (_installed.remove(kind) != null) _changed();
+      _invalidate(StickerSetKind.of(stickerType));
     }
+  }
+
+  void _invalidate(StickerSetKind kind) {
+    _generations[kind] = (_generations[kind] ?? 0) + 1;
+    _installed.remove(kind);
+    _loading.remove(kind);
+    _changed();
   }
 
   void _changed() {
@@ -93,16 +110,28 @@ final class StickerSetsController {
   Future<List<td.StickerSetInfo>> installed(StickerSetKind kind) {
     final known = _installed[kind];
     if (known != null) return Future.value(known);
-    return _loading[kind] ??= () async {
+    final generation = _generations[kind] ?? 0;
+    final loading = _loading[kind];
+    if (loading != null && loading.generation == generation) {
+      return loading.sets;
+    }
+    final sets = () async {
       try {
-        final sets = await _client.send(
-          td.GetInstalledStickerSets(stickerType: kind.type),
+        final sets = List<td.StickerSetInfo>.unmodifiable(
+          (await _client.send(
+            td.GetInstalledStickerSets(stickerType: kind.type),
+          )).sets,
         );
-        return _installed[kind] = List.unmodifiable(sets.sets);
+        // Kept only when nothing changed while it loaded; otherwise the
+        // change has already asked for another look.
+        if ((_generations[kind] ?? 0) == generation) _installed[kind] = sets;
+        return sets;
       } finally {
-        unawaited(_loading.remove(kind));
+        if (_loading[kind]?.generation == generation) _loading.remove(kind);
       }
     }();
+    _loading[kind] = (generation: generation, sets: sets);
+    return sets;
   }
 
   /// Moves an installed set from [from] to [to].
@@ -134,7 +163,7 @@ final class StickerSetsController {
       td.ChangeStickerSet(setId: setId, isInstalled: true, isArchived: false),
     );
     // TDLib adds it at the top; the next look loads the list again.
-    if (_installed.remove(kind) != null) _changed();
+    _invalidate(kind);
   }
 
   Future<void> _change(
@@ -159,8 +188,9 @@ final class StickerSetsController {
     });
   }
 
-  /// Shows [ids] at once, in that order, and the previous list again if
-  /// [request] fails.
+  /// Shows [ids] at once, in that order. If [request] fails the list is
+  /// loaded again: putting back a snapshot could undo a later change that
+  /// succeeded.
   Future<void> _optimistic(
     StickerSetKind kind,
     List<int> ids,
@@ -175,10 +205,7 @@ final class StickerSetsController {
     try {
       await request();
     } on Object {
-      if (before != null && _installed[kind] != null) {
-        _installed[kind] = before;
-        _changed();
-      }
+      _invalidate(kind);
       rethrow;
     }
   }
@@ -209,6 +236,12 @@ final class StickerSetsController {
       limit: limit,
     ),
   )).sets;
+
+  /// Marks trending sets as seen, so Telegram stops counting them as new.
+  Future<void> viewTrending(List<int> setIds) async {
+    if (setIds.isEmpty) return;
+    await _client.send(td.ViewTrendingStickerSets(stickerSetIds: setIds));
+  }
 
   /// The set named [name] with all its stickers, as a link names it.
   Future<td.StickerSet> byName(String name) =>

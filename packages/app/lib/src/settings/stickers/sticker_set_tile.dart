@@ -17,6 +17,24 @@ String stickerSetCount(AppLocalizations l10n, td.StickerSetInfo set) =>
     ? l10n.emojiCount(set.size)
     : l10n.stickerCount(set.size);
 
+/// Asks before removing [set] for good; true to go ahead.
+Future<bool> confirmStickerSetRemoval(
+  BuildContext context, {
+  required String title,
+  required bool emoji,
+}) async {
+  final l10n = AppLocalizations.of(context);
+  final confirmed = await showMgConfirm(
+    context,
+    title: emoji ? l10n.removeEmojiSetTitle : l10n.removeStickerSetTitle,
+    message: title,
+    confirmLabel: l10n.remove,
+    cancelLabel: l10n.cancel,
+    destructive: true,
+  );
+  return confirmed != null;
+}
+
 /// A set's picture: its thumbnail, still, or its first sticker, or the
 /// first letter of its title on a grey tile when it has neither.
 class StickerSetThumb extends StatelessWidget {
@@ -127,7 +145,8 @@ class StickerSetRow extends StatelessWidget {
 }
 
 /// Installed sets, reordered by dragging their handles: the rows part to
-/// make room, and the dragged one lifts.
+/// make room, and the dragged one lifts (without growing under reduced
+/// motion).
 class StickerSetReorderList extends StatelessWidget {
   const StickerSetReorderList({
     super.key,
@@ -149,6 +168,8 @@ class StickerSetReorderList extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = MgColors.of(context);
     final s = SettingsColors.of(context);
+    // With reduced motion the dragged row only gains its shadow.
+    final lift = MediaQuery.disableAnimationsOf(context) ? 0.0 : 0.02;
     final list = ReorderableListView(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -159,7 +180,7 @@ class StickerSetReorderList extends StatelessWidget {
         builder: (context, child) {
           final t = Curves.easeOutCubic.transform(animation.value);
           return Transform.scale(
-            scale: 1 + 0.02 * t,
+            scale: 1 + lift * t,
             child: DecoratedBox(
               decoration: BoxDecoration(
                 color: s.group,

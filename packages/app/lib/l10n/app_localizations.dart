@@ -4675,6 +4675,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, one{{count} emoji} other{{count} emoji}}'**
   String emojiCount(int count);
+
+  /// No description provided for @removeStickerSetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this sticker set?'**
+  String get removeStickerSetTitle;
+
+  /// No description provided for @removeEmojiSetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this emoji set?'**
+  String get removeEmojiSetTitle;
+
+  /// No description provided for @stickerSetLookupFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open the set. Check your connection and try again.'**
+  String get stickerSetLookupFailed;
 }
 
 class _AppLocalizationsDelegate
