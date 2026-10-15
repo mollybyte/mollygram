@@ -34,6 +34,21 @@ Future<void> showMgMenu(
   required List<MgMenuItem> items,
   Widget? header,
 }) {
+  return showMgPopover(
+    context,
+    position: position,
+    child: _Menu(items: items, header: header),
+  );
+}
+
+/// Shows [child] at [position], flipped to the left or upwards when there
+/// is no room, as a menu does. Closes on a click outside, with no
+/// animation and no dimming.
+Future<void> showMgPopover(
+  BuildContext context, {
+  required Offset position,
+  required Widget child,
+}) {
   return showGeneralDialog<void>(
     context: context,
     barrierDismissible: true,
@@ -42,7 +57,7 @@ Future<void> showMgMenu(
     transitionDuration: Duration.zero,
     pageBuilder: (context, _, _) => CustomSingleChildLayout(
       delegate: _MenuLayout(position),
-      child: _Menu(items: items, header: header),
+      child: Material(type: MaterialType.transparency, child: child),
     ),
   );
 }

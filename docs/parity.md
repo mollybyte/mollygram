@@ -62,13 +62,13 @@ M8 calls and macOS release, M9 after release.
 | Pinned message bar with cycling and the pinned list | partial | Pinned PR: bar with cycling, pin and unpin from the menu; no pinned list view | S | M2 |
 | Jump to a replied message and back | done | Jump with a highlight; the down button returns to where the user was | | |
 | Date headers and sticky date | done | Date pills, and the top row's date floats while scrolling | | |
-| Jump to date (calendar) | missing | `ChatCalendarModalController` | M | M2 |
-| Header status: online, last seen, members, typing | missing | Header has the slot | S | M1 |
+| Jump to date (calendar) | done | Click a date pill: calendar, `getChatMessageByDate`; no media calendar | M | M2 |
+| Header status: online, last seen, members, typing | done (#40) | | S | M1 |
 | Join and mute buttons for channels and groups you are not in | done | Join in place of the composer; Mute and Unmute in channels you only read | | |
-| Open `t.me` and `tg://` links, usernames, hashtags, bot commands | missing | `GetInternalLinkType` | M | M1 |
+| Open `t.me` and `tg://` links, usernames, hashtags, bot commands | partial | Links, mentions, invites and `tg://` work (`links/`); hashtags, bot commands, mention names and the jump to a linked message are missing | S | M1 |
 | Link previews in messages | partial | Check `MessageText.linkPreview` rendering | M | M1 |
-| Text selection across messages | missing | `ChatSelectText` | M | M2 |
-| Multi-select mode: forward, delete, copy several | missing | | M | M2 |
+| Text selection across messages | missing | `ChatSelectText`; whole messages go through multi-select | M | M2 |
+| Multi-select mode: forward, delete, copy several | done | Select from the menu, click rows, bar in place of the composer; no shift-click range yet | M | M2 |
 | Forum topics: topic list, topic chat, create and close topics | missing | Service messages render only | L | M2 |
 | Channel comments (discussion thread) | missing | `GetMessageThread` | M | M2 |
 | Reply threads in groups | missing | | M | M2 |
@@ -91,13 +91,13 @@ M8 calls and macOS release, M9 after release.
 | Quick reactions and toggling reactions | done | #30 | | |
 | Full reaction picker (all emoji, custom reactions) | missing | | M | M1 |
 | Reply with quote (part of the text) | missing | `InputTextQuote` | S | M2 |
-| Pin and unpin | missing | `PinChatMessage` | S | M1 |
+| Pin and unpin | done (#49) | | S | M1 |
 | Forward without author or caption | missing | `sendCopy`, `removeCaption` | S | M2 |
 | Save media to Downloads, show in Finder | missing | | S | M1 |
 | Report message | missing | `ReportChat` | S | M2 |
 | Who read and who reacted | missing | `GetMessageViewers`, `GetMessageAddedReactions` | S | M2 |
 | Message info: view count, forwards, edit date | partial | | S | M2 |
-| Select and copy part of a message | missing | See text selection | | M2 |
+| Select and copy part of a message | partial | Whole messages copy via multi-select; part of a message needs text selection | | M2 |
 
 ### Composer
 
@@ -111,12 +111,12 @@ M8 calls and macOS release, M9 after release.
 | Sticker panel, recent and favourite stickers, sticker search | partial | #34: recent, favourites, installed sets; no search, no set management | S | M1 |
 | GIF panel and GIF search | missing | `GifKeyboardController` | M | M2 |
 | Emoji and sticker suggestions while typing | missing | `InputSwapSuggestionsPanel` | M | M2 |
-| Rich text formatting: bold, italic, code, link, spoiler, quote; Markdown shortcuts | missing | `text_edit.dart` sends plain text | M | M1 |
-| Mentions autocomplete (@) | missing | `SearchChatMembers` | S | M1 |
+| Rich text formatting: bold, italic, code, link, spoiler, quote; Markdown shortcuts | done | `RichTextEditingController` in ui_kit: ⌘B, ⌘I, ⌘U, ⌘⇧X, ⌘⇧M, ⌘⇧P, ⌘⇧., ⌘K, context menu; Markdown converted on send. Captions of files are still plain | | |
+| Mentions autocomplete (@) | done | `MentionSearch` with `ChatMembersFilterMention`; no `:` emoji shortcodes yet | | |
 | Bot command autocomplete (/) and bot keyboards | missing | `ReplyMarkupNode` | M | M2 |
 | Inline bots (@gif, @vid) | missing | `GetInlineQueryResults` | M | M9 |
 | Voice message recording | done | Hold, lock, cancel; Opus in Ogg via AudioToolbox on macOS | M | M1 |
-| Video message (circle) recording | missing | Playback done in `packages/media` | L | M4 |
+| Video message (circle) recording | partial | Hold, lock, cancel, 60 s limit; 640×640 H.264 via AVFoundation on macOS. Front camera only, no flip or preview before sending | L | M4 |
 | Silent send and scheduled messages, scheduled list | missing | `MessageSchedulingStateSendAtDate` | M | M2 |
 | Send as (channel identity) | missing | `ChatInputSendAsView` | S | M6 |
 | Polls and quizzes creation | missing | `NewPollController` | M | M2 |
@@ -128,7 +128,7 @@ M8 calls and macOS release, M9 after release.
 | Media editor: drawing (pen, marker, arrow, eraser, colours, thickness) | done | `packages/media_editor` | | |
 | Media editor: text, stickers and emoji placed on the image | partial | Text and emoji done; stickers need the app’s sticker picker | M | M4 |
 | Media editor: arrows and shapes, blur and pixelate brush | done | `packages/media_editor` | | |
-| Media editor: filters and adjustments (brightness, contrast, saturation, warmth, vignette) | missing | | M | M4 |
+| Media editor: filters and adjustments (brightness, contrast, saturation, warmth, vignette) | done | `packages/media_editor`: seven looks, six sliders | | |
 | Video editor: trim, mute, cover frame, quality | missing | `VideoEditorModalController` | M | M4 |
 | Slowmode and restriction notices | missing | | S | M2 |
 | Link preview control (remove, above/below) | missing | | S | M2 |
@@ -160,9 +160,9 @@ M8 calls and macOS release, M9 after release.
 |---|---|---|---|---|
 | Chat search in the sidebar and ⌘K palette | done | `chat_search.dart`, #27 | | |
 | Global message search | partial | `SearchMessages` used by the palette; no jump to the message | M | M2 |
-| Search inside a chat, by sender, by date | missing | `ChatSearchView` | M | M2 |
+| Search inside a chat, by sender, by date | partial | ⌘F capsule with result arrows (`chat_search/`); sender filter in core only, no date jump | S | M2 |
 | Hashtag and cashtag search | missing | | S | M2 |
-| Search filters (media, links, files, voice) | missing | | S | M2 |
+| Search filters (media, links, files, voice) | partial | `ChatSearchController` filters back the shared media tabs; not offered in ⌘F yet | S | M2 |
 | Recent searches and top peers | missing | | S | M2 |
 
 ### Profiles and info panels
@@ -171,7 +171,7 @@ M8 calls and macOS release, M9 after release.
 |---|---|---|---|---|
 | User profile: photo, bio, username, phone, birthday, actions | done | `PeerInfoController` in core, inspector panel in `app/lib/src/profile` | | |
 | Group and channel info: description, link, members count | done | First 50 members, most recently active first | | |
-| Shared media tabs: media, files, links, voice, music, GIFs, groups in common | missing | `PeerMediaController` | L | M2 |
+| Shared media tabs: media, files, links, voice, music, GIFs, groups in common | partial | `SharedMediaView` has media, files, links, voice, music; GIFs and groups in common missing; in the info panel | M | M2 |
 | Members list with search | partial | First page in the info panel, no search or paging | M | M6 |
 | Profile photo gallery | missing | | S | M2 |
 | Per-chat notifications and auto-delete timer | partial | Mute and unmute in the info panel; no mute-for durations, no auto-delete | S | M1 |
@@ -199,8 +199,8 @@ M8 calls and macOS release, M9 after release.
 |---|---|---|---|---|
 | Sign in: QR, phone, code, 2FA password | done | #16, #24 | | |
 | Sign up (new account), email code, account reset | partial | Unsupported steps show a notice | M | M6 |
-| Contacts list, add and edit contact | missing | `ContactsController` | M | M6 |
-| New message / compose (pick a user) | missing | `ComposeViewController` | S | M1 |
+| Contacts list, add and edit contact | partial | Contacts sheet: list with status, add by phone, delete; editing a contact's name is not there yet | S | M6 |
+| New message / compose (pick a user) | done | ⌘N sheet: recent chats, contacts, username search | | |
 | Edit own profile: name, bio, username, photo, birthday | partial | Name, username and bio in Settings; photo and birthday missing | M | M6 |
 | Multiple accounts and switching | missing | Several TDLib clients | L | M6 |
 | Log out | done | Settings, My profile, Log out | | |
@@ -215,8 +215,8 @@ M8 calls and macOS release, M9 after release.
 | Privacy and security: last seen, phone, photo, calls, forwards, groups, blocked list | missing | `SelectivePrivacySettingsController` | L | M6 |
 | Two-step verification setup | missing | `TwoStepVerification` | M | M6 |
 | Passcode lock and Touch ID | missing | `PasscodeSettingsViewController`, `LocalAuth` | M | M7 |
-| Data and storage: cache usage, clear, limits, network usage | missing | `StorageUsageController` | M | M7 |
-| Appearance: theme, accent, night mode schedule, chat background, text size | partial | Light/dark follow the system | M | M7 |
+| Data and storage: cache usage, clear, limits, network usage | partial | Usage by kind, clear by kind, download folder; auto-download switches are stored but not yet applied; no limits or network usage | M | M7 |
+| Appearance: theme, accent, night mode schedule, chat background, text size | partial | Theme, accent, wallpaper on or off, message text size, reduce motion; no night schedule or custom backgrounds | M | M7 |
 | Language: UI language picker, translation settings | partial | RU and EN follow the system | S | M7 |
 | Stickers and emoji: packs, reorder, archived, suggest, large emoji | missing | `InstalledStickerPacksController` | M | M7 |
 | Quick reaction choice | missing | | S | M7 |

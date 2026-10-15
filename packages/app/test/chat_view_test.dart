@@ -12,6 +12,7 @@ import 'package:mollygram/src/chat/recent_emoji.dart';
 import 'package:mollygram/src/chat/timeline_view.dart';
 import 'package:mollygram/src/home/chat_view.dart';
 import 'package:mollygram/src/session/providers.dart';
+import 'package:mollygram/src/shared_media/message_jump.dart';
 import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
@@ -221,6 +222,30 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Answer', findRichText: true), findsOneWidget);
     expect(find.byTooltip('Back to where you were'), findsNothing);
+  });
+
+  testWidgets('scrolls to a message another panel asks for', (tester) async {
+    json.chat = [for (var id = 1; id <= 60; id++) id];
+    json.push(_chat(lastRead: 60, unread: 0, last: 60));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await pump(tester);
+    await tester.pumpAndSettle();
+    final first = find.textContaining(
+      RegExp(r'Message 1(?!\d)'),
+      findRichText: true,
+    );
+    expect(first, findsNothing);
+
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(ChatView)),
+    );
+    container.read(messageJumpProvider.notifier).request(7, 1);
+    await tester.pump();
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+
+    expect(tester.getRect(first).top, inInclusiveRange(0, 800));
+    expect(container.read(messageJumpProvider), isEmpty);
   });
 
   testWidgets('floats the date of the top row while scrolling', (tester) async {
@@ -496,6 +521,127 @@ void main() {
     final forward = json.sent.lastWhere((r) => r['@type'] == 'forwardMessages');
     expect(forward['chat_id'], 9);
     expect(forward['message_ids'], [12]);
+  });
+
+  Future<void> selectTwo(WidgetTester tester) async {
+    await rightClick(tester, 'From Boris');
+    await tester.tap(find.text('Select'));
+    await tester.pump();
+    expect(find.text('1 selected'), findsOneWidget);
+    // While selecting, the row's content doesn't take clicks; the row does.
+    await tester.tap(find.text('From Vera'), warnIfMissed: false);
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+    expect(find.text('2 selected'), findsOneWidget);
+  }
+
+  testWidgets('selects messages and forwards them together', (tester) async {
+    await pump(tester);
+    await selectTwo(tester);
+
+    await tester.tap(find.text('Forward'));
+    await tester.pump();
+    await tester.pump();
+    expect(find.byType(SelectionBar), findsNothing);
+    await tester.tap(find.text('Saved'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+
+    final forward = json.sent.lastWhere((r) => r['@type'] == 'forwardMessages');
+    expect(forward['message_ids'], [10, 12]);
+  });
+
+  testWidgets('copies the selected texts oldest first', (tester) async {
+    final copied = <String>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData') {
+          copied.add((call.arguments as Map)['text'] as String);
+        }
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+    await pump(tester);
+    await selectTwo(tester);
+
+    await tester.tap(find.text('Copy'));
+    await tester.pumpAndSettle();
+
+    expect(copied, ['From Boris\n\nFrom Vera']);
+    expect(find.byType(SelectionBar), findsNothing);
+  });
+
+  testWidgets('deletes the selected messages after asking', (tester) async {
+    await pump(tester);
+    await selectTwo(tester);
+
+    await tester.tap(find.text('Delete'));
+    await tester.pump();
+    expect(find.text('Delete 2 messages?'), findsOneWidget);
+    await tester.tap(find.text('Delete').last);
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+
+    final delete = json.sent.lastWhere((r) => r['@type'] == 'deleteMessages');
+    expect(delete['message_ids'], [10, 12]);
+    expect(find.byType(SelectionBar), findsNothing);
+  });
+
+  testWidgets('a click takes a message out again and Esc ends selecting', (
+    tester,
+  ) async {
+    await pump(tester);
+    await selectTwo(tester);
+
+    await tester.tap(find.text('From Vera'), warnIfMissed: false);
+    await tester.pumpAndSettle();
+    expect(find.text('1 selected'), findsOneWidget);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.byType(SelectionBar), findsNothing);
+    expect(find.byType(Composer), findsOneWidget);
+  });
+
+  testWidgets('opens a calendar from a date pill and jumps to the day', (
+    tester,
+  ) async {
+    await pump(tester);
+
+    // The date pill above the first message comes once the start of the
+    // chat is known, a page later.
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    // The history is from October 2025.
+    await tester.tap(find.byType(DatePill).first);
+    await tester.pump();
+    expect(find.text('October 2025'), findsOneWidget);
+    // Days after today can't be picked; the month can't go past it.
+    expect(find.byType(MgCalendar), findsOneWidget);
+
+    await tester.tap(find.text('9'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(MgCalendar), findsNothing);
+    final request = json.sent.lastWhere(
+      (r) => r['@type'] == 'getChatMessageByDate',
+    );
+    expect(request['chat_id'], 7);
+    expect(
+      request['date'],
+      DateTime(2025, 10, 10).millisecondsSinceEpoch ~/ 1000 - 1,
+    );
+    expect(tester.widget<TimelineView>(find.byType(TimelineView)).anchor, 11);
   });
 
   testWidgets('opens a photo full screen and pages through the chat media', (
@@ -914,6 +1060,11 @@ final class _FakeTdJson implements td.TdJson {
       },
       'downloadFile' => _stickerFile(decoded['file_id']! as int),
       'joinChat' => {'@type': 'chatJoinResultSuccess'},
+      'getChatMessageByDate' => _message(
+        id: 11,
+        senderId: 2,
+        text: 'Boris again',
+      ).toJson(),
       'forwardMessages' => {
         '@type': 'messages',
         'total_count': 0,

@@ -148,6 +148,110 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nothingFound => 'Nothing found';
 
   @override
+  String get newMessage => 'New message';
+
+  @override
+  String get contacts => 'Contacts';
+
+  @override
+  String get peopleSearchHint => 'Name or username';
+
+  @override
+  String get recentChats => 'Recent';
+
+  @override
+  String get globalSearch => 'Global search';
+
+  @override
+  String get noContacts => 'No contacts yet';
+
+  @override
+  String get presenceOnline => 'online';
+
+  @override
+  String get presenceJustNow => 'last seen just now';
+
+  @override
+  String presenceMinutes(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'last seen $count minutes ago',
+      one: 'last seen $count minute ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String presenceToday(Object time) {
+    return 'last seen today at $time';
+  }
+
+  @override
+  String presenceYesterday(Object time) {
+    return 'last seen yesterday at $time';
+  }
+
+  @override
+  String presenceDate(Object date) {
+    return 'last seen $date';
+  }
+
+  @override
+  String get presenceRecently => 'last seen recently';
+
+  @override
+  String get presenceLastWeek => 'last seen within a week';
+
+  @override
+  String get presenceLastMonth => 'last seen within a month';
+
+  @override
+  String get presenceLongAgo => 'last seen a long time ago';
+
+  @override
+  String get presenceBot => 'bot';
+
+  @override
+  String get addContact => 'Add contact';
+
+  @override
+  String get contactFirstName => 'First name';
+
+  @override
+  String get contactLastName => 'Last name (optional)';
+
+  @override
+  String get contactPhone => 'Phone number';
+
+  @override
+  String get contactAdd => 'Add';
+
+  @override
+  String get contactFirstNameRequired => 'Enter a first name';
+
+  @override
+  String get contactPhoneRequired => 'Enter a phone number';
+
+  @override
+  String get contactNotOnTelegram => 'This number is not on Telegram';
+
+  @override
+  String get contactAddFailed =>
+      'Couldn\'t add the contact. Check the connection and try again.';
+
+  @override
+  String get deleteContact => 'Delete contact';
+
+  @override
+  String deleteContactTitle(Object name) {
+    return 'Delete $name from contacts?';
+  }
+
+  @override
+  String get deleteContactFailed => 'Couldn\'t delete the contact';
+
+  @override
   String get selectChat => 'Select a chat to start messaging';
 
   @override
@@ -186,6 +290,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get voiceSendFailed => 'Couldn\'t send the voice message';
+
+  @override
+  String get videoHoldToRecord => 'Hold to record a video message';
+
+  @override
+  String get videoCameraDenied => 'Mollygram has no access to the camera.';
 
   @override
   String previewYou(String text) {
@@ -343,6 +453,42 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cancel => 'Cancel';
+
+  @override
+  String get formatBold => 'Bold';
+
+  @override
+  String get formatItalic => 'Italic';
+
+  @override
+  String get formatUnderline => 'Underline';
+
+  @override
+  String get formatStrikethrough => 'Strikethrough';
+
+  @override
+  String get formatMonospace => 'Monospace';
+
+  @override
+  String get formatSpoiler => 'Spoiler';
+
+  @override
+  String get formatQuote => 'Quote';
+
+  @override
+  String get formatLink => 'Link…';
+
+  @override
+  String get formatPlain => 'Plain text';
+
+  @override
+  String get linkTitle => 'Add link';
+
+  @override
+  String get linkHint => 'URL';
+
+  @override
+  String get linkApply => 'Apply';
 
   @override
   String get deleteMessageTitle => 'Delete message?';
@@ -1040,6 +1186,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connectedBot => 'Connected business bot';
 
   @override
+  String get connectedBotFailed => 'Couldn\'t load the connected bot';
+
+  @override
   String get connectedBotHint =>
       'This bot can read and answer your business chats.';
 
@@ -1049,6 +1198,174 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String disconnectBotTitle(String name) {
     return 'Disconnect $name?';
+  }
+
+  @override
+  String get appearance => 'Appearance';
+
+  @override
+  String get themeAuto => 'Auto';
+
+  @override
+  String get themeLight => 'Light';
+
+  @override
+  String get themeDark => 'Dark';
+
+  @override
+  String get accentColor => 'Accent color';
+
+  @override
+  String get accentBlue => 'Blue';
+
+  @override
+  String get accentIndigo => 'Indigo';
+
+  @override
+  String get accentTeal => 'Teal';
+
+  @override
+  String get accentGreen => 'Green';
+
+  @override
+  String get accentOrange => 'Orange';
+
+  @override
+  String get accentGraphite => 'Graphite';
+
+  @override
+  String get chatWallpaper => 'Chat wallpaper';
+
+  @override
+  String get chatWallpaperHint => 'When off, chats sit on a plain background.';
+
+  @override
+  String get messageTextSize => 'Message text size';
+
+  @override
+  String textSizeValue(String size) {
+    return '$size pt';
+  }
+
+  @override
+  String get previewSender => 'Anna';
+
+  @override
+  String get previewMessage => 'Good morning! The new settings look great.';
+
+  @override
+  String get reduceMotion => 'Reduce motion';
+
+  @override
+  String get reduceMotionHint =>
+      'Turns animations off. Mollygram also follows the same setting in macOS Accessibility.';
+
+  @override
+  String get dataAndStorage => 'Data and storage';
+
+  @override
+  String get storageUsage => 'Storage';
+
+  @override
+  String get storageCalculating => 'Calculating…';
+
+  @override
+  String storageUsed(String size) {
+    return '$size of media and files';
+  }
+
+  @override
+  String get storageEmpty => 'No media or files are stored on this computer.';
+
+  @override
+  String get storagePhotos => 'Photos';
+
+  @override
+  String get storageVideos => 'Videos';
+
+  @override
+  String get storageFiles => 'Files';
+
+  @override
+  String get storageVoiceAndMusic => 'Voice and music';
+
+  @override
+  String get storageStickers => 'Stickers';
+
+  @override
+  String get storageOther => 'Other';
+
+  @override
+  String get storageDatabase => 'Message database';
+
+  @override
+  String get storageHint =>
+      'Cleared media stays in the Telegram cloud and downloads again when needed. Messages are kept.';
+
+  @override
+  String get storageFailed => 'Couldn\'t read the storage usage.';
+
+  @override
+  String get clearCache => 'Clear cache…';
+
+  @override
+  String clearCacheTitle(String size) {
+    return 'Clear $size from this computer?';
+  }
+
+  @override
+  String get clearCacheMessage =>
+      'Media stays in the Telegram cloud and downloads again when you open it.';
+
+  @override
+  String get clear => 'Clear';
+
+  @override
+  String get clearCacheFailed => 'Couldn\'t clear the cache.';
+
+  @override
+  String get autoDownload => 'Automatic media download';
+
+  @override
+  String get autoDownloadWifi => 'On Wi-Fi and Ethernet';
+
+  @override
+  String get autoDownloadOther => 'On other networks';
+
+  @override
+  String get autoDownloadHint =>
+      'Other networks are personal hotspots and other metered connections.';
+
+  @override
+  String get downloadFolder => 'Download folder';
+
+  @override
+  String get downloadFolderDefault => 'Downloads';
+
+  @override
+  String get chooseFolder => 'Choose…';
+
+  @override
+  String get downloadFolderHint => 'Files you save from chats go here.';
+
+  @override
+  String sizeBytes(String size) {
+    return '$size B';
+  }
+
+  @override
+  String sizeKilobytes(String size) {
+    return '$size KB';
+  }
+
+  @override
+  String sizeMegabytes(String size) {
+    return '$size MB';
+  }
+
+  @override
+  String sizeGigabytes(String size) {
+    return '$size GB';
   }
 
   @override
@@ -1176,6 +1493,77 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nextReaction => 'Next reaction';
 
   @override
+  String get linkJoinChannel => 'Join channel';
+
+  @override
+  String get linkJoinGroup => 'Join group';
+
+  @override
+  String get linkRequestToJoin => 'Request to join';
+
+  @override
+  String get linkViewChannel => 'View channel';
+
+  @override
+  String get linkViewGroup => 'View group';
+
+  @override
+  String linkSubscribers(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString subscribers',
+      one: '$countString subscriber',
+      zero: 'No subscribers',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String linkMembers(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString members',
+      one: '$countString member',
+      zero: 'No members',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get linkApprovalHint => 'An admin has to approve your request.';
+
+  @override
+  String get linkRequestSent => 'Request sent';
+
+  @override
+  String get linkRequestSentHint => 'You\'ll join once an admin approves it.';
+
+  @override
+  String get linkJoinFailed => 'Couldn\'t join. Try again later.';
+
+  @override
+  String get linkMissing => 'This link is invalid or has expired.';
+
+  @override
+  String get linkUnsupported => 'Mollygram can\'t open this kind of link yet.';
+
+  @override
+  String get done => 'Done';
+
+  @override
+  String get linkForbidden => 'You can\'t view this chat.';
+
+  @override
   String get menuPin => 'Pin';
 
   @override
@@ -1194,6 +1582,62 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get backToPrevious => 'Back to where you were';
+
+  @override
+  String get searchInChat => 'Search in chat';
+
+  @override
+  String searchCounter(int index, int count) {
+    return '$index of $count';
+  }
+
+  @override
+  String get searchNoResults => 'No results';
+
+  @override
+  String get searchOlder => 'Previous result';
+
+  @override
+  String get searchNewer => 'Next result';
+
+  @override
+  String get sharedMedia => 'Shared media';
+
+  @override
+  String get sharedMediaTab => 'Media';
+
+  @override
+  String get sharedFilesTab => 'Files';
+
+  @override
+  String get sharedLinksTab => 'Links';
+
+  @override
+  String get sharedVoiceTab => 'Voice';
+
+  @override
+  String get sharedMusicTab => 'Music';
+
+  @override
+  String get sharedMediaEmpty => 'No photos or videos yet';
+
+  @override
+  String get sharedFilesEmpty => 'No files yet';
+
+  @override
+  String get sharedLinksEmpty => 'No links yet';
+
+  @override
+  String get sharedVoiceEmpty => 'No voice messages yet';
+
+  @override
+  String get sharedMusicEmpty => 'No music yet';
+
+  @override
+  String get sharedLoadFailed => 'Couldn\'t load the list';
+
+  @override
+  String get showInChat => 'Show in chat';
 
   @override
   String get joinChannel => 'Join channel';
@@ -1263,4 +1707,30 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get hideContentOpenedHint =>
       'Senders won\'t see that you\'ve played them';
+
+  @override
+  String get menuSelect => 'Select';
+
+  @override
+  String selectedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count selected',
+      one: '$count selected',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get clearSelection => 'Clear selection';
+
+  @override
+  String get copy => 'Copy';
+
+  @override
+  String get previousMonth => 'Previous month';
+
+  @override
+  String get nextMonth => 'Next month';
 }

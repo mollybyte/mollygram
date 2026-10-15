@@ -3,10 +3,14 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../home/workspace.dart';
 import '../session/providers.dart';
+import '../shared_media/message_jump.dart';
+import '../shared_media/shared_media_view.dart';
 import 'peer_info_panel.dart';
 import 'peer_info_state.dart';
 
@@ -15,7 +19,8 @@ import 'peer_info_state.dart';
 ///
 /// The panel slides in and fades, and slides back out when closed by its
 /// button or Escape; either move can be reversed halfway. Inside the panel
-/// a click on a member shows their info, with a back button to return.
+/// a click on a member shows their info, and "Shared media" the chat's
+/// media, files and links, each with a back button to return.
 class PeerInfoHost extends ConsumerStatefulWidget {
   const PeerInfoHost({super.key, required this.chatId, required this.child});
 
@@ -46,6 +51,9 @@ class _PeerInfoHostState extends ConsumerState<PeerInfoHost>
   /// from a group's list go on top.
   late List<int> _stack = [widget.chatId];
 
+  /// Whether the top of the stack shows its shared media over its info.
+  var _media = false;
+
   late final _panels = ref.read(peerInfoPanelsProvider.notifier);
 
   @override
@@ -55,7 +63,10 @@ class _PeerInfoHostState extends ConsumerState<PeerInfoHost>
     if (_isOpen) _slide.value = 1;
     _slide.addStatusListener((status) {
       if (status == AnimationStatus.dismissed) {
-        setState(() => _stack = [widget.chatId]);
+        setState(() {
+          _stack = [widget.chatId];
+          _media = false;
+        });
       }
     });
   }
@@ -68,6 +79,7 @@ class _PeerInfoHostState extends ConsumerState<PeerInfoHost>
         ..detach(old.chatId)
         ..attach(widget.chatId);
       _stack = [widget.chatId];
+      _media = false;
       _slide.value = _isOpen ? 1 : 0;
     }
   }
@@ -100,7 +112,21 @@ class _PeerInfoHostState extends ConsumerState<PeerInfoHost>
     setState(() => _stack = [..._stack, chatId]);
   }
 
-  void _back() => setState(() => _stack = _stack.sublist(0, _stack.length - 1));
+  void _back() => setState(() {
+    if (_media) {
+      _media = false;
+    } else {
+      _stack = _stack.sublist(0, _stack.length - 1);
+    }
+  });
+
+  /// "Show in chat" from the shared media: the pane's own chat scrolls
+  /// to the message with the panel left open, to go on browsing; a
+  /// member's chat opens in this pane at it.
+  void _showInChat(ConversationMessage message) {
+    ref.read(messageJumpProvider.notifier).request(message.chatId, message.id);
+    if (message.chatId != widget.chatId) _message(message.chatId);
+  }
 
   /// "Message": the pane already shows its own chat, so the panel just
   /// gets out of the way; a member's chat opens in this pane.
@@ -162,14 +188,27 @@ class _PeerInfoHostState extends ConsumerState<PeerInfoHost>
                         ),
                       ],
                     ),
-                    child: PeerInfoPanel(
-                      key: ValueKey(_stack.last),
-                      chatId: _stack.last,
-                      onClose: _close,
-                      onBack: _stack.length > 1 ? _back : null,
-                      onMember: (userId) => unawaited(_openMember(userId)),
-                      onMessage: () => _message(_stack.last),
-                    ),
+                    child: _media
+                        ? PeerInfoPage(
+                            key: ValueKey(('media', _stack.last)),
+                            title: AppLocalizations.of(context).sharedMedia,
+                            onBack: _back,
+                            onClose: _close,
+                            child: SharedMediaView(
+                              chatId: _stack.last,
+                              onOpenMessage: _showInChat,
+                            ),
+                          )
+                        : PeerInfoPanel(
+                            key: ValueKey(_stack.last),
+                            chatId: _stack.last,
+                            onClose: _close,
+                            onBack: _stack.length > 1 ? _back : null,
+                            onMember: (userId) =>
+                                unawaited(_openMember(userId)),
+                            onMessage: () => _message(_stack.last),
+                            onSharedMedia: () => setState(() => _media = true),
+                          ),
                   ),
                 ),
               ],

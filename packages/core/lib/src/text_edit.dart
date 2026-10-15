@@ -58,6 +58,62 @@ List<td.TextEntity> carryEntities(
   return carried;
 }
 
+/// [fresh], the formatting the composer gives [after], plus what it can't
+/// show of [old], the entities of the earlier version [before]: custom
+/// emoji and dates are carried over, and a code block keeps its language
+/// and a quote stays expandable where the composer's entity covers the
+/// same text.
+List<td.TextEntity> keepHiddenEntities(
+  String before,
+  String after,
+  List<td.TextEntity> old,
+  List<td.TextEntity> fresh,
+) {
+  final hidden = [
+    for (final entity in old)
+      if (entity.type
+          case td.TextEntityTypeCustomEmoji() ||
+              td.TextEntityTypeDateTime() ||
+              td.TextEntityTypePreCode() ||
+              td.TextEntityTypeExpandableBlockQuote())
+        entity,
+  ];
+  if (hidden.isEmpty) return fresh;
+  final carried = carryEntities(before, after, hidden);
+
+  bool richer(td.TextEntityType kept, td.TextEntityType plain) => switch ((
+    kept,
+    plain,
+  )) {
+    (
+      td.TextEntityTypePreCode(),
+      td.TextEntityTypePre() || td.TextEntityTypeCode(),
+    ) =>
+      true,
+    (td.TextEntityTypeExpandableBlockQuote(), td.TextEntityTypeBlockQuote()) =>
+      true,
+    _ => false,
+  };
+
+  final result = [
+    for (final entity in fresh)
+      carried
+              .where(
+                (c) =>
+                    c.offset == entity.offset &&
+                    c.length == entity.length &&
+                    richer(c.type, entity.type),
+              )
+              .firstOrNull ??
+          entity,
+    for (final entity in carried)
+      if (entity.type
+          case td.TextEntityTypeCustomEmoji() || td.TextEntityTypeDateTime())
+        entity,
+  ]..sort((a, b) => a.offset.compareTo(b.offset));
+  return result;
+}
+
 /// Formatting the user sets, as opposed to what TDLib detects by itself.
 bool _isManual(td.TextEntityType type) => switch (type) {
   td.TextEntityTypeBold() ||

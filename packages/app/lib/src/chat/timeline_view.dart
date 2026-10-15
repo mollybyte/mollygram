@@ -6,6 +6,7 @@ import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../settings/appearance.dart';
 import 'message_tile.dart';
 import 'timeline.dart';
 import 'timeline_scroll.dart';
@@ -34,6 +35,8 @@ class TimelineView extends StatefulWidget {
     this.flashId,
     this.flash = 0,
     this.topInset = TimelineView.headerInset,
+    this.selection,
+    this.onDateTap,
   });
 
   /// Newest first.
@@ -69,6 +72,14 @@ class TimelineView extends StatefulWidget {
   /// The space above the oldest message: the header, and the pinned bar
   /// when it shows.
   final double topInset;
+
+  /// The ids of the selected messages while messages are being selected;
+  /// null otherwise.
+  final Set<int>? selection;
+
+  /// A click on a date pill, at [position] in global coordinates, which
+  /// opens the calendar to jump to a date.
+  final void Function(DateTime day, Offset position)? onDateTap;
 
   static const double headerInset = 72;
   static const double bottomInset = 88;
@@ -246,6 +257,8 @@ class _TimelineList extends StatelessWidget {
     final flashId = view.flashId;
     final flash = view.flash;
     final topInset = view.topInset;
+    final selection = view.selection;
+    final onDateTap = view.onDateTap;
     const bottomInset = TimelineView.bottomInset;
     final l10n = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).toLanguageTag();
@@ -269,7 +282,17 @@ class _TimelineList extends StatelessWidget {
 
     Widget build(TimelineItem item) {
       final Widget child = switch (item) {
-        TimelineDate(:final day) => DatePill(formatDay(l10n, day, locale)),
+        TimelineDate(:final day) =>
+          onDateTap == null
+              ? DatePill(formatDay(l10n, day, locale))
+              : MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: GestureDetector(
+                    onTapUp: (details) =>
+                        onDateTap(day, details.globalPosition),
+                    child: DatePill(formatDay(l10n, day, locale)),
+                  ),
+                ),
         TimelineRow(
           :final row,
           :final startsRun,
@@ -297,6 +320,10 @@ class _TimelineList extends StatelessWidget {
                       endsRun: endsRun,
                       startsForwards: startsForwards,
                       lastReadOutbox: lastReadOutbox,
+                      selecting: selection != null,
+                      selected:
+                          selection != null &&
+                          row.messages.any((m) => selection.contains(m.id)),
                     ),
                     actions: actions,
                   ),
@@ -307,7 +334,8 @@ class _TimelineList extends StatelessWidget {
       };
       final padded = Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: child,
+        // The text size chosen in Settings, Appearance.
+        child: MessageTextSize(child: child),
       );
       return KeyedSubtree(
         key: ValueKey<Object>(item.key),

@@ -356,6 +356,180 @@ abstract class AppLocalizations {
   /// **'Nothing found'**
   String get nothingFound;
 
+  /// No description provided for @newMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'New message'**
+  String get newMessage;
+
+  /// No description provided for @contacts.
+  ///
+  /// In en, this message translates to:
+  /// **'Contacts'**
+  String get contacts;
+
+  /// No description provided for @peopleSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Name or username'**
+  String get peopleSearchHint;
+
+  /// No description provided for @recentChats.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent'**
+  String get recentChats;
+
+  /// No description provided for @globalSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Global search'**
+  String get globalSearch;
+
+  /// No description provided for @noContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'No contacts yet'**
+  String get noContacts;
+
+  /// No description provided for @presenceOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'online'**
+  String get presenceOnline;
+
+  /// No description provided for @presenceJustNow.
+  ///
+  /// In en, this message translates to:
+  /// **'last seen just now'**
+  String get presenceJustNow;
+
+  /// No description provided for @presenceMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{last seen {count} minute ago} other{last seen {count} minutes ago}}'**
+  String presenceMinutes(num count);
+
+  /// No description provided for @presenceToday.
+  ///
+  /// In en, this message translates to:
+  /// **'last seen today at {time}'**
+  String presenceToday(Object time);
+
+  /// No description provided for @presenceYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'last seen yesterday at {time}'**
+  String presenceYesterday(Object time);
+
+  /// No description provided for @presenceDate.
+  ///
+  /// In en, this message translates to:
+  /// **'last seen {date}'**
+  String presenceDate(Object date);
+
+  /// No description provided for @presenceRecently.
+  ///
+  /// In en, this message translates to:
+  /// **'last seen recently'**
+  String get presenceRecently;
+
+  /// No description provided for @presenceLastWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'last seen within a week'**
+  String get presenceLastWeek;
+
+  /// No description provided for @presenceLastMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'last seen within a month'**
+  String get presenceLastMonth;
+
+  /// No description provided for @presenceLongAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'last seen a long time ago'**
+  String get presenceLongAgo;
+
+  /// No description provided for @presenceBot.
+  ///
+  /// In en, this message translates to:
+  /// **'bot'**
+  String get presenceBot;
+
+  /// No description provided for @addContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Add contact'**
+  String get addContact;
+
+  /// No description provided for @contactFirstName.
+  ///
+  /// In en, this message translates to:
+  /// **'First name'**
+  String get contactFirstName;
+
+  /// No description provided for @contactLastName.
+  ///
+  /// In en, this message translates to:
+  /// **'Last name (optional)'**
+  String get contactLastName;
+
+  /// No description provided for @contactPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone number'**
+  String get contactPhone;
+
+  /// No description provided for @contactAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get contactAdd;
+
+  /// No description provided for @contactFirstNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a first name'**
+  String get contactFirstNameRequired;
+
+  /// No description provided for @contactPhoneRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a phone number'**
+  String get contactPhoneRequired;
+
+  /// No description provided for @contactNotOnTelegram.
+  ///
+  /// In en, this message translates to:
+  /// **'This number is not on Telegram'**
+  String get contactNotOnTelegram;
+
+  /// No description provided for @contactAddFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t add the contact. Check the connection and try again.'**
+  String get contactAddFailed;
+
+  /// No description provided for @deleteContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete contact'**
+  String get deleteContact;
+
+  /// No description provided for @deleteContactTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {name} from contacts?'**
+  String deleteContactTitle(Object name);
+
+  /// No description provided for @deleteContactFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t delete the contact'**
+  String get deleteContactFailed;
+
   /// No description provided for @selectChat.
   ///
   /// In en, this message translates to:
@@ -433,6 +607,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t send the voice message'**
   String get voiceSendFailed;
+
+  /// No description provided for @videoHoldToRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold to record a video message'**
+  String get videoHoldToRecord;
+
+  /// No description provided for @videoCameraDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Mollygram has no access to the camera.'**
+  String get videoCameraDenied;
 
   /// No description provided for @previewYou.
   ///
@@ -733,6 +919,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cancel'**
   String get cancel;
+
+  /// No description provided for @formatBold.
+  ///
+  /// In en, this message translates to:
+  /// **'Bold'**
+  String get formatBold;
+
+  /// No description provided for @formatItalic.
+  ///
+  /// In en, this message translates to:
+  /// **'Italic'**
+  String get formatItalic;
+
+  /// No description provided for @formatUnderline.
+  ///
+  /// In en, this message translates to:
+  /// **'Underline'**
+  String get formatUnderline;
+
+  /// No description provided for @formatStrikethrough.
+  ///
+  /// In en, this message translates to:
+  /// **'Strikethrough'**
+  String get formatStrikethrough;
+
+  /// No description provided for @formatMonospace.
+  ///
+  /// In en, this message translates to:
+  /// **'Monospace'**
+  String get formatMonospace;
+
+  /// No description provided for @formatSpoiler.
+  ///
+  /// In en, this message translates to:
+  /// **'Spoiler'**
+  String get formatSpoiler;
+
+  /// No description provided for @formatQuote.
+  ///
+  /// In en, this message translates to:
+  /// **'Quote'**
+  String get formatQuote;
+
+  /// No description provided for @formatLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Link…'**
+  String get formatLink;
+
+  /// No description provided for @formatPlain.
+  ///
+  /// In en, this message translates to:
+  /// **'Plain text'**
+  String get formatPlain;
+
+  /// No description provided for @linkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add link'**
+  String get linkTitle;
+
+  /// No description provided for @linkHint.
+  ///
+  /// In en, this message translates to:
+  /// **'URL'**
+  String get linkHint;
+
+  /// No description provided for @linkApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get linkApply;
 
   /// No description provided for @deleteMessageTitle.
   ///
@@ -1748,6 +2006,12 @@ abstract class AppLocalizations {
   /// **'Connected business bot'**
   String get connectedBot;
 
+  /// No description provided for @connectedBotFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the connected bot'**
+  String get connectedBotFailed;
+
   /// No description provided for @connectedBotHint.
   ///
   /// In en, this message translates to:
@@ -1765,6 +2029,306 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Disconnect {name}?'**
   String disconnectBotTitle(String name);
+
+  /// No description provided for @appearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get appearance;
+
+  /// No description provided for @themeAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get themeAuto;
+
+  /// No description provided for @themeLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get themeLight;
+
+  /// No description provided for @themeDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get themeDark;
+
+  /// No description provided for @accentColor.
+  ///
+  /// In en, this message translates to:
+  /// **'Accent color'**
+  String get accentColor;
+
+  /// No description provided for @accentBlue.
+  ///
+  /// In en, this message translates to:
+  /// **'Blue'**
+  String get accentBlue;
+
+  /// No description provided for @accentIndigo.
+  ///
+  /// In en, this message translates to:
+  /// **'Indigo'**
+  String get accentIndigo;
+
+  /// No description provided for @accentTeal.
+  ///
+  /// In en, this message translates to:
+  /// **'Teal'**
+  String get accentTeal;
+
+  /// No description provided for @accentGreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Green'**
+  String get accentGreen;
+
+  /// No description provided for @accentOrange.
+  ///
+  /// In en, this message translates to:
+  /// **'Orange'**
+  String get accentOrange;
+
+  /// No description provided for @accentGraphite.
+  ///
+  /// In en, this message translates to:
+  /// **'Graphite'**
+  String get accentGraphite;
+
+  /// No description provided for @chatWallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat wallpaper'**
+  String get chatWallpaper;
+
+  /// No description provided for @chatWallpaperHint.
+  ///
+  /// In en, this message translates to:
+  /// **'When off, chats sit on a plain background.'**
+  String get chatWallpaperHint;
+
+  /// No description provided for @messageTextSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Message text size'**
+  String get messageTextSize;
+
+  /// No description provided for @textSizeValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{size} pt'**
+  String textSizeValue(String size);
+
+  /// No description provided for @previewSender.
+  ///
+  /// In en, this message translates to:
+  /// **'Anna'**
+  String get previewSender;
+
+  /// No description provided for @previewMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Good morning! The new settings look great.'**
+  String get previewMessage;
+
+  /// No description provided for @reduceMotion.
+  ///
+  /// In en, this message translates to:
+  /// **'Reduce motion'**
+  String get reduceMotion;
+
+  /// No description provided for @reduceMotionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Turns animations off. Mollygram also follows the same setting in macOS Accessibility.'**
+  String get reduceMotionHint;
+
+  /// No description provided for @dataAndStorage.
+  ///
+  /// In en, this message translates to:
+  /// **'Data and storage'**
+  String get dataAndStorage;
+
+  /// No description provided for @storageUsage.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage'**
+  String get storageUsage;
+
+  /// No description provided for @storageCalculating.
+  ///
+  /// In en, this message translates to:
+  /// **'Calculating…'**
+  String get storageCalculating;
+
+  /// No description provided for @storageUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'{size} of media and files'**
+  String storageUsed(String size);
+
+  /// No description provided for @storageEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No media or files are stored on this computer.'**
+  String get storageEmpty;
+
+  /// No description provided for @storagePhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos'**
+  String get storagePhotos;
+
+  /// No description provided for @storageVideos.
+  ///
+  /// In en, this message translates to:
+  /// **'Videos'**
+  String get storageVideos;
+
+  /// No description provided for @storageFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Files'**
+  String get storageFiles;
+
+  /// No description provided for @storageVoiceAndMusic.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice and music'**
+  String get storageVoiceAndMusic;
+
+  /// No description provided for @storageStickers.
+  ///
+  /// In en, this message translates to:
+  /// **'Stickers'**
+  String get storageStickers;
+
+  /// No description provided for @storageOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get storageOther;
+
+  /// No description provided for @storageDatabase.
+  ///
+  /// In en, this message translates to:
+  /// **'Message database'**
+  String get storageDatabase;
+
+  /// No description provided for @storageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Cleared media stays in the Telegram cloud and downloads again when needed. Messages are kept.'**
+  String get storageHint;
+
+  /// No description provided for @storageFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t read the storage usage.'**
+  String get storageFailed;
+
+  /// No description provided for @clearCache.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear cache…'**
+  String get clearCache;
+
+  /// No description provided for @clearCacheTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear {size} from this computer?'**
+  String clearCacheTitle(String size);
+
+  /// No description provided for @clearCacheMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Media stays in the Telegram cloud and downloads again when you open it.'**
+  String get clearCacheMessage;
+
+  /// No description provided for @clear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get clear;
+
+  /// No description provided for @clearCacheFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t clear the cache.'**
+  String get clearCacheFailed;
+
+  /// No description provided for @autoDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic media download'**
+  String get autoDownload;
+
+  /// No description provided for @autoDownloadWifi.
+  ///
+  /// In en, this message translates to:
+  /// **'On Wi-Fi and Ethernet'**
+  String get autoDownloadWifi;
+
+  /// No description provided for @autoDownloadOther.
+  ///
+  /// In en, this message translates to:
+  /// **'On other networks'**
+  String get autoDownloadOther;
+
+  /// No description provided for @autoDownloadHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Other networks are personal hotspots and other metered connections.'**
+  String get autoDownloadHint;
+
+  /// No description provided for @downloadFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Download folder'**
+  String get downloadFolder;
+
+  /// No description provided for @downloadFolderDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloads'**
+  String get downloadFolderDefault;
+
+  /// No description provided for @chooseFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose…'**
+  String get chooseFolder;
+
+  /// No description provided for @downloadFolderHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Files you save from chats go here.'**
+  String get downloadFolderHint;
+
+  /// No description provided for @sizeBytes.
+  ///
+  /// In en, this message translates to:
+  /// **'{size} B'**
+  String sizeBytes(String size);
+
+  /// No description provided for @sizeKilobytes.
+  ///
+  /// In en, this message translates to:
+  /// **'{size} KB'**
+  String sizeKilobytes(String size);
+
+  /// No description provided for @sizeMegabytes.
+  ///
+  /// In en, this message translates to:
+  /// **'{size} MB'**
+  String sizeMegabytes(String size);
+
+  /// No description provided for @sizeGigabytes.
+  ///
+  /// In en, this message translates to:
+  /// **'{size} GB'**
+  String sizeGigabytes(String size);
 
   /// No description provided for @emojiTab.
   ///
@@ -1994,6 +2558,96 @@ abstract class AppLocalizations {
   /// **'Next reaction'**
   String get nextReaction;
 
+  /// No description provided for @linkJoinChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Join channel'**
+  String get linkJoinChannel;
+
+  /// No description provided for @linkJoinGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Join group'**
+  String get linkJoinGroup;
+
+  /// No description provided for @linkRequestToJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'Request to join'**
+  String get linkRequestToJoin;
+
+  /// No description provided for @linkViewChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'View channel'**
+  String get linkViewChannel;
+
+  /// No description provided for @linkViewGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'View group'**
+  String get linkViewGroup;
+
+  /// No description provided for @linkSubscribers.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No subscribers} one{{count} subscriber} other{{count} subscribers}}'**
+  String linkSubscribers(int count);
+
+  /// No description provided for @linkMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No members} one{{count} member} other{{count} members}}'**
+  String linkMembers(int count);
+
+  /// No description provided for @linkApprovalHint.
+  ///
+  /// In en, this message translates to:
+  /// **'An admin has to approve your request.'**
+  String get linkApprovalHint;
+
+  /// No description provided for @linkRequestSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Request sent'**
+  String get linkRequestSent;
+
+  /// No description provided for @linkRequestSentHint.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ll join once an admin approves it.'**
+  String get linkRequestSentHint;
+
+  /// No description provided for @linkJoinFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t join. Try again later.'**
+  String get linkJoinFailed;
+
+  /// No description provided for @linkMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'This link is invalid or has expired.'**
+  String get linkMissing;
+
+  /// No description provided for @linkUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Mollygram can\'t open this kind of link yet.'**
+  String get linkUnsupported;
+
+  /// No description provided for @done.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get done;
+
+  /// No description provided for @linkForbidden.
+  ///
+  /// In en, this message translates to:
+  /// **'You can\'t view this chat.'**
+  String get linkForbidden;
+
   /// No description provided for @menuPin.
   ///
   /// In en, this message translates to:
@@ -2029,6 +2683,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Back to where you were'**
   String get backToPrevious;
+
+  /// No description provided for @searchInChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Search in chat'**
+  String get searchInChat;
+
+  /// No description provided for @searchCounter.
+  ///
+  /// In en, this message translates to:
+  /// **'{index} of {count}'**
+  String searchCounter(int index, int count);
+
+  /// No description provided for @searchNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No results'**
+  String get searchNoResults;
+
+  /// No description provided for @searchOlder.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous result'**
+  String get searchOlder;
+
+  /// No description provided for @searchNewer.
+  ///
+  /// In en, this message translates to:
+  /// **'Next result'**
+  String get searchNewer;
+
+  /// No description provided for @sharedMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared media'**
+  String get sharedMedia;
+
+  /// No description provided for @sharedMediaTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Media'**
+  String get sharedMediaTab;
+
+  /// No description provided for @sharedFilesTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Files'**
+  String get sharedFilesTab;
+
+  /// No description provided for @sharedLinksTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Links'**
+  String get sharedLinksTab;
+
+  /// No description provided for @sharedVoiceTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice'**
+  String get sharedVoiceTab;
+
+  /// No description provided for @sharedMusicTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Music'**
+  String get sharedMusicTab;
+
+  /// No description provided for @sharedMediaEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No photos or videos yet'**
+  String get sharedMediaEmpty;
+
+  /// No description provided for @sharedFilesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No files yet'**
+  String get sharedFilesEmpty;
+
+  /// No description provided for @sharedLinksEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No links yet'**
+  String get sharedLinksEmpty;
+
+  /// No description provided for @sharedVoiceEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No voice messages yet'**
+  String get sharedVoiceEmpty;
+
+  /// No description provided for @sharedMusicEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No music yet'**
+  String get sharedMusicEmpty;
+
+  /// No description provided for @sharedLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the list'**
+  String get sharedLoadFailed;
+
+  /// No description provided for @showInChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Show in chat'**
+  String get showInChat;
 
   /// No description provided for @joinChannel.
   ///
@@ -2155,6 +2917,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Senders won\'t see that you\'ve played them'**
   String get hideContentOpenedHint;
+
+  /// No description provided for @menuSelect.
+  ///
+  /// In en, this message translates to:
+  /// **'Select'**
+  String get menuSelect;
+
+  /// No description provided for @selectedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} selected} other{{count} selected}}'**
+  String selectedCount(int count);
+
+  /// No description provided for @clearSelection.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear selection'**
+  String get clearSelection;
+
+  /// No description provided for @copy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get copy;
+
+  /// No description provided for @previousMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous month'**
+  String get previousMonth;
+
+  /// No description provided for @nextMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Next month'**
+  String get nextMonth;
 }
 
 class _AppLocalizationsDelegate

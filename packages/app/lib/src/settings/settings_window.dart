@@ -7,10 +7,12 @@ import '../../l10n/app_localizations.dart';
 import '../notifications/notifications_page.dart';
 import '../window_drag_area.dart';
 import 'account_page.dart';
+import 'appearance_page.dart';
 import 'plugins_page.dart';
 import 'privacy_extras_page.dart';
 import 'sessions_page.dart';
 import 'settings_style.dart';
+import 'storage_page.dart';
 
 /// One entry of the settings source list and the page it opens.
 ///
@@ -57,6 +59,14 @@ const privacyExtrasSectionId = 'privacyExtras';
 /// Every page of the source list below the account card, in order.
 final settingsSections = <SettingsSection>[
   SettingsSection(
+    id: 'notifications',
+    icon: MgIcons.notifications,
+    tint: const Color(0xFFE5343B),
+    title: (l10n) => l10n.notifications,
+    builder: (context) => const NotificationsPage(),
+    fullBleed: true,
+  ),
+  SettingsSection(
     id: 'privacy',
     icon: MgIcons.lock,
     tint: const Color(0xFF0A7CFF),
@@ -83,12 +93,32 @@ final settingsSections = <SettingsSection>[
     builder: (context) => const PrivacyExtrasPage(),
   ),
   SettingsSection(
-    id: 'notifications',
-    icon: MgIcons.notifications,
-    tint: const Color(0xFFE5343B),
-    title: (l10n) => l10n.notifications,
-    builder: (context) => const NotificationsPage(),
-    fullBleed: true,
+    id: 'data',
+    icon: MgIcons.storage,
+    tint: const Color(0xFF34A853),
+    title: (l10n) => l10n.dataAndStorage,
+    keywords: (l10n) => [
+      l10n.storageUsage,
+      l10n.clearCache,
+      l10n.autoDownload,
+      l10n.downloadFolder,
+    ],
+    builder: (context) => const StoragePage(),
+  ),
+  SettingsSection(
+    id: 'appearance',
+    icon: MgIcons.appearance,
+    tint: const Color(0xFF5E5CE6),
+    title: (l10n) => l10n.appearance,
+    keywords: (l10n) => [
+      l10n.themeDark,
+      l10n.themeLight,
+      l10n.accentColor,
+      l10n.chatWallpaper,
+      l10n.messageTextSize,
+      l10n.reduceMotion,
+    ],
+    builder: (context) => const AppearancePage(),
   ),
   SettingsSection(
     id: 'plugins',
@@ -183,10 +213,7 @@ class _NestedPage {
 
 class _SettingsWindowState extends ConsumerState<SettingsWindow>
     with SingleTickerProviderStateMixin {
-  late final _appear = AnimationController(
-    vsync: this,
-    duration: settingsMotion,
-  )..forward();
+  late final _appear = AnimationController(vsync: this);
   final _search = TextEditingController();
   late String _section = widget.initialSection;
   final _nested = <_NestedPage>[];
@@ -196,6 +223,13 @@ class _SettingsWindowState extends ConsumerState<SettingsWindow>
   void initState() {
     super.initState();
     _search.addListener(() => setState(() {}));
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _appear.duration = settingsMotionOf(context);
+    if (_appear.isDismissed && !_closing) _appear.forward();
   }
 
   @override
@@ -340,7 +374,7 @@ class _SettingsWindowState extends ConsumerState<SettingsWindow>
                 // The back button is drawn over this band, above the window
                 // drag area (see the pane below); the title makes room.
                 child: AnimatedPadding(
-                  duration: settingsMotion,
+                  duration: settingsMotionOf(context),
                   curve: settingsCurve,
                   padding: EdgeInsets.only(left: _nested.isEmpty ? 20 : 46),
                   child: Align(
@@ -445,7 +479,7 @@ class _PageSwitcher extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => AnimatedSwitcher(
-    duration: settingsMotion,
+    duration: settingsMotionOf(context),
     switchInCurve: settingsCurve,
     switchOutCurve: Curves.easeIn,
     layoutBuilder: (current, previous) =>

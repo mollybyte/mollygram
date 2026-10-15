@@ -15,11 +15,15 @@ final class MessageMenuHandlers {
     required this.onReply,
     required this.onEdit,
     required this.onForward,
+    required this.onSelect,
   });
 
   final void Function(ConversationMessage message) onReply;
   final void Function(ConversationMessage message) onEdit;
   final void Function(List<ConversationMessage> messages) onForward;
+
+  /// Starts selecting messages with this row, or adds it to the selection.
+  final void Function(MessageRow row) onSelect;
 }
 
 /// The message a command like Reply or Edit acts on in [row]: the one with
@@ -127,16 +131,20 @@ Future<void> showMessageMenu(
               .catchError((Object _) {}),
         ),
       ),
+    MgMenuItem(
+      label: l10n.menuSelect,
+      onSelected: () => handlers.onSelect(row),
+    ),
     if (canDelete)
       MgMenuItem(
         label: l10n.menuDelete,
         destructive: true,
         onSelected: () => unawaited(
-          _confirmDelete(
+          confirmDeleteMessages(
             context,
             conversations: conversations,
             messages: row.messages,
-            properties: properties!,
+            properties: [properties!],
             peerName: peerName,
             isShown: isShown,
           ),
@@ -181,20 +189,25 @@ bool _isEditable(ConversationMessage message) => switch (message.content) {
   _ => false,
 };
 
-Future<void> _confirmDelete(
+/// Asks before deleting [messages], whose [properties] say how each may go:
+/// the "also for" option shows only when every one of them can be deleted
+/// both ways. Nothing happens when one of them can't be deleted at all.
+Future<void> confirmDeleteMessages(
   BuildContext context, {
   required ConversationController conversations,
   required List<ConversationMessage> messages,
-  required td.MessageProperties properties,
+  required List<td.MessageProperties> properties,
   required String? peerName,
   required bool Function() isShown,
 }) async {
   final l10n = AppLocalizations.of(context);
   final count = messages.length;
+  final forAll = properties.every((p) => p.canBeDeletedForAllUsers);
+  final forSelf = properties.every((p) => p.canBeDeletedOnlyForSelf);
+  if (!forAll && !forSelf) return;
   // In a channel, or for an outgoing message in a basic group, only
   // deleting for everyone may be possible; there is nothing to choose.
-  final choice =
-      properties.canBeDeletedForAllUsers && properties.canBeDeletedOnlyForSelf;
+  final choice = forAll && forSelf;
   final revokeOption = !choice
       ? null
       : peerName != null
@@ -212,7 +225,7 @@ Future<void> _confirmDelete(
     destructive: true,
   );
   if (checked == null || !isShown()) return;
-  final revoke = choice ? checked : properties.canBeDeletedForAllUsers;
+  final revoke = choice ? checked : forAll;
   await conversations
       .deleteMessages(messages.first.chatId, [
         for (final message in messages) message.id,

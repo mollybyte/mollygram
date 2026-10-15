@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mollygram_core/mollygram_core.dart';
-import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../l10n/app_localizations.dart';
 import 'auth/sign_in_screen.dart';
@@ -12,27 +11,38 @@ import 'home/home_screen.dart';
 import 'home/workspace_storage.dart';
 import 'session/close_before_exit.dart';
 import 'session/providers.dart';
+import 'settings/appearance.dart';
+import 'settings/preferences.dart';
 
-class MollygramApp extends StatelessWidget {
+class MollygramApp extends ConsumerWidget {
   const MollygramApp({super.key});
 
   @override
-  Widget build(BuildContext context) => MaterialApp(
-    onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
-    debugShowCheckedModeBanner: false,
-    theme: buildMgTheme(MgColors.light),
-    darkTheme: buildMgTheme(MgColors.dark),
-    localizationsDelegates: const [
-      AppLocalizations.delegate,
-      GlobalMaterialLocalizations.delegate,
-      GlobalWidgetsLocalizations.delegate,
-      GlobalCupertinoLocalizations.delegate,
-    ],
-    supportedLocales: AppLocalizations.supportedLocales,
-    home: const _CloseSessionBeforeExit(
-      child: Material(type: MaterialType.transparency, child: _Root()),
-    ),
-  );
+  Widget build(BuildContext context, WidgetRef ref) {
+    final preferences = ref.watch(preferencesProvider);
+    final themes = appThemes(preferences);
+    return MaterialApp(
+      onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
+      debugShowCheckedModeBanner: false,
+      theme: themes.light,
+      darkTheme: themes.dark,
+      themeMode: preferences.theme,
+      // A theme or accent change cross-fades.
+      themeAnimationDuration: themeAnimationDuration(preferences.reduceMotion),
+      themeAnimationCurve: Curves.easeOut,
+      builder: (context, child) => ReduceMotionScope(child: child!),
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: const _CloseSessionBeforeExit(
+        child: Material(type: MaterialType.transparency, child: _Root()),
+      ),
+    );
+  }
 }
 
 /// Saves the window layout and closes TDLib before the process exits; see
@@ -47,6 +57,7 @@ class _CloseSessionBeforeExit extends ConsumerWidget {
     close: () async {
       // A layout change still waiting to be saved is written first.
       await ref.read(workspaceSaverProvider).flush();
+      await ref.read(preferencesProvider.notifier).flush();
       await ref.read(telegramSessionProvider).value?.dispose();
     },
     child: child,

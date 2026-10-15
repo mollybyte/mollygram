@@ -149,6 +149,112 @@ class AppLocalizationsRu extends AppLocalizations {
   String get nothingFound => 'Ничего не найдено';
 
   @override
+  String get newMessage => 'Новое сообщение';
+
+  @override
+  String get contacts => 'Контакты';
+
+  @override
+  String get peopleSearchHint => 'Имя или имя пользователя';
+
+  @override
+  String get recentChats => 'Недавние';
+
+  @override
+  String get globalSearch => 'Глобальный поиск';
+
+  @override
+  String get noContacts => 'Контактов пока нет';
+
+  @override
+  String get presenceOnline => 'в сети';
+
+  @override
+  String get presenceJustNow => 'был(а) только что';
+
+  @override
+  String presenceMinutes(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'был(а) $count минуты назад',
+      many: 'был(а) $count минут назад',
+      few: 'был(а) $count минуты назад',
+      one: 'был(а) $count минуту назад',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String presenceToday(Object time) {
+    return 'был(а) сегодня в $time';
+  }
+
+  @override
+  String presenceYesterday(Object time) {
+    return 'был(а) вчера в $time';
+  }
+
+  @override
+  String presenceDate(Object date) {
+    return 'был(а) $date';
+  }
+
+  @override
+  String get presenceRecently => 'был(а) недавно';
+
+  @override
+  String get presenceLastWeek => 'был(а) на этой неделе';
+
+  @override
+  String get presenceLastMonth => 'был(а) в этом месяце';
+
+  @override
+  String get presenceLongAgo => 'был(а) давно';
+
+  @override
+  String get presenceBot => 'бот';
+
+  @override
+  String get addContact => 'Добавить контакт';
+
+  @override
+  String get contactFirstName => 'Имя';
+
+  @override
+  String get contactLastName => 'Фамилия (необязательно)';
+
+  @override
+  String get contactPhone => 'Номер телефона';
+
+  @override
+  String get contactAdd => 'Добавить';
+
+  @override
+  String get contactFirstNameRequired => 'Введите имя';
+
+  @override
+  String get contactPhoneRequired => 'Введите номер телефона';
+
+  @override
+  String get contactNotOnTelegram => 'Этого номера нет в Telegram';
+
+  @override
+  String get contactAddFailed =>
+      'Не удалось добавить контакт. Проверьте соединение и попробуйте ещё раз.';
+
+  @override
+  String get deleteContact => 'Удалить контакт';
+
+  @override
+  String deleteContactTitle(Object name) {
+    return 'Удалить $name из контактов?';
+  }
+
+  @override
+  String get deleteContactFailed => 'Не удалось удалить контакт';
+
+  @override
   String get selectChat => 'Выберите чат, чтобы начать общение';
 
   @override
@@ -186,6 +292,12 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get voiceSendFailed => 'Не удалось отправить голосовое';
+
+  @override
+  String get videoHoldToRecord => 'Удерживайте, чтобы записать видеосообщение';
+
+  @override
+  String get videoCameraDenied => 'У Mollygram нет доступа к камере.';
 
   @override
   String previewYou(String text) {
@@ -343,6 +455,42 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get cancel => 'Отмена';
+
+  @override
+  String get formatBold => 'Жирный';
+
+  @override
+  String get formatItalic => 'Курсив';
+
+  @override
+  String get formatUnderline => 'Подчёркнутый';
+
+  @override
+  String get formatStrikethrough => 'Зачёркнутый';
+
+  @override
+  String get formatMonospace => 'Моноширинный';
+
+  @override
+  String get formatSpoiler => 'Спойлер';
+
+  @override
+  String get formatQuote => 'Цитата';
+
+  @override
+  String get formatLink => 'Ссылка…';
+
+  @override
+  String get formatPlain => 'Обычный текст';
+
+  @override
+  String get linkTitle => 'Добавить ссылку';
+
+  @override
+  String get linkHint => 'Адрес';
+
+  @override
+  String get linkApply => 'Применить';
 
   @override
   String get deleteMessageTitle => 'Удалить сообщение?';
@@ -1049,6 +1197,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get connectedBot => 'Подключённый бизнес-бот';
 
   @override
+  String get connectedBotFailed => 'Не удалось загрузить подключённого бота';
+
+  @override
   String get connectedBotHint =>
       'Этот бот может читать ваши бизнес-чаты и отвечать в них.';
 
@@ -1058,6 +1209,175 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String disconnectBotTitle(String name) {
     return 'Отключить $name?';
+  }
+
+  @override
+  String get appearance => 'Оформление';
+
+  @override
+  String get themeAuto => 'Авто';
+
+  @override
+  String get themeLight => 'Светлая';
+
+  @override
+  String get themeDark => 'Тёмная';
+
+  @override
+  String get accentColor => 'Цвет акцента';
+
+  @override
+  String get accentBlue => 'Синий';
+
+  @override
+  String get accentIndigo => 'Индиго';
+
+  @override
+  String get accentTeal => 'Бирюзовый';
+
+  @override
+  String get accentGreen => 'Зелёный';
+
+  @override
+  String get accentOrange => 'Оранжевый';
+
+  @override
+  String get accentGraphite => 'Графит';
+
+  @override
+  String get chatWallpaper => 'Обои в чатах';
+
+  @override
+  String get chatWallpaperHint => 'Если выключено, у чатов будет простой фон.';
+
+  @override
+  String get messageTextSize => 'Размер текста сообщений';
+
+  @override
+  String textSizeValue(String size) {
+    return '$size пт';
+  }
+
+  @override
+  String get previewSender => 'Анна';
+
+  @override
+  String get previewMessage => 'Доброе утро! Новые настройки отлично выглядят.';
+
+  @override
+  String get reduceMotion => 'Уменьшить движение';
+
+  @override
+  String get reduceMotionHint =>
+      'Отключает анимацию. Mollygram также учитывает одноимённую настройку универсального доступа macOS.';
+
+  @override
+  String get dataAndStorage => 'Данные и память';
+
+  @override
+  String get storageUsage => 'Хранилище';
+
+  @override
+  String get storageCalculating => 'Подсчёт…';
+
+  @override
+  String storageUsed(String size) {
+    return 'Медиа и файлы: $size';
+  }
+
+  @override
+  String get storageEmpty =>
+      'На этом компьютере нет сохранённых медиа и файлов.';
+
+  @override
+  String get storagePhotos => 'Фото';
+
+  @override
+  String get storageVideos => 'Видео';
+
+  @override
+  String get storageFiles => 'Файлы';
+
+  @override
+  String get storageVoiceAndMusic => 'Голосовые и музыка';
+
+  @override
+  String get storageStickers => 'Стикеры';
+
+  @override
+  String get storageOther => 'Другое';
+
+  @override
+  String get storageDatabase => 'База сообщений';
+
+  @override
+  String get storageHint =>
+      'Удалённые медиа остаются в облаке Telegram и загружаются снова, когда нужны. Сообщения сохраняются.';
+
+  @override
+  String get storageFailed => 'Не удалось подсчитать занятое место.';
+
+  @override
+  String get clearCache => 'Очистить кэш…';
+
+  @override
+  String clearCacheTitle(String size) {
+    return 'Удалить $size с этого компьютера?';
+  }
+
+  @override
+  String get clearCacheMessage =>
+      'Медиа останутся в облаке Telegram и загрузятся снова, когда вы их откроете.';
+
+  @override
+  String get clear => 'Очистить';
+
+  @override
+  String get clearCacheFailed => 'Не удалось очистить кэш.';
+
+  @override
+  String get autoDownload => 'Автозагрузка медиа';
+
+  @override
+  String get autoDownloadWifi => 'По Wi-Fi и Ethernet';
+
+  @override
+  String get autoDownloadOther => 'В других сетях';
+
+  @override
+  String get autoDownloadHint =>
+      'Другие сети — это режим модема и прочие лимитные подключения.';
+
+  @override
+  String get downloadFolder => 'Папка загрузок';
+
+  @override
+  String get downloadFolderDefault => 'Загрузки';
+
+  @override
+  String get chooseFolder => 'Выбрать…';
+
+  @override
+  String get downloadFolderHint => 'Сюда сохраняются файлы из чатов.';
+
+  @override
+  String sizeBytes(String size) {
+    return '$size Б';
+  }
+
+  @override
+  String sizeKilobytes(String size) {
+    return '$size КБ';
+  }
+
+  @override
+  String sizeMegabytes(String size) {
+    return '$size МБ';
+  }
+
+  @override
+  String sizeGigabytes(String size) {
+    return '$size ГБ';
   }
 
   @override
@@ -1186,6 +1506,81 @@ class AppLocalizationsRu extends AppLocalizations {
   String get nextReaction => 'Следующая реакция';
 
   @override
+  String get linkJoinChannel => 'Подписаться на канал';
+
+  @override
+  String get linkJoinGroup => 'Вступить в группу';
+
+  @override
+  String get linkRequestToJoin => 'Подать заявку';
+
+  @override
+  String get linkViewChannel => 'Открыть канал';
+
+  @override
+  String get linkViewGroup => 'Открыть группу';
+
+  @override
+  String linkSubscribers(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString подписчиков',
+      few: '$countString подписчика',
+      one: '$countString подписчик',
+      zero: 'Нет подписчиков',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String linkMembers(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString участников',
+      few: '$countString участника',
+      one: '$countString участник',
+      zero: 'Нет участников',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get linkApprovalHint => 'Заявку должен одобрить администратор.';
+
+  @override
+  String get linkRequestSent => 'Заявка отправлена';
+
+  @override
+  String get linkRequestSentHint =>
+      'Вы вступите, когда администратор её одобрит.';
+
+  @override
+  String get linkJoinFailed => 'Не удалось вступить. Попробуйте позже.';
+
+  @override
+  String get linkMissing => 'Ссылка недействительна или устарела.';
+
+  @override
+  String get linkUnsupported =>
+      'Mollygram пока не умеет открывать такие ссылки.';
+
+  @override
+  String get done => 'Готово';
+
+  @override
+  String get linkForbidden => 'Вы не можете просматривать этот чат.';
+
+  @override
   String get menuPin => 'Закрепить';
 
   @override
@@ -1204,6 +1599,62 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get backToPrevious => 'Вернуться назад';
+
+  @override
+  String get searchInChat => 'Поиск в чате';
+
+  @override
+  String searchCounter(int index, int count) {
+    return '$index из $count';
+  }
+
+  @override
+  String get searchNoResults => 'Ничего не найдено';
+
+  @override
+  String get searchOlder => 'Предыдущий результат';
+
+  @override
+  String get searchNewer => 'Следующий результат';
+
+  @override
+  String get sharedMedia => 'Общие материалы';
+
+  @override
+  String get sharedMediaTab => 'Медиа';
+
+  @override
+  String get sharedFilesTab => 'Файлы';
+
+  @override
+  String get sharedLinksTab => 'Ссылки';
+
+  @override
+  String get sharedVoiceTab => 'Голосовые';
+
+  @override
+  String get sharedMusicTab => 'Музыка';
+
+  @override
+  String get sharedMediaEmpty => 'Здесь пока нет фото и видео';
+
+  @override
+  String get sharedFilesEmpty => 'Здесь пока нет файлов';
+
+  @override
+  String get sharedLinksEmpty => 'Здесь пока нет ссылок';
+
+  @override
+  String get sharedVoiceEmpty => 'Здесь пока нет голосовых сообщений';
+
+  @override
+  String get sharedMusicEmpty => 'Здесь пока нет музыки';
+
+  @override
+  String get sharedLoadFailed => 'Не удалось загрузить список';
+
+  @override
+  String get showInChat => 'Показать в чате';
 
   @override
   String get joinChannel => 'Подписаться';
@@ -1273,4 +1724,31 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get hideContentOpenedHint =>
       'Отправители не увидят, что вы их прослушали';
+
+  @override
+  String get menuSelect => 'Выбрать';
+
+  @override
+  String selectedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Выбрано $count сообщений',
+      few: 'Выбрано $count сообщения',
+      one: 'Выбрано $count сообщение',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get clearSelection => 'Снять выделение';
+
+  @override
+  String get copy => 'Копировать';
+
+  @override
+  String get previousMonth => 'Предыдущий месяц';
+
+  @override
+  String get nextMonth => 'Следующий месяц';
 }
