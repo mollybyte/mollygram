@@ -1570,6 +1570,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get linkForbidden => 'You can\'t view this chat.';
 
   @override
+  String get linkCannotSend => 'Couldn\'t send the command.';
+
+  @override
   String get menuPin => 'Pin';
 
   @override

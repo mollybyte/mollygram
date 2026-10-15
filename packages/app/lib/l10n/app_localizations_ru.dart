@@ -1587,6 +1587,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get linkForbidden => 'Вы не можете просматривать этот чат.';
 
   @override
+  String get linkCannotSend => 'Не удалось отправить команду.';
+
+  @override
   String get menuPin => 'Закрепить';
 
   @override

@@ -427,6 +427,7 @@
   "linkUnsupported": "Mollygram пока не умеет открывать такие ссылки.",
   "done": "Готово",
   "linkForbidden": "Вы не можете просматривать этот чат.",
+  "linkCannotSend": "Не удалось отправить команду.",
   "menuPin": "Закрепить",
   "menuUnpin": "Открепить",
   "pinnedMessage": "Закреплённое сообщение",

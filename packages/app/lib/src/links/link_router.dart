@@ -34,6 +34,25 @@ enum LinkNotice {
 
   /// A chat the user was banned from.
   forbidden,
+
+  /// A bot command tapped where the user can't write, or that failed to
+  /// send.
+  cannotSend,
+}
+
+/// What sending a bot command needs from the session.
+abstract interface class CommandChats {
+  /// Whether the user may write in [chatId]; false for channels, where a
+  /// command would be published to every reader.
+  bool canSendCommand(int chatId);
+
+  /// Whether [chatId] is a group, where several bots may listen.
+  bool isGroup(int chatId);
+
+  /// The username of [userId] when it is a bot.
+  Future<String?> botUsername(int userId);
+
+  Future<void> send(int chatId, String text);
 }
 
 /// Opens what a link points at: a chat in the workspace, the join sheet
@@ -50,7 +69,7 @@ class LinkRouter {
     required this._launch,
     this._openMessage,
     this._search,
-    this._sendCommand,
+    this._commandChats,
   });
 
   final Future<LinkTarget?> Function(String raw) _resolve;
@@ -60,12 +79,10 @@ class LinkRouter {
   final Future<bool> Function(Uri uri) _launch;
   final void Function(int chatId, int messageId)? _openMessage;
 
-  /// Searches messages for a hashtag.
-  final void Function(String hashtag)? _search;
+  /// Opens the message search with a query.
+  final void Function(String query)? _search;
 
-  /// Sends a bot command to the chat it was tapped in; false when there
-  /// is no such chat.
-  final Future<bool> Function(String command)? _sendCommand;
+  final CommandChats? _commandChats;
 
   /// The window that shows sheets; set by [LinkHost]. Without it a link
   /// still opens chats and pages, and skips the sheets.
@@ -107,10 +124,6 @@ class LinkRouter {
         }
         final chat = await presenter.confirmJoin(preview, () => _join(preview));
         if (chat != null && chat != 0) _openChat(chat);
-      case HashtagLinkTarget(:final hashtag):
-        _search?.call(hashtag);
-      case BotCommandLinkTarget(:final command):
-        await _sendCommand?.call(command);
       case CommandLinkTarget(:final commandId):
         if (!_runCommand(commandId)) {
           presenter?.showNotice(LinkNotice.unsupported);
@@ -125,6 +138,44 @@ class LinkRouter {
         } else {
           presenter?.showNotice(LinkNotice.unsupported);
         }
+    }
+  }
+
+  /// Searches messages for [hashtag], with its `#` or `$`.
+  void searchHashtag(String hashtag) {
+    ++_generation;
+    // The search takes a leading "#" as the switch to messages, so the
+    // hashtag keeps its own after it: "##news" finds "#news".
+    _search?.call('#$hashtag');
+  }
+
+  /// Sends bot [command] to [chatId], where it was tapped in a message
+  /// from [senderUserId]. In a group a bare command gets the bot's
+  /// username, so it reaches the bot that offered it and only that one.
+  Future<void> sendBotCommand(
+    String command, {
+    required int chatId,
+    int? senderUserId,
+  }) async {
+    final generation = ++_generation;
+    final chats = _commandChats;
+    if (chats == null) return;
+    if (!chats.canSendCommand(chatId)) {
+      presenter?.showNotice(LinkNotice.cannotSend);
+      return;
+    }
+    var text = command;
+    if (!command.contains('@') &&
+        senderUserId != null &&
+        chats.isGroup(chatId)) {
+      final bot = await chats.botUsername(senderUserId);
+      if (generation != _generation) return;
+      if (bot != null && bot.isNotEmpty) text = '$command@$bot';
+    }
+    try {
+      await chats.send(chatId, text);
+    } on Object {
+      presenter?.showNotice(LinkNotice.cannotSend);
     }
   }
 }
@@ -154,45 +205,81 @@ final linkRouterProvider = Provider<LinkRouter>((ref) {
     // An open chat is revealed where it is instead of being opened again.
     openChat: workspace.open,
     // The chat's view takes the jump as it opens, or now if it is open.
+    // A jump the view never takes expires, see [MessageJumps.take].
     openMessage: (chatId, messageId) {
-      ref.read(messageJumpProvider.notifier).request(chatId, messageId);
-      workspace.open(chatId);
+      final jumps = ref.read(messageJumpProvider.notifier)
+        ..request(chatId, messageId);
+      try {
+        workspace.open(chatId);
+      } on Object {
+        jumps.take(chatId);
+        rethrow;
+      }
     },
     runCommand: commands.run,
     launch: launchExternal,
-    // The ⌘K palette searches messages after a "#": "#news" finds the
-    // messages with the hashtag, as Telegram's own hashtag search does.
-    search: (hashtag) => workspaceShellKey.currentState?.openPalette(
-      hashtag.startsWith('#') ? hashtag : '#$hashtag',
-    ),
-    // A click in a pane focuses it first, so the focused chat is the one
-    // the command was tapped in.
-    sendCommand: (command) async {
-      final chatId = workspace.value.focusedChat;
-      if (chatId == null) return false;
-      try {
-        await session.conversations.sendText(chatId, command);
-      } on Object {
-        return false;
-      }
-      return true;
-    },
+    search: (query) => workspaceShellKey.currentState?.openPalette(query),
+    commandChats: _SessionCommandChats(session),
   );
 });
 
-/// Opens a link tapped in [context], such as a link or a mention in a
-/// message. Outside a signed-in window it falls back to the browser.
-void openLinkFrom(BuildContext context, String url) {
-  LinkRouter? router;
+final class _SessionCommandChats implements CommandChats {
+  _SessionCommandChats(this._session);
+
+  final TelegramSession _session;
+
+  ConversationStore get _store => _session.conversations.store;
+
+  @override
+  bool canSendCommand(int chatId) =>
+      !_store.isChannel(chatId) && _store.canPost(chatId);
+
+  @override
+  bool isGroup(int chatId) => _store.isGroup(chatId);
+
+  @override
+  Future<String?> botUsername(int userId) => _session.links.botUsername(userId);
+
+  @override
+  Future<void> send(int chatId, String text) =>
+      _session.conversations.sendText(chatId, text);
+}
+
+LinkRouter? _routerOf(BuildContext context) {
   try {
-    router = ProviderScope.containerOf(
+    return ProviderScope.containerOf(
       context,
       listen: false,
     ).read(linkRouterProvider);
   } on Object {
     // No session or no provider scope, as in widget previews.
-    router = null;
+    return null;
   }
+}
+
+/// Searches messages for a hashtag tapped in [context].
+void searchHashtagFrom(BuildContext context, String hashtag) =>
+    _routerOf(context)?.searchHashtag(hashtag);
+
+/// Sends a bot command tapped in a message of [chatId] from
+/// [senderUserId].
+void sendBotCommandFrom(
+  BuildContext context,
+  String command, {
+  required int chatId,
+  int? senderUserId,
+}) {
+  final router = _routerOf(context);
+  if (router == null) return;
+  unawaited(
+    router.sendBotCommand(command, chatId: chatId, senderUserId: senderUserId),
+  );
+}
+
+/// Opens a link tapped in [context], such as a link or a mention in a
+/// message. Outside a signed-in window it falls back to the browser.
+void openLinkFrom(BuildContext context, String url) {
+  final router = _routerOf(context);
   if (router != null) {
     unawaited(router.open(url));
     return;

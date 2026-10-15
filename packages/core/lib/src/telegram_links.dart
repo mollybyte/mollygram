@@ -55,23 +55,6 @@ abstract final class TelegramLinks {
     'tel',
   }.contains(uri.scheme.toLowerCase());
 
-  static final _hashtag = RegExp(r'^[#$][^\s#$/@]+(@[A-Za-z0-9_]+)?$');
-  static final _botCommand = RegExp(r'^/[A-Za-z0-9_]{1,64}(@[A-Za-z0-9_]+)?$');
-
-  /// The hashtag or cashtag [raw] is, such as `#news` or `$TON`; null for
-  /// anything else.
-  static String? hashtag(String raw) {
-    final text = raw.trim();
-    return _hashtag.hasMatch(text) ? text : null;
-  }
-
-  /// The bot command [raw] is, such as `/start` or `/help@somebot`; null
-  /// for anything else.
-  static String? botCommand(String raw) {
-    final text = raw.trim();
-    return _botCommand.hasMatch(text) ? text : null;
-  }
-
   /// The link that opens the private chat with user [userId], as a
   /// mention by name in a message points to it.
   static Uri userLink(int userId) =>

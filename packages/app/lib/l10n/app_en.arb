@@ -631,6 +631,7 @@
   "linkUnsupported": "Mollygram can't open this kind of link yet.",
   "done": "Done",
   "linkForbidden": "You can't view this chat.",
+  "linkCannotSend": "Couldn't send the command.",
   "menuPin": "Pin",
   "menuUnpin": "Unpin",
   "pinnedMessage": "Pinned message",

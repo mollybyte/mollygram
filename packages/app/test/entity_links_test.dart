@@ -23,20 +23,58 @@ void main() {
         ),
       ],
     );
-    final links = <String>[];
-    final spans = buildEntitySpans(
+    final taps = <String>[];
+    List<String?> linked({bool inChat = true}) => [
+      for (final span in buildEntitySpans(
+        text,
+        colors: MgColors.light,
+        onLink: (url) {
+          taps.add('link $url');
+          return TapGestureRecognizer();
+        },
+        onHashtag: (tag) {
+          taps.add('hashtag $tag');
+          return TapGestureRecognizer();
+        },
+        onBotCommand: inChat
+            ? (command) {
+                taps.add('command $command');
+                return TapGestureRecognizer();
+              }
+            : null,
+      ))
+        if (span is TextSpan && span.recognizer != null) span.text,
+    ];
+    expect(linked(), ['Anna', '#news', '/start']);
+    expect(taps, ['link tg://user?id=55', 'hashtag #news', 'command /start']);
+    // Outside a chat a command has nowhere to go.
+    expect(linked(inChat: false), ['Anna', '#news']);
+  });
+
+  test('a link whose target reads like a command stays a link', () {
+    const text = td.FormattedText(
+      text: 'press',
+      entities: [
+        td.TextEntity(
+          offset: 0,
+          length: 5,
+          type: td.TextEntityTypeTextUrl(url: '/start'),
+        ),
+      ],
+    );
+    final taps = <String>[];
+    buildEntitySpans(
       text,
       colors: MgColors.light,
       onLink: (url) {
-        links.add(url);
+        taps.add('link $url');
+        return TapGestureRecognizer();
+      },
+      onBotCommand: (command) {
+        taps.add('command $command');
         return TapGestureRecognizer();
       },
     );
-    expect(links, ['tg://user?id=55', '#news', '/start']);
-    final linked = [
-      for (final span in spans)
-        if (span is TextSpan && span.recognizer != null) span.text,
-    ];
-    expect(linked, ['Anna', '#news', '/start']);
+    expect(taps, ['link /start']);
   });
 }

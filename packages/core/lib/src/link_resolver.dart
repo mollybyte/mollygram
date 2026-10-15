@@ -30,24 +30,6 @@ final class JoinLinkTarget extends LinkTarget {
   final ChatJoinPreview preview;
 }
 
-/// A hashtag or cashtag in a message, such as `#news`: the app searches
-/// messages for it.
-final class HashtagLinkTarget extends LinkTarget {
-  const HashtagLinkTarget(this.hashtag);
-
-  /// With its `#` or `$`.
-  final String hashtag;
-}
-
-/// A bot command in a message, such as `/start`: tapping it sends it to
-/// the chat it was tapped in.
-final class BotCommandLinkTarget extends LinkTarget {
-  const BotCommandLinkTarget(this.command);
-
-  /// With its `/` and any `@botname`.
-  final String command;
-}
-
 /// A link that runs one of the app's commands, such as `tg://settings`.
 final class CommandLinkTarget extends LinkTarget {
   const CommandLinkTarget(this.commandId);
@@ -136,16 +118,10 @@ final class LinkResolver {
   /// What [raw] leads to: a URL, `@username` or a scheme-less link such as
   /// `t.me/durov`. Returns null for text that is not a link.
   ///
-  /// Hashtags (`#news`, `$TON`) and bot commands (`/start`) come back as
-  /// such, `tg://user?id=` opens the private chat with that user and
-  /// `t.me/s/` channel previews lead to the channel.
+  /// `tg://user?id=` opens the private chat with that user and `t.me/s/`
+  /// channel previews lead to the channel. Hashtags and bot commands are
+  /// not links: the text knows them by their entities.
   Future<LinkTarget?> resolve(String raw) async {
-    if (TelegramLinks.hashtag(raw) case final tag?) {
-      return HashtagLinkTarget(tag);
-    }
-    if (TelegramLinks.botCommand(raw) case final command?) {
-      return BotCommandLinkTarget(command);
-    }
     final normalized = TelegramLinks.normalize(raw);
     if (normalized == null) return null;
     final uri = TelegramLinks.withoutWebPreview(normalized);
@@ -167,6 +143,18 @@ final class LinkResolver {
       return await _target(type, web);
     } on td.TdException {
       return const MissingLinkTarget();
+    }
+  }
+
+  /// The username of user [userId] when it is a bot; null for people,
+  /// bots without one and users TDLib can't find.
+  Future<String?> botUsername(int userId) async {
+    try {
+      final user = await _client.send(td.GetUser(userId: userId));
+      if (user.type is! td.UserTypeBot) return null;
+      return user.usernames?.activeUsernames.firstOrNull;
+    } on td.TdException {
+      return null;
     }
   }
 

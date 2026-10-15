@@ -210,20 +210,19 @@ void main() {
     expect(tg, isA<UnsupportedLinkTarget>());
   });
 
-  test('hands hashtags and bot commands back without asking TDLib', () async {
-    expect(
-      (await links.resolve('#news') as HashtagLinkTarget?)?.hashtag,
-      '#news',
-    );
-    expect(
-      (await links.resolve(r'$TON') as HashtagLinkTarget?)?.hashtag,
-      r'$TON',
-    );
-    expect(
-      (await links.resolve('/start@somebot') as BotCommandLinkTarget?)?.command,
-      '/start@somebot',
-    );
-    expect(json.sent, isEmpty);
+  test('leaves hashtags and bot commands to the text', () async {
+    expect(await links.resolve('#news'), isNot(isA<ChatLinkTarget>()));
+    expect(await links.resolve('/start'), isNot(isA<ChatLinkTarget>()));
+    expect(sentTypes(), isNot(contains('createPrivateChat')));
+  });
+
+  test('finds the username of a bot, not of a person', () async {
+    json.user = _user(5, bot: true, username: 'somebot');
+    expect(await links.botUsername(5), 'somebot');
+    json.user = _user(6, username: 'anna');
+    expect(await links.botUsername(6), isNull);
+    json.user = null;
+    expect(await links.botUsername(7), isNull);
   });
 
   test('opens the private chat of a tg://user link', () async {
@@ -313,6 +312,25 @@ Map<String, Object?> _chat(
   'video_chat': {'@type': 'videoChat'},
 };
 
+Map<String, Object?> _user(int id, {bool bot = false, String? username}) => {
+  '@type': 'user',
+  'id': id,
+  'first_name': 'U$id',
+  'last_name': '',
+  'phone_number': '',
+  'status': {'@type': 'userStatusEmpty'},
+  if (username != null)
+    'usernames': {
+      '@type': 'usernames',
+      'active_usernames': [username],
+      'disabled_usernames': <String>[],
+      'editable_username': username,
+    },
+  'type': bot
+      ? {'@type': 'userTypeBot', 'inline_query_placeholder': ''}
+      : {'@type': 'userTypeRegular'},
+};
+
 const _error = {'@type': 'error', 'code': 400, 'message': 'Bad request'};
 
 final class _FakeTdJson implements td.TdJson {
@@ -321,6 +339,7 @@ final class _FakeTdJson implements td.TdJson {
 
   Map<String, Object?>? linkType;
   Map<String, Object?>? chat;
+  Map<String, Object?>? user;
   String memberStatus = 'chatMemberStatusLeft';
   Map<String, Object?>? memberStatusJson;
   int inviteChatId = 0;
@@ -345,6 +364,7 @@ final class _FakeTdJson implements td.TdJson {
     if (decoded['@type'] != 'close') sent.add(decoded);
     final response = switch (decoded['@type']) {
       'getInternalLinkType' => linkType ?? _error,
+      'getUser' => user ?? _error,
       'searchPublicChat' || 'getChat' || 'createPrivateChat' => chat ?? _error,
       'getSupergroup' => {
         '@type': 'supergroup',

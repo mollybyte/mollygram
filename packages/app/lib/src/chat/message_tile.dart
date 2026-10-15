@@ -494,12 +494,12 @@ class _MessageBody extends StatelessWidget {
           when text.entities.isEmpty && isEmojiOnly(text.text):
         return _BigEmoji(text.text);
       case td.MessageText(:final text, :final linkPreview):
-        if (linkPreview == null) return FormattedTextView(text: text);
+        if (linkPreview == null) return _text(text);
         return Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (!linkPreview.showAboveText) FormattedTextView(text: text),
+            if (!linkPreview.showAboveText) _text(text),
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 420),
               child: _LinkPreview(linkPreview),
@@ -507,7 +507,7 @@ class _MessageBody extends StatelessWidget {
             if (linkPreview.showAboveText)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
-                child: FormattedTextView(text: text),
+                child: _text(text),
               ),
           ],
         );
@@ -544,7 +544,7 @@ class _MessageBody extends StatelessWidget {
       if (caption == null) return media;
       final text = ConstrainedBox(
         constraints: BoxConstraints(maxWidth: math.max(visual.width, 420)),
-        child: FormattedTextView(text: caption.text),
+        child: _text(caption.text),
       );
       return Column(
         mainAxisSize: MainAxisSize.min,
@@ -557,6 +557,13 @@ class _MessageBody extends StatelessWidget {
     return otherContent(context, content, isOutgoing: message.isOutgoing) ??
         Text(describeContent(l10n, content));
   }
+
+  /// The message's text or caption; its bot commands go to this chat.
+  Widget _text(td.FormattedText text) => FormattedTextView(
+    text: text,
+    chatId: message.chatId,
+    senderUserId: message.sender.isChat ? null : message.sender.id,
+  );
 
   /// Files and audio: a fixed-width row, the caption under it.
   Widget _withCaption(Widget file) {
@@ -572,7 +579,7 @@ class _MessageBody extends StatelessWidget {
         if (caption != null && caption.text.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 2),
-            child: FormattedTextView(text: caption),
+            child: _text(caption),
           ),
       ],
     );

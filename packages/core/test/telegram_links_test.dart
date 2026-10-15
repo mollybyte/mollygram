@@ -71,17 +71,6 @@ void main() {
     expect(e('javascript:alert(1)'), isFalse);
   });
 
-  test('recognizes hashtags, cashtags and bot commands', () {
-    expect(TelegramLinks.hashtag(' #news '), '#news');
-    expect(TelegramLinks.hashtag(r'$TON'), r'$TON');
-    expect(TelegramLinks.hashtag('#'), isNull);
-    expect(TelegramLinks.hashtag('#two words'), isNull);
-    expect(TelegramLinks.botCommand('/start'), '/start');
-    expect(TelegramLinks.botCommand('/help@some_bot'), '/help@some_bot');
-    expect(TelegramLinks.botCommand('/a/b'), isNull);
-    expect(TelegramLinks.botCommand('start'), isNull);
-  });
-
   test('makes and reads tg://user links', () {
     final link = TelegramLinks.userLink(55);
     expect(link.toString(), 'tg://user?id=55');
