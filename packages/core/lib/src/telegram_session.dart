@@ -6,8 +6,10 @@ import 'authorization_controller.dart';
 import 'authorization_stage.dart';
 import 'chat_list_controller.dart';
 import 'chat_search.dart';
+import 'connection_status.dart';
 import 'conversation_controller.dart';
 import 'file_controller.dart';
+import 'notification_controller.dart';
 import 'peer_info.dart';
 import 'sticker_library.dart';
 import 'tdlib_initializer.dart';
@@ -25,8 +27,10 @@ final class TelegramSession {
     required this.conversations,
     required this.search,
     required this.files,
+    required this.notifications,
     required this.stickers,
     required this.peers,
+    required this.connection,
     required this._initializer,
   });
 
@@ -37,8 +41,12 @@ final class TelegramSession {
   final ConversationController conversations;
   final ChatSearch search;
   final FileController files;
+  final NotificationController notifications;
   final StickerLibrary stickers;
   final PeerInfoController peers;
+
+  /// The connection state, for the "Connecting…" status in the window.
+  final ConnectionMonitor connection;
   final _errors = StreamController<Object>.broadcast(sync: true);
   StreamSubscription<AuthorizationStage>? _stageSubscription;
   Future<void>? _firstReconcile;
@@ -57,6 +65,8 @@ final class TelegramSession {
     final conversations = ConversationController(client);
     final files = FileController(client);
     final peers = PeerInfoController(client);
+    final connection = ConnectionMonitor(client);
+    final notifications = NotificationController(client);
     final session = TelegramSession._(
       tdlib: tdlib,
       authorization: authorization,
@@ -64,8 +74,10 @@ final class TelegramSession {
       conversations: conversations,
       search: ChatSearch(client),
       files: files,
+      notifications: notifications,
       stickers: StickerLibrary(client),
       peers: peers,
+      connection: connection,
       initializer: TdlibInitializer(client, parameters: parameters),
     );
     session._stageSubscription = authorization.stages.listen(session._onStage);
@@ -73,6 +85,8 @@ final class TelegramSession {
       await conversations.start();
       await files.start();
       await peers.start();
+      await connection.start();
+      await notifications.start();
       await authorization.start();
       // Sending the parameters is part of starting: a wrong database key or
       // bad credentials must fail the session, not leave the UI waiting.
@@ -126,6 +140,8 @@ final class TelegramSession {
     await conversations.dispose();
     await files.dispose();
     await peers.dispose();
+    await connection.dispose();
+    await notifications.dispose();
     await authorization.dispose();
     await _tdlib.close();
     await _errors.close();

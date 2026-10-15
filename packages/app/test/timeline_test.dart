@@ -39,6 +39,36 @@ void main() {
     expect(items.single, isA<TimelineRow>());
   });
 
+  test('gives every channel post its own name and photo', () {
+    final day = 1760011200;
+    final messages = [
+      _message(3, date: day + 200, sender: 2),
+      _message(2, date: day + 100, sender: 2),
+    ];
+    final group = timelineItems(messages, reachedStart: false);
+    final channel = timelineItems(
+      messages,
+      reachedStart: false,
+      isChannel: true,
+    );
+
+    expect((group.first as TimelineRow).startsRun, isFalse);
+    expect((channel.first as TimelineRow).startsRun, isTrue);
+    expect((channel.first as TimelineRow).endsRun, isTrue);
+  });
+
+  test('says "Forwarded messages" once over forwards in a row', () {
+    final day = 1760011200;
+    final items = timelineItems([
+      _message(4, date: day + 300, sender: 2, forwarded: true),
+      _message(3, date: day + 200, sender: 2, forwarded: true),
+      _message(2, date: day + 100, sender: 2),
+    ], reachedStart: false);
+    final rows = items.cast<TimelineRow>();
+
+    expect(rows.map((r) => r.startsForwards), [false, true, false]);
+  });
+
   test('splits albums into rows', () {
     expect(albumRows(1, 1), [1]);
     expect(albumRows(3, 1.6), [1, 2]);
@@ -68,10 +98,17 @@ ConversationMessage _message(
   required int date,
   required int sender,
   int album = 0,
+  bool forwarded = false,
 }) => ConversationMessage(
   td.Message.fromJson({
     '@type': 'message',
     'id': id,
+    if (forwarded)
+      'forward_info': {
+        '@type': 'messageForwardInfo',
+        'origin': {'@type': 'messageOriginUser', 'sender_user_id': 4},
+        'date': date - 600,
+      },
     'sender_id': {'@type': 'messageSenderUser', 'user_id': sender},
     'chat_id': 7,
     'date': date,

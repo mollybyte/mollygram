@@ -46,12 +46,19 @@ td.PhotoSize? photoSizeFor(td.Photo photo, double side) {
   return sizes.last;
 }
 
-/// A photo in a bubble or an album cell. Tapping it opens the viewer.
+/// A photo in a bubble or an album cell. Tapping it calls [onTap], which
+/// opens the viewer; without it the photo opens on its own.
 class PhotoContent extends StatelessWidget {
-  const PhotoContent({super.key, required this.photo, required this.size});
+  const PhotoContent({
+    super.key,
+    required this.photo,
+    required this.size,
+    this.onTap,
+  });
 
   final td.Photo photo;
   final Size size;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +66,8 @@ class PhotoContent extends StatelessWidget {
     final full = photoSizeFor(photo, size.width * dpr);
     final small = photo.sizes.isEmpty ? null : photo.sizes.first;
     return _Tappable(
-      onTap: () => showMediaViewer(context, MediaViewerItem.photo(photo)),
+      onTap:
+          onTap ?? () => showMediaViewer(context, MediaViewerItem.photo(photo)),
       child: SizedBox.fromSize(
         size: size,
         child: TdImage(
@@ -76,16 +84,23 @@ class PhotoContent extends StatelessWidget {
 /// A video: its cover, the length, and a play button; it plays in the
 /// viewer.
 class VideoContent extends StatelessWidget {
-  const VideoContent({super.key, required this.video, required this.size});
+  const VideoContent({
+    super.key,
+    required this.video,
+    required this.size,
+    this.onTap,
+  });
 
   final td.Video video;
   final Size size;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final c = MgColors.of(context);
     return _Tappable(
-      onTap: () => showMediaViewer(context, MediaViewerItem.video(video)),
+      onTap:
+          onTap ?? () => showMediaViewer(context, MediaViewerItem.video(video)),
       child: SizedBox.fromSize(
         size: size,
         child: Stack(
@@ -123,16 +138,19 @@ class VideoContent extends StatelessWidget {
   }
 }
 
-/// A GIF: downloads on sight and loops without sound.
+/// A GIF: downloads on sight and loops without sound. Tapping it calls
+/// [onTap], which opens it in the viewer.
 class AnimationContent extends StatelessWidget {
   const AnimationContent({
     super.key,
     required this.animation,
     required this.size,
+    this.onTap,
   });
 
   final td.Animation animation;
   final Size size;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -140,7 +158,7 @@ class AnimationContent extends StatelessWidget {
       thumbnail: animation.thumbnail?.file,
       minithumbnail: animation.minithumbnail,
     );
-    return SizedBox.fromSize(
+    final body = SizedBox.fromSize(
       size: size,
       child: TdFileBuilder(
         file: animation.animation,
@@ -152,6 +170,8 @@ class AnimationContent extends StatelessWidget {
         },
       ),
     );
+    final onTap = this.onTap;
+    return onTap == null ? body : _Tappable(onTap: onTap, child: body);
   }
 }
 

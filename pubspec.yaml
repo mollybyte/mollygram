@@ -5,8 +5,7 @@ environment:
   sdk: ^3.13.0
 
 # A monorepo on pub workspaces: one pubspec.lock and one dependency resolution
-# for all packages. The prototype/ directory is not included; it has its own
-# pubspec.
+# for all packages.
 workspace:
   - packages/tdlib
   - packages/calls
@@ -14,6 +13,7 @@ workspace:
   - packages/ui_kit
   - packages/media
   - packages/media/example
+  - packages/media_editor
   - packages/app
   - packages/plugin_host
   - packages/shell

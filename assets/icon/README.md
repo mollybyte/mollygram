@@ -18,7 +18,7 @@ python3 assets/icon/generate.py
 | `linux/<size>.png` | Linux hicolor sizes, install as `dev.mollygram.app.png` |
 
 The script also writes `macos/Runner/Assets.xcassets/AppIcon.appiconset` in
-`packages/app` and `prototype`, `packages/app/windows/runner/resources/app_icon.ico`
+`packages/app`, `packages/app/windows/runner/resources/app_icon.ico`
 and `packages/app/linux/runner/resources/app_icon.png`. Do not edit those by hand.
 
 Application id on every platform: `dev.mollygram.app` (reverse of the

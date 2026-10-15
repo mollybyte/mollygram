@@ -22,7 +22,7 @@ M8 calls and macOS release, M9 after release.
 
 ### First items to take
 
-1. Desktop notifications with reply and mark as read (M1)
+1. ~~Desktop notifications with reply and mark as read (M1)~~ done
 2. Unread jump: "new messages" separator, scroll-to-bottom button with a counter, jump to mentions and reactions (M1)
 3. Typing, online and last-seen statuses in the header and chat list (M1)
 4. Chat list context menu: pin, mute, archive, mark as read, delete or leave, plus the archive folder (M1)
@@ -56,11 +56,11 @@ M8 calls and macOS release, M9 after release.
 | History with paging, flat no-bubble layout | done | #24, #29 | | |
 | Read receipts sent on view | done | `ViewMessages` | | |
 | Read ticks on outgoing messages | done | `UpdateChatReadOutbox` | | |
-| "New messages" separator and opening at the first unread | missing | | M | M1 |
-| Scroll-to-bottom button with unread counter | missing | | S | M1 |
-| Jump to next mention and reaction | missing | `GetChatMessageByDate`, `ReadAllChatMentions` | S | M1 |
+| "New messages" separator and opening at the first unread | done | Unread PR: `TimelineView` grows both ways from the first unread | | |
+| Scroll-to-bottom button with unread counter | done | Unread PR | | |
+| Jump to next mention and reaction | done | Unread PR: `SearchChatMessages` with the unread filters | | |
 | Pinned message bar with cycling and the pinned list | missing | `UpdateMessageIsPinned` is handled, no bar | M | M1 |
-| Jump to a replied message and back | missing | Needs history at an arbitrary message | M | M1 |
+| Jump to a replied message and back | partial | Unread PR: jump with a highlight; no "back" button yet | S | M1 |
 | Date headers and sticky date | partial | Date pills exist, not sticky while scrolling | S | M1 |
 | Jump to date (calendar) | missing | `ChatCalendarModalController` | M | M2 |
 | Header status: online, last seen, members, typing | missing | Header has the slot | S | M1 |
@@ -107,8 +107,8 @@ M8 calls and macOS release, M9 after release.
 | Attach photos, videos, files: pick, drop, paste, albums | done | #31 | | |
 | Edit mode and reply panel | done | #30 | | |
 | Drafts saved to the server and synced | partial | Draft is local to the open view; `SetChatDraftMessage` not called | S | M1 |
-| Emoji picker | missing | Button exists, no panel | M | M1 |
-| Sticker panel, recent and favourite stickers, sticker search | missing | `StickersViewController` | L | M1 |
+| Emoji picker | done | #34: groups, recent, keyword search | | |
+| Sticker panel, recent and favourite stickers, sticker search | partial | #34: recent, favourites, installed sets; no search, no set management | S | M1 |
 | GIF panel and GIF search | missing | `GifKeyboardController` | M | M2 |
 | Emoji and sticker suggestions while typing | missing | `InputSwapSuggestionsPanel` | M | M2 |
 | Rich text formatting: bold, italic, code, link, spoiler, quote; Markdown shortcuts | missing | `text_edit.dart` sends plain text | M | M1 |
@@ -122,8 +122,14 @@ M8 calls and macOS release, M9 after release.
 | Polls and quizzes creation | missing | `NewPollController` | M | M2 |
 | Location and venue sending | missing | | M | M2 |
 | Contact sending | missing | | S | M2 |
-| Media editor before sending: crop, rotate, draw, compression toggle | partial | Preview exists; uncompressed default planned | L | M4 |
-| Spoiler and self-destruct on media | missing | `hasSpoiler`, `selfDestructType` | S | M2 |
+| Send preview: caption, send as files, albums | done | #31 | | |
+| Send preview: spoiler, self-destruct timer, compression choice | missing | `hasSpoiler`, `selfDestructType`; uncompressed default planned | S | M2 |
+| Media editor: crop, rotate, flip, aspect presets | done | `packages/media_editor` | | |
+| Media editor: drawing (pen, marker, neon, eraser, colours, sizes) | missing | | M | M4 |
+| Media editor: text, stickers and emoji placed on the image | missing | | M | M4 |
+| Media editor: arrows and shapes, blur and pixelate brush | missing | | M | M4 |
+| Media editor: filters and adjustments (brightness, contrast, saturation, warmth, vignette) | missing | | M | M4 |
+| Video editor: trim, mute, cover frame, quality | missing | `VideoEditorModalController` | M | M4 |
 | Slowmode and restriction notices | missing | | S | M2 |
 | Link preview control (remove, above/below) | missing | | S | M2 |
 
@@ -135,8 +141,12 @@ M8 calls and macOS release, M9 after release.
 | Voice messages playback with waveform | done | | | |
 | Video circles playback at 120 fps | done | `packages/media` | | |
 | Files and music: download, open, cancel | done | | | |
-| Fullscreen media viewer | partial | Single item; no gallery navigation, zoom, thumbnails | M | M2 |
-| Gallery: swipe between chat media, zoom, rotate, save, forward | missing | `GalleryViewer` | M | M2 |
+| Fullscreen media viewer on a dimmed backdrop, open and close animation | done | Viewer PR | | |
+| Viewer: arrows and swipe between the chat's photos and videos, thumbnail strip | partial | Viewer PR: arrows and keys over `SearchChatMessages`; no swipe, no thumbnail strip | S | M2 |
+| Viewer: zoom (pinch, scroll, double click) and pan, rotate | partial | Viewer PR: zoom and pan; no rotate | S | M2 |
+| Viewer: video scrubbing, loop, playback speed, volume, fullscreen | partial | Viewer PR: scrubbing, loop, speed, mute; plays once downloaded, no streaming | S | M2 |
+| Viewer: GIFs and video stickers looped | partial | Viewer PR: GIFs looped; video stickers not yet | S | M2 |
+| Viewer: save, copy, forward, delete, show in chat, keyboard shortcuts | partial | Viewer PR: save, copy, forward, Esc, arrows, Space, ⌘S, ⌘C; no delete or show in chat | S | M2 |
 | Global audio player with playlist and header bar | missing | `InlineAudioPlayerView` | M | M2 |
 | Picture-in-picture for video and circles | missing | `PIPVideoWindow` | M | M4 |
 | Voice playback speed and continuous play | missing | | S | M1 |
@@ -200,7 +210,7 @@ M8 calls and macOS release, M9 after release.
 | Feature | Status | Notes | Size | M |
 |---|---|---|---|---|
 | Settings window shell in macOS System Settings style | partial | Only the Plugins page exists | M | M1 |
-| Notifications and sounds: per-type, badge, preview, sound | missing | `NotificationPreferencesController` | M | M1 |
+| Notifications and sounds: per-type, badge, preview, sound | partial | Global switches, preview, sound and badge done (`NotificationsPage`); per-type scopes (private, groups, channels) and tones missing | S | M1 |
 | Active sessions and terminate | missing | `RecentSessionsController` | S | M1 |
 | Privacy and security: last seen, phone, photo, calls, forwards, groups, blocked list | missing | `SelectivePrivacySettingsController` | L | M6 |
 | Two-step verification setup | missing | `TwoStepVerification` | M | M6 |
@@ -211,7 +221,7 @@ M8 calls and macOS release, M9 after release.
 | Stickers and emoji: packs, reorder, archived, suggest, large emoji | missing | `InstalledStickerPacksController` | M | M7 |
 | Quick reaction choice | missing | | S | M7 |
 | Proxy: SOCKS5, MTProto, list, share | missing | `ProxyListController` | M | M7 |
-| Connection status in the window ("Connecting…") | missing | `UpdateConnectionState` | S | M1 |
+| Connection status in the window ("Connecting…") | done | `ConnectionMonitor`, capsule in the sidebar title bar | | |
 | Keyboard shortcuts list | partial | Shell shortcuts exist; no list | S | M7 |
 | Auto-delete messages default | missing | | S | M7 |
 | Settings search | missing | | S | M7 |
@@ -221,9 +231,9 @@ M8 calls and macOS release, M9 after release.
 
 | Feature | Status | Notes | Size | M |
 |---|---|---|---|---|
-| Desktop notifications with reply and mark read | missing | `UpdateNotificationGroup` | M | M1 |
-| Dock badge with unread count | missing | `UpdateUnreadChatCount` | S | M1 |
-| Notification sounds | missing | | S | M1 |
+| Desktop notifications with reply and mark read | done | `NotificationController` on TDLib notification groups; macOS only, banners hidden while the window is in front | | |
+| Dock badge with unread count | done | Unmuted chats by default; muted chats and message count are options | | |
+| Notification sounds | partial | System default sound; Telegram tones and custom sounds missing | S | M1 |
 | Menu bar and dock menu items | partial | Traffic lights done | S | M7 |
 | Share extension, Spotlight, Focus filters | missing | macOS-only niceties | M | M9 |
 | Auto update | missing | Sparkle or release-please assets | M | M8 |
