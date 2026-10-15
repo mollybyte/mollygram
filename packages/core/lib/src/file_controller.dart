@@ -14,6 +14,10 @@ abstract final class DownloadPriority {
   static const int requested = 32;
 }
 
+/// Media that may download on its own, as the Data and storage settings
+/// group it.
+enum MediaDownloadKind { photos, videos, files }
+
 /// Keeps the newest state of every file TDLib told us about, and starts
 /// and cancels downloads.
 ///
@@ -34,8 +38,36 @@ final class FileController {
     });
   }
 
+  /// Which kinds download without being asked, from Data and storage. The
+  /// app sets it; [autoDownload] reads it.
+  Set<MediaDownloadKind> autoDownloadKinds = {
+    MediaDownloadKind.photos,
+    MediaDownloadKind.videos,
+  };
+
+  /// Every new state of every file, as [changesOf] but for all of them.
+  Stream<td.File> get changes => _changes.stream;
+
   /// The newest known state of [file].
   td.File latest(td.File file) => _files[file.id] ?? file;
+
+  /// The newest known state of the file [fileId], if it has been seen.
+  td.File? latestById(int fileId) => _files[fileId];
+
+  /// Records a state that came from a request rather than an update.
+  void put(td.File file) => _put(file);
+
+  /// Downloads [fileId] when its [kind] may download on its own, otherwise
+  /// returns null and leaves it to a click. Media shown in a chat goes
+  /// through here, so the switches in Data and storage count.
+  Future<td.File?> autoDownload(
+    int fileId, {
+    required MediaDownloadKind kind,
+    int priority = DownloadPriority.media,
+  }) async {
+    if (!autoDownloadKinds.contains(kind)) return null;
+    return download(fileId, priority: priority);
+  }
 
   /// A map of [width] by [height] points around [location], as TDLib
   /// renders it for a location message in [chatId]; a file to download

@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:mollygram/l10n/app_localizations.dart';
+import 'package:mollygram/src/chat/message_tile.dart' show SenderAvatar;
 import 'package:mollygram/src/profile/last_seen.dart';
 import 'package:mollygram/src/profile/peer_info_host.dart';
 import 'package:mollygram/src/profile/peer_info_state.dart';
@@ -210,14 +211,42 @@ void main() {
       await settle(tester);
 
       await tester.tap(find.text('Mute'));
+      await tester.pumpAndSettle();
+      expect(find.text('Until I turn it back on'), findsOneWidget);
+      await tester.tap(find.text('For 8 hours'));
       await settle(tester);
       final request = json.sent.lastWhere(
         (r) => r['@type'] == 'setChatNotificationSettings',
       );
-      expect(
-        (request['notification_settings']! as Map)['mute_for'],
-        isPositive,
+      expect((request['notification_settings']! as Map)['mute_for'], 8 * 3600);
+    });
+
+    testWidgets('sets the auto-delete timer', (tester) async {
+      await pump(tester);
+      open(10);
+      await settle(tester);
+
+      expect(find.text('Auto-delete messages'), findsOneWidget);
+      expect(find.text('Off'), findsOneWidget);
+      await tester.tap(find.text('Auto-delete messages'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('1 week'));
+      await settle(tester);
+      final request = json.sent.lastWhere(
+        (r) => r['@type'] == 'setChatMessageAutoDeleteTime',
       );
+      expect(request['chat_id'], 10);
+      expect(request['message_auto_delete_time'], 7 * 86400);
+
+      // TDLib confirms with an update, and the row shows the new timer.
+      json.push({
+        '@type': 'updateChatMessageAutoDeleteTime',
+        'chat_id': 10,
+        'message_auto_delete_time': 7 * 86400,
+      });
+      await settle(tester);
+      expect(find.text('1 week'), findsOneWidget);
+      expect(find.text('Off'), findsNothing);
     });
 
     testWidgets('blocks only after confirmation', (tester) async {
@@ -307,10 +336,59 @@ void main() {
       // The pane's own chat: the panel stays to go on browsing.
       expect(find.text('Example'), findsOneWidget);
 
+      await tester.tap(find.text('GIFs'));
+      await load(tester);
+      expect(find.text('No GIFs yet'), findsOneWidget);
+      expect(
+        (json.sent.lastWhere(
+              (r) => r['@type'] == 'searchChatMessages',
+            )['filter']!
+            as Map)['@type'],
+        'searchMessagesFilterAnimation',
+      );
+
+      // A user's info also lists the groups in common.
+      await tester.tap(find.text('Groups'));
+      await load(tester);
+      expect(
+        json.sent.lastWhere((r) => r['@type'] == 'getGroupsInCommon'),
+        containsPair('user_id', 5),
+      );
+      expect(find.text('Flutter'), findsOneWidget);
+
       await tester.tap(find.byTooltip('Back'));
       await settle(tester);
       expect(find.text('Alina Petrova'), findsOneWidget);
       expect(find.byTooltip('Back'), findsNothing);
+    });
+
+    testWidgets('opens the profile photos from the big photo', (tester) async {
+      await pump(tester);
+      open(10);
+      await settle(tester);
+
+      await tester.tap(
+        find.byWidgetPredicate((w) => w is SenderAvatar && w.size == 88),
+      );
+      await settle(tester);
+
+      final request = json.sent.lastWhere(
+        (r) => r['@type'] == 'getUserProfilePhotos',
+      );
+      expect(request['user_id'], 5);
+      // The viewer: the newest photo first, the name on top, a counter.
+      expect(find.text('1 of 2'), findsOneWidget);
+      expect(find.text('Alina Petrova'), findsNWidgets(2));
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pumpAndSettle();
+      expect(find.text('2 of 2'), findsOneWidget);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await settle(tester);
+      expect(find.text('1 of 2'), findsNothing);
+      expect(find.text('2 of 2'), findsNothing);
+      expect(find.text('Alina Petrova'), findsOneWidget);
     });
 
     testWidgets('opens the info, not the media, the next time', (tester) async {
@@ -421,6 +499,37 @@ Map<String, Object?> _chat(int id, String title, Map<String, Object?> type) => {
   'video_chat': {'@type': 'videoChat'},
 };
 
+Map<String, Object?> _file(int id) => {
+  '@type': 'file',
+  'id': id,
+  'size': 1000,
+  'expected_size': 1000,
+  'local': {
+    '@type': 'localFile',
+    'path': '',
+    'can_be_downloaded': true,
+    'is_downloading_completed': false,
+  },
+  'remote': {'@type': 'remoteFile', 'id': 'r$id', 'unique_id': 'u$id'},
+};
+
+/// A profile photo with one 640 px size and when it was set.
+Map<String, Object?> _chatPhoto(int id, int addedDate) => {
+  '@type': 'chatPhoto',
+  'id': id,
+  'added_date': addedDate,
+  'sizes': [
+    {
+      '@type': 'photoSize',
+      'type': 'x',
+      'photo': _file(id),
+      'width': 640,
+      'height': 640,
+      'progressive_sizes': <int>[],
+    },
+  ],
+};
+
 Map<String, Object?> _user(
   int id,
   String first,
@@ -436,6 +545,15 @@ Map<String, Object?> _user(
   'phone_number': phone,
   'status': status ?? {'@type': 'userStatusOnline', 'expires': _now + 600},
   'type': {'@type': 'userTypeRegular'},
+  if (id == 5)
+    'profile_photo': {
+      '@type': 'profilePhoto',
+      'id': 1,
+      'small': _file(901),
+      'big': _file(902),
+      'has_animation': false,
+      'is_personal': false,
+    },
   if (username.isNotEmpty)
     'usernames': {
       '@type': 'usernames',
@@ -517,6 +635,16 @@ final class _FakeTdJson implements td.TdJson {
             _linkMessage(decoded['chat_id']! as int, 40),
         ],
         'next_from_message_id': 0,
+      },
+      'getGroupsInCommon' => {
+        '@type': 'chats',
+        'total_count': 1,
+        'chat_ids': [20],
+      },
+      'getUserProfilePhotos' => {
+        '@type': 'chatPhotos',
+        'total_count': 2,
+        'photos': [_chatPhoto(910, 1760000000), _chatPhoto(911, 1750000000)],
       },
       'getPhoneNumberInfo' => {
         '@type': 'phoneNumberInfo',

@@ -18,6 +18,7 @@ class SidebarIsland extends StatelessWidget {
     required this.search,
     required this.body,
     this.folders,
+    this.banner,
     this.actions = const [],
     this.titleBarInset = 76,
     this.titleBarFill,
@@ -28,6 +29,10 @@ class SidebarIsland extends StatelessWidget {
 
   /// Usually a [FolderTabBar].
   final Widget? folders;
+
+  /// A row between the folders and the list, such as the downloads bar;
+  /// null for none. It brings its own padding.
+  final Widget? banner;
 
   /// The chat list; it fills the rest of the island and scrolls inside it.
   final Widget body;
@@ -69,6 +74,7 @@ class SidebarIsland extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 6),
                 child: folders,
               ),
+            ?banner,
             Expanded(child: body),
           ],
         ),

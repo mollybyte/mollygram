@@ -9,6 +9,7 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../chat/formatted_text.dart';
+import '../chat/media_viewer.dart';
 import '../chat/message_tile.dart' show SenderAvatar;
 import '../secret/secret_chat.dart';
 import '../session/providers.dart';
@@ -112,6 +113,57 @@ class PeerInfoPage extends StatelessWidget {
       Expanded(child: child),
     ],
   );
+}
+
+/// Opens the profile's photos in the viewer, newest first; nothing
+/// happens when there are none to show.
+Future<void> _openPhotos(
+  BuildContext context,
+  WidgetRef ref,
+  PeerInfo info,
+) async {
+  final session = ref.read(telegramSessionProvider).asData?.value;
+  if (session == null) return;
+  final List<ProfilePhoto> photos;
+  try {
+    photos = await session.conversations.profilePhotos(
+      info.chatId,
+      userId: info.userId,
+    );
+  } on td.TdException {
+    return;
+  }
+  if (photos.isEmpty || !context.mounted) return;
+  await showProfilePhotos(context, photos: photos, title: info.title);
+}
+
+/// The big photo at the top; a click opens the profile's photos, as the
+/// official app does, so the pointer turns into a hand over it.
+class _ProfilePhoto extends StatelessWidget {
+  const _ProfilePhoto({
+    required this.name,
+    required this.photo,
+    required this.onTap,
+  });
+
+  final String name;
+  final td.File? photo;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final avatar = SenderAvatar(name: name, size: 88, photo: photo);
+    final onTap = this.onTap;
+    if (onTap == null) return avatar;
+    return Semantics(
+      button: true,
+      label: name,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(onTap: onTap, child: avatar),
+      ),
+    );
+  }
 }
 
 class _TopBar extends StatelessWidget {
@@ -304,7 +356,13 @@ class _Content extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Center(
-            child: SenderAvatar(name: title, size: 88, photo: info.photo),
+            child: _ProfilePhoto(
+              name: title,
+              photo: info.photo,
+              onTap: info.photo == null
+                  ? null
+                  : () => unawaited(_openPhotos(context, ref, info)),
+            ),
           ),
           const SizedBox(height: 12),
           Text(
@@ -347,11 +405,18 @@ class _Content extends ConsumerWidget {
                   _ActionTile(
                     icon: MgIcons.notifications,
                     label: info.isMuted ? l10n.infoUnmute : l10n.infoMute,
-                    onTap: () => unawaited(
-                      peers
-                          .setMuted(info.chatId, muted: !info.isMuted)
-                          .catchError((Object _) {}),
-                    ),
+                    onTap: info.isMuted
+                        ? () => unawaited(
+                            peers
+                                .setMuted(info.chatId, muted: false)
+                                .catchError((Object _) {}),
+                          )
+                        : null,
+                    onMenu: info.isMuted
+                        ? null
+                        : (position) => unawaited(
+                            _muteMenu(context, position, peers, info.chatId),
+                          ),
                   ),
                 if (rights.canChangeInfo) ...[
                   const SizedBox(width: 8),
@@ -375,6 +440,20 @@ class _Content extends ConsumerWidget {
             _Group(
               children: [
                 _NavRow(label: l10n.sharedMedia, onTap: onSharedMedia),
+              ],
+            ),
+          ],
+          if (canAct &&
+              !info.isSelf &&
+              (info.kind == PeerKind.user || rights.canChangeInfo)) ...[
+            const SizedBox(height: 12),
+            _Group(
+              children: [
+                _NavRow(
+                  label: l10n.autoDeleteTitle,
+                  value: _autoDeleteLabel(l10n, info.autoDeleteTime),
+                  onTap: () => unawaited(_autoDeleteMenu(context, peers, info)),
+                ),
               ],
             ),
           ],
@@ -626,10 +705,12 @@ class _ActionRow extends StatelessWidget {
 /// A row that leads to another page of the panel, with what is there
 /// now in grey before the chevron, like a System Settings row.
 class _NavRow extends StatelessWidget {
-  const _NavRow({required this.label, required this.onTap, this.value = ''});
+  const _NavRow({required this.label, required this.onTap, this.value});
 
   final String label;
-  final String value;
+
+  /// The current setting, muted, before the chevron.
+  final String? value;
   final VoidCallback onTap;
 
   @override
@@ -644,7 +725,7 @@ class _NavRow extends StatelessWidget {
           child: Row(
             children: [
               Expanded(child: Text(label, style: mgTextStyle(c))),
-              if (value.isNotEmpty) ...[
+              if (value case final value?) ...[
                 Text(
                   value,
                   maxLines: 1,
@@ -662,17 +743,81 @@ class _NavRow extends StatelessWidget {
   }
 }
 
+/// The mute tile's menu: for an hour, eight hours, two days, or until
+/// the user turns notifications back on.
+Future<void> _muteMenu(
+  BuildContext context,
+  Offset position,
+  PeerInfoController peers,
+  int chatId,
+) {
+  final l10n = AppLocalizations.of(context);
+  MgMenuItem item(String label, int seconds) => MgMenuItem(
+    label: label,
+    onSelected: () =>
+        unawaited(peers.setMuteFor(chatId, seconds).catchError((Object _) {})),
+  );
+  return showMgMenu(
+    context,
+    position: position,
+    items: [
+      item(l10n.muteForHours(1), 3600),
+      item(l10n.muteForHours(8), 8 * 3600),
+      item(l10n.muteForDays(2), 2 * 86400),
+      item(l10n.muteUntilEnabled, PeerInfoController.muteForever),
+    ],
+  );
+}
+
+/// The auto-delete row's menu: off, a day, a week or a month, as the
+/// official app offers.
+Future<void> _autoDeleteMenu(
+  BuildContext context,
+  PeerInfoController peers,
+  PeerInfo info,
+) {
+  final l10n = AppLocalizations.of(context);
+  final box = context.findRenderObject()! as RenderBox;
+  MgMenuItem item(int seconds) => MgMenuItem(
+    label: _autoDeleteLabel(l10n, seconds),
+    onSelected: () => unawaited(
+      peers.setAutoDeleteTime(info.chatId, seconds).catchError((Object _) {}),
+    ),
+  );
+  return showMgMenu(
+    context,
+    position: box.localToGlobal(Offset(box.size.width - 220, 0)),
+    items: [item(0), item(86400), item(7 * 86400), item(31 * 86400)],
+  );
+}
+
+String _autoDeleteLabel(AppLocalizations l10n, int seconds) =>
+    switch (seconds) {
+      0 => l10n.selfDestructOff,
+      86400 => l10n.oneDay,
+      604800 => l10n.oneWeek,
+      2678400 => l10n.oneMonth,
+      _ when seconds >= 604800 => l10n.ttlDays(seconds ~/ 86400),
+      _ when seconds >= 86400 => l10n.selfDestructDays(seconds ~/ 86400),
+      _ when seconds >= 3600 => l10n.selfDestructHours(seconds ~/ 3600),
+      _ => l10n.selfDestructMinutes(seconds ~/ 60),
+    };
+
 /// A quick action under the name: an icon over a short label.
 class _ActionTile extends StatefulWidget {
   const _ActionTile({
     required this.icon,
     required this.label,
-    required this.onTap,
-  });
+    this.onTap,
+    this.onMenu,
+  }) : assert(onTap != null || onMenu != null, 'a tile does something');
 
   final MgIconData icon;
   final String label;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
+
+  /// Opens a menu under the tile, at the position given.
+  final void Function(Offset position)? onMenu;
 
   @override
   State<_ActionTile> createState() => _ActionTileState();
@@ -693,7 +838,12 @@ class _ActionTileState extends State<_ActionTile> {
         onEnter: (_) => setState(() => _hover = true),
         onExit: (_) => setState(() => _hover = false),
         child: GestureDetector(
-          onTap: widget.onTap,
+          onTap: () {
+            final menu = widget.onMenu;
+            if (menu == null) return widget.onTap?.call();
+            final box = context.findRenderObject()! as RenderBox;
+            menu(box.localToGlobal(Offset(0, box.size.height + 4)));
+          },
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 120),
             width: 88,

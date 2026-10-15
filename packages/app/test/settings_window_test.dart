@@ -9,6 +9,7 @@ import 'package:mollygram/l10n/app_localizations.dart';
 import 'package:mollygram/src/privacy/privacy_settings.dart';
 import 'package:mollygram/src/session/providers.dart';
 import 'package:mollygram/src/settings/account_page.dart';
+import 'package:mollygram/src/settings/appearance.dart';
 import 'package:mollygram/src/settings/plugins_page.dart';
 import 'package:mollygram/src/settings/preferences.dart';
 import 'package:mollygram/src/settings/settings_window.dart';
@@ -430,19 +431,28 @@ void main() {
     final container = ProviderScope.containerOf(
       tester.element(find.byType(SettingsWindow)),
     );
-    await tester.tap(find.byKey(const ValueKey('theme.dark')));
-    await tester.tap(find.byKey(const ValueKey('accent.teal')));
-    await tester.tap(find.byKey(const ValueKey('wallpaper')));
-    await tester.tap(find.byKey(const ValueKey('reduceMotion')));
+    for (final key in [
+      'theme.dark',
+      'accent.teal',
+      'wallpaper.plain',
+      'reduceMotion',
+    ]) {
+      await tester.ensureVisible(find.byKey(ValueKey(key)));
+      await tester.pump();
+      await tester.tap(find.byKey(ValueKey(key)));
+    }
     await settle(tester);
     final p = container.read(preferencesProvider);
     expect(p.theme, ThemeMode.dark);
     expect(p.accent, AccentChoice.teal);
     expect(p.wallpaper, isFalse);
+    expect(p.wallpaperKind, WallpaperKind.plain);
     expect(p.reduceMotion, isTrue);
 
     // Dragging the slider to its right end picks 17 pt.
     final slider = find.byKey(const ValueKey('textSize'));
+    await tester.ensureVisible(slider);
+    await tester.pump();
     await tester.tapAt(
       tester.getCenter(slider) +
           Offset(tester.getSize(slider).width / 2 - 2, 0),
@@ -451,6 +461,81 @@ void main() {
     expect(container.read(preferencesProvider).textSize, 17);
     expect((preferences.saved! as Map)['textSize'], 17);
     expect((preferences.saved! as Map)['theme'], 'dark');
+  });
+
+  testWidgets('appearance part 2 choices apply and are saved', (tester) async {
+    final applied = <String?>[];
+    applyAppIcon = (asset) async => applied.add(asset);
+    addTearDown(() => applyAppIcon = (_) async {});
+    await pump(tester, section: 'appearance');
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(SettingsWindow)),
+    );
+    for (final key in [
+      'wallpaper.ocean',
+      'corner.large',
+      'compactLayout',
+      'appIcon.graphite',
+    ]) {
+      await tester.ensureVisible(find.byKey(ValueKey(key)));
+      await tester.pump();
+      await tester.tap(find.byKey(ValueKey(key)));
+    }
+    await settle(tester);
+    var p = container.read(preferencesProvider);
+    expect(p.wallpaperKind, WallpaperKind.gradient);
+    expect(p.wallpaperPreset, WallpaperPreset.ocean);
+    expect(p.mediaCorner, MediaCorner.large);
+    expect(p.compactLayout, isTrue);
+    expect(p.appIcon, AppIconChoice.graphite);
+    expect((preferences.saved! as Map)['appIcon'], 'graphite');
+    expect((preferences.saved! as Map)['wallpaperPreset'], 'ocean');
+
+    // The night schedule rows appear once the switch is on.
+    expect(find.byKey(const ValueKey('nightFrom')), findsNothing);
+    await tester.ensureVisible(find.byKey(const ValueKey('nightSchedule')));
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('nightSchedule')));
+    await settle(tester);
+    expect(find.byKey(const ValueKey('nightFrom')), findsOneWidget);
+    await tester.ensureVisible(find.byKey(const ValueKey('nightFrom')));
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('nightFrom')));
+    await settle(tester);
+    await tester.tap(find.text('9:00 PM').last);
+    await settle(tester);
+    p = container.read(preferencesProvider);
+    expect(p.nightSchedule.enabled, isTrue);
+    expect(p.nightSchedule.from, 21 * 60);
+  });
+
+  test('the night schedule turns the theme dark on time', () async {
+    var now = DateTime(2026, 1, 1, 21, 59);
+    final container = ProviderContainer(
+      overrides: [
+        preferencesStorageProvider.overrideWithValue(
+          MemoryPreferencesStorage(),
+        ),
+        clockProvider.overrideWithValue(() => now),
+      ],
+    );
+    addTearDown(container.dispose);
+    container
+        .read(preferencesProvider.notifier)
+        .update(
+          (p) => p.copyWith(
+            theme: ThemeMode.light,
+            nightSchedule: const NightSchedule(enabled: true),
+          ),
+        );
+    expect(container.read(effectiveThemeModeProvider), ThemeMode.light);
+    now = DateTime(2026, 1, 1, 22, 30);
+    container.invalidate(effectiveThemeModeProvider);
+    expect(container.read(effectiveThemeModeProvider), ThemeMode.dark);
+    container
+        .read(preferencesProvider.notifier)
+        .update((p) => p.copyWith(nightSchedule: const NightSchedule()));
+    expect(container.read(effectiveThemeModeProvider), ThemeMode.light);
   });
 
   testWidgets('shows the storage by kind and clears the chosen kinds', (

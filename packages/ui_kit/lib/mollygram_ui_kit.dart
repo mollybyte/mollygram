@@ -35,5 +35,6 @@ export 'src/sidebar/search_field.dart';
 export 'src/sidebar/sidebar_island.dart';
 export 'src/sign_in/sign_in.dart';
 export 'src/theme/colors.dart';
+export 'src/theme/metrics.dart';
 export 'src/theme/theme.dart';
 export 'src/wallpaper.dart';

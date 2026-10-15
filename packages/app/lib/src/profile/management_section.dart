@@ -80,7 +80,7 @@ class _ManagementSection extends ConsumerWidget {
         _NavRow(
           label: l10n.removedUsers,
           value: switch (settings.bannedCount + settings.restrictedCount) {
-            0 => '',
+            0 => null,
             final n => '$n',
           },
           onTap: () => open(RemovedUsersSheet(chatId: chatId)),

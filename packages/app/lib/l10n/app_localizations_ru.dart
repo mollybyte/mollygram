@@ -852,6 +852,36 @@ class AppLocalizationsRu extends AppLocalizations {
   String get infoUnmute => 'Со звуком';
 
   @override
+  String muteForHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'На $count часов',
+      few: 'На $count часа',
+      one: 'На $count час',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String muteForDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'На $count дней',
+      few: 'На $count дня',
+      one: 'На $count день',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get muteUntilEnabled => 'Пока не включу обратно';
+
+  @override
+  String get autoDeleteTitle => 'Автоудаление сообщений';
+
+  @override
   String get blockUser => 'Заблокировать';
 
   @override
@@ -1027,6 +1057,28 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get sendContactTitle => 'Отправить контакт';
+
+  @override
+  String get attachLocation => 'Геопозиция…';
+
+  @override
+  String get sendLocationTitle => 'Отправить геопозицию';
+
+  @override
+  String get locationSearchHint => 'Место, адрес или координаты';
+
+  @override
+  String get locationStartHint =>
+      'Введите координаты или вставьте ссылку на карту, чтобы выбрать точку, затем ищите места рядом';
+
+  @override
+  String get sendThisLocation => 'Отправить эту точку';
+
+  @override
+  String get mapZoomIn => 'Приблизить';
+
+  @override
+  String get mapZoomOut => 'Отдалить';
 
   @override
   String get newPollTitle => 'Новый опрос';
@@ -2007,6 +2059,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get sharedMusicTab => 'Музыка';
 
   @override
+  String get sharedGifsTab => 'GIF';
+
+  @override
+  String get sharedGroupsTab => 'Группы';
+
+  @override
   String get sharedMediaEmpty => 'Здесь пока нет фото и видео';
 
   @override
@@ -2020,6 +2078,12 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get sharedMusicEmpty => 'Здесь пока нет музыки';
+
+  @override
+  String get sharedGifsEmpty => 'Здесь пока нет GIF';
+
+  @override
+  String get sharedGroupsEmpty => 'Нет общих групп';
 
   @override
   String get sharedLoadFailed => 'Не удалось загрузить список';
@@ -2295,6 +2359,23 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get backToTopics => 'Назад к темам';
+
+  @override
+  String get savedShowAsChats => 'Показать как чаты';
+
+  @override
+  String get savedShowAsMessages => 'Показать как сообщения';
+
+  @override
+  String get savedMyNotes => 'Мои заметки';
+
+  @override
+  String get savedHiddenAuthor => 'Скрытый автор';
+
+  @override
+  String deleteSavedTopicConfirm(String name) {
+    return 'Удалить всё сохранённое из «$name»?';
+  }
 
   @override
   String get noTopics => 'Тем пока нет';
@@ -4134,4 +4215,164 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get chatLinkAvailable => 'Ссылка свободна.';
+
+  @override
+  String get chatBackground => 'Фон чатов';
+
+  @override
+  String get chatBackgroundHint =>
+      'Градиенты следуют теме. Своя картинка в тёмной теме слегка затемняется.';
+
+  @override
+  String get wallpaperClassic => 'Классика';
+
+  @override
+  String get wallpaperOcean => 'Океан';
+
+  @override
+  String get wallpaperLavender => 'Лаванда';
+
+  @override
+  String get wallpaperSand => 'Песок';
+
+  @override
+  String get wallpaperGraphite => 'Графит';
+
+  @override
+  String get wallpaperPlain => 'Однотонный';
+
+  @override
+  String get wallpaperPicture => 'Картинка';
+
+  @override
+  String get choosePicture => 'Выбрать картинку…';
+
+  @override
+  String get changePicture => 'Сменить картинку…';
+
+  @override
+  String get blurPicture => 'Размыть картинку';
+
+  @override
+  String get nightSchedule => 'Тёмная тема по расписанию';
+
+  @override
+  String get nightScheduleHint =>
+      'В эти часы включается тёмная тема, что бы ни было выбрано выше.';
+
+  @override
+  String get nightFrom => 'С';
+
+  @override
+  String get nightTo => 'До';
+
+  @override
+  String get layout => 'Вид';
+
+  @override
+  String get mediaCorners => 'Скругление медиа';
+
+  @override
+  String get cornerSmall => 'Малое';
+
+  @override
+  String get cornerMedium => 'Среднее';
+
+  @override
+  String get cornerLarge => 'Большое';
+
+  @override
+  String get compactLayout => 'Компактный вид';
+
+  @override
+  String get compactLayoutHint =>
+      'Плотнее строки в списке чатов и меньше воздуха между сообщениями.';
+
+  @override
+  String get appIcon => 'Значок приложения';
+
+  @override
+  String get appIconHint =>
+      'Значок в Dock, пока Mollygram запущен. В Finder остаётся тот, с которым приложение поставляется.';
+
+  @override
+  String get appIconCrimson => 'Малиновый';
+
+  @override
+  String get appIconBlue => 'Синий';
+
+  @override
+  String get appIconGraphite => 'Графит';
+
+  @override
+  String get downloads => 'Загрузки';
+
+  @override
+  String get downloadsEmpty => 'Загрузок нет';
+
+  @override
+  String get downloadsEmptyHint =>
+      'Здесь появятся файлы, которые вы сохраняете из чатов.';
+
+  @override
+  String get pauseAll => 'Приостановить все';
+
+  @override
+  String get resumeAll => 'Продолжить все';
+
+  @override
+  String get resume => 'Продолжить';
+
+  @override
+  String get clearFinished => 'Убрать завершённые';
+
+  @override
+  String get removeFromList => 'Убрать из списка';
+
+  @override
+  String get downloadPaused => 'Приостановлено';
+
+  @override
+  String downloadProgress(String done, String total) {
+    return '$done из $total';
+  }
+
+  @override
+  String downloadsActive(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Загружается $count файла',
+      many: 'Загружается $count файлов',
+      few: 'Загружается $count файла',
+      one: 'Загружается $count файл',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String downloadsAllPaused(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Приостановлены $count загрузки',
+      many: 'Приостановлено $count загрузок',
+      few: 'Приостановлены $count загрузки',
+      one: 'Приостановлена $count загрузка',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String downloadsFinished(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Загружено $count файла',
+      many: 'Загружено $count файлов',
+      few: 'Загружено $count файла',
+      one: 'Загружен $count файл',
+    );
+    return '$_temp0';
+  }
 }

@@ -9,6 +9,7 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 import '../../l10n/app_localizations.dart';
 import '../commands/command_registry.dart';
 import '../contacts/people_sheet.dart';
+import '../downloads/downloads_sheet.dart';
 import '../links/link_host.dart';
 import '../links/link_router.dart' show workspaceShellKey;
 import '../notifications/notification_service.dart';
@@ -131,6 +132,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         keywords: [other.contacts],
         run: () =>
             unawaited(showPeopleSheet(context, mode: PeopleSheetMode.contacts)),
+      ),
+      PaletteCommand(
+        id: 'app.downloads',
+        title: l10n.downloads,
+        keywords: [other.downloads],
+        shortcut: downloadsShortcut,
+        run: () => unawaited(showDownloadsSheet(context)),
       ),
       PaletteCommand(
         id: 'app.plugins',

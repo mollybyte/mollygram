@@ -15,6 +15,7 @@ typedef FileSender = Future<List<td.Message>> Function(
   int? replyTo,
   int? threadId,
   bool forumTopic,
+  bool savedTopic,
   bool silent,
   td.MessageSchedulingState? schedule,
 });
@@ -32,6 +33,7 @@ final class MessageThread {
     required this.chatId,
     required this.threadId,
     this.forumTopic,
+    this.savedTopic,
     required List<td.Message> roots,
     required this._replyCount,
     required this._onDispose,
@@ -59,14 +61,32 @@ final class MessageThread {
   /// history, sending and reading go through TDLib's topic functions.
   final td.ForumTopicInfo? forumTopic;
 
-  bool get isForumTopic => forumTopic != null;
+  /// Set when the thread is a Saved Messages topic: the messages saved
+  /// from one chat, through TDLib's Saved Messages topic functions.
+  final td.SavedMessagesTopic? savedTopic;
 
-  td.MessageTopic get _topic => forumTopic == null
+  bool get isForumTopic => forumTopic != null;
+  bool get isSavedTopic => savedTopic != null;
+
+  /// A forum or Saved Messages topic: a chat of its own with no root,
+  /// where a message is not a reply to anything.
+  bool get isStandalone => isForumTopic || isSavedTopic;
+
+  td.MessageTopic get _topic => isSavedTopic
+      ? td.MessageTopicSavedMessages(savedMessagesTopicId: threadId)
+      : forumTopic == null
       ? td.MessageTopicThread(messageThreadId: threadId)
       : td.MessageTopicForum(forumTopicId: threadId);
 
   Future<td.Messages> _history(int fromMessageId) => _client.send(
-    forumTopic == null
+    isSavedTopic
+        ? td.GetSavedMessagesTopicHistory(
+            savedMessagesTopicId: threadId,
+            fromMessageId: fromMessageId,
+            offset: 0,
+            limit: 50,
+          )
+        : forumTopic == null
         ? td.GetMessageThreadHistory(
             chatId: chatId,
             messageId: threadId,
@@ -147,7 +167,7 @@ final class MessageThread {
         chatId: chatId,
         topicId: _topic,
         // A comment answers the root; a topic message stands on its own.
-        replyTo: replyTo == null && isForumTopic
+        replyTo: replyTo == null && isStandalone
             ? null
             : td.InputMessageReplyToMessage(
                 messageId: replyTo ?? threadId,
@@ -186,9 +206,10 @@ final class MessageThread {
       files,
       caption: caption,
       captionEntities: captionEntities,
-      replyTo: replyTo ?? (isForumTopic ? null : threadId),
+      replyTo: replyTo ?? (isStandalone ? null : threadId),
       threadId: threadId,
       forumTopic: isForumTopic,
+      savedTopic: isSavedTopic,
       silent: silent,
       schedule: schedule,
     );
@@ -202,7 +223,9 @@ final class MessageThread {
     td.ViewMessages(
       chatId: chatId,
       messageIds: ids,
-      source: isForumTopic
+      source: isSavedTopic
+          ? const td.MessageSourceChatHistory()
+          : isForumTopic
           ? const td.MessageSourceForumTopicHistory()
           : const td.MessageSourceMessageThreadHistory(),
       forceRead: false,
@@ -272,6 +295,8 @@ final class MessageThread {
           !isForumTopic && messageThreadId == threadId,
         td.MessageTopicForum(:final forumTopicId) =>
           isForumTopic && forumTopicId == threadId,
+        td.MessageTopicSavedMessages(:final savedMessagesTopicId) =>
+          isSavedTopic && savedMessagesTopicId == threadId,
         _ => false,
       };
 

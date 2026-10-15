@@ -13,6 +13,7 @@ import 'chat_search_controller.dart';
 import 'connection_status.dart';
 import 'contacts_controller.dart';
 import 'conversation_controller.dart';
+import 'downloads_controller.dart';
 import 'file_controller.dart';
 import 'link_resolver.dart';
 import 'mention_search.dart';
@@ -53,6 +54,7 @@ final class TelegramSession {
     required this.search,
     required this.chatSearch,
     required this.files,
+    required this.downloads,
     required this.notifications,
     required this.stickers,
     required this.stickerSets,
@@ -85,6 +87,9 @@ final class TelegramSession {
   /// Search inside one chat and its shared media.
   final ChatSearchController chatSearch;
   final FileController files;
+
+  /// The downloads the user asked for: the list, pausing and clearing.
+  final DownloadsController downloads;
   final NotificationController notifications;
   final StickerLibrary stickers;
 
@@ -159,6 +164,7 @@ final class TelegramSession {
     final authorization = AuthorizationController(client);
     final conversations = ConversationController(client);
     final files = FileController(client);
+    final downloads = DownloadsController(client, files);
     final mentions = MentionSearch(client);
     final peers = PeerInfoController(client);
     final connection = ConnectionMonitor(client);
@@ -182,6 +188,7 @@ final class TelegramSession {
       search: ChatSearch(client),
       chatSearch: ChatSearchController(client),
       files: files,
+      downloads: downloads,
       notifications: notifications,
       stickers: StickerLibrary(client),
       stickerSets: stickerSets,
@@ -209,6 +216,7 @@ final class TelegramSession {
     try {
       await conversations.start();
       await files.start();
+      await downloads.start();
       await mentions.start();
       await peers.start();
       await connection.start();
@@ -283,6 +291,7 @@ final class TelegramSession {
     await _stageSubscription?.cancel();
     await chatLists.dispose();
     await conversations.dispose();
+    await downloads.dispose();
     await files.dispose();
     await mentions.dispose();
     await peers.dispose();

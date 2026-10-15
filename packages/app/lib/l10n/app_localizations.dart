@@ -1514,6 +1514,30 @@ abstract class AppLocalizations {
   /// **'Unmute'**
   String get infoUnmute;
 
+  /// No description provided for @muteForHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{For 1 hour} other{For {count} hours}}'**
+  String muteForHours(int count);
+
+  /// No description provided for @muteForDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{For 1 day} other{For {count} days}}'**
+  String muteForDays(int count);
+
+  /// No description provided for @muteUntilEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Until I turn it back on'**
+  String get muteUntilEnabled;
+
+  /// No description provided for @autoDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-delete messages'**
+  String get autoDeleteTitle;
+
   /// No description provided for @blockUser.
   ///
   /// In en, this message translates to:
@@ -1789,6 +1813,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Send contact'**
   String get sendContactTitle;
+
+  /// No description provided for @attachLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Location…'**
+  String get attachLocation;
+
+  /// No description provided for @sendLocationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send location'**
+  String get sendLocationTitle;
+
+  /// No description provided for @locationSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Place, address or coordinates'**
+  String get locationSearchHint;
+
+  /// No description provided for @locationStartHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter coordinates or paste a map link to pick a place, then search for venues around it'**
+  String get locationStartHint;
+
+  /// No description provided for @sendThisLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Send this location'**
+  String get sendThisLocation;
+
+  /// No description provided for @mapZoomIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom in'**
+  String get mapZoomIn;
+
+  /// No description provided for @mapZoomOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom out'**
+  String get mapZoomOut;
 
   /// No description provided for @newPollTitle.
   ///
@@ -3368,6 +3434,18 @@ abstract class AppLocalizations {
   /// **'Music'**
   String get sharedMusicTab;
 
+  /// No description provided for @sharedGifsTab.
+  ///
+  /// In en, this message translates to:
+  /// **'GIFs'**
+  String get sharedGifsTab;
+
+  /// No description provided for @sharedGroupsTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Groups'**
+  String get sharedGroupsTab;
+
   /// No description provided for @sharedMediaEmpty.
   ///
   /// In en, this message translates to:
@@ -3397,6 +3475,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No music yet'**
   String get sharedMusicEmpty;
+
+  /// No description provided for @sharedGifsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No GIFs yet'**
+  String get sharedGifsEmpty;
+
+  /// No description provided for @sharedGroupsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No groups in common'**
+  String get sharedGroupsEmpty;
 
   /// No description provided for @sharedLoadFailed.
   ///
@@ -3865,6 +3955,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Back to topics'**
   String get backToTopics;
+
+  /// No description provided for @savedShowAsChats.
+  ///
+  /// In en, this message translates to:
+  /// **'Show as chats'**
+  String get savedShowAsChats;
+
+  /// No description provided for @savedShowAsMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Show as messages'**
+  String get savedShowAsMessages;
+
+  /// No description provided for @savedMyNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'My notes'**
+  String get savedMyNotes;
+
+  /// No description provided for @savedHiddenAuthor.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden author'**
+  String get savedHiddenAuthor;
+
+  /// No description provided for @deleteSavedTopicConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete everything saved from {name}?'**
+  String deleteSavedTopicConfirm(String name);
 
   /// No description provided for @noTopics.
   ///
@@ -6835,6 +6955,252 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This link is available.'**
   String get chatLinkAvailable;
+
+  /// No description provided for @chatBackground.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat background'**
+  String get chatBackground;
+
+  /// No description provided for @chatBackgroundHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Gradients follow the theme. A picture of your own is dimmed a little in the dark theme.'**
+  String get chatBackgroundHint;
+
+  /// No description provided for @wallpaperClassic.
+  ///
+  /// In en, this message translates to:
+  /// **'Classic'**
+  String get wallpaperClassic;
+
+  /// No description provided for @wallpaperOcean.
+  ///
+  /// In en, this message translates to:
+  /// **'Ocean'**
+  String get wallpaperOcean;
+
+  /// No description provided for @wallpaperLavender.
+  ///
+  /// In en, this message translates to:
+  /// **'Lavender'**
+  String get wallpaperLavender;
+
+  /// No description provided for @wallpaperSand.
+  ///
+  /// In en, this message translates to:
+  /// **'Sand'**
+  String get wallpaperSand;
+
+  /// No description provided for @wallpaperGraphite.
+  ///
+  /// In en, this message translates to:
+  /// **'Graphite'**
+  String get wallpaperGraphite;
+
+  /// No description provided for @wallpaperPlain.
+  ///
+  /// In en, this message translates to:
+  /// **'Plain'**
+  String get wallpaperPlain;
+
+  /// No description provided for @wallpaperPicture.
+  ///
+  /// In en, this message translates to:
+  /// **'Picture'**
+  String get wallpaperPicture;
+
+  /// No description provided for @choosePicture.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose picture…'**
+  String get choosePicture;
+
+  /// No description provided for @changePicture.
+  ///
+  /// In en, this message translates to:
+  /// **'Change picture…'**
+  String get changePicture;
+
+  /// No description provided for @blurPicture.
+  ///
+  /// In en, this message translates to:
+  /// **'Blur picture'**
+  String get blurPicture;
+
+  /// No description provided for @nightSchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark theme by schedule'**
+  String get nightSchedule;
+
+  /// No description provided for @nightScheduleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Switches to the dark theme between these hours, whatever the theme above says.'**
+  String get nightScheduleHint;
+
+  /// No description provided for @nightFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'From'**
+  String get nightFrom;
+
+  /// No description provided for @nightTo.
+  ///
+  /// In en, this message translates to:
+  /// **'To'**
+  String get nightTo;
+
+  /// No description provided for @layout.
+  ///
+  /// In en, this message translates to:
+  /// **'Layout'**
+  String get layout;
+
+  /// No description provided for @mediaCorners.
+  ///
+  /// In en, this message translates to:
+  /// **'Media corners'**
+  String get mediaCorners;
+
+  /// No description provided for @cornerSmall.
+  ///
+  /// In en, this message translates to:
+  /// **'Small'**
+  String get cornerSmall;
+
+  /// No description provided for @cornerMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get cornerMedium;
+
+  /// No description provided for @cornerLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'Large'**
+  String get cornerLarge;
+
+  /// No description provided for @compactLayout.
+  ///
+  /// In en, this message translates to:
+  /// **'Compact layout'**
+  String get compactLayout;
+
+  /// No description provided for @compactLayoutHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tighter rows in the chat list and less air between messages.'**
+  String get compactLayoutHint;
+
+  /// No description provided for @appIcon.
+  ///
+  /// In en, this message translates to:
+  /// **'App icon'**
+  String get appIcon;
+
+  /// No description provided for @appIconHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The icon in the Dock while Mollygram runs. Finder keeps the one the app ships with.'**
+  String get appIconHint;
+
+  /// No description provided for @appIconCrimson.
+  ///
+  /// In en, this message translates to:
+  /// **'Crimson'**
+  String get appIconCrimson;
+
+  /// No description provided for @appIconBlue.
+  ///
+  /// In en, this message translates to:
+  /// **'Blue'**
+  String get appIconBlue;
+
+  /// No description provided for @appIconGraphite.
+  ///
+  /// In en, this message translates to:
+  /// **'Graphite'**
+  String get appIconGraphite;
+
+  /// No description provided for @downloads.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloads'**
+  String get downloads;
+
+  /// No description provided for @downloadsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No downloads'**
+  String get downloadsEmpty;
+
+  /// No description provided for @downloadsEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Files you save from chats will show up here.'**
+  String get downloadsEmptyHint;
+
+  /// No description provided for @pauseAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause all'**
+  String get pauseAll;
+
+  /// No description provided for @resumeAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume all'**
+  String get resumeAll;
+
+  /// No description provided for @resume.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume'**
+  String get resume;
+
+  /// No description provided for @clearFinished.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear finished'**
+  String get clearFinished;
+
+  /// No description provided for @removeFromList.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from list'**
+  String get removeFromList;
+
+  /// No description provided for @downloadPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get downloadPaused;
+
+  /// No description provided for @downloadProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} of {total}'**
+  String downloadProgress(String done, String total);
+
+  /// No description provided for @downloadsActive.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} file downloading} other{{count} files downloading}}'**
+  String downloadsActive(int count);
+
+  /// No description provided for @downloadsAllPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} download paused} other{{count} downloads paused}}'**
+  String downloadsAllPaused(int count);
+
+  /// No description provided for @downloadsFinished.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} file downloaded} other{{count} files downloaded}}'**
+  String downloadsFinished(int count);
 }
 
 class _AppLocalizationsDelegate

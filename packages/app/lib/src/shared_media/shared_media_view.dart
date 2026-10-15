@@ -11,80 +11,233 @@ import '../chat/file_content.dart';
 import '../chat/formatted_text.dart' show openLink;
 import '../chat/media_content.dart';
 import '../chat/media_viewer.dart';
+import '../chat/message_tile.dart' show SenderAvatar;
 import '../home/format.dart';
 import '../session/providers.dart';
 import 'shared_link.dart';
 
 /// A chat's shared media: tabs for photos and videos, files, links, voice
-/// messages and music, each loaded page by page with `searchChatMessages`.
+/// messages, music and GIFs, each loaded page by page with
+/// `searchChatMessages`, and for a user the groups in common.
 ///
-/// Photos and videos open in the media viewer, files and audio play or
-/// open in place, links open in the browser. [onOpenMessage] shows a
-/// message in the chat ("Show in chat").
+/// Photos, videos and GIFs open in the media viewer, files and audio play
+/// or open in place, links open in the browser. [onOpenMessage] shows a
+/// message in the chat ("Show in chat"); [onOpenChat] opens a group in
+/// common. [userId] is the user of a private chat, 0 elsewhere.
 class SharedMediaView extends ConsumerStatefulWidget {
   const SharedMediaView({
     super.key,
     required this.chatId,
+    this.userId = 0,
     this.onOpenMessage,
+    this.onOpenChat,
     this.initialKind = SharedMediaKind.media,
   });
 
   final int chatId;
+  final int userId;
   final ValueChanged<ConversationMessage>? onOpenMessage;
+  final ValueChanged<int>? onOpenChat;
   final SharedMediaKind initialKind;
 
   @override
   ConsumerState<SharedMediaView> createState() => _SharedMediaViewState();
 }
 
+/// The groups-in-common tab, which is no message filter.
+enum _Groups { tab }
+
 class _SharedMediaViewState extends ConsumerState<SharedMediaView> {
-  late var _kind = widget.initialKind;
+  late Object _tab = widget.initialKind;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final tab = _tab;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
-          child: _Tabs(
-            selected: _kind,
+          child: _Tabs<Object>(
+            selected: tab,
             labels: {
               SharedMediaKind.media: l10n.sharedMediaTab,
               SharedMediaKind.files: l10n.sharedFilesTab,
               SharedMediaKind.links: l10n.sharedLinksTab,
               SharedMediaKind.voice: l10n.sharedVoiceTab,
               SharedMediaKind.music: l10n.sharedMusicTab,
+              SharedMediaKind.gifs: l10n.sharedGifsTab,
+              if (widget.userId != 0) _Groups.tab: l10n.sharedGroupsTab,
             },
-            onSelect: (kind) => setState(() => _kind = kind),
+            onSelect: (tab) => setState(() => _tab = tab),
           ),
         ),
         Expanded(
-          child: _SharedList(
-            // A new list per chat and tab, so each starts from the newest.
-            key: ValueKey((widget.chatId, _kind)),
-            chatId: widget.chatId,
-            kind: _kind,
-            onOpenMessage: widget.onOpenMessage,
-          ),
+          child: switch (tab) {
+            final SharedMediaKind kind => _SharedList(
+              // A new list per chat and tab, so each starts from the newest.
+              key: ValueKey((widget.chatId, kind)),
+              chatId: widget.chatId,
+              kind: kind,
+              onOpenMessage: widget.onOpenMessage,
+            ),
+            _ => _GroupsList(
+              key: ValueKey((widget.chatId, _Groups.tab)),
+              userId: widget.userId,
+              onOpen: widget.onOpenChat,
+            ),
+          },
         ),
       ],
     );
   }
 }
 
+/// The groups the user shares with the chat's user, as rows with the
+/// group's photo and title; a click opens the group.
+class _GroupsList extends ConsumerStatefulWidget {
+  const _GroupsList({super.key, required this.userId, required this.onOpen});
+
+  final int userId;
+  final ValueChanged<int>? onOpen;
+
+  @override
+  ConsumerState<_GroupsList> createState() => _GroupsListState();
+}
+
+class _GroupsListState extends ConsumerState<_GroupsList> {
+  late final Future<List<td.Chat>> _groups = ref
+      .read(telegramSessionProvider)
+      .requireValue
+      .conversations
+      .groupsInCommon(widget.userId);
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    final l10n = AppLocalizations.of(context);
+    return FutureBuilder<List<td.Chat>>(
+      future: _groups,
+      builder: (context, snapshot) {
+        final groups = snapshot.data;
+        if (groups == null) {
+          return Center(
+            child: snapshot.hasError
+                ? Text(
+                    l10n.sharedLoadFailed,
+                    style: mgTextStyle(c, color: c.fg2),
+                  )
+                : const _Spinner(),
+          );
+        }
+        if (groups.isEmpty) {
+          return Center(
+            child: Text(
+              l10n.sharedGroupsEmpty,
+              textAlign: TextAlign.center,
+              style: mgTextStyle(c, color: c.fg2),
+            ),
+          );
+        }
+        return ListView.builder(
+          padding: const EdgeInsets.fromLTRB(8, 0, 8, 12),
+          itemCount: groups.length,
+          itemBuilder: (context, i) {
+            final group = groups[i];
+            return _GroupRow(
+              key: ValueKey(group.id),
+              title: group.title,
+              photo: group.photo?.small,
+              onTap: switch (widget.onOpen) {
+                final open? => () => open(group.id),
+                null => null,
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class _GroupRow extends StatefulWidget {
+  const _GroupRow({
+    super.key,
+    required this.title,
+    required this.photo,
+    required this.onTap,
+  });
+
+  final String title;
+  final td.File? photo;
+  final VoidCallback? onTap;
+
+  @override
+  State<_GroupRow> createState() => _GroupRowState();
+}
+
+class _GroupRowState extends State<_GroupRow> {
+  var _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    return Semantics(
+      button: widget.onTap != null,
+      label: widget.title,
+      excludeSemantics: true,
+      onTap: widget.onTap,
+      child: MouseRegion(
+        cursor: widget.onTap == null
+            ? MouseCursor.defer
+            : SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _hover = true),
+        onExit: (_) => setState(() => _hover = false),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: widget.onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 120),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+            decoration: BoxDecoration(
+              color: _hover && widget.onTap != null
+                  ? c.fg.withValues(alpha: 0.06)
+                  : null,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                SenderAvatar(name: widget.title, size: 36, photo: widget.photo),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    widget.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: mgTextStyle(c, weight: FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// A macOS-style segmented control.
-class _Tabs extends StatelessWidget {
+class _Tabs<T extends Object> extends StatelessWidget {
   const _Tabs({
     required this.selected,
     required this.labels,
     required this.onSelect,
   });
 
-  final SharedMediaKind selected;
-  final Map<SharedMediaKind, String> labels;
-  final ValueChanged<SharedMediaKind> onSelect;
+  final T selected;
+  final Map<T, String> labels;
+  final ValueChanged<T> onSelect;
 
   @override
   Widget build(BuildContext context) {
@@ -224,6 +377,7 @@ class _SharedListState extends ConsumerState<_SharedList> {
     SharedMediaKind.links => l10n.sharedLinksEmpty,
     SharedMediaKind.voice => l10n.sharedVoiceEmpty,
     SharedMediaKind.music => l10n.sharedMusicEmpty,
+    SharedMediaKind.gifs => l10n.sharedGifsEmpty,
   };
 
   @override
@@ -247,7 +401,9 @@ class _SharedListState extends ConsumerState<_SharedList> {
         },
       );
     }
-    if (widget.kind == SharedMediaKind.media) return _grid(messages);
+    if (widget.kind case SharedMediaKind.media || SharedMediaKind.gifs) {
+      return _grid(messages);
+    }
     return ListView.builder(
       controller: _scroll,
       padding: const EdgeInsets.fromLTRB(8, 0, 8, 12),
@@ -292,6 +448,11 @@ class _SharedListState extends ConsumerState<_SharedList> {
                 ),
                 td.MessageVideo(:final video) => VideoContent(
                   video: video,
+                  size: size,
+                  onTap: view,
+                ),
+                td.MessageAnimation(:final animation) => AnimationContent(
+                  animation: animation,
                   size: size,
                   onTap: view,
                 ),

@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 
 import 'colors.dart';
+import 'metrics.dart';
 
 /// Builds the app theme around [colors]: system font, no ink splashes,
 /// the single accent as the primary color.
-ThemeData buildMgTheme(MgColors colors) {
+ThemeData buildMgTheme(
+  MgColors colors, {
+  MgMetrics metrics = MgMetrics.defaults,
+}) {
   final base = ThemeData(
     brightness: colors.brightness,
     colorScheme: ColorScheme.fromSeed(
@@ -20,7 +24,7 @@ ThemeData buildMgTheme(MgColors colors) {
       cursorColor: colors.accent,
       selectionColor: colors.accent.withValues(alpha: 0.28),
     ),
-    extensions: [colors],
+    extensions: [colors, metrics],
   );
   return base.copyWith(
     textTheme: base.textTheme.apply(

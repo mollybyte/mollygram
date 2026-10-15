@@ -46,7 +46,7 @@ M8 calls and macOS release, M9 after release.
 | Folder editor: create, edit, delete, reorder, include/exclude, recommended | done | Settings > Chat folders: drag reorder, editor sheet with icon, chat types and a chat picker, delete with chats to leave, recommended folders; `ChatFoldersController` in core. No pinning inside a folder or "All chats" position yet | | M6 |
 | Folder sidebar (vertical tabs) and folder icons | missing | Official offers left-side folders | M | M7 |
 | Shared folders (chat folder invite links) | missing | `CreateChatFolderInviteLink` | M | M9 |
-| Saved Messages as a list of sub-chats | missing | Saved Messages tags and per-source chats | M | M2 |
+| Saved Messages as a list of sub-chats | partial | The list button in the Saved Messages capsule shows the chats the saved messages came from (`loadSavedMessagesTopics`, kept live from `updateSavedMessagesTopic`): own notes, a hidden author and one row per chat, pinned first, with the last message and time; one opens in place with its history (`getSavedMessagesTopicHistory`) and a composer, and its menu pins or deletes it. Tags pending | M | M2 |
 | Contacts birthdays and suggestions in the list | missing | | S | M9 |
 
 ### Opening and reading chats
@@ -114,14 +114,14 @@ M8 calls and macOS release, M9 after release.
 | Emoji and sticker suggestions while typing | done | `:word` offers Telegram's emoji keywords in the composer popup; a draft that is one emoji shows a strip of matching stickers above the composer | M | M2 |
 | Rich text formatting: bold, italic, code, link, spoiler, quote; Markdown shortcuts | done | `RichTextEditingController` in ui_kit: ⌘B, ⌘I, ⌘U, ⌘⇧X, ⌘⇧M, ⌘⇧P, ⌘⇧., ⌘K, context menu; Markdown converted on send. Captions of files are still plain | | |
 | Mentions autocomplete (@) | done | `MentionSearch` with `ChatMembersFilterMention`; no `:` emoji shortcodes yet | | |
-| Bot command autocomplete (/) and bot keyboards | partial | A / or the bot's menu button offers the commands the chat's bots announce and sends the pick; inline keyboards under messages (links, callbacks with the bot's answer as a toast, copy text, user links, switch-to-inline here or in a chosen chat) and the bot's reply keyboard above the composer with a toggle; its buttons send text, share the phone number after a confirmation, make a poll in the mode asked for or pick a user to share; location, chat and web app requests pending | M | M2 |
+| Bot command autocomplete (/) and bot keyboards | partial | A / or the bot's menu button offers the commands the chat's bots announce and sends the pick; inline keyboards under messages (links, callbacks with the bot's answer as a toast, copy text, user links, switch-to-inline here or in a chosen chat) and the bot's reply keyboard above the composer with a toggle; its buttons send text, share the phone number after a confirmation, make a poll in the mode asked for, pick a user or a chat to share (`shareUsersWithBot`, `shareChatWithBot`) or send a place from the location sheet; web app requests pending | M | M2 |
 | Inline bots (@gif, @vid) | done | `@bot query` in the composer shows the bot's results over it (`GetInlineQueryResults`): a grid for GIFs, photos, videos and stickers that play under the pointer, rows for articles and the rest, more pages as the grid scrolls; a click sends the result via the bot | M | M9 |
 | Voice message recording | done | Hold, lock, cancel; Opus in Ogg via AudioToolbox on macOS | M | M1 |
 | Video message (circle) recording | partial | Hold, lock, cancel, 60 s limit; 640×640 H.264 via AVFoundation on macOS. Front camera only, no flip or preview before sending | L | M4 |
 | Silent send and scheduled messages, scheduled list | done | Right click or long press on Send: without sound, at a day and time or, in a private chat with a person, when they come online; a clock in the composer opens the scheduled list with Send now, Reschedule and Delete; a right click on Send in the attachment preview offers the same | S | M2 |
 | Send as (channel identity) | done | Where TDLib sets the chat's `message_sender_id`, the composer shows the identity's avatar before the attach button; a click lists the account and the user's channels (`GetChatAvailableMessageSenders`), Premium-only ones greyed, and picks one with `SetChatMessageSender` | S | M6 |
 | Polls and quizzes creation | done | Attach menu > Poll… in groups and channels: question, up to ten options, anonymous voting, multiple answers, quiz mode with the right answer and an explanation | M | M2 |
-| Location and venue sending | missing | | M | M2 |
+| Location and venue sending | partial | Location… under the attach button: a sheet with a map to drag and zoom (`getMapThumbnailFile`) around the pin, a field that takes coordinates or a maps link, and venues around the pin from the venue bot (`venue_search_bot_username`, `getInlineQueryResults`); a row sends the point (`inputMessageLocation`) or the venue (`inputMessageVenue`). No current position yet (CoreLocation), no live location | M | M2 |
 | Contact sending | done | Contact… under the attach button opens a searchable list of contacts; the message shows the monogram, name and number and opens the person | S | M2 |
 | Send preview: caption, send as files, albums | done | #31 | | |
 | Send preview: spoiler, self-destruct timer, compression choice | partial | Hide with a spoiler, Send as files and, in private chats, a self-destruct timer (view once, 3 s to 1 min) in the preview; a quality choice pending | S | M2 |
@@ -151,8 +151,8 @@ M8 calls and macOS release, M9 after release.
 | Global audio player with playlist and header bar | done | A glass capsule at the right of the chat header while a voice message or music file plays: play/pause, sender or title, time, speed, close; its title shows the message, opening its chat when needed; a finished track goes on to the next one; a list button opens the chat's voice messages or music as a playlist, the playing one in the accent, a click plays another | M | M2 |
 | Picture-in-picture for video and circles | missing | `PIPVideoWindow` | M | M4 |
 | Voice playback speed and continuous play | done | Speed 1×, 1.5×, 2× and waveform scrubbing; a finished voice message goes on to the next newer one of the chat (music to the next music file), downloading it first | S | M1 |
-| Downloads manager (list, pause, show in Finder) | missing | `DownloadsController` | M | M7 |
-| Autodownload rules | missing | Data and storage | M | M7 |
+| Downloads manager (list, pause, show in Finder) | done | `DownloadsController` in core over TDLib's downloads list (`addFileToDownloads`, `updateFileDownload*`): a bar above the chat list while something downloads or is paused (ring, count, bytes), a sheet (⌘⇧J, palette) with active first, pause/resume per file and for all, Quick Look, Show in Finder, Show in chat, remove, clear finished. Chat rows still start downloads through `downloadFile`; they go onto the list once they call `DownloadsController.add` | | M7 |
+| Autodownload rules | partial | The Data and storage switches reach `FileController.autoDownloadKinds`; media rows switch to `FileController.autoDownload(kind:)` to honour them. No per-chat-type rules or size limits yet | S | M7 |
 | Quick Look for documents | done | Quick Look in the menu of a downloaded file on macOS (`qlmanage -p`) | S | M2 |
 
 ### Search
@@ -172,10 +172,10 @@ M8 calls and macOS release, M9 after release.
 |---|---|---|---|---|
 | User profile: photo, bio, username, phone, birthday, actions | done | `PeerInfoController` in core, inspector panel in `app/lib/src/profile` | | |
 | Group and channel info: description, link, members count | done | First 50 members, most recently active first | | |
-| Shared media tabs: media, files, links, voice, music, GIFs, groups in common | partial | `SharedMediaView` has media, files, links, voice, music; GIFs and groups in common missing; in the info panel | M | M2 |
+| Shared media tabs: media, files, links, voice, music, GIFs, groups in common | partial | `SharedMediaView` in the info panel: media, files, links, voice, music and GIFs (`searchChatMessages` by filter, GIFs in the grid and the viewer), and for a user the groups in common (`getGroupsInCommon`), each a row that opens the group | M | M2 |
 | Members list with search | done | Info panel (`profile/`): owner and admins first, then online; search and Show more pages through `getSupergroupMembers` | | |
-| Profile photo gallery | missing | | S | M2 |
-| Per-chat notifications and auto-delete timer | partial | Mute and unmute in the info panel; no mute-for durations, no auto-delete | S | M1 |
+| Profile photo gallery | done | The big photo in the info panel opens the viewer with the profile's photos newest first (`getUserProfilePhotos`; for a group or channel its photo-change messages), the name and when each was set on top, arrows and thumbnails to page | S | M2 |
+| Per-chat notifications and auto-delete timer | done | The info panel's Mute tile offers an hour, eight hours, two days or until turned back on (`setChatNotificationSettings`), Unmute when muted; an Auto-delete messages row shows the chat's timer and sets off, a day, a week or a month (`setChatMessageAutoDeleteTime`) for private chats and groups the user may edit | S | M1 |
 | Block, report, share contact | partial | Block and unblock in the info panel | S | M6 |
 
 ### Groups, channels and admin tools
@@ -219,7 +219,7 @@ M8 calls and macOS release, M9 after release.
 | Passcode lock and Touch ID | partial | Passcode lock: salted PBKDF2 hash in the keychain, locked at launch, auto-lock after 1, 5, 15 or 60 minutes away, ⌘L, blurred lock screen, growing waits after five wrong tries, no message text in notifications while locked, log out when forgotten; no Touch ID | S | M7 |
 | Delete account if away for 1, 3, 6 or 12 months | done | Privacy and security, Delete my account | | |
 | Data and storage: cache usage, clear, limits, network usage | partial | Usage by kind, clear by kind, download folder; auto-download switches are stored but not yet applied; no limits or network usage | M | M7 |
-| Appearance: theme, accent, night mode schedule, chat background, text size | partial | Theme, accent, wallpaper on or off, message text size, reduce motion; no night schedule or custom backgrounds | M | M7 |
+| Appearance: theme, accent, night mode schedule, chat background, text size | done | Theme, accent, dark theme by schedule (from/to half hours), chat background: five four-point gradients (classic, ocean, lavender, sand, graphite) with light and dark variants, plain, or a picture of your own with an optional blur; message text size; media corners (small/medium/large) and compact layout through `MgMetrics` in the theme; Dock icon (crimson, blue, graphite) through `NSApp.applicationIconImage`; reduce motion. No day/night colour themes beyond light and dark, no wallpaper patterns | | M7 |
 | Language: UI language picker, translation settings | partial | System, English or Russian in Settings, Language, applied at once; no translation settings or TDLib language packs | S | M7 |
 | Stickers and emoji: packs, reorder, archived, suggest, large emoji | partial | Settings > Stickers and emoji: installed sets dragged to reorder, archive or remove from the context menu, archived and trending pages, add by link, a set sheet (`showStickerSetSheet`), the same for custom emoji; large emoji, loop stickers and animated emoji switches. Set thumbnails are still frames; video (WebM) stickers loop regardless of the switch; suggest-by-emoji, emoji suggestions and dynamic pack order wait for composer suggestions | S | M7 |
 | Quick reaction choice | missing | | S | M7 |

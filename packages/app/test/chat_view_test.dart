@@ -1243,6 +1243,77 @@ void main() {
     expect(find.byType(LocationContent), findsOneWidget);
   });
 
+  testWidgets('shows Saved Messages as the chats they came from', (
+    tester,
+  ) async {
+    json.push({
+      '@type': 'updateOption',
+      'name': 'my_id',
+      'value': {'@type': 'optionValueInteger', 'value': 7},
+    });
+    json.push(
+      _chat(
+        lastRead: 13,
+        unread: 0,
+        last: 13,
+        type: {'@type': 'chatTypePrivate', 'user_id': 7},
+      ),
+    );
+    await pump(tester);
+    await tester.tap(find.byTooltip('Show as chats'));
+    await tester.pump();
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    expect(
+      json.sent.where((r) => r['@type'] == 'loadSavedMessagesTopics'),
+      isNotEmpty,
+    );
+    for (final (id, type, order) in [
+      (1, {'@type': 'savedMessagesTopicTypeMyNotes'}, 5),
+      (2, {'@type': 'savedMessagesTopicTypeSavedFromChat', 'chat_id': 7}, 9),
+    ]) {
+      json.push({
+        '@type': 'updateSavedMessagesTopic',
+        'topic': {
+          '@type': 'savedMessagesTopic',
+          'id': id,
+          'type': type,
+          'is_pinned': id == 1,
+          'order': order,
+          'last_message': _message(
+            id: 40 + id,
+            senderId: 2,
+            text: 'Saved $id',
+          ).toJson(),
+        },
+      });
+    }
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    expect(find.text('My notes'), findsOneWidget);
+    expect(find.text('Saved 2'), findsOneWidget);
+    // Pinned first, whatever the order.
+    final rows = tester.getTopLeft(find.byKey(const ValueKey('saved-topic-1')));
+    expect(
+      rows.dy,
+      lessThan(
+        tester.getTopLeft(find.byKey(const ValueKey('saved-topic-2'))).dy,
+      ),
+    );
+
+    await tester.tap(find.byKey(const ValueKey('saved-topic-2')));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    final history = json.sent.lastWhere(
+      (r) => r['@type'] == 'getSavedMessagesTopicHistory',
+    );
+    expect(history['saved_messages_topic_id'], 2);
+    expect(find.text('Kept for later'), findsOneWidget);
+    expect(find.byTooltip('Back to topics'), findsOneWidget);
+  });
+
   testWidgets('puts a switch-to-inline button\'s query in the composer', (
     tester,
   ) async {
@@ -1276,6 +1347,45 @@ void main() {
     final contact = (sent['input_message_content']! as Map)['contact']! as Map;
     expect(contact['phone_number'], '79990000000');
     expect(contact['user_id'], 7);
+  });
+
+  testWidgets('sends a place and shares a chat from a bot\'s keyboard', (
+    tester,
+  ) async {
+    json.history = [_replyKeyboardMessage(), ..._history];
+    json.push(_chat(lastRead: 13, unread: 0, last: 13, replyMarkup: 17));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await pump(tester);
+
+    await tester.tap(find.text('Where'));
+    await tester.pumpAndSettle();
+    expect(find.text('Send location'), findsOneWidget);
+    await tester.enterText(find.byType(TextField).last, '55.7558, 37.6173');
+    await tester.pump();
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('send-this-location')));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+    final sent = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    final content = sent['input_message_content']! as Map;
+    expect(content['@type'], 'inputMessageLocation');
+    expect((content['location']! as Map)['latitude'], closeTo(55.7558, 1e-6));
+
+    // The one-time keyboard folded away; bring it back for the next button.
+    await tester.tap(find.byTooltip('Bot keyboard'));
+    await tester.pump();
+    await tester.tap(find.text('Pick chat'));
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('Forward to chat'), findsOneWidget);
+    await tester.tap(find.text('Saved'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    final share = json.sent.lastWhere((r) => r['@type'] == 'shareChatWithBot');
+    expect(share['shared_chat_id'], 9);
+    expect(share['button_id'], 3);
+    expect((share['source']! as Map)['message_id'], 17);
   });
 
   testWidgets('shows a bot\'s reply keyboard and sends a button', (
@@ -1460,6 +1570,76 @@ void main() {
     expect((content['type']! as Map)['correct_option_ids'], [1]);
     expect(content['is_anonymous'], isTrue);
     expect(find.text('New quiz'), findsNothing);
+  });
+
+  testWidgets('sends a place or a venue from the attach menu', (tester) async {
+    await pump(tester, group: false);
+    await tester.tap(find.byTooltip('Attach'));
+    await tester.pump();
+    await tester.tap(find.text('Location…'));
+    await tester.pump();
+    expect(find.text('Send location'), findsOneWidget);
+
+    // Coordinates in the field move the pin there, whatever the sheet
+    // remembered from an earlier opening.
+    await tester.enterText(find.byType(TextField).last, '48.8566, 2.3522');
+    await tester.pump();
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    final map = json.sent.lastWhere((r) => r['@type'] == 'getMapThumbnailFile');
+    final shown = map['location']! as Map;
+    expect(shown['latitude'], closeTo(48.8566, 1e-6));
+    expect(map['zoom'], 15);
+    expect(find.text('48.85660, 2.35220'), findsOneWidget);
+
+    // A place name searches venues around the pin.
+    await tester.enterText(find.byType(TextField).last, 'tower');
+    await tester.pump(const Duration(milliseconds: 400));
+    for (var i = 0; i < 6; i++) {
+      await tester.runAsync(() => Future<void>.delayed(_tick));
+      await tester.pump();
+    }
+    final search = json.sent.lastWhere(
+      (r) => r['@type'] == 'getInlineQueryResults',
+    );
+    expect(search['query'], 'tower');
+    expect(
+      (search['user_location']! as Map)['latitude'],
+      closeTo(48.8566, 1e-6),
+    );
+    expect(find.text('Eiffel Tower'), findsOneWidget);
+    expect(find.text('Champ de Mars, Paris'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('send-this-location')));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump(const Duration(milliseconds: 200));
+    var send = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    var content = send['input_message_content']! as Map;
+    expect(content['@type'], 'inputMessageLocation');
+    expect((content['location']! as Map)['longitude'], closeTo(2.3522, 1e-6));
+    await tester.pumpAndSettle();
+    expect(find.text('Send location'), findsNothing);
+
+    // The sheet opens where it was left; a venue row sends the venue.
+    await tester.tap(find.byTooltip('Attach'));
+    await tester.pump();
+    await tester.tap(find.text('Location…'));
+    await tester.pump();
+    expect(find.text('48.85660, 2.35220'), findsOneWidget);
+    await tester.enterText(find.byType(TextField).last, 'tower');
+    await tester.pump(const Duration(milliseconds: 400));
+    for (var i = 0; i < 6; i++) {
+      await tester.runAsync(() => Future<void>.delayed(_tick));
+      await tester.pump();
+    }
+    await tester.tap(find.text('Eiffel Tower'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump(const Duration(milliseconds: 200));
+    send = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    content = send['input_message_content']! as Map;
+    expect(content['@type'], 'inputMessageVenue');
+    expect((content['venue']! as Map)['title'], 'Eiffel Tower');
+    await tester.pumpAndSettle();
   });
 
   testWidgets('sends a contact from the attach menu', (tester) async {
@@ -3214,6 +3394,20 @@ final class _FakeTdJson implements td.TdJson {
       },
       'getUser' when decoded['user_id'] == 2 => _user(2, 'Boris'),
       'getMe' => _user(7, 'Me', '79990000000'),
+      'getUser' when decoded['user_id'] == 7 => _user(7, 'Me'),
+      'getSavedMessagesTopicHistory' => {
+        '@type': 'messages',
+        'total_count': 1,
+        'messages': [
+          {
+            ..._message(id: 52, senderId: 2, text: 'Kept for later').toJson(),
+            'topic_id': {
+              '@type': 'messageTopicSavedMessages',
+              'saved_messages_topic_id': 2,
+            },
+          },
+        ],
+      },
       'getMapThumbnailFile' => _stickerFile(900),
       'getUser' when decoded['user_id'] == 50 => {
         ..._user(50, 'GIF Search'),
@@ -3228,6 +3422,51 @@ final class _FakeTdJson implements td.TdJson {
           'is_inline': true,
           'inline_query_placeholder': 'Search GIFs',
         },
+      },
+      'getUser' when decoded['user_id'] == 60 => {
+        ..._user(60, 'Foursquare'),
+        'type': {
+          '@type': 'userTypeBot',
+          'is_inline': true,
+          'inline_query_placeholder': 'Search places',
+        },
+      },
+      'searchPublicChat' when decoded['username'] == 'foursquare' => {
+        ...(_chat(
+              lastRead: 0,
+              unread: 0,
+              last: 1,
+              type: {'@type': 'chatTypePrivate', 'user_id': 60},
+              empty: true,
+            )['chat']!
+            as Map<String, Object?>),
+        'id': 60,
+        'title': 'Foursquare',
+      },
+      'getInlineQueryResults' when decoded['user_location'] != null => {
+        '@type': 'inlineQueryResults',
+        'inline_query_id': 778,
+        'next_offset': '',
+        'results': [
+          {
+            '@type': 'inlineQueryResultVenue',
+            'id': 'v1',
+            'venue': {
+              '@type': 'venue',
+              'location': {
+                '@type': 'location',
+                'latitude': 48.8584,
+                'longitude': 2.2945,
+                'horizontal_accuracy': 0,
+              },
+              'title': 'Eiffel Tower',
+              'address': 'Champ de Mars, Paris',
+              'provider': 'foursquare',
+              'id': 'ft',
+              'type': 'landmark',
+            },
+          },
+        ],
       },
       'searchPublicChat' when decoded['username'] == 'gif' => {
         ...(_chat(
@@ -3365,6 +3604,26 @@ td.Message _replyKeyboardMessage() => td.Message.fromJson({
           'icon_custom_emoji_id': 0,
           'style': {'@type': 'buttonStyleDefault'},
           'type': {'@type': 'keyboardButtonTypeRequestPhoneNumber'},
+        },
+      ],
+      [
+        {
+          '@type': 'keyboardButton',
+          'text': 'Where',
+          'icon_custom_emoji_id': 0,
+          'style': {'@type': 'buttonStyleDefault'},
+          'type': {'@type': 'keyboardButtonTypeRequestLocation'},
+        },
+        {
+          '@type': 'keyboardButton',
+          'text': 'Pick chat',
+          'icon_custom_emoji_id': 0,
+          'style': {'@type': 'buttonStyleDefault'},
+          'type': {
+            '@type': 'keyboardButtonTypeRequestChat',
+            'id': 3,
+            'chat_is_channel': false,
+          },
         },
       ],
     ],

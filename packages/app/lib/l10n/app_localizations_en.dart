@@ -841,6 +841,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get infoUnmute => 'Unmute';
 
   @override
+  String muteForHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'For $count hours',
+      one: 'For 1 hour',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String muteForDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'For $count days',
+      one: 'For 1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get muteUntilEnabled => 'Until I turn it back on';
+
+  @override
+  String get autoDeleteTitle => 'Auto-delete messages';
+
+  @override
   String get blockUser => 'Block user';
 
   @override
@@ -1014,6 +1042,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sendContactTitle => 'Send contact';
+
+  @override
+  String get attachLocation => 'Location…';
+
+  @override
+  String get sendLocationTitle => 'Send location';
+
+  @override
+  String get locationSearchHint => 'Place, address or coordinates';
+
+  @override
+  String get locationStartHint =>
+      'Enter coordinates or paste a map link to pick a place, then search for venues around it';
+
+  @override
+  String get sendThisLocation => 'Send this location';
+
+  @override
+  String get mapZoomIn => 'Zoom in';
+
+  @override
+  String get mapZoomOut => 'Zoom out';
 
   @override
   String get newPollTitle => 'New poll';
@@ -1985,6 +2035,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sharedMusicTab => 'Music';
 
   @override
+  String get sharedGifsTab => 'GIFs';
+
+  @override
+  String get sharedGroupsTab => 'Groups';
+
+  @override
   String get sharedMediaEmpty => 'No photos or videos yet';
 
   @override
@@ -1998,6 +2054,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sharedMusicEmpty => 'No music yet';
+
+  @override
+  String get sharedGifsEmpty => 'No GIFs yet';
+
+  @override
+  String get sharedGroupsEmpty => 'No groups in common';
 
   @override
   String get sharedLoadFailed => 'Couldn\'t load the list';
@@ -2271,6 +2333,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get backToTopics => 'Back to topics';
+
+  @override
+  String get savedShowAsChats => 'Show as chats';
+
+  @override
+  String get savedShowAsMessages => 'Show as messages';
+
+  @override
+  String get savedMyNotes => 'My notes';
+
+  @override
+  String get savedHiddenAuthor => 'Hidden author';
+
+  @override
+  String deleteSavedTopicConfirm(String name) {
+    return 'Delete everything saved from $name?';
+  }
 
   @override
   String get noTopics => 'No topics yet';
@@ -4075,4 +4154,158 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatLinkAvailable => 'This link is available.';
+
+  @override
+  String get chatBackground => 'Chat background';
+
+  @override
+  String get chatBackgroundHint =>
+      'Gradients follow the theme. A picture of your own is dimmed a little in the dark theme.';
+
+  @override
+  String get wallpaperClassic => 'Classic';
+
+  @override
+  String get wallpaperOcean => 'Ocean';
+
+  @override
+  String get wallpaperLavender => 'Lavender';
+
+  @override
+  String get wallpaperSand => 'Sand';
+
+  @override
+  String get wallpaperGraphite => 'Graphite';
+
+  @override
+  String get wallpaperPlain => 'Plain';
+
+  @override
+  String get wallpaperPicture => 'Picture';
+
+  @override
+  String get choosePicture => 'Choose picture…';
+
+  @override
+  String get changePicture => 'Change picture…';
+
+  @override
+  String get blurPicture => 'Blur picture';
+
+  @override
+  String get nightSchedule => 'Dark theme by schedule';
+
+  @override
+  String get nightScheduleHint =>
+      'Switches to the dark theme between these hours, whatever the theme above says.';
+
+  @override
+  String get nightFrom => 'From';
+
+  @override
+  String get nightTo => 'To';
+
+  @override
+  String get layout => 'Layout';
+
+  @override
+  String get mediaCorners => 'Media corners';
+
+  @override
+  String get cornerSmall => 'Small';
+
+  @override
+  String get cornerMedium => 'Medium';
+
+  @override
+  String get cornerLarge => 'Large';
+
+  @override
+  String get compactLayout => 'Compact layout';
+
+  @override
+  String get compactLayoutHint =>
+      'Tighter rows in the chat list and less air between messages.';
+
+  @override
+  String get appIcon => 'App icon';
+
+  @override
+  String get appIconHint =>
+      'The icon in the Dock while Mollygram runs. Finder keeps the one the app ships with.';
+
+  @override
+  String get appIconCrimson => 'Crimson';
+
+  @override
+  String get appIconBlue => 'Blue';
+
+  @override
+  String get appIconGraphite => 'Graphite';
+
+  @override
+  String get downloads => 'Downloads';
+
+  @override
+  String get downloadsEmpty => 'No downloads';
+
+  @override
+  String get downloadsEmptyHint =>
+      'Files you save from chats will show up here.';
+
+  @override
+  String get pauseAll => 'Pause all';
+
+  @override
+  String get resumeAll => 'Resume all';
+
+  @override
+  String get resume => 'Resume';
+
+  @override
+  String get clearFinished => 'Clear finished';
+
+  @override
+  String get removeFromList => 'Remove from list';
+
+  @override
+  String get downloadPaused => 'Paused';
+
+  @override
+  String downloadProgress(String done, String total) {
+    return '$done of $total';
+  }
+
+  @override
+  String downloadsActive(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count files downloading',
+      one: '$count file downloading',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String downloadsAllPaused(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count downloads paused',
+      one: '$count download paused',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String downloadsFinished(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count files downloaded',
+      one: '$count file downloaded',
+    );
+    return '$_temp0';
+  }
 }

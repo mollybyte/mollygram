@@ -8,6 +8,8 @@ import 'conversation_store.dart';
 import 'forum_topics.dart';
 import 'message_thread.dart';
 import 'outgoing_file.dart';
+import 'peer_info.dart';
+import 'saved_topics.dart';
 import 'text_edit.dart';
 
 /// Loads and maintains conversation timelines from TDLib.
@@ -36,6 +38,15 @@ final class ConversationController {
 
   /// The forum topic lists open on screen, fed every update.
   final _topicLists = <ForumTopicList>{};
+  final _savedLists = <SavedTopicList>{};
+  int? _myId;
+
+  /// The signed-in user's id, once TDLib has said it.
+  int? get myId => _myId;
+
+  /// Whether [chatId] is the user's Saved Messages.
+  bool isSavedMessages(int chatId) =>
+      _myId != null && store.privateUserIdOf(chatId) == _myId;
   StreamSubscription<td.TdObject>? _subscription;
 
   Stream<void> get changes => _changes.stream;
@@ -953,6 +964,25 @@ final class ConversationController {
     ),
   );
 
+  /// Answers a bot's request for a chat, from the button [buttonId] of
+  /// [messageId] in [chatId], with [sharedChatId].
+  Future<void> shareChatWithBot(
+    int chatId,
+    int messageId,
+    int buttonId,
+    int sharedChatId,
+  ) => _client.send(
+    td.ShareChatWithBot(
+      source: td.KeyboardButtonSourceMessage(
+        chatId: chatId,
+        messageId: messageId,
+      ),
+      buttonId: buttonId,
+      sharedChatId: sharedChatId,
+      onlyCheck: false,
+    ),
+  );
+
   /// Asks inline bot [botUserId] for its results to [query], as the
   /// composer shows them while the user types `@bot query`; [offset] is
   /// the previous answer's `nextOffset` for the following page.
@@ -1105,6 +1135,46 @@ final class ConversationController {
 
   /// The topics of forum [chatId], kept current until disposed; the
   /// first page still has to be loaded.
+  /// The topics of Saved Messages, fed updates until disposed.
+  SavedTopicList openSavedTopics() {
+    final list = SavedTopicList(_client, onDispose: _savedLists.remove);
+    _savedLists.add(list);
+    return list;
+  }
+
+  /// Opens Saved Messages [topic] in [chatId] as a thread of its own.
+  Future<MessageThread> openSavedTopic(
+    int chatId,
+    td.SavedMessagesTopic topic,
+  ) async {
+    final thread = MessageThread(
+      _client,
+      store,
+      chatId: chatId,
+      threadId: topic.id,
+      savedTopic: topic,
+      roots: const [],
+      replyCount: 0,
+      onDispose: _threads.remove,
+      sendFiles: sendFiles,
+    );
+    _threads.add(thread);
+    return thread;
+  }
+
+  /// Pins or unpins Saved Messages topic [topicId].
+  Future<void> setSavedTopicPinned(int topicId, bool pinned) => _client.send(
+    td.ToggleSavedMessagesTopicIsPinned(
+      savedMessagesTopicId: topicId,
+      isPinned: pinned,
+    ),
+  );
+
+  /// Deletes every saved message of topic [topicId].
+  Future<void> deleteSavedTopic(int topicId) => _client.send(
+    td.DeleteSavedMessagesTopicHistory(savedMessagesTopicId: topicId),
+  );
+
   ForumTopicList openTopics(int chatId) {
     final list = ForumTopicList(
       _client,
@@ -1259,6 +1329,132 @@ final class ConversationController {
     );
   }
 
+  /// The groups the user and [userId] are both in, as the info panel
+  /// lists them.
+  Future<List<td.Chat>> groupsInCommon(int userId) async {
+    final chats = await _client.send(
+      td.GetGroupsInCommon(userId: userId, offsetChatId: 0, limit: 100),
+    );
+    return Future.wait([
+      for (final id in chats.chatIds) _client.send(td.GetChat(chatId: id)),
+    ]);
+  }
+
+  /// The photos of a profile, newest first: a user's profile photos, or
+  /// the photos a group or channel has had, from its photo-change
+  /// messages. [userId] names the user of a private chat.
+  Future<List<ProfilePhoto>> profilePhotos(int chatId, {int userId = 0}) async {
+    if (userId != 0) {
+      final photos = await _client.send(
+        td.GetUserProfilePhotos(userId: userId, offset: 0, limit: 100),
+      );
+      return [
+        for (final photo in photos.photos)
+          (photo: _photoOf(photo), date: photo.addedDate),
+      ];
+    }
+    final found = await _client.send(
+      td.SearchChatMessages(
+        chatId: chatId,
+        query: '',
+        fromMessageId: 0,
+        offset: 0,
+        limit: 100,
+        filter: const td.SearchMessagesFilterChatPhoto(),
+      ),
+    );
+    return [
+      for (final message in found.messages)
+        if (message.content case td.MessageChatChangePhoto(:final photo))
+          (photo: _photoOf(photo), date: message.date),
+    ];
+  }
+
+  static td.Photo _photoOf(td.ChatPhoto photo) => td.Photo(
+    hasStickers: false,
+    minithumbnail: photo.minithumbnail,
+    sizes: photo.sizes,
+  );
+
+  /// Sends a place as a message, as a reply to [replyTo] when given.
+  Future<void> sendLocation(int chatId, td.Location location, {int? replyTo}) =>
+      _sendPlace(
+        chatId,
+        td.InputMessageLocation(location: location),
+        replyTo: replyTo,
+      );
+
+  /// Sends a venue, a place with a name and an address, as a message.
+  Future<void> sendVenue(int chatId, td.Venue venue, {int? replyTo}) =>
+      _sendPlace(chatId, td.InputMessageVenue(venue: venue), replyTo: replyTo);
+
+  Future<void> _sendPlace(
+    int chatId,
+    td.InputMessageContent content, {
+    int? replyTo,
+  }) async {
+    _add(
+      await _client.send(
+        td.SendMessage(
+          chatId: chatId,
+          replyTo: replyTo == null
+              ? null
+              : td.InputMessageReplyToMessage(
+                  messageId: replyTo,
+                  checklistTaskId: 0,
+                  pollOptionId: '',
+                ),
+          inputMessageContent: content,
+        ),
+      ),
+    );
+  }
+
+  td.User? _venueBot;
+
+  /// The inline bot Telegram names for venue search (the
+  /// `venue_search_bot_username` option, Foursquare unless told
+  /// otherwise); null when it can't be reached.
+  Future<td.User?> venueBot() async {
+    if (_venueBot case final bot?) return bot;
+    var username = 'foursquare';
+    try {
+      final option = await _client.send(
+        const td.GetOption(name: 'venue_search_bot_username'),
+      );
+      if (option is td.OptionValueString && option.value.isNotEmpty) {
+        username = option.value;
+      }
+    } on Object {
+      // Keep the default bot.
+    }
+    return _venueBot = await inlineBot(username);
+  }
+
+  /// Venues matching [query] around [near], from the venue bot, for the
+  /// location sheet; empty when there is no bot or nothing matches.
+  Future<List<td.Venue>> searchVenues(
+    int chatId,
+    String query,
+    td.Location near,
+  ) async {
+    final bot = await venueBot();
+    if (bot == null) return const [];
+    final results = await _client.send(
+      td.GetInlineQueryResults(
+        botUserId: bot.id,
+        chatId: chatId,
+        userLocation: near,
+        query: query,
+        offset: '',
+      ),
+    );
+    return [
+      for (final result in results.results)
+        if (result is td.InlineQueryResultVenue) result.venue,
+    ];
+  }
+
   /// Sends a recorded voice message: an Ogg Opus file at [path] with its
   /// length and Telegram's packed 5-bit [waveform].
   Future<void> sendVoiceNote(
@@ -1353,11 +1549,14 @@ final class ConversationController {
     int? replyTo,
     int? threadId,
     bool forumTopic = false,
+    bool savedTopic = false,
     bool silent = false,
     td.MessageSchedulingState? schedule,
   }) async {
     final topic = threadId == null
         ? null
+        : savedTopic
+        ? td.MessageTopicSavedMessages(savedMessagesTopicId: threadId)
         : forumTopic
         ? td.MessageTopicForum(forumTopicId: threadId)
         : td.MessageTopicThread(messageThreadId: threadId);
@@ -1661,7 +1860,15 @@ final class ConversationController {
     for (final list in _topicLists.toList()) {
       list.handle(object);
     }
+    for (final list in _savedLists.toList()) {
+      list.handle(object);
+    }
     switch (object) {
+      case td.UpdateOption(
+        name: 'my_id',
+        value: td.OptionValueInteger(:final value),
+      ):
+        _myId = value;
       // Sender names and avatars on screen follow their changes.
       case td.UpdateUser(:final user):
         final sender = MessageSenderId.user(user.id);

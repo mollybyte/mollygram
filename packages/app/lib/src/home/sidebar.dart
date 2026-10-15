@@ -7,6 +7,7 @@ import 'package:mollygram_shell/mollygram_shell.dart';
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../downloads/downloads_bar.dart';
 import '../session/providers.dart';
 import '../window_drag_area.dart';
 import 'format.dart';
@@ -81,6 +82,7 @@ class _SidebarState extends ConsumerState<Sidebar> {
                   ),
               ],
             ),
+      banner: const DownloadsBar(),
       body: shown.isEmpty
           ? Center(
               child: Text(
