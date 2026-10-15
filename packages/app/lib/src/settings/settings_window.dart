@@ -10,8 +10,8 @@ import 'account_page.dart';
 import 'appearance_page.dart';
 import 'folders_page.dart';
 import 'plugins_page.dart';
+import 'privacy/privacy_page.dart';
 import 'privacy_extras_page.dart';
-import 'sessions_page.dart';
 import 'settings_style.dart';
 import 'storage_page.dart';
 
@@ -77,7 +77,7 @@ final settingsSections = <SettingsSection>[
       l10n.thisDevice,
       l10n.terminateOthers,
     ],
-    builder: (context) => const PrivacyPage(),
+    builder: (context) => const PrivacySecurityPage(),
   ),
   SettingsSection(
     id: privacyExtrasSectionId,

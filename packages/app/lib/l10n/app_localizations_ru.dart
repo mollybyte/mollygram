@@ -1932,4 +1932,163 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get folderDeletedChat => 'Удалённый чат';
+
+  @override
+  String get privacyTitle => 'Конфиденциальность';
+
+  @override
+  String get privacyLoadFailed =>
+      'Не удалось загрузить настройки конфиденциальности.';
+
+  @override
+  String get privacyPhoneNumber => 'Номер телефона';
+
+  @override
+  String get privacyFindByPhone => 'Поиск по номеру';
+
+  @override
+  String get privacyLastSeen => 'Время захода и онлайн';
+
+  @override
+  String get privacyProfilePhotos => 'Фотографии профиля';
+
+  @override
+  String get privacyForwards => 'Пересылка сообщений';
+
+  @override
+  String get privacyCalls => 'Звонки';
+
+  @override
+  String get privacyVoiceMessages => 'Голосовые сообщения';
+
+  @override
+  String get privacyInvites => 'Группы и каналы';
+
+  @override
+  String get privacyBio => 'О себе';
+
+  @override
+  String get privacyBirthday => 'Дата рождения';
+
+  @override
+  String get privacyPhoneNumberQuestion => 'Кто видит мой номер телефона?';
+
+  @override
+  String get privacyFindByPhoneQuestion => 'Кто может найти меня по номеру?';
+
+  @override
+  String get privacyLastSeenQuestion =>
+      'Кто видит время моего последнего захода?';
+
+  @override
+  String get privacyProfilePhotosQuestion =>
+      'Кто видит фотографии моего профиля?';
+
+  @override
+  String get privacyForwardsQuestion =>
+      'Кто может ссылаться на мой аккаунт при пересылке моих сообщений?';
+
+  @override
+  String get privacyCallsQuestion => 'Кто может мне звонить?';
+
+  @override
+  String get privacyVoiceMessagesQuestion =>
+      'Кто может присылать мне голосовые и видеосообщения?';
+
+  @override
+  String get privacyInvitesQuestion =>
+      'Кто может добавлять меня в группы и каналы?';
+
+  @override
+  String get privacyBioQuestion => 'Кто видит информацию обо мне?';
+
+  @override
+  String get privacyBirthdayQuestion => 'Кто видит мою дату рождения?';
+
+  @override
+  String get privacyPhoneNumberAbout =>
+      'Те, у кого ваш номер сохранён в контактах, тоже увидят его в Telegram.';
+
+  @override
+  String get privacyFindByPhoneAbout =>
+      'Добавив ваш номер в контакты, человек увидит ваш аккаунт в Telegram, только если он входит в этот круг.';
+
+  @override
+  String get privacyLastSeenAbout =>
+      'Вы не увидите время захода тех, кому не показываете своё. Вместо него будет примерное время, например недавно или на этой неделе.';
+
+  @override
+  String get privacyForwardsAbout =>
+      'Пересланные людьми вне этого круга сообщения не будут ссылаться на ваш аккаунт.';
+
+  @override
+  String get privacyVoiceMessagesAbout =>
+      'Ограничить голосовые и видеосообщения могут только подписчики Telegram Premium.';
+
+  @override
+  String get privacyEverybody => 'Все';
+
+  @override
+  String get privacyMyContacts => 'Мои контакты';
+
+  @override
+  String get privacyNobody => 'Никто';
+
+  @override
+  String get privacyExceptions => 'Исключения';
+
+  @override
+  String get privacyExceptionsAbout => 'Исключения важнее выбора выше.';
+
+  @override
+  String get privacyAlwaysAllow => 'Всегда разрешать';
+
+  @override
+  String get privacyNeverAllow => 'Никогда не разрешать';
+
+  @override
+  String get privacyAlwaysAbout =>
+      'Этим людям разрешено при любом выборе выше.';
+
+  @override
+  String get privacyNeverAbout =>
+      'Этим людям не разрешено при любом выборе выше.';
+
+  @override
+  String get privacyAddPeople => 'Добавить людей';
+
+  @override
+  String get privacyGroupMembers => 'Участники группы';
+
+  @override
+  String privacyPeopleCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count человека',
+      many: '$count человек',
+      few: '$count человека',
+      one: '$count человек',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get blockedUsers => 'Заблокированные';
+
+  @override
+  String get blockedUsersAbout =>
+      'Заблокированные не могут писать и звонить вам или добавлять вас в группы, а также не видят ваши фотографии, статус в сети и время захода.';
+
+  @override
+  String get blockedUsersEmpty => 'Никто не заблокирован';
+
+  @override
+  String get blockSomeone => 'Заблокировать';
+
+  @override
+  String get unblock => 'Разблокировать';
+
+  @override
+  String get blockedShowMore => 'Показать ещё';
 }

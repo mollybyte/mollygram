@@ -18,6 +18,7 @@ import 'mention_search.dart';
 import 'notification_controller.dart';
 import 'peer_info.dart';
 import 'privacy_guard.dart';
+import 'privacy_settings_controller.dart';
 import 'sticker_library.dart';
 import 'storage_usage.dart';
 import 'tdlib_initializer.dart';
@@ -55,6 +56,7 @@ final class TelegramSession {
     required this.storage,
     required this.connection,
     required this.privacy,
+    required this.security,
     required this.contacts,
     required this.links,
     required this._initializer,
@@ -89,6 +91,9 @@ final class TelegramSession {
   /// this session sends to TDLib.
   final PrivacyGuard privacy;
 
+  /// The account's privacy settings and blocked list.
+  final PrivacySettingsController security;
+
   /// Contacts and the users TDLib has sent.
   final ContactsController contacts;
   final LinkResolver links;
@@ -122,11 +127,13 @@ final class TelegramSession {
     );
     final contacts = ContactsController(client);
     final folders = ChatFoldersController(client);
+    final security = PrivacySettingsController(client);
     final session = TelegramSession._(
       tdlib: tdlib,
       authorization: authorization,
       chatLists: ChatListController(client),
       folders: folders,
+      security: security,
       conversations: conversations,
       search: ChatSearch(client),
       chatSearch: ChatSearchController(client),
@@ -159,6 +166,7 @@ final class TelegramSession {
       await contacts.start();
       await notifications.start();
       await folders.start();
+      await security.start();
       await authorization.start();
       // Sending the parameters is part of starting: a wrong database key or
       // bad credentials must fail the session, not leave the UI waiting.
@@ -230,6 +238,7 @@ final class TelegramSession {
     await contacts.dispose();
     await notifications.dispose();
     await folders.dispose();
+    await security.dispose();
     await authorization.dispose();
     await _tdlib.close();
     // After close: requests sent while the client closes stay filtered.
