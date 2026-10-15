@@ -126,8 +126,8 @@ class ChatListTile extends StatefulWidget {
   static const double avatarSize = 44;
   static const double senderAvatarSize = 15;
 
-  static const double _titleLine = 18;
-  static const double _line = 17;
+  static const double _titleLine = 19;
+  static const double _line = 18;
 
   /// The title line, a 1 px gap and the two lines under it.
   static const double _content = _titleLine + 1 + 2 * _line;
@@ -138,6 +138,10 @@ class ChatListTile extends StatefulWidget {
   /// The height of every row, including the 1 px gap below it; the list
   /// lays rows out at this fixed extent.
   static const double extent = _content + 2 * (8 + _ring) + 1;
+
+  /// [extent] for the density in [context]: compact rows are shorter.
+  static double extentOf(BuildContext context) =>
+      _content + 2 * (MgMetrics.of(context).rowPadding + _ring) + 1;
 
   /// The online dot's green.
   static const Color onlineGreen = Color(0xFF34C759);
@@ -237,7 +241,6 @@ class _ChatListTileState extends State<ChatListTile> {
               ),
             ),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _AvatarWithDot(
                   avatar:
@@ -380,15 +383,14 @@ class _ChatListTileState extends State<ChatListTile> {
   /// The two lines under the title: what someone is doing; or who wrote
   /// last and the message on one line each; or the message on both.
   Widget _preview(MgColors c, bool on) {
-    const size = 12.5;
+    const size = 13.0;
     final activity = widget.activity;
     if (activity != null) {
       return MgStatusText(
         activity,
-        accent: true,
         activity: true,
         size: size,
-        accentColor: on ? c.onAccent : null,
+        color: on ? c.onAccentSecondary : c.fg2,
       );
     }
     final sender = widget.draftLabel == null ? widget.sender : null;

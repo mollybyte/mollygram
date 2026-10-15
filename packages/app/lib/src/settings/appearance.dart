@@ -51,11 +51,11 @@ import 'preferences.dart';
     mediaRadius: preferences.mediaCorner.radius,
     compact: preferences.compactLayout,
   );
-  // Only a gradient tints the surfaces; a plain colour or a picture keeps
-  // the classic tokens.
+  // A gradient tints the surfaces to match; the plain card and a picture
+  // take the Stage window's own Mist tokens.
   final tint = preferences.wallpaperKind == WallpaperKind.gradient
       ? surfaceTint(preferences.wallpaperPreset)
-      : null;
+      : surfaceTint(WallpaperPreset.mist);
   final light = tint?.light(MgColors.light) ?? MgColors.light;
   final dark = tint?.dark(MgColors.dark) ?? MgColors.dark;
   return (
@@ -376,9 +376,9 @@ class ReduceMotionScope extends ConsumerWidget {
 Color plainChatBackground(MgColors c) =>
     c.isDark ? const Color(0xFF17181A) : const Color(0xFFECEDEF);
 
-/// Under a chat on its card: the user's own picture when they chose one;
-/// otherwise nothing, and the card's solid colour shows. Gradients tint
-/// the window frame instead (see [surfaceTint]).
+/// Under a chat on its card: the chosen gradient or the user's own
+/// picture; for the plain background nothing, and the card's solid colour
+/// shows.
 class ChatCardBackground extends ConsumerWidget {
   const ChatCardBackground({super.key});
 
@@ -388,6 +388,7 @@ class ChatCardBackground extends ConsumerWidget {
       preferencesProvider.select(
         (p) => (
           kind: p.wallpaperKind,
+          preset: p.wallpaperPreset,
           image: p.wallpaperImage,
           blur: p.wallpaperBlur,
         ),
@@ -398,13 +399,18 @@ class ChatCardBackground extends ConsumerWidget {
       duration: MediaQuery.disableAnimationsOf(context)
           ? Duration.zero
           : const Duration(milliseconds: 260),
-      child: p.kind == WallpaperKind.image && image != null
-          ? WallpaperImage(
-              key: ValueKey('image:$image:${p.blur}'),
-              path: image,
-              blur: p.blur,
-            )
-          : const SizedBox.expand(key: ValueKey('none')),
+      child: switch (p.kind) {
+        WallpaperKind.image when image != null => WallpaperImage(
+          key: ValueKey('image:$image:${p.blur}'),
+          path: image,
+          blur: p.blur,
+        ),
+        WallpaperKind.gradient => SizedBox.expand(
+          key: ValueKey('gradient:${p.preset.name}'),
+          child: GradientWallpaper(preset: p.preset),
+        ),
+        _ => const SizedBox.expand(key: ValueKey('none')),
+      },
     );
   }
 }

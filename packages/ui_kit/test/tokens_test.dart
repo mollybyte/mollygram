@@ -3,6 +3,31 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 void main() {
+  testWidgets('compact layout makes chat list rows shorter', (tester) async {
+    late double regular;
+    late double compact;
+    for (final dense in [false, true]) {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildMgTheme(
+            MgColors.light,
+            metrics: MgMetrics(compact: dense),
+          ),
+          home: Builder(
+            builder: (context) {
+              final extent = ChatListTile.extentOf(context);
+              dense ? compact = extent : regular = extent;
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+    expect(regular, ChatListTile.extent);
+    expect(compact, lessThan(regular));
+  });
+
   group('MgColors', () {
     test('glass fill is .42 opaque in both themes', () {
       expect(MgColors.light.glass.a, closeTo(0.42, 0.005));
@@ -67,5 +92,12 @@ void main() {
       MgColors.light.copyWith(fg: const Color(0xFF000000)).bubbleShadow,
       MgColors.light.bubbleShadow,
     );
+  });
+
+  test('a theme change away from a selection colour keeps the accent', () {
+    final from = MgColors.dark.copyWith(selection: const Color(0xFF6E57D6));
+    final to = MgColors.dark.copyWith(accent: const Color(0xFF3FB8C6));
+    expect(from.lerp(to, 1).selected, to.accent);
+    expect(from.lerp(to, 0.5).selected.a, 1);
   });
 }

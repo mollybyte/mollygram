@@ -454,7 +454,7 @@ class MessageTile extends StatelessWidget {
     final tile = Padding(
       padding: EdgeInsets.only(
         top: context.startsRun
-            ? (metrics.compact ? 6 : 10)
+            ? (metrics.compact ? 5 : 10)
             : metrics.messageGap,
       ),
       child: Row(
@@ -491,6 +491,10 @@ class MessageTile extends StatelessWidget {
                         style: mgTextStyle(
                           c,
                           weight: FontWeight.w600,
+                          color: peerNameColor(
+                            c,
+                            store.colorOf(message.sender),
+                          ),
                           height: 1.35,
                         ),
                       ),
@@ -506,9 +510,14 @@ class MessageTile extends StatelessWidget {
                       ),
                     ),
                   ),
-                // Message text reads at 14 on 21 px lines.
+                // Message text reads a step larger than the rest, on
+                // lines just open enough for long paragraphs.
                 DefaultTextStyle.merge(
-                  style: const TextStyle(fontSize: 14, height: 1.5),
+                  style: TextStyle(
+                    fontSize: MgType.message,
+                    height: 1.35,
+                    letterSpacing: mgTracking(MgType.message),
+                  ),
                   child: content,
                 ),
               ],

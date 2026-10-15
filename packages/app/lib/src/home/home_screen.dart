@@ -22,6 +22,7 @@ import '../session/accounts.dart';
 import '../session/connection_status_capsule.dart';
 import '../session/providers.dart';
 import '../settings/appearance.dart';
+import '../settings/preferences.dart';
 import '../settings/settings_window.dart';
 import '../shared_media/message_jump.dart';
 import '../window_drag_area.dart';
@@ -59,6 +60,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       setState(() => _settings = section);
 
   void _closeSettings() => setState(() => _settings = null);
+
+  /// The sidebar's width while its edge is dragged; saved when let go.
+  double? _dragWidth;
+
+  void _resize(double dx) {
+    final width =
+        (_dragWidth ?? ref.read(preferencesProvider).sidebarWidth) + dx;
+    setState(
+      () => _dragWidth = width.clamp(
+        Preferences.minSidebarWidth,
+        Preferences.maxSidebarWidth,
+      ),
+    );
+  }
+
+  void _endResize() {
+    final width = _dragWidth;
+    if (width == null) return;
+    ref
+        .read(preferencesProvider.notifier)
+        .update((p) => p.copyWith(sidebarWidth: width));
+    setState(() => _dragWidth = null);
+  }
+
+  void _resetWidth() => ref
+      .read(preferencesProvider.notifier)
+      .update((p) => p.copyWith(sidebarWidth: Preferences.defaultSidebarWidth));
 
   void _newMessage() => unawaited(showPeopleSheet(context));
 
@@ -168,6 +196,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final directory = ref.watch(chatDirectoryProvider);
     ref.watch(pluginCommandsProvider);
     final keys = _registry.effectiveKeys();
+    final double sidebarWidth =
+        _dragWidth ??
+        ref.watch(preferencesProvider.select((p) => p.sidebarWidth));
     final home = CallbackShortcuts(
       // The shell binds its own shortcuts.
       bindings: {
@@ -219,7 +250,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                   ],
                 ),
-                sidebarWidth: SidebarIsland.width,
+                sidebarWidth: sidebarWidth,
                 paneBuilder: (context, chat, focused) => Padding(
                   padding: const EdgeInsets.fromLTRB(
                     0,
@@ -229,13 +260,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   child: ChatCard(
                     background: const ChatCardBackground(),
-                    child: chat == null
-                        ? const _NoChat()
-                        : PeerInfoHost(
-                            key: ValueKey(chat),
-                            chatId: chat,
-                            child: ChatView(chatId: chat),
-                          ),
+                    // Another chat settles in with a short fade and rise.
+                    child: AnimatedSwitcher(
+                      duration: MediaQuery.disableAnimationsOf(context)
+                          ? Duration.zero
+                          : const Duration(milliseconds: 200),
+                      switchInCurve: Curves.easeOutCubic,
+                      switchOutCurve: Curves.easeInCubic,
+                      transitionBuilder: (child, animation) => FadeTransition(
+                        opacity: animation,
+                        child: SlideTransition(
+                          position: Tween(
+                            begin: const Offset(0, 0.012),
+                            end: Offset.zero,
+                          ).animate(animation),
+                          child: child,
+                        ),
+                      ),
+                      child: chat == null
+                          ? const _NoChat(key: ValueKey('none'))
+                          : PeerInfoHost(
+                              key: ValueKey(chat),
+                              chatId: chat,
+                              child: ChatView(chatId: chat),
+                            ),
+                    ),
                   ),
                 ),
                 // The chat's view scrolls to the message once it is open.
@@ -247,6 +296,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 },
               ),
             ),
+            // The sidebar's edge: dragged to resize, double-clicked to
+            // bring back the default width.
+            Positioned(
+              left: sidebarWidth - 5,
+              width: 8,
+              top: SidebarIsland.topInset + SidebarIsland.titleBarHeight,
+              bottom: 0,
+              child: MouseRegion(
+                cursor: SystemMouseCursors.resizeLeftRight,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onHorizontalDragUpdate: (d) => _resize(d.delta.dx),
+                  onHorizontalDragEnd: (_) => _endResize(),
+                  onHorizontalDragCancel: _endResize,
+                  onDoubleTap: _resetWidth,
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -254,7 +321,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final settings = _settings;
     return SecretScreenProtection(
       child: LinkHost(
-        contentLeft: SidebarIsland.width,
+        contentLeft: sidebarWidth,
         covered: settings != null,
         child: NotificationsHost(
           child: Stack(
@@ -283,7 +350,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 }
 
 class _NoChat extends StatelessWidget {
-  const _NoChat();
+  const _NoChat({super.key});
 
   @override
   Widget build(BuildContext context) => Stack(

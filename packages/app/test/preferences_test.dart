@@ -46,13 +46,14 @@ void main() {
           Preferences.fromJson({'wallpaper': false}).wallpaperKind,
           WallpaperKind.plain,
         );
+        // The old default, the Mist gradient, is now the plain card.
         expect(
           Preferences.fromJson({'wallpaper': true}).wallpaperKind,
-          WallpaperKind.gradient,
+          WallpaperKind.plain,
         );
         expect(
           Preferences.fromJson({'wallpaperKind': 'image'}).wallpaperKind,
-          WallpaperKind.gradient,
+          WallpaperKind.plain,
         );
         final cleared = const Preferences()
             .copyWith(wallpaperImage: '/a.png')
@@ -156,7 +157,8 @@ void main() {
       });
       expect(restored.theme, ThemeMode.system);
       expect(restored.accent, AccentChoice.violet);
-      expect(restored.wallpaper, isTrue);
+      expect(restored.wallpaperKind, WallpaperKind.plain);
+      expect(restored.sidebarWidth, Preferences.defaultSidebarWidth);
       expect(restored.textSize, Preferences.maxTextSize);
       expect(
         restored.autoDownloadOf(AutoDownloadKind.photos),
@@ -164,6 +166,44 @@ void main() {
       );
       expect(Preferences.fromJson(null).textSize, 13);
       expect(Preferences.fromJson('broken').accent, AccentChoice.violet);
+    });
+
+    test('moves the old default Mist gradient to the plain card once, '
+        'then keeps a chosen gradient', () {
+      expect(
+        Preferences.fromJson({
+          'wallpaperKind': 'gradient',
+          'wallpaperPreset': 'mist',
+        }).wallpaperKind,
+        WallpaperKind.plain,
+      );
+      expect(
+        Preferences.fromJson({
+          'wallpaperKind': 'gradient',
+          'wallpaperPreset': 'sage',
+        }).wallpaperKind,
+        WallpaperKind.gradient,
+      );
+      const chosen = Preferences(
+        wallpaperKind: WallpaperKind.gradient,
+        wallpaperPreset: WallpaperPreset.mist,
+      );
+      expect(
+        Preferences.fromJson(chosen.toJson()).wallpaperKind,
+        WallpaperKind.gradient,
+      );
+    });
+
+    test('keeps the sidebar width within its limits', () {
+      expect(
+        Preferences.fromJson({'sidebarWidth': 1000}).sidebarWidth,
+        Preferences.maxSidebarWidth,
+      );
+      expect(
+        Preferences.fromJson(const Preferences(sidebarWidth: 300).toJson())
+            .sidebarWidth,
+        300,
+      );
     });
 
     test('moves the old default blue to violet once, then keeps a '

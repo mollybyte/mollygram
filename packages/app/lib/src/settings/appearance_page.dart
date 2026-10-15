@@ -163,7 +163,7 @@ class AppearancePage extends ConsumerWidget {
                     onTap: () => update(
                       (p) => p.copyWith(wallpaperKind: WallpaperKind.plain),
                     ),
-                    child: ColoredBox(color: plainChatBackground(c)),
+                    child: ColoredBox(color: c.card),
                   ),
                   _WallpaperTile(
                     key: const ValueKey('wallpaper.image'),

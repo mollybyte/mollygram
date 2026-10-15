@@ -21,24 +21,18 @@ class SettingsColors {
   /// A row while the mouse is down on it.
   final Color pressed;
 
-  static const _light = SettingsColors._(
-    sidebar: Color(0xFFF0F0F2),
-    pane: Color(0xFFFFFFFF),
-    group: Color(0xFFF6F6F8),
-    groupBorder: Color(0x0F000000),
-    pressed: Color(0x14000000),
-  );
-
-  static const _dark = SettingsColors._(
-    sidebar: Color(0xFF242427),
-    pane: Color(0xFF1C1C1E),
-    group: Color(0xFF262628),
-    groupBorder: Color(0x14FFFFFF),
-    pressed: Color(0x1AFFFFFF),
-  );
-
-  static SettingsColors of(BuildContext context) =>
-      MgColors.of(context).isDark ? _dark : _light;
+  /// The window's own surfaces, as in the chats: the source list lies on
+  /// the frame, the pane is a card, and its groups are a shade off it.
+  static SettingsColors of(BuildContext context) {
+    final c = MgColors.of(context);
+    return SettingsColors._(
+      sidebar: c.frame,
+      pane: c.card,
+      group: Color.alphaBlend(c.field, c.card),
+      groupBorder: c.separator,
+      pressed: c.isDark ? const Color(0x1AFFFFFF) : const Color(0x14000000),
+    );
+  }
 }
 
 /// How long a settings transition takes: short and eased, so it reads as

@@ -160,7 +160,7 @@ final class Preferences {
   const Preferences({
     this.theme = ThemeMode.system,
     this.accent = AccentChoice.violet,
-    this.wallpaperKind = WallpaperKind.gradient,
+    this.wallpaperKind = WallpaperKind.plain,
     this.wallpaperPreset = WallpaperPreset.mist,
     this.wallpaperImage,
     this.wallpaperBlur = false,
@@ -169,6 +169,7 @@ final class Preferences {
     this.compactLayout = false,
     this.appIcon = AppIconChoice.crimson,
     this.textSize = defaultTextSize,
+    this.sidebarWidth = defaultSidebarWidth,
     this.reduceMotion = false,
     this.autoDownload = defaultAutoDownload,
     this.downloadFolder,
@@ -224,6 +225,14 @@ final class Preferences {
   /// Message text size in points, [minTextSize] to [maxTextSize].
   final int textSize;
 
+  /// How wide the chat list is, [minSidebarWidth] to [maxSidebarWidth];
+  /// dragged at its edge.
+  final double sidebarWidth;
+
+  static const double minSidebarWidth = 280;
+  static const double maxSidebarWidth = 480;
+  static const double defaultSidebarWidth = 340;
+
   /// Turns animations off, as the macOS "Reduce motion" setting does.
   final bool reduceMotion;
   final Map<AutoDownloadKind, AutoDownload> autoDownload;
@@ -274,6 +283,7 @@ final class Preferences {
     bool? compactLayout,
     AppIconChoice? appIcon,
     int? textSize,
+    double? sidebarWidth,
     bool? reduceMotion,
     Map<AutoDownloadKind, AutoDownload>? autoDownload,
     String? downloadFolder,
@@ -301,6 +311,10 @@ final class Preferences {
     compactLayout: compactLayout ?? this.compactLayout,
     appIcon: appIcon ?? this.appIcon,
     textSize: (textSize ?? this.textSize).clamp(minTextSize, maxTextSize),
+    sidebarWidth: (sidebarWidth ?? this.sidebarWidth).clamp(
+      minSidebarWidth,
+      maxSidebarWidth,
+    ),
     reduceMotion: reduceMotion ?? this.reduceMotion,
     autoDownload: autoDownload ?? this.autoDownload,
     downloadFolder: downloadFolder ?? this.downloadFolder,
@@ -325,6 +339,7 @@ final class Preferences {
     'accentVersion': 2,
     'wallpaper': wallpaper,
     'wallpaperKind': wallpaperKind.name,
+    'wallpaperVersion': 2,
     'wallpaperPreset': wallpaperPreset.name,
     'wallpaperImage': ?wallpaperImage,
     'wallpaperBlur': wallpaperBlur,
@@ -333,6 +348,7 @@ final class Preferences {
     'compactLayout': compactLayout,
     'appIcon': appIcon.name,
     'textSize': textSize,
+    'sidebarWidth': sidebarWidth,
     'reduceMotion': reduceMotion,
     'autoDownload': {
       for (final kind in AutoDownloadKind.values)
@@ -361,11 +377,19 @@ final class Preferences {
     final shortcuts = json['shortcuts'];
     final image = json['wallpaperImage'];
     // Before wallpaper kinds there was one switch; off meant plain.
-    final kind =
+    final saved =
         _byName(WallpaperKind.values, json['wallpaperKind']) ??
         (_bool(json['wallpaper']) == false
             ? WallpaperKind.plain
             : defaults.wallpaperKind);
+    // The Mist gradient was the default before gradients were drawn on the
+    // chat card and was saved as such; it moves to the plain card once.
+    final kind =
+        saved == WallpaperKind.gradient &&
+            json['wallpaperVersion'] != 2 &&
+            (json['wallpaperPreset'] ?? 'mist') == 'mist'
+        ? WallpaperKind.plain
+        : saved;
     return Preferences(
       theme: _byName(ThemeMode.values, json['theme']) ?? defaults.theme,
       accent: switch (_byName(AccentChoice.values, json['accent'])) {
@@ -393,6 +417,13 @@ final class Preferences {
       textSize: size is int
           ? size.clamp(minTextSize, maxTextSize)
           : defaults.textSize,
+      sidebarWidth: switch (json['sidebarWidth']) {
+        final num width => width.toDouble().clamp(
+          minSidebarWidth,
+          maxSidebarWidth,
+        ),
+        _ => defaults.sidebarWidth,
+      },
       reduceMotion: _bool(json['reduceMotion']) ?? defaults.reduceMotion,
       autoDownload: {
         for (final kind in AutoDownloadKind.values)

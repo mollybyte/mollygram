@@ -21,6 +21,11 @@ class MainFlutterWindow: NSWindow {
 
   override func awakeFromNib() {
     let flutterViewController = FlutterViewController()
+    // The view's own backing is black and shows wherever Flutter's surface
+    // doesn't reach (the rounded corners, a fractional edge pixel); it is
+    // made clear so the window's background, which Dart sets to the
+    // frame's colour, shows there instead.
+    flutterViewController.backgroundColor = .clear
     self.contentViewController = flutterViewController
 
     // Content extends under a transparent title bar: the window buttons stay
@@ -48,6 +53,15 @@ class MainFlutterWindow: NSWindow {
       case "startDrag":
         if let event = NSApp.currentEvent { self.performDrag(with: event) }
         result(nil)
+      case "setBackgroundColor":
+        if let argb = call.arguments as? Int {
+          self.backgroundColor = NSColor(
+            srgbRed: CGFloat((argb >> 16) & 0xFF) / 255,
+            green: CGFloat((argb >> 8) & 0xFF) / 255,
+            blue: CGFloat(argb & 0xFF) / 255,
+            alpha: 1)
+        }
+        result(nil)
       case "zoom":
         self.zoom(nil)
         result(nil)
@@ -55,6 +69,33 @@ class MainFlutterWindow: NSWindow {
         // Kept out of screenshots and screen recordings (secret chats).
         let protect = call.arguments as? Bool ?? false
         self.sharingType = protect ? .none : .readOnly
+        result(nil)
+      default:
+        result(FlutterMethodNotImplemented)
+      }
+    }
+
+    // Appearance's "App icon": Dart sends the PNG of the chosen Dock icon,
+    // or asks for the bundled one back. Only the running app's Dock tile
+    // changes; Finder keeps the bundled icon. Registered here, before Dart
+    // runs, so the choice saved last time is applied at launch.
+    let appIcon = FlutterMethodChannel(
+      name: "mollygram/app_icon",
+      binaryMessenger: flutterViewController.engine.binaryMessenger)
+    appIcon.setMethodCallHandler { call, result in
+      switch call.method {
+      case "set":
+        if let data = call.arguments as? FlutterStandardTypedData,
+           let image = NSImage(data: data.data) {
+          NSApp.applicationIconImage = image
+          NSApp.dockTile.display()
+          result(nil)
+        } else {
+          result(FlutterError(code: "bad_image", message: "Not a PNG", details: nil))
+        }
+      case "reset":
+        NSApp.applicationIconImage = nil
+        NSApp.dockTile.display()
         result(nil)
       default:
         result(FlutterMethodNotImplemented)

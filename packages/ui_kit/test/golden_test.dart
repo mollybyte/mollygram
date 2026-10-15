@@ -128,10 +128,14 @@ class _Window extends StatelessWidget {
               folders: const FolderSegments(
                 selected: 0,
                 segments: [
-                  FolderSegment(label: 'All'),
-                  FolderSegment(label: 'Personal', count: 2),
-                  FolderSegment(label: 'Work', count: 3),
-                  FolderSegment(label: 'Channels'),
+                  FolderSegment(label: 'All', icon: MgIcons.list),
+                  FolderSegment(
+                    label: 'Personal',
+                    icon: MgIcons.profile,
+                    count: 2,
+                  ),
+                  FolderSegment(label: 'Work', icon: MgIcons.group, count: 3),
+                  FolderSegment(label: 'Channels', icon: MgIcons.channel),
                 ],
               ),
               actions: [
@@ -238,7 +242,10 @@ class _Flat extends StatelessWidget {
                   style: mgTextStyle(c, weight: FontWeight.w600, height: 1.35),
                 ),
                 for (final line in lines)
-                  Text(line, style: mgTextStyle(c, size: 14, height: 1.5)),
+                  Text(
+                    line,
+                    style: mgTextStyle(c, size: MgType.message, height: 1.35),
+                  ),
               ],
             ),
           ),
