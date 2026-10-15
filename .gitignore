@@ -42,3 +42,6 @@ packages/tdlib/native/
 
 # fvm
 .fvm/
+
+# Golden test failure artifacts
+**/test/failures/
