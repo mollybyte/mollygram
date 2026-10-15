@@ -29,12 +29,15 @@ import '../chat/message_actions.dart';
 import '../chat/message_tile.dart';
 import '../chat/schedule_picker.dart';
 import '../chat/slow_mode.dart';
+import '../chat/sticker_suggestions.dart';
 import '../chat/timeline.dart';
 import '../chat/timeline_scroll.dart';
 import '../chat/timeline_view.dart';
 import '../chat_search/chat_search_bar.dart';
+import '../compose/emoji_suggester.dart';
 import '../compose/mention_suggester.dart';
 import '../compose/rich_text_bridge.dart';
+import '../compose/sticker_suggester.dart';
 import '../links/link_router.dart';
 import '../profile/peer_info_state.dart';
 import '../secret/secret_chat.dart';
@@ -58,6 +61,8 @@ class ChatView extends ConsumerStatefulWidget {
 class _ChatViewState extends ConsumerState<ChatView> {
   final _draft = RichTextEditingController();
   late final _mentions = MentionSuggester(controller: _draft);
+  late final _emojiHints = EmojiSuggester(controller: _draft);
+  late final _stickerHints = StickerSuggester(controller: _draft);
   final _focus = FocusNode();
   late final ConversationController _conversations;
 
@@ -171,6 +176,12 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _mentions
       ..search = _mentionSearch()
       ..addListener(_mentionsChanged);
+    final stickers = ref.read(telegramSessionProvider).requireValue.stickers;
+    _emojiHints.search = (query) =>
+        stickers.emojiSuggestions(query, languages: _inputLanguages());
+    _emojiHints.addListener(_mentionsChanged);
+    _stickerHints.search = _stickerSearch();
+    _stickerHints.addListener(_mentionsChanged);
     _scroll.addListener(_followScroll);
     _open(widget.chatId);
     WidgetsBinding.instance.addPostFrameCallback((_) => _takeJump());
@@ -198,6 +209,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _mentions
       ..search = _mentionSearch()
       ..reset();
+    _emojiHints.reset();
+    _stickerHints.search = _stickerSearch();
+    _stickerHints.reset();
     _failure = null;
     _replyTo = null;
     _replyQuote = null;
@@ -232,6 +246,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
     if (_editing == null) _saveDraft(widget.chatId);
     _close(widget.chatId);
     _mentions.dispose();
+    _emojiHints.dispose();
+    _stickerHints.dispose();
     _draft.dispose();
     _focus.dispose();
     _scroll.dispose();
@@ -1324,6 +1340,27 @@ class _ChatViewState extends ConsumerState<ChatView> {
 
   void _mentionsChanged() => setState(() {});
 
+  /// Stickers for an emoji, as this chat may see them.
+  Future<List<td.Sticker>> Function(String emoji) _stickerSearch() {
+    final chatId = widget.chatId;
+    final stickers = ref.read(telegramSessionProvider).requireValue.stickers;
+    return (emoji) => stickers.stickersFor(emoji, chatId: chatId);
+  }
+
+  /// The languages emoji keywords are matched in: the app's, then
+  /// English, which Telegram always knows.
+  List<String> _inputLanguages() {
+    final code = Localizations.localeOf(context).languageCode;
+    return code == 'en' ? const ['en'] : [code, 'en'];
+  }
+
+  /// Sends a sticker picked from the strip and empties the draft that
+  /// asked for it.
+  Future<void> _sendSuggestedSticker(td.Sticker sticker) async {
+    _draft.clear();
+    await _sendSticker(sticker);
+  }
+
   /// Members to offer for an @ in this chat, while it is a group.
   Future<List<MentionCandidate>> Function(String) _mentionSearch() {
     final chatId = widget.chatId;
@@ -2072,6 +2109,16 @@ class _ChatViewState extends ConsumerState<ChatView> {
                       ),
                     ),
                   ),
+                if (_selected == null &&
+                    !_listOpen &&
+                    !_panelOpen &&
+                    _editing == null &&
+                    _stickerHints.stickers.isNotEmpty)
+                  StickerSuggestionStrip(
+                    stickers: _stickerHints.stickers,
+                    onPick: (sticker) =>
+                        unawaited(_sendSuggestedSticker(sticker)),
+                  ),
                 if (_selected == null && !_listOpen)
                   ?_replyKeyboardPanel(store),
                 if (_panelOpen)
@@ -2111,9 +2158,16 @@ class _ChatViewState extends ConsumerState<ChatView> {
                       onRecordedVideo: _sendVideoNote,
                       builder: (context, recordButton, recordingBar) =>
                           Composer(
-                            suggestions: _mentions.suggestions,
-                            onSuggestion: _mentions.pick,
-                            onDismissSuggestions: _mentions.dismiss,
+                            suggestions: _mentions.suggestions.isNotEmpty
+                                ? _mentions.suggestions
+                                : _emojiHints.suggestions,
+                            onSuggestion: _mentions.suggestions.isNotEmpty
+                                ? _mentions.pick
+                                : _emojiHints.pick,
+                            onDismissSuggestions:
+                                _mentions.suggestions.isNotEmpty
+                                ? _mentions.dismiss
+                                : _emojiHints.dismiss,
                             controller: _draft,
                             focusNode: _focus,
                             header: _composerHeader(l10n),

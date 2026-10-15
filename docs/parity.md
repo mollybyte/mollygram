@@ -111,7 +111,7 @@ M8 calls and macOS release, M9 after release.
 | Emoji picker | done | #34: groups, recent, keyword search | | |
 | Sticker panel, recent and favourite stickers, sticker search | partial | #34: recent, favourites, installed sets; no search; sets are managed in Settings > Stickers and emoji | S | M1 |
 | GIF panel and GIF search | missing | `GifKeyboardController` | M | M2 |
-| Emoji and sticker suggestions while typing | missing | `InputSwapSuggestionsPanel` | M | M2 |
+| Emoji and sticker suggestions while typing | done | `:word` offers Telegram's emoji keywords in the composer popup; a draft that is one emoji shows a strip of matching stickers above the composer | M | M2 |
 | Rich text formatting: bold, italic, code, link, spoiler, quote; Markdown shortcuts | done | `RichTextEditingController` in ui_kit: ⌘B, ⌘I, ⌘U, ⌘⇧X, ⌘⇧M, ⌘⇧P, ⌘⇧., ⌘K, context menu; Markdown converted on send. Captions of files are still plain | | |
 | Mentions autocomplete (@) | done | `MentionSearch` with `ChatMembersFilterMention`; no `:` emoji shortcodes yet | | |
 | Bot command autocomplete (/) and bot keyboards | partial | Inline keyboards under messages (links, callbacks with the bot's answer as a toast, copy text, user links) and the bot's reply keyboard above the composer with a toggle; no / autocomplete, no switch-to-inline, no request buttons | M | M2 |

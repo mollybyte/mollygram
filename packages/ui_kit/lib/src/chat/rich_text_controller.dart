@@ -216,6 +216,37 @@ class RichTextEditingController extends TextEditingController {
     return query;
   }
 
+  /// The `:word` the caret is in, without the colon: at least two
+  /// letters right after a colon that starts a word, for emoji
+  /// suggestions. Null otherwise.
+  String? get emojiQuery {
+    final selection = value.selection;
+    if (!selection.isValid || !selection.isCollapsed) return null;
+    final caret = selection.baseOffset;
+    final before = text.substring(0, caret);
+    final colon = before.lastIndexOf(':');
+    if (colon < 0) return null;
+    if (colon > 0 && !_isSpace(before.codeUnitAt(colon - 1))) return null;
+    final query = before.substring(colon + 1);
+    if (query.length < 2 || query.length > 32) return null;
+    if (!RegExp(r'^[\p{L}\p{N}_]+$', unicode: true).hasMatch(query)) {
+      return null;
+    }
+    return query;
+  }
+
+  /// Replaces the `:word` at the caret with [emoji].
+  void insertEmoji(String emoji) {
+    final query = emojiQuery;
+    if (query == null) return;
+    final caret = value.selection.baseOffset;
+    final start = caret - query.length - 1;
+    value = TextEditingValue(
+      text: text.replaceRange(start, caret, emoji),
+      selection: TextSelection.collapsed(offset: start + emoji.length),
+    );
+  }
+
   /// Replaces the @word at the caret with `@username ` when the user has
   /// a username, otherwise with their [name] linked to [userId].
   void insertMention({required String name, String? username, int? userId}) {
