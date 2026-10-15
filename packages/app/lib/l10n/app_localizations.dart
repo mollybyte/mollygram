@@ -7028,6 +7028,24 @@ abstract class AppLocalizations {
   /// **'Gradients follow the theme. A picture of your own is dimmed a little in the dark theme.'**
   String get chatBackgroundHint;
 
+  /// No description provided for @wallpaperMist.
+  ///
+  /// In en, this message translates to:
+  /// **'Mist'**
+  String get wallpaperMist;
+
+  /// No description provided for @wallpaperSage.
+  ///
+  /// In en, this message translates to:
+  /// **'Sage'**
+  String get wallpaperSage;
+
+  /// No description provided for @wallpaperLinen.
+  ///
+  /// In en, this message translates to:
+  /// **'Linen'**
+  String get wallpaperLinen;
+
   /// No description provided for @wallpaperClassic.
   ///
   /// In en, this message translates to:

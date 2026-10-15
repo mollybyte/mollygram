@@ -4256,6 +4256,15 @@ class AppLocalizationsRu extends AppLocalizations {
       'Градиенты следуют теме. Своя картинка в тёмной теме слегка затемняется.';
 
   @override
+  String get wallpaperMist => 'Туман';
+
+  @override
+  String get wallpaperSage => 'Шалфей';
+
+  @override
+  String get wallpaperLinen => 'Лён';
+
+  @override
   String get wallpaperClassic => 'Классика';
 
   @override

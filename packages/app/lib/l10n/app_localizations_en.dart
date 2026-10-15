@@ -4195,6 +4195,15 @@ class AppLocalizationsEn extends AppLocalizations {
       'Gradients follow the theme. A picture of your own is dimmed a little in the dark theme.';
 
   @override
+  String get wallpaperMist => 'Mist';
+
+  @override
+  String get wallpaperSage => 'Sage';
+
+  @override
+  String get wallpaperLinen => 'Linen';
+
+  @override
   String get wallpaperClassic => 'Classic';
 
   @override

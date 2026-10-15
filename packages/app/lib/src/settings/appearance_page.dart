@@ -316,6 +316,9 @@ String _accentName(AppLocalizations l10n, AccentChoice choice) =>
 
 String _wallpaperName(AppLocalizations l10n, WallpaperPreset preset) =>
     switch (preset) {
+      WallpaperPreset.mist => l10n.wallpaperMist,
+      WallpaperPreset.sage => l10n.wallpaperSage,
+      WallpaperPreset.linen => l10n.wallpaperLinen,
       WallpaperPreset.classic => l10n.wallpaperClassic,
       WallpaperPreset.ocean => l10n.wallpaperOcean,
       WallpaperPreset.lavender => l10n.wallpaperLavender,
