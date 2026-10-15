@@ -30,6 +30,7 @@ export 'src/glass/glass.dart';
 export 'src/icon_button.dart';
 export 'src/icons.dart';
 export 'src/sidebar/chat_list_tile.dart';
+export 'src/sidebar/folder_rail.dart';
 export 'src/sidebar/folder_tabs.dart';
 export 'src/sidebar/search_field.dart';
 export 'src/sidebar/sidebar_island.dart';

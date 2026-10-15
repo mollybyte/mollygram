@@ -226,9 +226,9 @@ class _ChatSearchBarState extends State<ChatSearchBar> {
         const SingleActivator(LogicalKeyboardKey.enter, shift: true): newer,
         const SingleActivator(LogicalKeyboardKey.arrowDown): newer,
       },
-      child: Glass(
-        radius: 22,
-        padding: const EdgeInsets.fromLTRB(7, 7, 4, 7),
+      // Inside the header bar, which draws the glass.
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(9, 8, 6, 8),
         child: Row(
           children: [
             if (_kind case final kind?)

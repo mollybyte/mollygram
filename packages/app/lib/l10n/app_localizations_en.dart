@@ -422,6 +422,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deletedMessage => 'Deleted message';
 
   @override
+  String get deletedMark => 'deleted';
+
+  @override
+  String deletedAt(String time) {
+    return 'Deleted $time';
+  }
+
+  @override
+  String get menuEditHistory => 'Edit history';
+
+  @override
+  String get editHistoryTitle => 'Edit history';
+
+  @override
+  String get editHistoryCurrent => 'Current version';
+
+  @override
+  String get editHistoryEmpty => 'No earlier versions were kept';
+
+  @override
   String get loadingMessage => 'Loading…';
 
   @override

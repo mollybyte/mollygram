@@ -235,7 +235,11 @@ class MessageTile extends StatelessWidget {
     final meta = MessageMeta(
       time: formatMessageTime(message.date, locale),
       status: _status,
-      label: message.editDate > 0 ? l10n.edited : null,
+      label: message.isDeleted
+          ? l10n.deletedMark
+          : message.editDate > 0
+          ? l10n.edited
+          : null,
       views: isPost && info != null && info.viewCount > 0
           ? compact.format(info.viewCount)
           : null,
@@ -246,6 +250,10 @@ class MessageTile extends StatelessWidget {
         formatFullDate(message.date, locale),
         if (message.editDate > 0)
           l10n.editedAt(formatFullDate(message.editDate, locale)),
+        if (message.deletedAt case final deletedAt?)
+          l10n.deletedAt(
+            formatFullDate(deletedAt.millisecondsSinceEpoch ~/ 1000, locale),
+          ),
       ].join('\n'),
     );
     final reactions = info?.reactions?.reactions;
@@ -260,7 +268,14 @@ class MessageTile extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _MessageBody(row: row, store: store, actions: actions),
+        // A deleted message stays readable, but steps back a little.
+        if (message.isDeleted)
+          Opacity(
+            opacity: 0.62,
+            child: _MessageBody(row: row, store: store, actions: actions),
+          )
+        else
+          _MessageBody(row: row, store: store, actions: actions),
         if (message.message.replyMarkup case td.ReplyMarkupInlineKeyboard(
           :final rows,
         ))

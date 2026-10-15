@@ -610,6 +610,45 @@ void main() {
     expect(find.text('Editing'), findsNothing);
   });
 
+  testWidgets('comes back to where a chat was left', (tester) async {
+    json.chat = [for (var id = 1; id <= 60; id++) id];
+    json.push(_chat(lastRead: 60, unread: 0, last: 60));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await pump(tester);
+    await tester.pumpAndSettle();
+    final newest = find.textContaining('Message 60', findRichText: true);
+    expect(newest, findsOneWidget);
+
+    // Up a few screens, then away and back.
+    await tester.drag(find.byType(TimelineView), const Offset(0, 1500));
+    await tester.pumpAndSettle();
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+    expect(newest, findsNothing);
+    final shown = tester
+        .widgetList<RichText>(find.byType(RichText))
+        .map((t) => t.text.toPlainText())
+        .where((t) => t.contains('Message '))
+        .toSet();
+    expect(shown, isNotEmpty);
+
+    _shownChat.value = 8;
+    await tester.pump();
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    _shownChat.value = 7;
+    await tester.pump();
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+    expect(newest, findsNothing);
+    final back = tester
+        .widgetList<RichText>(find.byType(RichText))
+        .map((t) => t.text.toPlainText())
+        .where((t) => t.contains('Message '))
+        .toSet();
+    expect(back.intersection(shown), isNotEmpty);
+  });
+
   testWidgets('drops an edit, not the draft, when the chat changes', (
     tester,
   ) async {
@@ -1382,6 +1421,104 @@ void main() {
     await tester.runAsync(() => Future<void>.delayed(_tick));
     await tester.pump();
     expect(find.text('Ideas'), findsOneWidget);
+  });
+
+  testWidgets('shows kept deleted messages and the edit history', (
+    tester,
+  ) async {
+    // A session that keeps what others delete and edit, in a store in
+    // memory.
+    final plain = session;
+    addTearDown(plain.dispose);
+    await tester.runAsync(() async {
+      json = _FakeTdJson();
+      session = await TelegramSession.attach(
+        td.Td.custom(json, td.InlineTdEventSource(json)),
+        parameters: TdlibParameters(
+          api: const TelegramApiConfig(
+            apiId: 12345,
+            apiHash: '0123456789abcdef0123456789abcdef',
+          ),
+          databaseDirectory: '/tmp/mollygram/database',
+          filesDirectory: '/tmp/mollygram/files',
+          databaseEncryptionKey: Uint8List.fromList([1, 2, 3]),
+          systemLanguageCode: 'en',
+          deviceModel: 'Mac',
+          applicationVersion: '0.1.0',
+        ),
+        privacy: const PrivacySettings(
+          keepDeletedMessages: true,
+          keepEditHistory: true,
+        ),
+        openStore: MessageStore.memory,
+      );
+      // Opened here, under real async, so the view finds it ready.
+      await session.capture.store;
+    });
+    session.conversations.store
+      ..setUserName(2, 'Boris')
+      ..setUserName(3, 'Vera');
+    await pump(tester);
+    expect(find.text('Boris again'), findsOneWidget);
+
+    // Boris deletes a message: it stays, marked.
+    json.push({
+      '@type': 'updateDeleteMessages',
+      'chat_id': 7,
+      'message_ids': [11],
+      'is_permanent': true,
+      'from_cache': false,
+    });
+    await tester.runAsync(() async {
+      await Future<void>.delayed(_tick);
+      await session.capture.flush();
+      await Future<void>.delayed(_tick);
+    });
+    await tester.pump();
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    expect(find.text('Boris again'), findsOneWidget);
+    expect(find.text('deleted'), findsOneWidget);
+
+    // Boris edits another: the menu opens its earlier version.
+    json.push({
+      '@type': 'updateMessageContent',
+      'chat_id': 7,
+      'message_id': 10,
+      'new_content': {
+        '@type': 'messageText',
+        'text': {
+          '@type': 'formattedText',
+          'text': 'From Boris, fixed',
+          'entities': <Object?>[],
+        },
+      },
+    });
+    json.push({
+      '@type': 'updateMessageEdited',
+      'chat_id': 7,
+      'message_id': 10,
+      'edit_date': 1700000000,
+    });
+    await tester.runAsync(() async {
+      await Future<void>.delayed(_tick);
+      await session.capture.flush();
+    });
+    await tester.pump();
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    expect(find.text('From Boris, fixed'), findsOneWidget);
+    await rightClick(tester, 'From Boris, fixed');
+    // The store's watch keeps the view busy, so the menu takes a beat more.
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    await tester.tap(find.text('Edit history'));
+    await tester.pump();
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    expect(find.text('From Boris'), findsOneWidget);
+    expect(find.text('Current version'), findsOneWidget);
+    expect(find.byKey(const ValueKey('version-current')), findsOneWidget);
   });
 
   testWidgets('puts a switch-to-inline button\'s query in the composer', (

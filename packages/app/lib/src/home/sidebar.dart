@@ -9,14 +9,30 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 import '../../l10n/app_localizations.dart';
 import '../avatar/peer_avatar.dart';
 import '../downloads/downloads_bar.dart';
+import '../folders/folder_icons.dart';
+import '../privacy/ghost_mode_capsule.dart';
 import '../session/providers.dart';
 import '../window_drag_area.dart';
 import 'format.dart';
 import 'workspace.dart';
 
-/// The floating glass island with folders and the chat list.
+/// The floating glass island: the folder rail, search and the chat list.
 class Sidebar extends ConsumerStatefulWidget {
-  const Sidebar({super.key});
+  const Sidebar({
+    super.key,
+    this.onSettings,
+    this.onPrivacy,
+    this.onNewMessage,
+  });
+
+  /// The settings button at the rail's bottom.
+  final VoidCallback? onSettings;
+
+  /// The ghost in the title bar, shown while a privacy extra is on.
+  final VoidCallback? onPrivacy;
+
+  /// The compose button in the title bar.
+  final VoidCallback? onNewMessage;
 
   @override
   ConsumerState<Sidebar> createState() => _SidebarState();
@@ -64,25 +80,40 @@ class _SidebarState extends ConsumerState<Sidebar> {
     final select = ref.read(selectedChatListProvider.notifier).select;
 
     return SidebarIsland(
-      titleBarFill: const WindowDragArea(),
-      search: MgSearchField(hintText: l10n.searchHint, controller: _search),
-      folders: folders.isEmpty
-          ? null
-          : FolderTabBar(
-              children: [
-                FolderTab(
-                  label: l10n.folderAll,
-                  selected: list.isMain,
-                  onTap: () => select(const ChatListLocation.main()),
-                ),
-                for (final folder in folders)
-                  FolderTab(
-                    label: folder.title,
-                    selected: list == ChatListLocation.folder(folder.id),
-                    onTap: () => select(ChatListLocation.folder(folder.id)),
-                  ),
-              ],
+      rail: FolderRail(
+        topFill: const WindowDragArea(),
+        trailing: [
+          MgIconButton(
+            icon: MgIcons.settings,
+            tooltip: l10n.settings,
+            onPressed: widget.onSettings,
+          ),
+        ],
+        children: [
+          FolderRailItem(
+            icon: folderIcon('All'),
+            label: l10n.folderAll,
+            selected: list.isMain,
+            onTap: () => select(const ChatListLocation.main()),
+          ),
+          for (final folder in folders)
+            FolderRailItem(
+              icon: folderIcon(folder.iconName),
+              label: folder.title,
+              selected: list == ChatListLocation.folder(folder.id),
+              onTap: () => select(ChatListLocation.folder(folder.id)),
             ),
+        ],
+      ),
+      search: MgSearchField(hintText: l10n.searchHint, controller: _search),
+      actions: [
+        GhostModeCapsule(onTap: widget.onPrivacy),
+        MgIconButton(
+          icon: MgIcons.compose,
+          tooltip: l10n.newMessage,
+          onPressed: widget.onNewMessage,
+        ),
+      ],
       banner: const DownloadsBar(),
       body: shown.isEmpty
           ? Center(

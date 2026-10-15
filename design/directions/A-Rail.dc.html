@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>A Rail — main window</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="base.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#0071E3}a:hover{color:#0058B0}
+</style>
+</helmet>
+<div class="pair">
+<sc-for list="{{themes}}" as="t" hint-placeholder-count="2">
+<div class="win {{t.cls}}">
+
+  <!-- Sidebar island: icon rail + list -->
+  <aside class="glass" aria-label="Chats" style="position: absolute; z-index: 3; top: 10px; left: 10px; bottom: 10px; width: 356px; border-radius: 16px; display: flex; overflow: hidden">
+    <nav class="rail" aria-label="Folders" style="width: 64px; padding: 14px 8px 10px; box-sizing: border-box; border-right: 1px solid var(--sep); display: flex; flex-direction: column; align-items: center">
+      <span class="lights" aria-hidden="true" style="margin: 0 0 14px"><span></span><span></span><span></span></span>
+      <button class="on" aria-label="All chats"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4.3A8 8 0 1 1 21 12z"></path></svg><span>All</span></button>
+      <button aria-label="Personal"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg><span>Personal</span></button>
+      <button aria-label="Groups"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><circle cx="17" cy="9" r="2.8"></circle><path d="M2.5 20a6.5 6.5 0 0 1 13 0"></path><path d="M15 20a5 5 0 0 1 6.5-4.8"></path></svg><span>Groups</span></button>
+      <button aria-label="Bots"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="8" width="16" height="12" rx="3"></rect><path d="M12 8V4M9 14h.01M15 14h.01"></path></svg><span>Bots</span></button>
+      <button aria-label="Channels"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10v4h4l7 5V5l-7 5H3z"></path><path d="M17 9a4 4 0 0 1 0 6"></path></svg><span>Channels</span></button>
+      <span style="flex: 1"></span>
+      <button aria-label="Archive"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="5" rx="1.5"></rect><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9M10 13h4"></path></svg></button>
+      <button aria-label="Settings"><span class="av" style="width: 28px; height: 28px; font-size: 11px">A</span></button>
+    </nav>
+    <div style="flex: 1; display: flex; flex-direction: column; min-width: 0">
+      <div style="height: 48px; display: flex; align-items: center; gap: 8px; padding: 0 10px 0 14px">
+        <label class="search" style="flex: 1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg><input type="search" placeholder="Search" aria-label="Search"></label>
+        <button class="ib" aria-label="New message"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6"></path><path d="M17.5 3.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4z"></path></svg></button>
+      </div>
+      <div style="flex: 1; padding: 0 8px; display: flex; flex-direction: column; gap: 1px; overflow: hidden">
+        <button class="row" style="padding: 7px 8px"><span class="av" style="width: 40px; height: 40px; font-size: 14px">A</span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px"><span style="display: flex; justify-content: space-between; gap: 8px"><span class="nm">alina --verbose</span><span class="tm">Wed</span></span><span class="sub">You: Photo, https://raskurvdodo.ru/</span></span></button>
+        <button class="row" style="padding: 7px 8px"><span class="av" style="width: 40px; height: 40px; font-size: 14px">КБ</span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px"><span style="display: flex; justify-content: space-between; gap: 8px"><span class="nm">котики без пятерочки</span><span class="tm">17:39</span></span><span style="display: flex; justify-content: space-between; gap: 8px"><span class="sub">норм такая</span><span class="badge">3</span></span></span></button>
+        <button class="row on" style="padding: 7px 8px"><span class="av" style="width: 40px; height: 40px; font-size: 14px">P</span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px"><span style="display: flex; justify-content: space-between; gap: 8px"><span class="nm">powershell</span><span class="tm">18:01</span></span><span class="sub">You: давай</span></span></button>
+        <button class="row" style="padding: 7px 8px"><span class="av" style="width: 40px; height: 40px; font-size: 14px">12</span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px"><span style="display: flex; justify-content: space-between; gap: 8px"><span class="nm">1212</span><span class="tm">17:47</span></span><span class="sub">Photo</span></span></button>
+        <button class="row" style="padding: 7px 8px"><span class="av" style="width: 40px; height: 40px; font-size: 14px">PC</span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px"><span style="display: flex; justify-content: space-between; gap: 8px"><span class="nm">pink color</span><span class="tm">17:46</span></span><span class="sub">шизоид</span></span></button>
+        <button class="row" style="padding: 7px 8px"><span class="av" style="width: 40px; height: 40px; font-size: 14px">Н</span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px"><span style="display: flex; justify-content: space-between; gap: 8px"><span class="nm">наташа</span><span class="tm">17:45</span></span><span class="sub">You: avito type shit user</span></span></button>
+        <button class="row" style="padding: 7px 8px"><span class="av" style="width: 40px; height: 40px; font-size: 14px">WC</span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px"><span style="display: flex; justify-content: space-between; gap: 8px"><span class="nm">white color</span><span class="tm">17:25</span></span><span style="display: flex; justify-content: space-between; gap: 8px"><span class="sub">чехол реально топ</span><span class="badge m">12</span></span></span></button>
+        <button class="row" style="padding: 7px 8px"><span class="av" style="width: 40px; height: 40px; font-size: 14px">Á</span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px"><span style="display: flex; justify-content: space-between; gap: 8px"><span class="nm">á</span><span class="tm">16:50</span></span><span class="sub">Video message</span></span></button>
+        <button class="row" style="padding: 7px 8px"><span class="av" style="width: 40px; height: 40px; font-size: 14px">N</span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px"><span style="display: flex; justify-content: space-between; gap: 8px"><span class="nm">Nikolay</span><span class="tm">16:37</span></span><span class="sub">You: спасибо за фидбек</span></span></button>
+        <button class="row" style="padding: 7px 8px"><span class="av" style="width: 40px; height: 40px; font-size: 14px">M</span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px"><span style="display: flex; justify-content: space-between; gap: 8px"><span class="nm">Mollygram Dev</span><span class="tm">15:28</span></span><span class="sub">Release 0.1.0 notes</span></span></button>
+        <button class="row" style="padding: 7px 8px"><span class="av" style="width: 40px; height: 40px; font-size: 14px">D</span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px"><span style="display: flex; justify-content: space-between; gap: 8px"><span class="nm">Design</span><span class="tm">12:59</span></span><span class="sub">https://vt.tiktok.com/ZSgR98Bjq/</span></span></button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Full-width header bar (glass, one piece) -->
+  <header class="glass" style="position: absolute; z-index: 3; top: 10px; left: 378px; right: 10px; height: 48px; border-radius: 14px; display: flex; align-items: center; gap: 12px; padding: 0 8px 0 10px; box-sizing: border-box">
+    <span class="av" style="width: 30px; height: 30px; font-size: 12px">P</span>
+    <div style="display: flex; flex-direction: column; gap: 1px; min-width: 0">
+      <span class="hd">powershell</span>
+      <span class="st">online</span>
+    </div>
+    <span style="flex: 1"></span>
+    <label class="search" style="width: 200px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg><input type="search" placeholder="Search in chat" aria-label="Search in chat"></label>
+    <button class="ib" aria-label="Call"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"></path></svg></button>
+    <button class="ib" aria-label="Video call"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2.5"></rect><path d="m16 10 5-3v10l-5-3"></path></svg></button>
+    <button class="ib" aria-label="Chat info"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5M12 8h.01"></path></svg></button>
+  </header>
+
+  <!-- Messages (flat, no bubbles) -->
+  <main style="position: absolute; left: 378px; right: 10px; top: 70px; bottom: 76px; padding: 8px 20px 0 20px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end">
+    <div class="msgs" style="gap: 2px">
+      <span class="datepill">Today</span>
+      <div class="m" style="margin-top: 8px"><span class="av" style="width: 36px; height: 36px; font-size: 13px">A</span><div><div class="who a">aliné</div><div class="txt">бля чот</div></div><span class="meta"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 13 4 4L15 9"></path><path d="m10 17 10-10"></path></svg>17:29</span></div>
+      <div class="m f"><div class="txt">PI в сети</div><span class="meta"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 13 4 4L15 9"></path><path d="m10 17 10-10"></path></svg>17:29</span></div>
+      <div class="m f"><div class="txt">тоесть лампа горит но не отвечает</div><span class="meta"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 13 4 4L15 9"></path><path d="m10 17 10-10"></path></svg>17:29</span></div>
+      <div class="m f"><div class="txt">походу питания не хватает</div><span class="meta"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 13 4 4L15 9"></path><path d="m10 17 10-10"></path></svg>17:29</span></div>
+      <div class="m" style="margin-top: 8px"><span class="av" style="width: 36px; height: 36px; font-size: 13px">P</span><div><div class="who b">powershell</div><div class="txt">как оно?</div></div><span class="meta">17:52</span></div>
+      <div class="m" style="margin-top: 8px"><span class="av" style="width: 36px; height: 36px; font-size: 13px">A</span><div><div class="who a">aliné</div><div class="txt">все завел рпи ща вг подыму</div></div><span class="meta"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 13 4 4L15 9"></path><path d="m10 17 10-10"></path></svg>17:52</span></div>
+      <div class="m f"><div style="width: 360px; height: 180px; border-radius: 10px; background: linear-gradient(135deg, var(--av1), var(--av2)); display: grid; place-items: center; color: rgba(255,255,255,.85); font-size: 12px">screenshot.png</div><span class="meta"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 13 4 4L15 9"></path><path d="m10 17 10-10"></path></svg>18:00</span></div>
+      <div class="m" style="margin-top: 8px"><span class="av" style="width: 36px; height: 36px; font-size: 13px">P</span><div><div class="who b">powershell</div><div class="txt">ну вроде все норм</div></div><span class="meta">18:00</span></div>
+      <div class="m f"><div class="txt">ща проверю</div><span class="meta">18:01</span></div>
+      <div class="m" style="margin-top: 8px"><span class="av" style="width: 36px; height: 36px; font-size: 13px">A</span><div><div class="who a">aliné</div><div class="txt">давай</div></div><span class="meta"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 13 4 4L15 9"></path><path d="m10 17 10-10"></path></svg>18:01</span></div>
+    </div>
+  </main>
+
+  <!-- Composer capsule -->
+  <form class="glass comp" style="position: absolute; z-index: 3; left: 378px; right: 10px; bottom: 14px; height: 46px; border-radius: 23px; padding: 0 10px 0 16px; box-sizing: border-box">
+    <button class="ib" type="button" aria-label="Attach" style="width: 26px; height: 26px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 12-8.5 8.5a5.5 5.5 0 0 1-7.8-7.8L13 4.4a3.7 3.7 0 0 1 5.2 5.2L9.9 18a1.8 1.8 0 0 1-2.6-2.6L15 7.7"></path></svg></button>
+    <input type="text" placeholder="Message" aria-label="Message">
+    <button class="ib" type="button" aria-label="Emoji" style="width: 26px; height: 26px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0M9 10h.01M15 10h.01"></path></svg></button>
+    <button class="ib" type="button" aria-label="Record" style="width: 26px; height: 26px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg></button>
+  </form>
+
+</div>
+</sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":2400,"height":740}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { themes: [{ cls: 'light' }, { cls: 'dark' }] };
+  }
+}
+</script>
+</body>
+</html>

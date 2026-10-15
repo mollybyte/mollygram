@@ -39,9 +39,15 @@ enum MessageSendState {
 /// It wraps the TDLib message as is, so every kind of content reaches the
 /// chat view; the getters cover what the timeline itself needs.
 final class ConversationMessage {
-  const ConversationMessage(this.message);
+  const ConversationMessage(this.message, {this.deletedAt});
 
   final td.Message message;
+
+  /// When someone deleted the message for everyone, for one kept in the
+  /// privacy store and shown in its place; null for a live message.
+  final DateTime? deletedAt;
+
+  bool get isDeleted => deletedAt != null;
 
   int get id => message.id;
   int get chatId => message.chatId;
@@ -80,6 +86,7 @@ final class ConversationMessage {
   ConversationMessage patched(Map<String, Object?> fields) =>
       ConversationMessage(
         td.Message.fromJson({...message.toJson(), ...fields}),
+        deletedAt: deletedAt,
       );
 }
 
