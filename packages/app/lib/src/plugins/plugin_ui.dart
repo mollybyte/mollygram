@@ -114,10 +114,16 @@ class PluginUiView extends StatelessWidget {
 /// An inline action in the accent color, as Telegram's "Translate" under a
 /// message.
 class PluginLink extends StatefulWidget {
-  const PluginLink({super.key, required this.label, this.onTap});
+  const PluginLink({
+    super.key,
+    required this.label,
+    this.onTap,
+    this.size = MgType.body,
+  });
 
   final String label;
   final VoidCallback? onTap;
+  final double size;
 
   @override
   State<PluginLink> createState() => _PluginLinkState();
@@ -141,10 +147,17 @@ class _PluginLinkState extends State<PluginLink> {
           onTap: widget.onTap,
           child: Text(
             widget.label,
-            style: mgTextStyle(c, color: enabled ? c.accent : c.fg2).copyWith(
-              decoration: _hover && enabled ? TextDecoration.underline : null,
-              decorationColor: c.accent,
-            ),
+            style:
+                mgTextStyle(
+                  c,
+                  size: widget.size,
+                  color: enabled ? c.accent : c.fg2,
+                ).copyWith(
+                  decoration: _hover && enabled
+                      ? TextDecoration.underline
+                      : null,
+                  decorationColor: c.accent,
+                ),
           ),
         ),
       ),

@@ -50,6 +50,17 @@ void main() {
     expect(await call(PluginStorage(dir), 'storage.get', 'a'), 'y' * 150);
   });
 
+  test('writes close together all land, in order', () async {
+    final s = PluginStorage(dir);
+    await Future.wait([
+      for (var i = 0; i < 20; i++) call(s, 'storage.set', 'k$i', i),
+      call(s, 'storage.delete', 'k3'),
+    ]);
+    final again = PluginStorage(dir);
+    expect(await call(again, 'storage.get', 'k19'), 19);
+    expect(await call(again, 'storage.get', 'k3'), isNull);
+  });
+
   test('an unreadable file starts over, clear forgets everything', () async {
     File('${dir.path}/dev.a.b.json').writeAsStringSync('{broken');
     final s = PluginStorage(dir);

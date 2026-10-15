@@ -26,7 +26,7 @@ PluginMessage? pluginMessageOf(ConversationMessage message) {
 }
 
 /// Whether `message.filter` plugins collapse or hide a message; null while
-/// it is shown as usual. The chat list can use it for previews too.
+/// it is shown as usual. For the chat list's previews and unread counts.
 final messageVisibilityProvider = FutureProvider.autoDispose
     .family<EventFiltered?, PluginMessage>((ref, message) async {
       final plugins = await ref.watch(appPluginsProvider.future);
@@ -48,9 +48,65 @@ void _followChanges(Ref ref, AppPlugins plugins) {
   ref.onDispose(() => plugins.revision.removeListener(changed));
 }
 
-/// [child], unless a filter plugin hides the message, or collapses it into
-/// a line with the reason that shows it on a click.
-class PluginFilteredMessage extends ConsumerStatefulWidget {
+/// Gives the timeline below it the filter plugins' answers, so hidden
+/// messages leave the list (see [visible]) instead of leaving a gap, and
+/// the runs around them join up.
+class PluginVerdicts extends ConsumerWidget {
+  const PluginVerdicts({super.key, required this.child});
+
+  final Widget child;
+
+  /// [messages] without the ones a filter plugin hides. Asks about the
+  /// rest, so their answers are known before they scroll into view.
+  static List<ConversationMessage> visible(
+    BuildContext context,
+    List<ConversationMessage> messages,
+  ) {
+    final plugins = context
+        .dependOnInheritedWidgetOfExactType<_VerdictScope>()
+        ?.plugins;
+    if (plugins == null || !plugins.filters) return messages;
+    return [
+      for (final m in messages)
+        if (_verdictOf(plugins, m)?.verdict != FilterVerdict.hide) m,
+    ];
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final plugins = ref.watch(appPluginsProvider).value;
+    return _VerdictScope(
+      plugins: plugins,
+      notifier: plugins?.verdictRevision,
+      child: child,
+    );
+  }
+}
+
+class _VerdictScope extends InheritedNotifier<ValueNotifier<int>> {
+  const _VerdictScope({
+    required this.plugins,
+    required super.notifier,
+    required super.child,
+  });
+
+  final AppPlugins? plugins;
+
+  @override
+  bool updateShouldNotify(_VerdictScope old) =>
+      old.plugins != plugins || super.updateShouldNotify(old);
+}
+
+EventFiltered? _verdictOf(AppPlugins plugins, ConversationMessage message) {
+  final m = pluginMessageOf(message);
+  return m == null ? null : plugins.verdictNow(m).verdict;
+}
+
+/// [child], unless a filter plugin collapses the message into a line with
+/// the reason that shows it on a click, or hides it. While the answer is
+/// not known yet the message keeps its place without being drawn, so an
+/// advertisement never flashes.
+class PluginFilteredMessage extends ConsumerWidget {
   const PluginFilteredMessage({
     super.key,
     required this.message,
@@ -61,26 +117,31 @@ class PluginFilteredMessage extends ConsumerStatefulWidget {
   final Widget child;
 
   @override
-  ConsumerState<PluginFilteredMessage> createState() =>
-      _PluginFilteredMessageState();
-}
-
-class _PluginFilteredMessageState extends ConsumerState<PluginFilteredMessage> {
-  var _shown = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final message = pluginMessageOf(widget.message);
-    if (message == null || _shown) return widget.child;
-    final verdict = ref.watch(messageVisibilityProvider(message)).value;
-    return switch (verdict?.verdict) {
-      null => widget.child,
-      FilterVerdict.hide => const SizedBox.shrink(),
-      FilterVerdict.collapse => _Collapsed(
-        reason: verdict!.reason,
-        onShow: () => setState(() => _shown = true),
-      ),
-    };
+  Widget build(BuildContext context, WidgetRef ref) {
+    final plugins = ref.watch(appPluginsProvider).value;
+    final m = pluginMessageOf(message);
+    if (plugins == null || m == null) return child;
+    return ValueListenableBuilder(
+      valueListenable: plugins.verdictRevision,
+      builder: (context, _, _) {
+        if (plugins.isRevealed(m)) return child;
+        final (:known, :verdict) = plugins.verdictNow(m);
+        if (!known) {
+          return IgnorePointer(child: Opacity(opacity: 0, child: child));
+        }
+        return switch (verdict?.verdict) {
+          null => child,
+          FilterVerdict.hide => const SizedBox.shrink(),
+          FilterVerdict.collapse => _Collapsed(
+            reason: verdict!.reason,
+            onShow: () {
+              plugins.reveal(m);
+              plugins.verdictRevision.value++;
+            },
+          ),
+        };
+      },
+    );
   }
 }
 
@@ -101,17 +162,23 @@ class _Collapsed extends StatelessWidget {
         bottom: 2,
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
         children: [
           Flexible(
             child: Text(
               reason ?? l10n.pluginFilteredMessage,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: mgTextStyle(c, color: c.fg2),
+              style: mgTextStyle(c, size: MgType.caption, color: c.fg2),
             ),
           ),
           const SizedBox(width: 8),
-          PluginLink(label: l10n.pluginShowMessage, onTap: onShow),
+          PluginLink(
+            label: l10n.pluginShowMessage,
+            size: MgType.caption,
+            onTap: onShow,
+          ),
         ],
       ),
     );
@@ -136,16 +203,26 @@ class _PluginMessageExtrasState extends ConsumerState<PluginMessageExtras> {
   final _busy = <String>{};
   PluginMessage? _message;
 
+  /// The plugins' revision the answers belong to: a plugin turned off or
+  /// a setting changed, such as the language, makes them stale.
+  int? _revision;
+
   @override
   Widget build(BuildContext context) {
     final message = pluginMessageOf(widget.message);
-    if (message != _message) {
-      // An edit or another message in this place: earlier answers go.
+    final plugins = ref.watch(appPluginsProvider).value;
+    final revision = plugins?.revision.value;
+    if (message != _message || revision != _revision) {
+      // An edit, another message in this place, or plugins changed.
       _message = message;
+      _revision = revision;
       _answers.clear();
     }
-    if (message == null) return const SizedBox.shrink();
-    final blocks = ref.watch(pluginBlocksProvider(message)).value ?? const [];
+    if (message == null || plugins == null) return const SizedBox.shrink();
+    final blocks =
+        ref.watch(pluginBlocksProvider(message)).value ??
+        plugins.cachedBlocks(message) ??
+        const [];
     final shown = [
       for (final b in blocks) (b.pluginId, _answers[b.pluginId] ?? b.ui),
     ].where((b) => b.$2.isNotEmpty);
@@ -161,7 +238,7 @@ class _PluginMessageExtrasState extends ConsumerState<PluginMessageExtras> {
               nodes: ui,
               enabled: !_busy.contains(id),
               onAction: (action, payload) =>
-                  unawaited(_act(id, action, payload, message)),
+                  unawaited(_act(plugins, id, action, payload, message)),
             ),
           ),
       ],
@@ -169,18 +246,23 @@ class _PluginMessageExtrasState extends ConsumerState<PluginMessageExtras> {
   }
 
   Future<void> _act(
+    AppPlugins plugins,
     String pluginId,
     String action,
     Object? payload,
     PluginMessage message,
   ) async {
     setState(() => _busy.add(pluginId));
-    final plugins = await ref.read(appPluginsProvider.future);
-    final ui = await plugins.action(pluginId, action, payload, message);
-    if (!mounted) return;
-    setState(() {
-      _busy.remove(pluginId);
-      if (ui != null && message == _message) _answers[pluginId] = ui;
-    });
+    List<Map<String, Object?>>? ui;
+    try {
+      ui = await plugins.action(pluginId, action, payload, message);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _busy.remove(pluginId);
+          if (ui != null && message == _message) _answers[pluginId] = ui;
+        });
+      }
+    }
   }
 }

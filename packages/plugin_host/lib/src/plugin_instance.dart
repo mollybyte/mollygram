@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 
 import 'js_vm.dart';
@@ -175,16 +176,17 @@ final class PluginInstance {
   /// Used for `messages.read: on_command`.
   int? _commandChat;
 
-  final _logs = <String>[];
+  final _logs = ListQueue<String>();
 
-  /// The plugin's log keeps its last [maxLogLines] lines.
+  /// The plugin's log keeps its last [maxLogLines] lines, each cut to
+  /// [maxLogLine] characters.
   static const maxLogLines = 200;
+  static const maxLogLine = 1000;
 
   void _log(String line) {
+    if (line.length > maxLogLine) line = '${line.substring(0, maxLogLine)}…';
     _logs.add(line);
-    if (_logs.length > maxLogLines) {
-      _logs.removeRange(0, _logs.length - maxLogLines);
-    }
+    if (_logs.length > maxLogLines) _logs.removeFirst();
     onLog?.call(line);
   }
 

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:io';
 
 import 'package:file_selector/file_selector.dart';
@@ -175,6 +176,11 @@ Future<File?> pickPluginManifest() async {
 const launchTimeout = Duration(seconds: 10);
 const eventTimeout = Duration(seconds: 6);
 
+/// A plugin that fails to start is tried again after [launchRetry] times
+/// 2, 4, … and turned off after [maxLaunchFailures] failures in a row.
+const launchRetry = Duration(seconds: 5);
+const maxLaunchFailures = 3;
+
 /// An approved plugin that could not be installed.
 final class PluginInstallError implements Exception {
   const PluginInstallError(this.message);
@@ -219,7 +225,12 @@ final class AppPlugins implements PluginsDelegate {
   Future<void> _writes = Future.value();
   final _cache = <(String, String?), List<CodeSpan>?>{};
   final _verdicts = <PluginMessage, EventFiltered?>{};
-  final _logs = <String, List<String>>{};
+  final _asking = <PluginMessage, Future<EventFiltered?>>{};
+  final _blocks = <PluginMessage, List<PluginBlock>>{};
+  final _revealed = <(int, int)>{};
+  final _logs = <String, ListQueue<String>>{};
+  final _launchFailures = <String, int>{};
+  final _retryAt = <String, DateTime>{};
   final _logSubscriptions = <String, StreamSubscription<String>>{};
 
   late final PluginsController controller;
@@ -228,18 +239,31 @@ final class AppPlugins implements PluginsDelegate {
   /// turned on or off, updated, or a setting changed.
   final revision = ValueNotifier(0);
 
-  /// Bumped whenever a plugin's log grows.
+  /// Bumped, at most a few times a second, when a plugin's log grows.
   final logRevision = ValueNotifier(0);
+
+  /// Bumped, once a frame at most, when filter answers arrive.
+  final verdictRevision = ValueNotifier(0);
 
   /// The last lines a plugin logged in this run of the app, oldest first.
   List<String> logsOf(String id) => List.unmodifiable(_logs[id] ?? const []);
 
   void _log(String id, String line) {
-    final lines = _logs.putIfAbsent(id, () => []);
+    final lines = _logs.putIfAbsent(id, ListQueue.new);
     lines.add(line);
-    if (lines.length > PluginInstance.maxLogLines) lines.removeAt(0);
-    logRevision.value++;
+    if (lines.length > PluginInstance.maxLogLines) lines.removeFirst();
+    _logBump ??= Timer(const Duration(milliseconds: 250), () {
+      _logBump = null;
+      logRevision.value++;
+    });
   }
+
+  Timer? _logBump;
+  Timer? _verdictBump;
+
+  /// See [launchRetry]; shorter in tests.
+  @visibleForTesting
+  Duration retryDelay = launchRetry;
 
   static Future<AppPlugins> load({
     required PluginStore store,
@@ -353,10 +377,44 @@ final class AppPlugins implements PluginsDelegate {
     }
   }
 
+  /// Whether any plugin that is on filters messages.
+  bool get filters => controller.entries.any(
+    (e) => e.active && e.manifest.hooks.contains(PluginEvent.messageFilter.id),
+  );
+
+  /// The answer for [m] if it is known now; otherwise it is asked for, and
+  /// [verdictRevision] moves when it arrives. Without filter plugins the
+  /// answer is always known: shown.
+  ({bool known, EventFiltered? verdict}) verdictNow(PluginMessage m) {
+    if (_verdicts.containsKey(m)) return (known: true, verdict: _verdicts[m]);
+    if (!filters) return (known: true, verdict: null);
+    unawaited(
+      filterMessage(m).then((_) {
+        _verdictBump ??= Timer(const Duration(milliseconds: 16), () {
+          _verdictBump = null;
+          verdictRevision.value++;
+        });
+      }),
+    );
+    return (known: false, verdict: null);
+  }
+
+  /// Whether the user chose to see the filtered message [m] anyway.
+  bool isRevealed(PluginMessage m) => _revealed.contains((m.chatId, m.id));
+
+  void reveal(PluginMessage m) => _revealed.add((m.chatId, m.id));
+
   /// Whether `message.filter` plugins collapse or hide [m]; null to show it.
   /// The strongest answer wins, and an invalid one counts as none.
   Future<EventFiltered?> filterMessage(PluginMessage m) async {
     if (_verdicts.containsKey(m)) return _verdicts[m];
+    return _asking[m] ??= _filter(m).whenComplete(() {
+      // A block: the removed future is this one, not to be waited for.
+      _asking.remove(m);
+    });
+  }
+
+  Future<EventFiltered?> _filter(PluginMessage m) async {
     final at = revision.value;
     EventFiltered? verdict;
     await for (final (_, outcome) in _ask(PluginEvent.messageFilter, {
@@ -374,14 +432,30 @@ final class AppPlugins implements PluginsDelegate {
     return verdict;
   }
 
+  /// What `message.render.text` plugins showed under [m] last, if known.
+  List<PluginBlock>? cachedBlocks(PluginMessage m) => _blocks[m];
+
   /// What `message.render.text` plugins show under [m].
-  Future<List<PluginBlock>> renderText(PluginMessage m) async => [
-    await for (final (id, outcome) in _ask(PluginEvent.messageRenderText, {
-      'message': _payloadOf(m),
-    }))
-      if (outcome is EventHandled && outcome.ui.isNotEmpty)
-        (pluginId: id, ui: outcome.ui),
-  ];
+  Future<List<PluginBlock>> renderText(PluginMessage m) async {
+    final known = _blocks[m];
+    if (known != null) return known;
+    final at = revision.value;
+    final blocks = [
+      await for (final (id, outcome) in _ask(PluginEvent.messageRenderText, {
+        'message': _payloadOf(m),
+      }))
+        if (outcome is EventHandled && outcome.ui.isNotEmpty)
+          (pluginId: id, ui: outcome.ui),
+    ];
+    if (at == revision.value) _remember(m, blocks);
+    return blocks;
+  }
+
+  void _remember(PluginMessage m, List<PluginBlock> blocks) {
+    _blocks.remove(m);
+    if (_blocks.length >= 300) _blocks.remove(_blocks.keys.first);
+    _blocks[m] = blocks;
+  }
 
   /// Passes a tap on a plugin's button under [m] to that plugin. Returns
   /// what to show instead, or null to keep what is shown.
@@ -394,12 +468,22 @@ final class AppPlugins implements PluginsDelegate {
     final plugin = await _plugin(pluginId);
     if (plugin == null) return null;
     try {
+      final at = revision.value;
       final outcome = await plugin.dispatch(PluginEvent.uiAction, {
         'action': action,
         'payload': ?payload,
         'message': _payloadOf(m),
       });
-      return outcome is EventHandled ? outcome.ui : null;
+      if (outcome is! EventHandled) return null;
+      // The answer stays when the message scrolls away and back.
+      final shown = _blocks[m];
+      if (shown != null && at == revision.value) {
+        _remember(m, [
+          for (final b in shown)
+            b.pluginId == pluginId ? (pluginId: pluginId, ui: outcome.ui) : b,
+        ]);
+      }
+      return outcome.ui;
     } on Object {
       return null;
     }
@@ -430,6 +514,10 @@ final class AppPlugins implements PluginsDelegate {
     if (e == null || source == null || !e.active || !_delivered(e)) {
       return Future.value();
     }
+    final retryAt = _retryAt[id];
+    if (retryAt != null && DateTime.now().isBefore(retryAt)) {
+      return Future.value();
+    }
     late final Future<RunningPlugin?> starting;
     starting = _running[id] ??= () async {
       // Lets `starting` be set before anything below can look at it.
@@ -445,10 +533,22 @@ final class AppPlugins implements PluginsDelegate {
         ).timeout(launchTimeout);
       } on Object catch (error) {
         _log(id, 'error: could not start: $error');
-        // Could not start: tried again with the next event.
         if (identical(_running[id], starting)) unawaited(_running.remove(id));
+        // Tried again later, each time waiting longer; after a few
+        // failures in a row the plugin is turned off with the reason.
+        final failures = _launchFailures[id] = (_launchFailures[id] ?? 0) + 1;
+        if (failures >= maxLaunchFailures) {
+          _launchFailures.remove(id);
+          _retryAt.remove(id);
+          controller.markDisabled(id, 'could not start: $error');
+          _changed();
+        } else {
+          _retryAt[id] = DateTime.now().add(retryDelay * (1 << failures));
+        }
         return null;
       }
+      _launchFailures.remove(id);
+      _retryAt.remove(id);
       // Turned off, updated or uninstalled while it was starting.
       if (!identical(_running[id], starting)) {
         p.stop();
@@ -490,7 +590,10 @@ final class AppPlugins implements PluginsDelegate {
   void _changed() {
     _cache.clear();
     _verdicts.clear();
+    _blocks.clear();
+    _retryAt.clear();
     revision.value++;
+    verdictRevision.value++;
   }
 
   void _save() {
@@ -610,9 +713,12 @@ final class AppPlugins implements PluginsDelegate {
     for (final id in [..._running.keys]) {
       _stop(id);
     }
+    _logBump?.cancel();
+    _verdictBump?.cancel();
     controller.dispose();
     revision.dispose();
     logRevision.dispose();
+    verdictRevision.dispose();
   }
 }
 

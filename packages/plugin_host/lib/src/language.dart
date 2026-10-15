@@ -137,7 +137,7 @@ _Guess? _latin(String s) {
   hint('çœêèàù', 'fr');
   hint('ãõ', 'pt');
   hint('ąćęłńśźż', 'pl');
-  hint('ğışİ', 'tr');
+  hint('ğış', 'tr');
   final ranked = scores.entries.toList()
     ..sort((a, b) => b.value.compareTo(a.value));
   final best = ranked[0], second = ranked[1];

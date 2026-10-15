@@ -58,19 +58,24 @@ PluginMessage _message(String text, {int id = 1, bool outgoing = false}) => (
   outgoing: outgoing,
 );
 
-ConversationMessage _conversationMessage(String text) => ConversationMessage(
-  td.Message.fromJson({
-    '@type': 'message',
-    'id': 1,
-    'sender_id': {'@type': 'messageSenderUser', 'user_id': 3},
-    'chat_id': 7,
-    'date': 1700000000,
-    'content': {
-      '@type': 'messageText',
-      'text': {'@type': 'formattedText', 'text': text, 'entities': <Object?>[]},
-    },
-  }),
-);
+ConversationMessage _conversationMessage(String text, {int id = 1}) =>
+    ConversationMessage(
+      td.Message.fromJson({
+        '@type': 'message',
+        'id': id,
+        'sender_id': {'@type': 'messageSenderUser', 'user_id': 3},
+        'chat_id': 7,
+        'date': 1700000000,
+        'content': {
+          '@type': 'messageText',
+          'text': {
+            '@type': 'formattedText',
+            'text': text,
+            'entities': <Object?>[],
+          },
+        },
+      }),
+    );
 
 const _ad = 'New course, sign up today. erid: 2VtzqwXyZ12';
 const _german = 'Ich weiß nicht, ob wir heute auch mit dir kommen.';
@@ -90,6 +95,7 @@ void main() {
   Future<AppPlugins> load({
     List<String> builtin = const ['filters', 'translate'],
     StoredBundle? installed,
+    PluginLauncher? launch,
   }) async {
     if (installed != null) {
       store.bundles[installed.id] = installed;
@@ -98,6 +104,7 @@ void main() {
       store: store,
       builtin: [for (final b in builtin) _builtin(b)],
       locale: 'en',
+      launch: launch ?? launchInWorker,
       translate: (chat, message, to) async {
         translated.add((chat, message, to));
         return 'I do not know if we are coming with you today.';
@@ -114,6 +121,15 @@ void main() {
       expect(verdict?.verdict, FilterVerdict.collapse);
       expect(verdict?.reason, 'Advertising');
       expect(await plugins.filterMessage(_message('See you at 6')), isNull);
+    });
+
+    test('an edited message is asked about again', () async {
+      final plugins = await load(builtin: ['filters']);
+      expect(await plugins.filterMessage(_message(_ad)), isNotNull);
+      expect(
+        await plugins.filterMessage(_message('Course moved to 6')),
+        isNull,
+      );
     });
 
     test('hides instead when set so, and turning it off shows all', () async {
@@ -175,7 +191,57 @@ void main() {
     });
   });
 
+  test('uninstalling deletes what the plugin stored', () async {
+    final plugins = await load(builtin: const [], installed: _bundle(''));
+    final file = File('${temp.path}/dev.example.hostile.json');
+    await AppPluginServices(storage: PluginStorage(temp)).call(
+      'dev.example.hostile',
+      'storage.set',
+      {'key': 'k', 'value': 1, 'quota': 1024},
+    );
+    expect(file.existsSync(), isTrue);
+    await plugins.uninstall(plugins.controller.entry('dev.example.hostile')!);
+    await pumpEventQueue();
+    expect(file.existsSync(), isFalse);
+  });
+
   group('hostile plugins', () {
+    test(
+      'one that cannot start is tried less often, then turned off',
+      () async {
+        var attempts = 0;
+        final plugins = await load(
+          builtin: const [],
+          installed: _bundle(''),
+          launch:
+              (
+                m,
+                source, {
+                required settings,
+                required locale,
+                required services,
+              }) async {
+                attempts++;
+                throw StateError('no isolate');
+              },
+        );
+        plugins.retryDelay = const Duration(milliseconds: 20);
+        await plugins.filterMessage(_message('a', id: 1));
+        // Within the wait it is not tried again.
+        await plugins.filterMessage(_message('b', id: 2));
+        expect(attempts, 1);
+        for (var i = 3; attempts < 3 && i < 50; i++) {
+          await Future<void>.delayed(const Duration(milliseconds: 30));
+          await plugins.filterMessage(_message('c', id: i));
+        }
+        expect(attempts, 3);
+        final entry = plugins.controller.entry('dev.example.hostile')!;
+        expect(entry.disabledReason, contains('no isolate'));
+        await plugins.filterMessage(_message('d', id: 99));
+        expect(attempts, 3);
+      },
+    );
+
     test('an endless loop is turned off with the reason shown', () async {
       final plugins = await load(
         builtin: const [],
@@ -314,8 +380,9 @@ void main() {
         ),
       ),
     );
-    Future<void> settle() async {
-      for (var i = 0; i < 10; i++) {
+    // Waits for the worker, up to a few seconds on a busy machine.
+    Future<void> settle(Finder until) async {
+      for (var i = 0; i < 200 && until.evaluate().isEmpty; i++) {
         await tester.runAsync(
           () => Future<void>.delayed(const Duration(milliseconds: 20)),
         );
@@ -323,9 +390,9 @@ void main() {
       }
     }
 
-    await settle();
+    await settle(find.text('Translate from German'));
     await tester.tap(find.text('Translate from German'));
-    await settle();
+    await settle(find.text('I do not know if we are coming with you today.'));
     expect(
       find.text('I do not know if we are coming with you today.'),
       findsOneWidget,
@@ -359,6 +426,68 @@ void main() {
     }
     expect(find.text('warn: checked'), findsOneWidget);
     expect(find.byKey(const ValueKey('copyLog')), findsOneWidget);
+  });
+
+  testWidgets('hidden messages leave the list, unknown ones wait unseen', (
+    tester,
+  ) async {
+    final plugins = (await tester.runAsync(() => load(builtin: ['filters'])))!;
+    await tester.runAsync(
+      () => plugins.controller.setSetting(
+        'dev.mollygram.filters',
+        'mode',
+        'hide',
+      ),
+    );
+    final messages = [
+      _conversationMessage('Hello there, friend', id: 1),
+      _conversationMessage(_ad, id: 2),
+      _conversationMessage('See you at six', id: 3),
+    ];
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [appPluginsProvider.overrideWith((ref) async => plugins)],
+        child: MaterialApp(
+          theme: buildMgTheme(MgColors.light),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          home: Material(
+            child: PluginVerdicts(
+              child: Builder(
+                builder: (context) => Column(
+                  children: [
+                    for (final m in PluginVerdicts.visible(context, messages))
+                      PluginFilteredMessage(message: m, child: Text(m.text)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    // Asked, not answered yet: in place but not drawn.
+    expect(
+      find.byWidgetPredicate((w) => w is Opacity && w.opacity == 0),
+      findsWidgets,
+    );
+    final unseen = find.byWidgetPredicate(
+      (w) => w is Opacity && w.opacity == 0,
+    );
+    for (var i = 0; i < 200 && unseen.evaluate().isNotEmpty; i++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 20)),
+      );
+      // The answers are announced together, a frame later.
+      await tester.pump(const Duration(milliseconds: 20));
+    }
+    expect(find.text(_ad), findsNothing);
+    expect(find.text('Hello there, friend'), findsOneWidget);
+    expect(find.text('See you at six'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate((w) => w is Opacity && w.opacity == 0),
+      findsNothing,
+    );
   });
 }
 

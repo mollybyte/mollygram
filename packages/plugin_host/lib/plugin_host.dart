@@ -17,4 +17,5 @@ export 'src/ui.dart'
         codeSpansFor,
         codeTokens,
         maxCodeSpans,
+        maxUiText,
         validateUi;
