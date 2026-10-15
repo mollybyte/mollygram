@@ -222,6 +222,7 @@ final class PluginInstance {
     if (event.readsMessages && !_mayReadChat(payload)) {
       return const EventSkipped('chat is not granted');
     }
+    payload = _fragmentOnly(event, payload);
     final timeout = event == PluginEvent.uiAction
         ? policy.actionTimeout
         : policy.eventTimeout;
@@ -268,6 +269,25 @@ final class PluginInstance {
     return EventHandled(
       payload: event.kind == EventKind.intercept ? value['payload'] : payload,
     );
+  }
+
+  /// A `message.render.code` handler gets the code block, not the
+  /// message: without `messages.read` only its ids are passed on.
+  Map<String, Object?> _fragmentOnly(
+    PluginEvent event,
+    Map<String, Object?> payload,
+  ) {
+    if (event != PluginEvent.messageRenderCode ||
+        manifest.permissions.canObserveMessages) {
+      return payload;
+    }
+    final message = payload['message'];
+    return {
+      for (final MapEntry(:key, :value) in payload.entries)
+        if (key != 'message') key: value,
+      if (message is Map)
+        'message': {'chatId': message['chatId'], 'id': message['id']},
+    };
   }
 
   /// Whether the chat in an event payload is readable under

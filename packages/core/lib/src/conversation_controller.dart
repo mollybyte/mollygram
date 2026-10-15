@@ -229,6 +229,54 @@ final class ConversationController {
     _notify();
   }
 
+  /// Who saw [messageId] of [chatId], in a small group; TDLib keeps the
+  /// list only for recent messages.
+  Future<List<td.MessageViewer>> viewers(int chatId, int messageId) async {
+    final viewers = await _client.send(
+      td.GetMessageViewers(chatId: chatId, messageId: messageId),
+    );
+    return viewers.viewers;
+  }
+
+  /// Who reacted to [messageId] of [chatId], newest first, up to [limit].
+  Future<List<td.AddedReaction>> addedReactions(
+    int chatId,
+    int messageId, {
+    int limit = 100,
+  }) async {
+    final added = await _client.send(
+      td.GetMessageAddedReactions(
+        chatId: chatId,
+        messageId: messageId,
+        offset: '',
+        limit: limit,
+      ),
+    );
+    return added.reactions;
+  }
+
+  /// When the other side read [messageId] of [chatId], in a private chat.
+  Future<td.MessageReadDate> readDate(int chatId, int messageId) =>
+      _client.send(td.GetMessageReadDate(chatId: chatId, messageId: messageId));
+
+  /// Reports [messageIds] of [chatId] to the moderators. The first call
+  /// goes out with no option and comes back with the reasons to choose
+  /// from; each later call carries the chosen [optionId], and [text] once
+  /// the server asks for details.
+  Future<td.ReportChatResult> report(
+    int chatId,
+    List<int> messageIds, {
+    Uint8List? optionId,
+    String text = '',
+  }) => _client.send(
+    td.ReportChat(
+      chatId: chatId,
+      optionId: optionId ?? Uint8List(0),
+      messageIds: messageIds,
+      text: text,
+    ),
+  );
+
   /// Unpins every message of [chatId].
   Future<void> unpinAll(int chatId) async {
     await _client.send(td.UnpinAllChatMessages(chatId: chatId));
@@ -362,6 +410,38 @@ final class ConversationController {
   /// their updates only while open.
   Future<void> openChat(int chatId) async {
     await _client.send(td.OpenChat(chatId: chatId));
+    // The slowmode of a supergroup comes with its full info; TDLib sends
+    // changes on its own once it has been asked.
+    final supergroupId = store.supergroupIdOf(chatId);
+    if (supergroupId == null) return;
+    try {
+      final full = await _client.send(
+        td.GetSupergroupFullInfo(supergroupId: supergroupId),
+      );
+      store.setSlowMode(
+        supergroupId,
+        delay: full.slowModeDelay,
+        expiresIn: full.slowModeDelayExpiresIn,
+      );
+      _notify();
+    } on Object {
+      // Without the full info the chat still works; slowmode shows up on
+      // the first send.
+    }
+  }
+
+  /// Remembers that TDLib refused a message for [seconds] under slowmode,
+  /// so the composer can count down.
+  void noteSlowModeWait(int chatId, int seconds) {
+    final supergroupId = store.supergroupIdOf(chatId);
+    if (supergroupId == null) return;
+    final delay = store.slowModeDelay(chatId);
+    store.setSlowMode(
+      supergroupId,
+      delay: delay > 0 ? delay : seconds,
+      expiresIn: seconds.toDouble(),
+    );
+    _notify();
   }
 
   /// Tells TDLib the chat is no longer on screen.
@@ -384,12 +464,15 @@ final class ConversationController {
   }
 
   /// Sends [text] with its formatting [entities], as a reply to [replyTo]
-  /// when it is set.
+  /// when it is set, quoting [quote] of its text at [quotePosition] when
+  /// that is given.
   Future<void> sendText(
     int chatId,
     String text, {
     int? replyTo,
     List<td.TextEntity> entities = const [],
+    String? quote,
+    int quotePosition = 0,
   }) async {
     if (text.trim().isEmpty) {
       throw ArgumentError.value(
@@ -405,6 +488,12 @@ final class ConversationController {
             ? null
             : td.InputMessageReplyToMessage(
                 messageId: replyTo,
+                quote: quote == null || quote.isEmpty
+                    ? null
+                    : td.InputTextQuote(
+                        text: td.FormattedText(text: quote, entities: const []),
+                        position: quotePosition,
+                      ),
                 checklistTaskId: 0,
                 pollOptionId: '',
               ),
@@ -722,13 +811,24 @@ final class ConversationController {
     int chatId,
     int messageId, {
     int limit = 8,
+  }) => _emojiReactions(chatId, messageId, limit: limit);
+
+  /// Every emoji reaction the user may put on a message, the ones offered
+  /// first coming first, for the full picker.
+  Future<List<String>> allReactions(int chatId, int messageId) =>
+      _emojiReactions(chatId, messageId, limit: null);
+
+  Future<List<String>> _emojiReactions(
+    int chatId,
+    int messageId, {
+    required int? limit,
   }) async {
     final available = await _client.send(
       td.GetMessageAvailableReactions(
         chatId: chatId,
         messageId: messageId,
         // TDLib accepts rows of 5 to 25.
-        rowSize: limit.clamp(5, 25),
+        rowSize: (limit ?? 25).clamp(5, 25),
       ),
     );
     // The user can't react here, for example without Premium in a chat
@@ -803,7 +903,20 @@ final class ConversationController {
             _ => false,
           })
           ..setChatType(chat.id, chat.type)
+          ..setPermissions(chat.id, chat.permissions)
           ..setMuteFor(chat.id, chat.notificationSettings.muteFor);
+      case td.UpdateChatPermissions(:final chatId, :final permissions):
+        if (store.setPermissions(chatId, permissions)) _notify();
+      case td.UpdateSupergroupFullInfo(
+        :final supergroupId,
+        :final supergroupFullInfo,
+      ):
+        store.setSlowMode(
+          supergroupId,
+          delay: supergroupFullInfo.slowModeDelay,
+          expiresIn: supergroupFullInfo.slowModeDelayExpiresIn,
+        );
+        _notify();
       case td.UpdateSupergroup(:final supergroup):
         if (store.setSupergroupStatus(supergroup.id, supergroup.status) !=
             null) {

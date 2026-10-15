@@ -109,6 +109,7 @@ class _LinkHostState extends ConsumerState<LinkHost> implements LinkPresenter {
         LinkNotice.missing => l10n.linkMissing,
         LinkNotice.unsupported => l10n.linkUnsupported,
         LinkNotice.forbidden => l10n.linkForbidden,
+        LinkNotice.cannotSend => l10n.linkCannotSend,
       }),
     );
   }

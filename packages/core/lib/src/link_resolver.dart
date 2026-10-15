@@ -124,9 +124,15 @@ final class LinkResolver {
 
   /// What [raw] leads to: a URL, `@username` or a scheme-less link such as
   /// `t.me/durov`. Returns null for text that is not a link.
+  ///
+  /// `tg://user?id=` opens the private chat with that user and `t.me/s/`
+  /// channel previews lead to the channel. Hashtags and bot commands are
+  /// not links: the text knows them by their entities.
   Future<LinkTarget?> resolve(String raw) async {
-    final uri = TelegramLinks.normalize(raw);
-    if (uri == null) return null;
+    final normalized = TelegramLinks.normalize(raw);
+    if (normalized == null) return null;
+    final uri = TelegramLinks.withoutWebPreview(normalized);
+    if (TelegramLinks.userIdOf(uri) case final userId?) return _user(userId);
     if (!TelegramLinks.isTelegram(uri)) {
       return TelegramLinks.isExternal(uri) ? ExternalLinkTarget(uri) : null;
     }
@@ -144,6 +150,18 @@ final class LinkResolver {
       return await _target(type, web);
     } on td.TdException {
       return const MissingLinkTarget();
+    }
+  }
+
+  /// The username of user [userId] when it is a bot; null for people,
+  /// bots without one and users TDLib can't find.
+  Future<String?> botUsername(int userId) async {
+    try {
+      final user = await _client.send(td.GetUser(userId: userId));
+      if (user.type is! td.UserTypeBot) return null;
+      return user.usernames?.activeUsernames.firstOrNull;
+    } on td.TdException {
+      return null;
     }
   }
 
@@ -256,6 +274,17 @@ final class LinkResolver {
     }
     if (info.chatId == 0) return const MissingLinkTarget();
     return ChatLinkTarget(info.chatId, messageId: info.message?.id);
+  }
+
+  Future<LinkTarget> _user(int userId) async {
+    try {
+      final chat = await _client.send(
+        td.CreatePrivateChat(userId: userId, force: false),
+      );
+      return ChatLinkTarget(chat.id);
+    } on td.TdException {
+      return const MissingLinkTarget();
+    }
   }
 
   Future<LinkTarget> _savedMessages() async {

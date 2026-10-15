@@ -241,6 +241,43 @@ void main() {
     expect(tg, isA<UnsupportedLinkTarget>());
   });
 
+  test('leaves hashtags and bot commands to the text', () async {
+    expect(await links.resolve('#news'), isNot(isA<ChatLinkTarget>()));
+    expect(await links.resolve('/start'), isNot(isA<ChatLinkTarget>()));
+    expect(sentTypes(), isNot(contains('createPrivateChat')));
+  });
+
+  test('finds the username of a bot, not of a person', () async {
+    json.user = _user(5, bot: true, username: 'somebot');
+    expect(await links.botUsername(5), 'somebot');
+    json.user = _user(6, username: 'anna');
+    expect(await links.botUsername(6), isNull);
+    json.user = null;
+    expect(await links.botUsername(7), isNull);
+  });
+
+  test('opens the private chat of a tg://user link', () async {
+    json.chat = _chat(9, 'Anna');
+    final target = await links.resolve('tg://user?id=55');
+    expect((target! as ChatLinkTarget).chatId, 9);
+    expect(sentTypes(), ['createPrivateChat']);
+    expect(json.sent.single['user_id'], 55);
+  });
+
+  test('reports a tg://user link to an unknown user', () async {
+    expect(await links.resolve('tg://user?id=55'), isA<MissingLinkTarget>());
+  });
+
+  test('opens a channel from its t.me/s/ web preview', () async {
+    json.linkType = {
+      '@type': 'internalLinkTypePublicChat',
+      'chat_username': 'news',
+    };
+    json.chat = _chat(7, 'News');
+    await links.resolve('https://t.me/s/news');
+    expect(json.sent.first['link'], 'https://t.me/news');
+  });
+
   group('join', () {
     const invite = ChatJoinPreview(
       title: 'Book club',
@@ -306,6 +343,25 @@ Map<String, Object?> _chat(
   'video_chat': {'@type': 'videoChat'},
 };
 
+Map<String, Object?> _user(int id, {bool bot = false, String? username}) => {
+  '@type': 'user',
+  'id': id,
+  'first_name': 'U$id',
+  'last_name': '',
+  'phone_number': '',
+  'status': {'@type': 'userStatusEmpty'},
+  if (username != null)
+    'usernames': {
+      '@type': 'usernames',
+      'active_usernames': [username],
+      'disabled_usernames': <String>[],
+      'editable_username': username,
+    },
+  'type': bot
+      ? {'@type': 'userTypeBot', 'inline_query_placeholder': ''}
+      : {'@type': 'userTypeRegular'},
+};
+
 const _error = {'@type': 'error', 'code': 400, 'message': 'Bad request'};
 
 final class _FakeTdJson implements td.TdJson {
@@ -314,6 +370,7 @@ final class _FakeTdJson implements td.TdJson {
 
   Map<String, Object?>? linkType;
   Map<String, Object?>? chat;
+  Map<String, Object?>? user;
   String memberStatus = 'chatMemberStatusLeft';
   Map<String, Object?>? memberStatusJson;
   int inviteChatId = 0;
@@ -338,7 +395,8 @@ final class _FakeTdJson implements td.TdJson {
     if (decoded['@type'] != 'close') sent.add(decoded);
     final response = switch (decoded['@type']) {
       'getInternalLinkType' => linkType ?? _error,
-      'searchPublicChat' || 'getChat' => chat ?? _error,
+      'getUser' => user ?? _error,
+      'searchPublicChat' || 'getChat' || 'createPrivateChat' => chat ?? _error,
       'getSupergroup' => {
         '@type': 'supergroup',
         'id': 1,

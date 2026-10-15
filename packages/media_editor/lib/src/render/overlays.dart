@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:flutter/painting.dart';
 
@@ -26,19 +27,33 @@ Size overlaySize(MediaOverlay overlay, Size oriented) {
     case ShapeOverlay():
       final width = overlay.scale * short;
       return Size(width, width / overlay.aspect);
+    case ImageOverlay():
+      final width = overlay.scale * short;
+      return Size(width, width / overlay.aspect);
   }
 }
 
 /// Draws [overlays] over the oriented picture of [oriented] pixels, in
-/// that space, bottom first.
-void paintOverlays(Canvas canvas, List<MediaOverlay> overlays, Size oriented) {
+/// that space, bottom first. [images] holds the decoded pictures of
+/// image overlays by path; one that is missing is not drawn.
+void paintOverlays(
+  Canvas canvas,
+  List<MediaOverlay> overlays,
+  Size oriented, {
+  Map<String, ui.Image> images = const {},
+}) {
   for (final overlay in overlays) {
-    paintOverlay(canvas, overlay, oriented);
+    paintOverlay(canvas, overlay, oriented, images: images);
   }
 }
 
 /// Draws one [overlay], rotated around its center.
-void paintOverlay(Canvas canvas, MediaOverlay overlay, Size oriented) {
+void paintOverlay(
+  Canvas canvas,
+  MediaOverlay overlay,
+  Size oriented, {
+  Map<String, ui.Image> images = const {},
+}) {
   final short = math.min(oriented.width, oriented.height);
   final center = Offset(
     overlay.center.dx * oriented.width,
@@ -57,6 +72,23 @@ void paintOverlay(Canvas canvas, MediaOverlay overlay, Size oriented) {
       painter.dispose();
     case ShapeOverlay():
       _paintShape(canvas, overlay, short);
+    case ImageOverlay():
+      final image = images[overlay.path];
+      if (image != null) {
+        final size = overlaySize(overlay, oriented);
+        canvas.drawImageRect(
+          image,
+          Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
+          Rect.fromCenter(
+            center: Offset.zero,
+            width: size.width,
+            height: size.height,
+          ),
+          Paint()
+            ..filterQuality = FilterQuality.high
+            ..isAntiAlias = true,
+        );
+      }
   }
   canvas.restore();
 }

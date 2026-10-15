@@ -7,6 +7,7 @@ import 'authorization_controller.dart';
 import 'authorization_stage.dart';
 import 'chat_folders.dart';
 import 'chat_list_controller.dart';
+import 'chat_management.dart';
 import 'chat_search.dart';
 import 'chat_search_controller.dart';
 import 'connection_status.dart';
@@ -21,6 +22,7 @@ import 'privacy_guard.dart';
 import 'proxy_controller.dart';
 import 'sticker_library.dart';
 import 'storage_usage.dart';
+import 'store/message_capture.dart';
 import 'tdlib_initializer.dart';
 
 /// Thrown by [TelegramSession.attach] when TDLib closes the client while
@@ -56,7 +58,9 @@ final class TelegramSession {
     required this.storage,
     required this.connection,
     required this.privacy,
+    required this.capture,
     required this.contacts,
+    required this.management,
     required this.links,
     required this.proxies,
     required this._initializer,
@@ -91,8 +95,22 @@ final class TelegramSession {
   /// this session sends to TDLib.
   final PrivacyGuard privacy;
 
+  /// Keeps deleted messages and edit history while their switches are on.
+  final MessageCapture capture;
+
+  /// Applies the privacy extras to the guard and the capture.
+  set privacySettings(PrivacySettings settings) {
+    privacy.settings = settings;
+    capture
+      ..keepDeleted = settings.keepDeletedMessages
+      ..keepEdits = settings.keepEditHistory;
+  }
+
   /// Contacts and the users TDLib has sent.
   final ContactsController contacts;
+
+  /// Group and channel administration.
+  final ChatManagement management;
   final LinkResolver links;
 
   /// The proxies TDLib can connect through.
@@ -111,10 +129,18 @@ final class TelegramSession {
     td.Td tdlib, {
     required TdlibParameters parameters,
     PrivacySettings privacy = const PrivacySettings(),
+    MessageStoreOpener? openStore,
   }) async {
     final client = tdlib.createClient();
     // First, so that nothing reaches TDLib before the filter is in place.
     final guard = PrivacyGuard(client, settings: privacy);
+    // Next, so that it sees every message the app loads.
+    final capture = MessageCapture(
+      client,
+      openStore: openStore,
+      keepDeleted: privacy.keepDeletedMessages,
+      keepEdits: privacy.keepEditHistory,
+    );
     final authorization = AuthorizationController(client);
     final conversations = ConversationController(client);
     final files = FileController(client);
@@ -126,6 +152,7 @@ final class TelegramSession {
       deliberately: guard.deliberately,
     );
     final contacts = ContactsController(client);
+    final management = ChatManagement(client);
     final folders = ChatFoldersController(client);
     final session = TelegramSession._(
       tdlib: tdlib,
@@ -144,7 +171,9 @@ final class TelegramSession {
       storage: StorageManager(client),
       connection: connection,
       privacy: guard,
+      capture: capture,
       contacts: contacts,
+      management: management,
       links: LinkResolver(client),
       proxies: ProxyController(client),
       initializer: TdlibInitializer(client, parameters: parameters),
@@ -163,6 +192,7 @@ final class TelegramSession {
       await peers.start();
       await connection.start();
       await contacts.start();
+      await management.start();
       await notifications.start();
       await folders.start();
       await authorization.start();
@@ -234,12 +264,14 @@ final class TelegramSession {
     await peers.dispose();
     await connection.dispose();
     await contacts.dispose();
+    await management.dispose();
     await notifications.dispose();
     await folders.dispose();
     await authorization.dispose();
     await _tdlib.close();
     // After close: requests sent while the client closes stay filtered.
     await privacy.dispose();
+    await capture.dispose();
     await _errors.close();
   }
 }

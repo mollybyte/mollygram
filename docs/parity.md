@@ -65,9 +65,9 @@ M8 calls and macOS release, M9 after release.
 | Jump to date (calendar) | done | Click a date pill: calendar, `getChatMessageByDate`; no media calendar | M | M2 |
 | Header status: online, last seen, members, typing | done (#40) | | S | M1 |
 | Join and mute buttons for channels and groups you are not in | done | Join in place of the composer; Mute and Unmute in channels you only read | | |
-| Open `t.me` and `tg://` links, usernames, hashtags, bot commands | partial | Links, mentions, invites and `tg://` work (`links/`); hashtags, bot commands, mention names and the jump to a linked message are missing | S | M1 |
+| Open `t.me` and `tg://` links, usernames, hashtags, bot commands | done | `links/`: links, mentions and mentions by name, invites, `tg://user?id=`, `t.me/s/` previews, message links jump to the message; hashtags open the ⌘K message search, bot commands are sent to the chat | | |
 | Link previews in messages | partial | Check `MessageText.linkPreview` rendering | M | M1 |
-| Text selection across messages | missing | `ChatSelectText`; whole messages go through multi-select | M | M2 |
+| Text selection across messages | done | Mouse selection over the timeline, copy with the shortcut | M | M2 |
 | Multi-select mode: forward, delete, copy several | done | Select from the menu, click rows, bar in place of the composer; no shift-click range yet | M | M2 |
 | Forum topics: topic list, topic chat, create and close topics | missing | Service messages render only | L | M2 |
 | Channel comments (discussion thread) | missing | `GetMessageThread` | M | M2 |
@@ -89,15 +89,15 @@ M8 calls and macOS release, M9 after release.
 |---|---|---|---|---|
 | Reply, edit, delete (for me / for everyone), forward, copy text, copy link | done | #30 | | |
 | Quick reactions and toggling reactions | done | #30 | | |
-| Full reaction picker (all emoji, custom reactions) | missing | | M | M1 |
-| Reply with quote (part of the text) | missing | `InputTextQuote` | S | M2 |
+| Full reaction picker (all emoji, custom reactions) | partial | Chevron in the reaction bar opens a grid of every emoji reaction TDLib offers; custom emoji reactions wait for sticker rendering | S | M2 |
+| Reply with quote (part of the text) | done | Select text, Quote in the menu | S | M2 |
 | Pin and unpin | done (#49) | | S | M1 |
 | Forward without author or caption | done | Checkboxes in the forward picker | S | M2 |
 | Save media to Downloads, show in Finder | missing | | S | M1 |
-| Report message | missing | `ReportChat` | S | M2 |
-| Who read and who reacted | missing | `GetMessageViewers`, `GetMessageAddedReactions` | S | M2 |
-| Message info: view count, forwards, edit date | partial | | S | M2 |
-| Select and copy part of a message | partial | Whole messages copy via multi-select; part of a message needs text selection | | M2 |
+| Report message | done | `ReportChat` step by step: reason, sub-reason, details, toast (`chat/report.dart`) | | |
+| Who read and who reacted | done | Rows at the top of the message menu, read time in private chats | S | M2 |
+| Message info: view count, forwards, edit date | done | Views and forwards on channel posts, full date and edit time on hover | S | M2 |
+| Select and copy part of a message | done | | | M2 |
 
 ### Composer
 
@@ -126,11 +126,11 @@ M8 calls and macOS release, M9 after release.
 | Send preview: spoiler, self-destruct timer, compression choice | missing | `hasSpoiler`, `selfDestructType`; uncompressed default planned | S | M2 |
 | Media editor: crop, rotate, flip, aspect presets | done | `packages/media_editor` | | |
 | Media editor: drawing (pen, marker, arrow, eraser, colours, thickness) | done | `packages/media_editor` | | |
-| Media editor: text, stickers and emoji placed on the image | partial | Text and emoji done; stickers need the app’s sticker picker | M | M4 |
+| Media editor: text, stickers and emoji placed on the image | done | `packages/media_editor`; stickers from the user’s packs through the app’s picker (animated ones as stills) | | |
 | Media editor: arrows and shapes, blur and pixelate brush | done | `packages/media_editor` | | |
 | Media editor: filters and adjustments (brightness, contrast, saturation, warmth, vignette) | done | `packages/media_editor`: seven looks, six sliders | | |
 | Video editor: trim, mute, cover frame, quality | partial | `packages/media_editor`: trim, mute and cover done (macOS, AVFoundation); quality presets pending | S | M4 |
-| Slowmode and restriction notices | missing | | S | M2 |
+| Slowmode and restriction notices | done | Members who may not write see why instead of the composer; slowmode counts down under it (`chat/slow_mode.dart`) | | |
 | Link preview control (remove, above/below) | missing | | S | M2 |
 
 ### Media
@@ -161,7 +161,7 @@ M8 calls and macOS release, M9 after release.
 | Chat search in the sidebar and ⌘K palette | done | `chat_search.dart`, #27 | | |
 | Global message search | partial | `SearchMessages` used by the palette; no jump to the message | M | M2 |
 | Search inside a chat, by sender, by date | partial | ⌘F capsule with result arrows (`chat_search/`); sender filter in core only, no date jump | S | M2 |
-| Hashtag and cashtag search | missing | | S | M2 |
+| Hashtag and cashtag search | partial | A tapped hashtag or cashtag opens the ⌘K message search with it; no dedicated hashtag results view | S | M2 |
 | Search filters (media, links, files, voice) | partial | `ChatSearchController` filters back the shared media tabs; not offered in ⌘F yet | S | M2 |
 | Recent searches and top peers | missing | | S | M2 |
 
@@ -172,7 +172,7 @@ M8 calls and macOS release, M9 after release.
 | User profile: photo, bio, username, phone, birthday, actions | done | `PeerInfoController` in core, inspector panel in `app/lib/src/profile` | | |
 | Group and channel info: description, link, members count | done | First 50 members, most recently active first | | |
 | Shared media tabs: media, files, links, voice, music, GIFs, groups in common | partial | `SharedMediaView` has media, files, links, voice, music; GIFs and groups in common missing; in the info panel | M | M2 |
-| Members list with search | partial | First page in the info panel, no search or paging | M | M6 |
+| Members list with search | done | Info panel (`profile/`): owner and admins first, then online; search and Show more pages through `getSupergroupMembers` | | |
 | Profile photo gallery | missing | | S | M2 |
 | Per-chat notifications and auto-delete timer | partial | Mute and unmute in the info panel; no mute-for durations, no auto-delete | S | M1 |
 | Block, report, share contact | partial | Block and unblock in the info panel | S | M6 |
@@ -181,11 +181,12 @@ M8 calls and macOS release, M9 after release.
 
 | Feature | Status | Notes | Size | M |
 |---|---|---|---|---|
-| Create group and channel | missing | `CreateGroupViewController`, `CreateChannelController` | M | M6 |
-| Edit title, photo, description, username, public/private | missing | | M | M6 |
-| Add, remove, ban members; admin rights and titles | missing | `ChannelAdminController` | L | M6 |
+| Create group and channel | partial | ⌘K New group (contacts, then a name) and New channel (name, description); no photo or public link at creation | S | M6 |
+| Edit title, photo, description, username, public/private | partial | Edit sheet for title, description and photo; username and public/private missing | S | M6 |
+| Add, remove, ban members; admin rights and titles | partial | Member context menu: make admin with a rights sheet, edit or dismiss, restrict, remove; adding members to an existing group and admin titles missing | M | M6 |
 | Group permissions, slow mode | missing | `ChannelPermissionsController` | M | M6 |
-| Invite links: create, revoke, join requests | missing | `InviteLinksController` | M | M6 |
+| Invite links: create, revoke, join requests | partial | Primary link copy and revoke, additional links with expiry, limit and approval; editing a link and the join request queue missing | S | M6 |
+| Leave a group or channel, delete it for everyone | done | Info panel rows with a confirmation; delete only for the owner | | |
 | Linked discussion group | missing | | S | M6 |
 | Allowed reactions, chat history for new members | missing | | S | M6 |
 | Recent actions (admin log) | missing | `ChannelEventLogController` | M | M6 |
@@ -275,5 +276,5 @@ These are not parity items; they are tracked in their own docs.
 | Tabs, split view, ⌘K palette, layout restore | done | [packages/shell](../packages/shell) |
 | JS plugin sandbox with manifest permissions (M5) | partial | [plugins.md](plugins.md) |
 | Ghost mode: no read receipts, typing, online or played marks; per-chat silent read API (M3) | done | [privacy_guard.dart](../packages/core/lib/src/privacy_guard.dart) |
-| Saved deleted messages, edit history (M3) | missing | [forks-research.md](forks-research.md) |
+| Saved deleted messages, edit history (M3) | partial: kept in the encrypted store; the chat does not show them yet | [privacy-store.md](privacy-store.md) |
 | 640×640 circles, uncompressed media by default (M4) | partial | [packages/media](../packages/media) |

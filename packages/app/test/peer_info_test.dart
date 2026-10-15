@@ -344,6 +344,23 @@ void main() {
       expect(jumps.take(10), isNull);
       expect(container.read(messageJumpProvider), isEmpty);
     });
+
+    test('expire when the chat does not open in time', () {
+      var now = DateTime(2026);
+      final container = ProviderContainer(
+        overrides: [
+          messageJumpProvider.overrideWith(
+            () => MessageJumps(clock: () => now),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      final jumps = container.read(messageJumpProvider.notifier)
+        ..request(10, 40);
+      now = now.add(MessageJumps.maxWait + const Duration(seconds: 1));
+      expect(jumps.take(10), isNull);
+      expect(container.read(messageJumpProvider), isEmpty);
+    });
   });
 }
 
@@ -477,6 +494,7 @@ final class _FakeTdJson implements td.TdJson {
       'getAuthorizationState' => {'@type': 'authorizationStateReady'},
       'getChat' => _chats[decoded['chat_id']]!,
       'getUser' => _users[decoded['user_id']]!,
+      'getMe' => _user(7, 'Me', ''),
       'createPrivateChat' => _chats[decoded['user_id'] == 5 ? 10 : 11]!,
       'getUserFullInfo' => {
         '@type': 'userFullInfo',

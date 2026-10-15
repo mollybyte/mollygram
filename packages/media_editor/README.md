@@ -14,6 +14,9 @@ final result = await showMediaEditor(context, path: '/path/photo.jpg');
   nothing.
 - `exportEdit` applies a `MediaEdit` at full resolution. PNG stays PNG,
   everything else becomes JPEG (quality 93), capped at 8192 px a side.
+- Pass a `stickerPicker` to get a sticker tool: the editor calls it and
+  places the `StickerFilePick` (a still image file) or `EmojiPick` it
+  returns as an overlay.
 - Strings are built in (English and Russian), picked by the ambient locale.
 
 Keys: Escape leaves the tool or cancels, Enter confirms, ⌘Z / ⇧⌘Z undo and

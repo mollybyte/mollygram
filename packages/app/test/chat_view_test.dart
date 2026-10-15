@@ -98,6 +98,8 @@ void main() {
 
   Future<void> rightClick(WidgetTester tester, String text) async {
     await tester.tap(find.text(text), buttons: kSecondaryButton);
+    // The menu asks for the message's properties, then who saw it.
+    await tester.runAsync(() => Future<void>.delayed(_tick));
     await tester.runAsync(() => Future<void>.delayed(_tick));
     await tester.pump();
   }
@@ -400,6 +402,86 @@ void main() {
     expect(unpin['message_id'], 12);
   });
 
+  testWidgets('says why a member may not write in a group', (tester) async {
+    json.chat = [for (var id = 1; id <= 10; id++) id];
+    json
+      ..push(
+        _chat(
+          lastRead: 10,
+          unread: 0,
+          last: 10,
+          type: {
+            '@type': 'chatTypeSupergroup',
+            'supergroup_id': 99,
+            'is_channel': false,
+          },
+          canSendText: false,
+        ),
+      )
+      ..push(
+        _supergroup(99, {
+          '@type': 'chatMemberStatusMember',
+          'member_since_date': 0,
+        }),
+      );
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await pump(tester, group: false);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(Composer), findsNothing);
+    expect(
+      find.text("Text messages aren't allowed in this group"),
+      findsOneWidget,
+    );
+
+    // The group opens up again, but this member is restricted for a while.
+    json
+      ..push({
+        '@type': 'updateChatPermissions',
+        'chat_id': 7,
+        'permissions': {
+          '@type': 'chatPermissions',
+          'can_send_basic_messages': true,
+        },
+      })
+      ..push(
+        _supergroup(99, {
+          '@type': 'chatMemberStatusRestricted',
+          'is_member': true,
+          'restricted_until_date': 1800000000,
+          'permissions': {'@type': 'chatPermissions'},
+        }),
+      );
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+    expect(find.byType(Composer), findsNothing);
+    expect(find.textContaining("You can't write here until"), findsOneWidget);
+
+    // Free to write, under slowmode.
+    json
+      ..push(
+        _supergroup(99, {
+          '@type': 'chatMemberStatusMember',
+          'member_since_date': 0,
+        }),
+      )
+      ..push({
+        '@type': 'updateSupergroupFullInfo',
+        'supergroup_id': 99,
+        'supergroup_full_info': {
+          '@type': 'supergroupFullInfo',
+          'slow_mode_delay': 30,
+          'slow_mode_delay_expires_in': 25.0,
+        },
+      });
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+    expect(find.byType(Composer), findsOneWidget);
+    expect(find.textContaining('Slowmode is on'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 30));
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('offers to join a channel, then to mute it', (tester) async {
     json.chat = [for (var id = 1; id <= 10; id++) id];
     json
@@ -543,6 +625,62 @@ void main() {
     expect(delete['revoke'], isTrue);
   });
 
+  testWidgets('opens the full reaction picker and reacts from it', (
+    tester,
+  ) async {
+    await pump(tester);
+
+    await rightClick(tester, 'From Vera');
+    await tester.tap(find.byTooltip('More reactions'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    expect(find.byType(ReactionGrid), findsOneWidget);
+    await tester.tap(
+      find.descendant(of: find.byType(ReactionGrid), matching: find.text('🎉')),
+    );
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+
+    expect(find.byType(ReactionGrid), findsNothing);
+    final added = json.sent.lastWhere(
+      (r) => r['@type'] == 'addMessageReaction',
+    );
+    expect(added['message_id'], 12);
+    expect((added['reaction_type']! as Map)['emoji'], '🎉');
+  });
+
+  testWidgets('reports a message with a reason and details', (tester) async {
+    await pump(tester);
+
+    await rightClick(tester, 'From Vera');
+    await tester.tap(find.text('Report'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    // The server names the reasons.
+    expect(find.text('Report for'), findsOneWidget);
+    await tester.tap(find.text('Spam'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    // Then asks for details, which are required here.
+    expect(find.text('Add details'), findsOneWidget);
+    await tester.enterText(find.byType(TextField).last, 'Adverts');
+    await tester.pump();
+    await tester.tap(find.text('Send'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+
+    final reports = json.sent.where((r) => r['@type'] == 'reportChat');
+    expect(reports, hasLength(3));
+    expect(reports.first['message_ids'], [12]);
+    expect(reports.last['option_id'], 'AQ==');
+    expect(reports.last['text'], 'Adverts');
+    expect(find.text('Thank you, the report is on its way.'), findsOneWidget);
+    // The toast goes away by itself.
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+    expect(find.text('Thank you, the report is on its way.'), findsNothing);
+  });
+
   testWidgets('forwards a message to the chat picked', (tester) async {
     await pump(tester);
 
@@ -559,6 +697,78 @@ void main() {
     expect(forward['chat_id'], 9);
     expect(forward['message_ids'], [12]);
     expect(forward['send_copy'], isFalse);
+  });
+
+  testWidgets('selects text with the mouse and replies with it quoted', (
+    tester,
+  ) async {
+    await pump(tester);
+
+    // Drag across the whole of "From Vera".
+    final text = tester.getRect(find.text('From Vera'));
+    final gesture = await tester.startGesture(
+      Offset(text.left + 1, text.center.dy),
+      kind: PointerDeviceKind.mouse,
+    );
+    await tester.pump();
+    await gesture.moveTo(Offset(text.right + 30, text.center.dy));
+    await tester.pump();
+    await gesture.up();
+    await tester.pump();
+
+    await rightClick(tester, 'From Vera');
+    // The selection hands focus over before the menu shows.
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Quote'));
+    await tester.pumpAndSettle();
+    // The composer's reply bar carries the quote.
+    expect(find.byType(ComposerContextBar), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(ComposerContextBar),
+        matching: find.text('From Vera'),
+      ),
+      findsOneWidget,
+    );
+
+    await tester.enterText(find.byType(TextField), 'Noted');
+    await tester.pump();
+    await tester.tap(find.byType(MgSendButton));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+
+    final send = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    final replyTo = send['reply_to']! as Map;
+    expect(replyTo['message_id'], 12);
+    final quote = replyTo['quote']! as Map;
+    expect((quote['text']! as Map)['text'], 'From Vera');
+    expect(quote['position'], 0);
+  });
+
+  testWidgets('tells who saw a message and lists them', (tester) async {
+    await pump(tester);
+
+    await rightClick(tester, 'From Boris');
+    await tester.pumpAndSettle();
+    expect(find.text('Seen by 1'), findsOneWidget);
+    await tester.tap(find.text('Seen by 1'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(MgPeopleList), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(MgPeopleList),
+        matching: find.text('Vera'),
+      ),
+      findsOneWidget,
+    );
+
+    // A message TDLib keeps no viewers for has no such row.
+    await tester.tapAt(const Offset(5, 5));
+    await tester.pumpAndSettle();
+    await rightClick(tester, 'From Vera');
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Seen by'), findsNothing);
   });
 
   testWidgets('forwards without the sender name when asked', (tester) async {
@@ -915,6 +1125,7 @@ Map<String, Object?> _chat({
   required int unread,
   required int last,
   Map<String, Object?> type = const {'@type': 'chatTypePrivate', 'user_id': 2},
+  bool canSendText = true,
 }) => {
   '@type': 'updateNewChat',
   'chat': {
@@ -930,7 +1141,10 @@ Map<String, Object?> _chat({
     'unread_count': unread,
     'last_read_inbox_message_id': lastRead,
     'last_read_outbox_message_id': 0,
-    'permissions': {'@type': 'chatPermissions'},
+    'permissions': {
+      '@type': 'chatPermissions',
+      'can_send_basic_messages': canSendText,
+    },
     'positions': <Object?>[],
     'chat_lists': <Object?>[],
     'notification_settings': {'@type': 'chatNotificationSettings'},
@@ -1136,6 +1350,29 @@ final class _FakeTdJson implements td.TdJson {
         'can_be_pinned': true,
         'can_be_deleted_only_for_self': true,
         'can_be_deleted_for_all_users': true,
+        'can_get_viewers': decoded['message_id'] == 10,
+        'can_get_added_reactions': true,
+        'can_report_chat': true,
+      },
+      'reportChat' when decoded['option_id'] == '' => {
+        '@type': 'reportChatResultOptionRequired',
+        'title': 'Report for',
+        'options': [
+          {'@type': 'reportOption', 'id': 'AQ==', 'text': 'Spam'},
+          {'@type': 'reportOption', 'id': 'Ag==', 'text': 'Violence'},
+        ],
+      },
+      'reportChat' when decoded['text'] == '' => {
+        '@type': 'reportChatResultTextRequired',
+        'option_id': decoded['option_id'],
+        'is_optional': false,
+      },
+      'reportChat' => {'@type': 'reportChatResultOk'},
+      'getMessageViewers' => {
+        '@type': 'messageViewers',
+        'viewers': [
+          {'@type': 'messageViewer', 'user_id': 3, 'view_date': 1760000500},
+        ],
       },
       'getMessageAvailableReactions' => {
         '@type': 'availableReactions',
@@ -1153,7 +1390,14 @@ final class _FakeTdJson implements td.TdJson {
           },
         ],
         'recent_reactions': <Object?>[],
-        'popular_reactions': <Object?>[],
+        'popular_reactions': [
+          for (final emoji in ['🔥', '🎉'])
+            {
+              '@type': 'availableReaction',
+              'type': {'@type': 'reactionTypeEmoji', 'emoji': emoji},
+              'needs_premium': false,
+            },
+        ],
         'allow_custom_emoji': true,
         'are_tags': false,
       },

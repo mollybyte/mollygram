@@ -91,6 +91,7 @@ class MessageRowActions {
     this.onViewMedia,
     this.onJump,
     this.onSelectToggle,
+    this.onTextSelected,
   });
 
   /// Adds the reaction, or takes it back when the user had chosen it.
@@ -119,6 +120,11 @@ class MessageRowActions {
   /// A click on a row while selecting: the row joins or leaves the
   /// selection.
   final void Function(MessageRow row)? onSelectToggle;
+
+  /// The text selection within a message changed; null once nothing of
+  /// it is selected. Turns on text selection in the timeline.
+  final void Function(ConversationMessage message, QuoteSelection? quote)?
+  onTextSelected;
 }
 
 /// A message, or an album, in Telegram's flat layout: no bubbles, the
@@ -171,8 +177,10 @@ class MessageTile extends StatelessWidget {
     final c = MgColors.of(buildContext);
     final message = row.primary;
     if (message.isService) {
-      final service = ServiceMessage(
-        describeService(l10n, store, message, isChannel: context.isChannel),
+      final service = SelectionContainer.disabled(
+        child: ServiceMessage(
+          describeService(l10n, store, message, isChannel: context.isChannel),
+        ),
       );
       // Chat events can't be selected; while selecting they just sit there.
       return context.selecting ? IgnorePointer(child: service) : service;
@@ -180,13 +188,22 @@ class MessageTile extends StatelessWidget {
     final locale = Localizations.localeOf(buildContext).toLanguageTag();
     final info = message.message.interactionInfo;
     final isPost = message.message.isChannelPost;
+    final compact = NumberFormat.compact(locale: locale);
     final meta = MessageMeta(
       time: formatMessageTime(message.date, locale),
       status: _status,
       label: message.editDate > 0 ? l10n.edited : null,
       views: isPost && info != null && info.viewCount > 0
-          ? NumberFormat.compact(locale: locale).format(info.viewCount)
+          ? compact.format(info.viewCount)
           : null,
+      forwards: isPost && info != null && info.forwardCount > 0
+          ? compact.format(info.forwardCount)
+          : null,
+      tooltip: [
+        formatFullDate(message.date, locale),
+        if (message.editDate > 0)
+          l10n.editedAt(formatFullDate(message.editDate, locale)),
+      ].join('\n'),
     );
     final reactions = info?.reactions?.reactions;
     final comments = isPost ? info?.replyInfo : null;
@@ -197,39 +214,43 @@ class MessageTile extends StatelessWidget {
       children: [
         _MessageBody(row: row, store: store, actions: actions),
         if (reactions != null && reactions.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 5),
-            child: Wrap(
-              spacing: 4,
-              runSpacing: 4,
-              children: [
-                for (final reaction in reactions)
-                  ReactionChip(
-                    emoji: _reactionEmoji(reaction.type),
-                    count: reaction.totalCount,
-                    chosen: reaction.isChosen,
-                    onTap: reaction.type is td.ReactionTypePaid
-                        ? null
-                        : () => actions.onReaction(
-                            message,
-                            reaction.type,
-                            reaction.isChosen,
-                          ),
-                  ),
-              ],
+          SelectionContainer.disabled(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 5),
+              child: Wrap(
+                spacing: 4,
+                runSpacing: 4,
+                children: [
+                  for (final reaction in reactions)
+                    ReactionChip(
+                      emoji: _reactionEmoji(reaction.type),
+                      count: reaction.totalCount,
+                      chosen: reaction.isChosen,
+                      onTap: reaction.type is td.ReactionTypePaid
+                          ? null
+                          : () => actions.onReaction(
+                              message,
+                              reaction.type,
+                              reaction.isChosen,
+                            ),
+                    ),
+                ],
+              ),
             ),
           ),
         if (comments != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: CommentsRow(
-              label: comments.replyCount == 0
-                  ? l10n.leaveComment
-                  : l10n.commentCount(comments.replyCount),
-              avatars: [
-                for (final sender in comments.recentReplierIds.take(3))
-                  _replierAvatar(l10n, sender),
-              ],
+          SelectionContainer.disabled(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: CommentsRow(
+                label: comments.replyCount == 0
+                    ? l10n.leaveComment
+                    : l10n.commentCount(comments.replyCount),
+                avatars: [
+                  for (final sender in comments.recentReplierIds.take(3))
+                    _replierAvatar(l10n, sender),
+                ],
+              ),
             ),
           ),
       ],
@@ -267,22 +288,26 @@ class MessageTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (context.startsRun)
-                  Text(
-                    name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: mgTextStyle(
-                      c,
-                      weight: FontWeight.w600,
-                      color: peerNameColor(c, store.colorOf(message.sender)),
+                  SelectionContainer.disabled(
+                    child: Text(
+                      name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: mgTextStyle(
+                        c,
+                        weight: FontWeight.w600,
+                        color: peerNameColor(c, store.colorOf(message.sender)),
+                      ),
                     ),
                   ),
                 if (context.startsForwards)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 3),
-                    child: Text(
-                      l10n.forwardedMessages,
-                      style: mgTextStyle(c, color: c.fg2),
+                  SelectionContainer.disabled(
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 3),
+                      child: Text(
+                        l10n.forwardedMessages,
+                        style: mgTextStyle(c, color: c.fg2),
+                      ),
                     ),
                   ),
                 content,
@@ -290,7 +315,9 @@ class MessageTile extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          Padding(padding: const EdgeInsets.only(top: 1), child: meta),
+          SelectionContainer.disabled(
+            child: Padding(padding: const EdgeInsets.only(top: 1), child: meta),
+          ),
         ],
       ),
     );
@@ -439,6 +466,21 @@ class _MessageBody extends StatelessWidget {
 
   ConversationMessage get message => row.primary;
 
+  /// The text of [of] reports its selection for a quote.
+  FormattedTextView _text(td.FormattedText text, {ConversationMessage? of}) {
+    final onTextSelected = actions.onTextSelected;
+    final owner = of ?? message;
+    // Bot commands in it go to this chat, meant for the bot that sent it.
+    return FormattedTextView(
+      text: text,
+      chatId: owner.chatId,
+      senderUserId: owner.sender.isChat ? null : owner.sender.id,
+      onSelection: onTextSelected == null
+          ? null
+          : (quote) => onTextSelected(owner, quote),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -494,12 +536,12 @@ class _MessageBody extends StatelessWidget {
           when text.entities.isEmpty && isEmojiOnly(text.text):
         return _BigEmoji(text.text);
       case td.MessageText(:final text, :final linkPreview):
-        if (linkPreview == null) return FormattedTextView(text: text);
+        if (linkPreview == null) return _text(text);
         return Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (!linkPreview.showAboveText) FormattedTextView(text: text),
+            if (!linkPreview.showAboveText) _text(text),
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 420),
               child: _LinkPreview(linkPreview),
@@ -507,7 +549,7 @@ class _MessageBody extends StatelessWidget {
             if (linkPreview.showAboveText)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
-                child: FormattedTextView(text: text),
+                child: _text(text),
               ),
           ],
         );
@@ -544,7 +586,7 @@ class _MessageBody extends StatelessWidget {
       if (caption == null) return media;
       final text = ConstrainedBox(
         constraints: BoxConstraints(maxWidth: math.max(visual.width, 420)),
-        child: FormattedTextView(text: caption.text),
+        child: _text(caption.text, of: caption.of),
       );
       return Column(
         mainAxisSize: MainAxisSize.min,
@@ -572,7 +614,7 @@ class _MessageBody extends StatelessWidget {
         if (caption != null && caption.text.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 2),
-            child: FormattedTextView(text: caption),
+            child: _text(caption),
           ),
       ],
     );
@@ -588,7 +630,9 @@ class _MessageBody extends StatelessWidget {
           padding: const EdgeInsets.only(top: 2, bottom: 4),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
-            child: _replyHeader(l10n, reply),
+            child: SelectionContainer.disabled(
+              child: _replyHeader(l10n, reply),
+            ),
           ),
         ),
       );
@@ -641,7 +685,8 @@ class _MessageBody extends StatelessWidget {
   }
 
   /// The caption of a row's media and whether it goes above the media.
-  static ({td.FormattedText text, bool above})? _caption(MessageRow row) {
+  static ({td.FormattedText text, bool above, ConversationMessage of})?
+  _caption(MessageRow row) {
     for (final m in row.messages) {
       final caption = captionOf(m.content);
       if (caption == null || caption.text.isEmpty) continue;
@@ -653,7 +698,7 @@ class _MessageBody extends StatelessWidget {
         ) => showCaptionAboveMedia,
         _ => false,
       };
-      return (text: caption, above: above);
+      return (text: caption, above: above, of: m);
     }
     return null;
   }
