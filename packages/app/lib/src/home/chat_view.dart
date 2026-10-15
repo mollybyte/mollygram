@@ -23,6 +23,7 @@ import '../chat/bot_keyboard.dart';
 import '../chat/contact_picker.dart';
 import '../chat/custom_emoji.dart';
 import '../chat/describe.dart';
+import '../chat/edit_history.dart';
 import '../chat/emoji_sticker_panel.dart';
 import '../chat/formatted_text.dart';
 import '../chat/forum_topics.dart';
@@ -206,6 +207,14 @@ class _ChatViewState extends ConsumerState<ChatView> {
   /// A join or mute request on its way.
   var _actionPending = false;
 
+  /// Messages others deleted that the privacy store kept for this chat,
+  /// shown in their place while "Keep deleted messages" is on.
+  var _deleted = const <DeletedMessage>[];
+  StreamSubscription<List<DeletedMessage>>? _deletedSub;
+
+  TelegramSession get _session =>
+      ref.read(telegramSessionProvider).requireValue;
+
   /// The ids of the selected messages while messages are being selected;
   /// null otherwise.
   Set<int>? _selected;
@@ -314,6 +323,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _close(widget.chatId);
     _dropTopics();
     _dropSavedTopics();
+    _deletedSub?.cancel();
     _mentions.dispose();
     _emojiHints.dispose();
     _commands.dispose();
@@ -344,6 +354,62 @@ class _ChatViewState extends ConsumerState<ChatView> {
       unawaited(_quiet(_conversations.loadPinned(chatId)));
     }
     _loadDraft(chatId);
+    _watchDeleted(chatId);
+  }
+
+  /// Follows the deleted messages kept for [chatId], when any are kept.
+  void _watchDeleted(int chatId) {
+    _deletedSub?.cancel();
+    _deletedSub = null;
+    _deleted = const [];
+    final capture = _session.capture;
+    if (!capture.keepDeleted) return;
+    final store = capture.store;
+    if (store == null) return;
+    _deletedSub = store
+        .asStream()
+        .asyncExpand((store) => store.deleted.watchChat(chatId))
+        .handleError((Object _) {})
+        .listen((kept) {
+          if (!mounted || widget.chatId != chatId) return;
+          setState(() => _deleted = kept);
+        });
+  }
+
+  /// [list] with the kept deleted messages that fall inside the loaded
+  /// history put back where they were, newest first.
+  List<ConversationMessage> _withDeleted(
+    List<ConversationMessage> list,
+    ConversationStore store,
+  ) {
+    if (_deleted.isEmpty) return list;
+    final oldest = list.isEmpty ? null : list.last.id;
+    final reachedStart = store.reachedStart(widget.chatId);
+    final live = {for (final message in list) message.id};
+    // Older than the loaded history, a message waits for that page.
+    bool inRange(int id) => reachedStart || (oldest != null && id > oldest);
+    final kept = [
+      for (final deleted in _deleted)
+        if (!live.contains(deleted.messageId) && inRange(deleted.messageId))
+          ConversationMessage(deleted.message, deletedAt: deleted.deletedAt),
+    ];
+    if (kept.isEmpty) return list;
+    return [...list, ...kept]..sort((a, b) => b.id.compareTo(a.id));
+  }
+
+  /// Opens the earlier versions of [message] from the privacy store.
+  void _showEditHistory(ConversationMessage message) {
+    final store = _session.capture.store;
+    if (store == null) return;
+    unawaited(
+      showEditHistory(
+        context,
+        message: message,
+        versions: store.then(
+          (store) => store.edits.versions(message.chatId, message.id),
+        ),
+      ),
+    );
   }
 
   /// Puts the draft TDLib keeps for [chatId] into the empty composer: its
@@ -1518,6 +1584,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
         onEdit: _edit,
         onForward: (messages) => unawaited(_forward(messages)),
         onSelect: _select,
+        onEditHistory: _session.capture.keepEdits ? _showEditHistory : null,
       ),
     );
   }
@@ -3295,7 +3362,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
                 _placeUnread(list);
                 return TimelineView(
                   key: _timelineKey,
-                  messages: list,
+                  messages: _withDeleted(list, store),
                   store: store,
                   chatId: widget.chatId,
                   isGroup: chat?.isGroup ?? false,

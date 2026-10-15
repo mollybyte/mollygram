@@ -854,6 +854,42 @@ abstract class AppLocalizations {
   /// **'Deleted message'**
   String get deletedMessage;
 
+  /// No description provided for @deletedMark.
+  ///
+  /// In en, this message translates to:
+  /// **'deleted'**
+  String get deletedMark;
+
+  /// No description provided for @deletedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted {time}'**
+  String deletedAt(String time);
+
+  /// No description provided for @menuEditHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit history'**
+  String get menuEditHistory;
+
+  /// No description provided for @editHistoryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit history'**
+  String get editHistoryTitle;
+
+  /// No description provided for @editHistoryCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current version'**
+  String get editHistoryCurrent;
+
+  /// No description provided for @editHistoryEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No earlier versions were kept'**
+  String get editHistoryEmpty;
+
   /// No description provided for @loadingMessage.
   ///
   /// In en, this message translates to:

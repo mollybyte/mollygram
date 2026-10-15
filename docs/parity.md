@@ -146,7 +146,7 @@ M8 calls and macOS release, M9 after release.
 | Viewer: arrows and swipe between the chat's photos and videos, thumbnail strip | done | Arrows and keys over `SearchChatMessages`; a thumbnail strip under the page, centered on the one on screen, jumps to any of them; a two-finger swipe turns the page unless the photo is zoomed in | S | M2 |
 | Viewer: zoom (pinch, scroll, double click) and pan, rotate | done | Zoom and pan; a Rotate button and R turn photos and videos by quarters, shrinking a sideways page to fit | S | M2 |
 | Viewer: video scrubbing, loop, playback speed, volume, fullscreen | partial | Viewer PR: scrubbing, loop, speed, mute; plays once downloaded, no streaming | S | M2 |
-| Viewer: GIFs and video stickers looped | partial | Viewer PR: GIFs looped; video stickers not yet | S | M2 |
+| Viewer: GIFs and video stickers looped | done | GIFs loop in the viewer; a video sticker, as in the official apps, opens its sticker set rather than the viewer | | |
 | Viewer: save, copy, forward, delete, show in chat, keyboard shortcuts | done | Save, copy, forward, show in chat (closes the viewer at the message), delete (asks over the viewer, Delete or Backspace key); Esc, arrows, Space, ⌘S, ⌘C | S | M2 |
 | Global audio player with playlist and header bar | done | A glass capsule at the right of the chat header while a voice message or music file plays: play/pause, sender or title, time, speed, close; its title shows the message, opening its chat when needed; a finished track goes on to the next one; a list button opens the chat's voice messages or music as a playlist, the playing one in the accent, a click plays another | M | M2 |
 | Picture-in-picture for video and circles | missing | `PIPVideoWindow` | M | M4 |
@@ -278,5 +278,5 @@ These are not parity items; they are tracked in their own docs.
 | Tabs, split view, ⌘K palette, layout restore | done | [packages/shell](../packages/shell) |
 | JS plugin sandbox with manifest permissions (M5) | partial | [plugins.md](plugins.md) |
 | Ghost mode: no read receipts, typing, online or played marks; per-chat silent read API (M3) | done | [privacy_guard.dart](../packages/core/lib/src/privacy_guard.dart) |
-| Saved deleted messages, edit history (M3) | partial: kept in the encrypted store; the chat does not show them yet | [privacy-store.md](privacy-store.md) |
+| Saved deleted messages, edit history (M3) | done: kept in the encrypted store; a kept deleted message stays in the chat, dimmed and marked "deleted" with the time on hover, and an edited message's menu opens its earlier versions ("Edit history") while the switches are on | [privacy-store.md](privacy-store.md) |
 | 640×640 circles, uncompressed media by default (M4) | partial | [packages/media](../packages/media) |

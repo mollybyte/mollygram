@@ -96,8 +96,11 @@ Not kept:
 A failed write closes the store and tries again, up to three times with a
 growing wait. A lost key is not retried; it is shown on the page.
 
-The saved messages are not shown in chats yet: a "deleted" mark and the
-edit history view come with the chat work.
+In the chat, while "Keep deleted messages" is on, a kept deleted message
+stays where it was (`deleted.watchChat`), dimmed and marked "deleted",
+with the deletion time on hover; while "Keep edit history" is on, an
+edited message's menu has "Edit history", which lists the kept versions
+(`edits.versions`) under the current one.
 
 ## API
 
