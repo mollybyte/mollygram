@@ -1955,6 +1955,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get showInChat => 'Показать в чате';
 
   @override
+  String get playlist => 'Плейлист';
+
+  @override
   String get joinChannel => 'Подписаться';
 
   @override

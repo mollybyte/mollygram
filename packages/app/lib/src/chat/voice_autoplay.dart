@@ -61,7 +61,27 @@ Future<void> _playNext(
     finished.messageId,
   );
   if (next == null) return;
-  final file = audioFileOf(next.content);
+  await playAudioMessage(
+    session,
+    player,
+    finished.chatId,
+    next,
+    onlyWhenIdle: true,
+  );
+}
+
+/// Plays [message], a voice message or music file of [chatId], on [player],
+/// downloading it first when needed, and tells Telegram it was opened. With
+/// [onlyWhenIdle], nothing plays if the user started something else while
+/// the file downloaded.
+Future<void> playAudioMessage(
+  TelegramSession session,
+  AudioTrackPlayer player,
+  int chatId,
+  ConversationMessage message, {
+  bool onlyWhenIdle = false,
+}) async {
+  final file = audioFileOf(message.content);
   if (file == null) return;
   var path = downloadedPath(file);
   if (path == null) {
@@ -71,12 +91,11 @@ Future<void> _playNext(
       return;
     }
   }
-  // The user may have started something else while the file downloaded.
-  if (path == null || player.track.value != null) return;
-  await player.play((chatId: finished.chatId, messageId: next.id), path);
+  if (path == null || (onlyWhenIdle && player.track.value != null)) return;
+  await player.play((chatId: chatId, messageId: message.id), path);
   unawaited(
     session.conversations
-        .openContent(finished.chatId, next.id)
+        .openContent(chatId, message.id)
         .catchError((Object _) {}),
   );
 }

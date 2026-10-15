@@ -1934,6 +1934,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get showInChat => 'Show in chat';
 
   @override
+  String get playlist => 'Playlist';
+
+  @override
   String get joinChannel => 'Join channel';
 
   @override

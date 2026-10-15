@@ -3278,6 +3278,12 @@ abstract class AppLocalizations {
   /// **'Show in chat'**
   String get showInChat;
 
+  /// No description provided for @playlist.
+  ///
+  /// In en, this message translates to:
+  /// **'Playlist'**
+  String get playlist;
+
   /// No description provided for @joinChannel.
   ///
   /// In en, this message translates to:
