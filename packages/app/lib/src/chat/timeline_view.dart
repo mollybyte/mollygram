@@ -31,6 +31,7 @@ class TimelineView extends StatelessWidget {
     this.unreadFrom,
     this.flashId,
     this.flash = 0,
+    this.topInset = TimelineView.headerInset,
   });
 
   /// Newest first.
@@ -63,7 +64,11 @@ class TimelineView extends StatelessWidget {
   final int? flashId;
   final int flash;
 
-  static const double topInset = 72;
+  /// The space above the oldest message: the header, and the pinned bar
+  /// when it shows.
+  final double topInset;
+
+  static const double headerInset = 72;
   static const double bottomInset = 88;
 
   static bool _holds(TimelineItem item, int? id) =>
@@ -185,7 +190,7 @@ class TimelineView extends StatelessWidget {
             ),
           ),
         ),
-        const SliverToBoxAdapter(child: SizedBox(height: topInset)),
+        SliverToBoxAdapter(child: SizedBox(height: topInset)),
       ],
     );
   }

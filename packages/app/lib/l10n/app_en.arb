@@ -379,5 +379,13 @@
   "unreadMessages": "Unread messages",
   "scrollToBottom": "Scroll to the newest message",
   "nextMention": "Next mention",
-  "nextReaction": "Next reaction"
+  "nextReaction": "Next reaction",
+  "menuPin": "Pin",
+  "menuUnpin": "Unpin",
+  "pinnedMessage": "Pinned message",
+  "pinnedMessageNumber": "Pinned message #{number}",
+  "@pinnedMessageNumber": {
+    "placeholders": { "number": { "type": "int" } }
+  },
+  "hidePinned": "Hide pinned messages"
 }

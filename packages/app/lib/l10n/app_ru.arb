@@ -229,5 +229,10 @@
   "unreadMessages": "Непрочитанные сообщения",
   "scrollToBottom": "К последнему сообщению",
   "nextMention": "Следующее упоминание",
-  "nextReaction": "Следующая реакция"
+  "nextReaction": "Следующая реакция",
+  "menuPin": "Закрепить",
+  "menuUnpin": "Открепить",
+  "pinnedMessage": "Закреплённое сообщение",
+  "pinnedMessageNumber": "Закреплённое сообщение #{number}",
+  "hidePinned": "Скрыть закреплённые"
 }
