@@ -522,6 +522,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get forwardSearch => 'Search chats';
 
   @override
+  String get forwardHideSender => 'Hide sender names';
+
+  @override
+  String get forwardHideCaptions => 'Hide captions';
+
+  @override
   String get noChatsFound => 'No chats found';
 
   @override

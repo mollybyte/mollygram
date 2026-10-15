@@ -525,6 +525,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get forwardSearch => 'Поиск чатов';
 
   @override
+  String get forwardHideSender => 'Скрыть имена отправителей';
+
+  @override
+  String get forwardHideCaptions => 'Скрыть подписи';
+
+  @override
   String get noChatsFound => 'Чаты не найдены';
 
   @override

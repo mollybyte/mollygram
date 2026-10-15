@@ -92,7 +92,7 @@ M8 calls and macOS release, M9 after release.
 | Full reaction picker (all emoji, custom reactions) | missing | | M | M1 |
 | Reply with quote (part of the text) | missing | `InputTextQuote` | S | M2 |
 | Pin and unpin | done (#49) | | S | M1 |
-| Forward without author or caption | missing | `sendCopy`, `removeCaption` | S | M2 |
+| Forward without author or caption | done | Checkboxes in the forward picker | S | M2 |
 | Save media to Downloads, show in Finder | missing | | S | M1 |
 | Report message | missing | `ReportChat` | S | M2 |
 | Who read and who reacted | missing | `GetMessageViewers`, `GetMessageAddedReactions` | S | M2 |

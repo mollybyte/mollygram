@@ -156,6 +156,8 @@
   "editingMessage": "Редактирование",
   "forwardTitle": "Переслать в чат",
   "forwardSearch": "Поиск чатов",
+  "forwardHideSender": "Скрыть имена отправителей",
+  "forwardHideCaptions": "Скрыть подписи",
   "noChatsFound": "Чаты не найдены",
   "editFailed": "Не удалось сохранить изменения",
   "attachTitle": "{count, plural, one{Отправить {count} файл} few{Отправить {count} файла} other{Отправить {count} файлов}}",
