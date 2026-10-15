@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -331,6 +332,122 @@ void main() {
     expect(container.read(workspaceControllerProvider).value.focusedChat, 1);
   });
 
+  testWidgets('a secondary click opens the chat menu and pins', (tester) async {
+    await pump(tester);
+    await tester.tap(row('Anna'), buttons: kSecondaryButton);
+    await settle(tester);
+    for (final label in [
+      'Pin',
+      'Mute',
+      'Mark as unread',
+      'Archive',
+      'Clear history',
+      'Delete chat',
+    ]) {
+      expect(find.text(label), findsOneWidget, reason: label);
+    }
+
+    // Mute opens its durations beside it.
+    await tester.tap(find.text('Mute'));
+    await settle(tester);
+    expect(find.text('For 1 hour'), findsOneWidget);
+    expect(find.text('Forever'), findsOneWidget);
+
+    await tester.tap(find.text('Pin'));
+    await settle(tester);
+    expect(find.text('Mark as unread'), findsNothing);
+    final pin = json.sent.lastWhere((r) => r['@type'] == 'toggleChatIsPinned');
+    expect(pin['chat_id'], 1);
+    expect(pin['is_pinned'], isTrue);
+  });
+
+  testWidgets('leaving a channel asks first', (tester) async {
+    session.chatLists.store.upsert(
+      ChatListEntry(
+        id: 4,
+        title: 'News',
+        unreadCount: 0,
+        type: ChatType.channel,
+        positions: [
+          ChatListPosition(
+            list: const ChatListLocation.main(),
+            order: 1,
+            isPinned: false,
+          ),
+        ],
+      ),
+    );
+    await pump(tester);
+    await tester.tap(row('News'), buttons: kSecondaryButton);
+    await settle(tester);
+    expect(find.text('Clear history'), findsNothing);
+    await tester.tap(find.text('Leave channel'));
+    await settle(tester);
+    expect(find.text('Leave News?'), findsOneWidget);
+    await tester.tap(find.text('Leave'));
+    await settle(tester);
+    expect(json.sent.where((r) => r['@type'] == 'leaveChat'), hasLength(1));
+  });
+
+  testWidgets('the archive row opens the archive and comes back', (
+    tester,
+  ) async {
+    session.chatLists.store.upsert(
+      ChatListEntry(
+        id: 4,
+        title: 'Dmitry',
+        unreadCount: 2,
+        positions: [
+          ChatListPosition(
+            list: const ChatListLocation.archive(),
+            order: 5,
+            isPinned: false,
+          ),
+        ],
+      ),
+    );
+    await pump(tester);
+    expect(row('Archived chats'), findsOneWidget);
+    expect(row('Dmitry'), findsOneWidget);
+    expect(row('Anna'), findsOneWidget);
+
+    await tester.tap(row('Archived chats'));
+    await settle(tester);
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(row('Anna'), findsNothing);
+    expect(row('Dmitry'), findsOneWidget);
+
+    await tester.tap(find.text('Archived chats'));
+    await settle(tester);
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(row('Anna'), findsOneWidget);
+  });
+
+  testWidgets('shows who is typing in the list and the header', (tester) async {
+    await pump(tester);
+    await tester.tap(row('Boris'));
+    await settle(tester);
+    json.push({
+      '@type': 'updateChatAction',
+      'chat_id': 2,
+      'sender_id': {'@type': 'messageSenderUser', 'user_id': 2},
+      'action': {'@type': 'chatActionTyping'},
+    });
+    await settle(tester);
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('typing'), findsNWidgets(2));
+
+    json.push({
+      '@type': 'updateChatAction',
+      'chat_id': 2,
+      'sender_id': {'@type': 'messageSenderUser', 'user_id': 2},
+      'action': {'@type': 'chatActionCancel'},
+    });
+    await settle(tester);
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('typing'), findsNothing);
+  });
+
   test('recent chats put the ones opened here first', () {
     final directory = TelegramChatDirectory(
       session.chatLists.store,
@@ -360,6 +477,9 @@ class _Host extends ConsumerWidget {
 final class _FakeTdJson implements td.TdJson {
   final _queue = Queue<String>();
   var _nextClientId = 0;
+
+  void push(Map<String, Object?> update) =>
+      _queue.add(jsonEncode({...update, '@client_id': 1}));
 
   @override
   int createClientId() => ++_nextClientId;

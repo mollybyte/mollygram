@@ -94,7 +94,7 @@ void main() {
                 title: 'Team',
                 unreadCount: 0,
                 positions: const [],
-                isGroup: group,
+                type: group ? ChatType.supergroup : ChatType.private,
               ),
             ),
           ),

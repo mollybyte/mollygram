@@ -62,6 +62,7 @@ import '../session/providers.dart';
 import '../shared_media/message_jump.dart';
 import '../voice/voice_record_composer.dart';
 import '../window_drag_area.dart';
+import 'chat_status.dart';
 import 'format.dart';
 
 /// One conversation: messages scroll under the floating header and
@@ -3531,8 +3532,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
                       ),
                       onTap: _closePinnedList,
                     )
-                  : ChatTitleCapsule(
-                      title: chat?.title ?? '',
+                  : ChatHeaderTitle(
+                      chatId: widget.chatId,
                       titleIcon: secret == null ? null : const SecretChatLock(),
                       avatar: _saved
                           ? MgIconButton(

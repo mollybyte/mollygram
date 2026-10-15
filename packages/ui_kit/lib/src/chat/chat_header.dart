@@ -4,6 +4,7 @@ import '../avatar.dart';
 import '../glass/glass.dart';
 import '../theme/colors.dart';
 import '../theme/theme.dart';
+import 'status_text.dart';
 
 /// The chat header: one glass bar across the top of the message list, the
 /// title at the left edge and the actions at the right. [fill] lies under
@@ -88,6 +89,8 @@ class ChatTitleCapsule extends StatelessWidget {
     super.key,
     required this.title,
     this.subtitle = '',
+    this.subtitleAccent = false,
+    this.subtitleActivity = false,
     this.avatar,
     this.titleIcon,
     this.onTap,
@@ -100,6 +103,13 @@ class ChatTitleCapsule extends StatelessWidget {
 
   /// Online status, members count, "typing…" and so on.
   final String subtitle;
+
+  /// Draws [subtitle] in the accent color, as for "online".
+  final bool subtitleAccent;
+
+  /// [subtitle] is what someone is doing, such as "typing": it is drawn in
+  /// the accent color with animated dots.
+  final bool subtitleActivity;
 
   /// Defaults to a 30 px [MonogramAvatar] of [title].
   final Widget? avatar;
@@ -151,18 +161,20 @@ class ChatTitleCapsule extends StatelessWidget {
                       ),
                     ],
                   ),
-                  if (subtitle.isNotEmpty)
-                    Text(
-                      subtitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: mgTextStyle(
-                        c,
-                        size: MgType.caption,
-                        color: c.fg2,
-                        height: 1.2,
-                      ),
-                    ),
+                  // A longer or shorter status resizes the capsule
+                  // smoothly; the title never waits for it.
+                  AnimatedSize(
+                    duration: MgStatusText.duration,
+                    curve: Curves.easeOutCubic,
+                    alignment: Alignment.centerLeft,
+                    child: subtitle.isEmpty
+                        ? const SizedBox.shrink()
+                        : MgStatusText(
+                            subtitle,
+                            accent: subtitleAccent || subtitleActivity,
+                            activity: subtitleActivity,
+                          ),
+                  ),
                 ],
               ),
             ),

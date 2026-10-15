@@ -152,7 +152,11 @@ class TelegramChatDirectory extends ChangeNotifier implements ChatDirectory {
   static ChatSummary _summary(ChatListEntry entry) => ChatSummary(
     id: entry.id,
     title: entry.title,
-    kind: entry.isGroup ? ChatKind.group : ChatKind.private,
+    kind: switch (entry.type) {
+      ChatType.basicGroup || ChatType.supergroup => ChatKind.group,
+      ChatType.channel => ChatKind.channel,
+      ChatType.private || ChatType.secret => ChatKind.private,
+    },
     unread: entry.unreadCount,
   );
 }

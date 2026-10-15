@@ -1310,6 +1310,390 @@ abstract class AppLocalizations {
   /// **'No chats found'**
   String get noChatsFound;
 
+  /// No description provided for @statusOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'online'**
+  String get statusOnline;
+
+  /// No description provided for @statusJustNow.
+  ///
+  /// In en, this message translates to:
+  /// **'last seen just now'**
+  String get statusJustNow;
+
+  /// No description provided for @statusMinutesAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{last seen {count} minute ago} other{last seen {count} minutes ago}}'**
+  String statusMinutesAgo(int count);
+
+  /// No description provided for @statusToday.
+  ///
+  /// In en, this message translates to:
+  /// **'last seen today at {time}'**
+  String statusToday(String time);
+
+  /// No description provided for @statusYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'last seen yesterday at {time}'**
+  String statusYesterday(String time);
+
+  /// No description provided for @statusOnDate.
+  ///
+  /// In en, this message translates to:
+  /// **'last seen {date}'**
+  String statusOnDate(String date);
+
+  /// No description provided for @statusRecently.
+  ///
+  /// In en, this message translates to:
+  /// **'last seen recently'**
+  String get statusRecently;
+
+  /// No description provided for @statusLastWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'last seen within a week'**
+  String get statusLastWeek;
+
+  /// No description provided for @statusLastMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'last seen within a month'**
+  String get statusLastMonth;
+
+  /// No description provided for @statusLongAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'last seen a long time ago'**
+  String get statusLongAgo;
+
+  /// No description provided for @statusBot.
+  ///
+  /// In en, this message translates to:
+  /// **'bot'**
+  String get statusBot;
+
+  /// No description provided for @statusService.
+  ///
+  /// In en, this message translates to:
+  /// **'service notifications'**
+  String get statusService;
+
+  /// No description provided for @statusGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'group'**
+  String get statusGroup;
+
+  /// No description provided for @statusChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'channel'**
+  String get statusChannel;
+
+  /// No description provided for @statusMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} member} other{{count} members}}'**
+  String statusMembers(int count);
+
+  /// No description provided for @statusMembersOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'{members}, {online} online'**
+  String statusMembersOnline(String members, String online);
+
+  /// No description provided for @statusSubscribers.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} subscriber} other{{count} subscribers}}'**
+  String statusSubscribers(int count);
+
+  /// No description provided for @activityTyping.
+  ///
+  /// In en, this message translates to:
+  /// **'typing'**
+  String get activityTyping;
+
+  /// No description provided for @activityRecordingVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'recording a voice message'**
+  String get activityRecordingVoice;
+
+  /// No description provided for @activityRecordingVideoNote.
+  ///
+  /// In en, this message translates to:
+  /// **'recording a video message'**
+  String get activityRecordingVideoNote;
+
+  /// No description provided for @activityRecordingVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'recording a video'**
+  String get activityRecordingVideo;
+
+  /// No description provided for @activitySendingPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'sending a photo'**
+  String get activitySendingPhoto;
+
+  /// No description provided for @activitySendingVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'sending a video'**
+  String get activitySendingVideo;
+
+  /// No description provided for @activitySendingVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'sending a voice message'**
+  String get activitySendingVoice;
+
+  /// No description provided for @activitySendingVideoNote.
+  ///
+  /// In en, this message translates to:
+  /// **'sending a video message'**
+  String get activitySendingVideoNote;
+
+  /// No description provided for @activitySendingFile.
+  ///
+  /// In en, this message translates to:
+  /// **'sending a file'**
+  String get activitySendingFile;
+
+  /// No description provided for @activityChoosingSticker.
+  ///
+  /// In en, this message translates to:
+  /// **'choosing a sticker'**
+  String get activityChoosingSticker;
+
+  /// No description provided for @activityChoosingLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'choosing a location'**
+  String get activityChoosingLocation;
+
+  /// No description provided for @activityChoosingContact.
+  ///
+  /// In en, this message translates to:
+  /// **'choosing a contact'**
+  String get activityChoosingContact;
+
+  /// No description provided for @activityPlayingGame.
+  ///
+  /// In en, this message translates to:
+  /// **'playing a game'**
+  String get activityPlayingGame;
+
+  /// No description provided for @activityWatchingAnimations.
+  ///
+  /// In en, this message translates to:
+  /// **'watching an animation'**
+  String get activityWatchingAnimations;
+
+  /// No description provided for @activityByOne.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is {activity}'**
+  String activityByOne(String name, String activity);
+
+  /// No description provided for @activityByTwo.
+  ///
+  /// In en, this message translates to:
+  /// **'{first} and {second} are typing'**
+  String activityByTwo(String first, String second);
+
+  /// No description provided for @activityByMany.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{name} and {count} other are typing} other{{name} and {count} others are typing}}'**
+  String activityByMany(String name, int count);
+
+  /// No description provided for @archivedChats.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived chats'**
+  String get archivedChats;
+
+  /// No description provided for @noArchivedChats.
+  ///
+  /// In en, this message translates to:
+  /// **'No archived chats'**
+  String get noArchivedChats;
+
+  /// No description provided for @menuPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Pin'**
+  String get menuPin;
+
+  /// No description provided for @menuUnpin.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpin'**
+  String get menuUnpin;
+
+  /// No description provided for @menuMute.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute'**
+  String get menuMute;
+
+  /// No description provided for @menuUnmute.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute'**
+  String get menuUnmute;
+
+  /// No description provided for @muteFor1Hour.
+  ///
+  /// In en, this message translates to:
+  /// **'For 1 hour'**
+  String get muteFor1Hour;
+
+  /// No description provided for @muteFor8Hours.
+  ///
+  /// In en, this message translates to:
+  /// **'For 8 hours'**
+  String get muteFor8Hours;
+
+  /// No description provided for @muteFor3Days.
+  ///
+  /// In en, this message translates to:
+  /// **'For 3 days'**
+  String get muteFor3Days;
+
+  /// No description provided for @muteForever.
+  ///
+  /// In en, this message translates to:
+  /// **'Forever'**
+  String get muteForever;
+
+  /// No description provided for @menuArchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive'**
+  String get menuArchive;
+
+  /// No description provided for @menuUnarchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Unarchive'**
+  String get menuUnarchive;
+
+  /// No description provided for @menuMarkRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as read'**
+  String get menuMarkRead;
+
+  /// No description provided for @menuMarkUnread.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as unread'**
+  String get menuMarkUnread;
+
+  /// No description provided for @menuMarkAllRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark all as read'**
+  String get menuMarkAllRead;
+
+  /// No description provided for @menuClearHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear history'**
+  String get menuClearHistory;
+
+  /// No description provided for @menuDeleteChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete chat'**
+  String get menuDeleteChat;
+
+  /// No description provided for @menuDeleteAndLeave.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete and leave'**
+  String get menuDeleteAndLeave;
+
+  /// No description provided for @menuLeaveGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave group'**
+  String get menuLeaveGroup;
+
+  /// No description provided for @menuLeaveChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave channel'**
+  String get menuLeaveChannel;
+
+  /// No description provided for @clearHistoryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear history?'**
+  String get clearHistoryTitle;
+
+  /// No description provided for @clearHistoryMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages in {name} will be deleted for you.'**
+  String clearHistoryMessage(String name);
+
+  /// No description provided for @clearAlsoFor.
+  ///
+  /// In en, this message translates to:
+  /// **'Also clear for {name}'**
+  String clearAlsoFor(String name);
+
+  /// No description provided for @clear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get clear;
+
+  /// No description provided for @deleteChatTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete chat?'**
+  String get deleteChatTitle;
+
+  /// No description provided for @deleteChatMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The chat with {name} will be deleted for you.'**
+  String deleteChatMessage(String name);
+
+  /// No description provided for @leaveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave {name}?'**
+  String leaveTitle(String name);
+
+  /// No description provided for @leave.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave'**
+  String get leave;
+
+  /// No description provided for @deleteAndLeaveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete and leave {name}?'**
+  String deleteAndLeaveTitle(String name);
+
+  /// No description provided for @chatActionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t do that, try again'**
+  String get chatActionFailed;
+
   /// No description provided for @editFailed.
   ///
   /// In en, this message translates to:
@@ -1406,12 +1790,6 @@ abstract class AppLocalizations {
   /// **'Info'**
   String get peerInfo;
 
-  /// No description provided for @statusOnline.
-  ///
-  /// In en, this message translates to:
-  /// **'online'**
-  String get statusOnline;
-
   /// No description provided for @lastSeenJustNow.
   ///
   /// In en, this message translates to:
@@ -1465,12 +1843,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'last seen a long time ago'**
   String get lastSeenLongAgo;
-
-  /// No description provided for @statusBot.
-  ///
-  /// In en, this message translates to:
-  /// **'bot'**
-  String get statusBot;
 
   /// No description provided for @deletedAccount.
   ///
@@ -2852,12 +3224,6 @@ abstract class AppLocalizations {
   /// **'Media stays in the Telegram cloud and downloads again when you open it.'**
   String get clearCacheMessage;
 
-  /// No description provided for @clear.
-  ///
-  /// In en, this message translates to:
-  /// **'Clear'**
-  String get clear;
-
   /// No description provided for @clearCacheFailed.
   ///
   /// In en, this message translates to:
@@ -3350,18 +3716,6 @@ abstract class AppLocalizations {
   /// **'Couldn\'t send the command.'**
   String get linkCannotSend;
 
-  /// No description provided for @menuPin.
-  ///
-  /// In en, this message translates to:
-  /// **'Pin'**
-  String get menuPin;
-
-  /// No description provided for @menuUnpin.
-  ///
-  /// In en, this message translates to:
-  /// **'Unpin'**
-  String get menuUnpin;
-
   /// No description provided for @pinnedMessage.
   ///
   /// In en, this message translates to:
@@ -3625,12 +3979,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Slowmode is on, next message in {time}'**
   String slowModeWait(String time);
-
-  /// No description provided for @chatActionFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Couldn\'t do that, try again'**
-  String get chatActionFailed;
 
   /// No description provided for @privacyExtras.
   ///
@@ -4561,12 +4909,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Remove'**
   String get remove;
-
-  /// No description provided for @leave.
-  ///
-  /// In en, this message translates to:
-  /// **'Leave'**
-  String get leave;
 
   /// No description provided for @newGroup.
   ///
