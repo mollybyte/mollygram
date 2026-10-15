@@ -39,9 +39,17 @@ enum MessageSendState {
 /// It wraps the TDLib message as is, so every kind of content reaches the
 /// chat view; the getters cover what the timeline itself needs.
 final class ConversationMessage {
-  const ConversationMessage(this.message, {this.deletedAt});
+  const ConversationMessage(this.message, {this.deletedAt, this.stableId});
 
   final td.Message message;
+
+  /// The id this message was first drawn under, when it has changed since:
+  /// a sent message gets its server id in place of the temporary one, and
+  /// the timeline keeps its row under the first so nothing is rebuilt.
+  final int? stableId;
+
+  /// What the timeline keys the row by.
+  int get keyId => stableId ?? message.id;
 
   /// When someone deleted the message for everyone, for one kept in the
   /// privacy store and shown in its place; null for a live message.
@@ -87,6 +95,7 @@ final class ConversationMessage {
       ConversationMessage(
         td.Message.fromJson({...message.toJson(), ...fields}),
         deletedAt: deletedAt,
+        stableId: stableId,
       );
 }
 
@@ -316,7 +325,17 @@ final class ConversationStore {
   }
 
   void upsert(ConversationMessage message) {
-    (_byChat[message.chatId] ??= {})[message.id] = message;
+    final byId = _byChat[message.chatId] ??= {};
+    // Keep the row's first key when a newer copy of the message arrives.
+    final old = byId[message.id];
+    if (old?.stableId != null && message.stableId == null) {
+      message = ConversationMessage(
+        message.message,
+        deletedAt: message.deletedAt,
+        stableId: old!.stableId,
+      );
+    }
+    byId[message.id] = message;
     final key = (message.chatId, message.id);
     if (_referenced.containsKey(key)) _referenced[key] = message;
   }
