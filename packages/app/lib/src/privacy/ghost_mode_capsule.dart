@@ -48,7 +48,13 @@ class GhostModeView extends StatelessWidget {
         ? Duration.zero
         : _duration;
     final label = partial ? l10n.privacyExtrasAreOn : l10n.ghostModeIsOn;
-    return Center(
+    // Off, the capsule takes no width, so the search field beside it
+    // reaches the compose button.
+    return AnimatedAlign(
+      alignment: Alignment.center,
+      widthFactor: on ? 1 : 0,
+      duration: duration,
+      curve: Curves.easeOutCubic,
       child: IgnorePointer(
         ignoring: !on,
         child: ExcludeSemantics(
