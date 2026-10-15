@@ -278,6 +278,24 @@ final class ConversationController {
         : ConversationMessage(found.messages.last);
   }
 
+  /// The last message of [chatId] sent on [day] or before it, for a jump
+  /// to a date; null when the chat has nothing that old.
+  Future<ConversationMessage?> messageByDate(int chatId, DateTime day) async {
+    final end = DateTime(day.year, day.month, day.day + 1);
+    try {
+      final message = await _client.send(
+        td.GetChatMessageByDate(
+          chatId: chatId,
+          date: end.millisecondsSinceEpoch ~/ 1000 - 1,
+        ),
+      );
+      return ConversationMessage(message);
+    } on td.TdException catch (error) {
+      if (error.code == 404) return null;
+      rethrow;
+    }
+  }
+
   /// Makes sure the message that [messageId] of [chatId] replies to is in
   /// the store, asking TDLib for it when it is outside the loaded timeline.
   /// When TDLib can't find it, the reply is marked as pointing nowhere

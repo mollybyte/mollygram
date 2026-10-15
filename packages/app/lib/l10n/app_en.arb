@@ -535,5 +535,7 @@
     "placeholders": { "count": { "type": "int" } }
   },
   "clearSelection": "Clear selection",
-  "copy": "Copy"
+  "copy": "Copy",
+  "previousMonth": "Previous month",
+  "nextMonth": "Next month"
 }

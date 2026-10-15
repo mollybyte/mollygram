@@ -282,6 +282,30 @@ void main() {
     expect(controller.store.message(7, 3)?.text, 'Quoted');
   });
 
+  test('finds the last message of a day, or nothing before the chat', () async {
+    await controller.start();
+
+    final found = await controller.messageByDate(7, DateTime(2025, 10, 9, 15));
+    expect(found?.id, 10);
+    final request = json.sent.lastWhere(
+      (r) => r['@type'] == 'getChatMessageByDate',
+    );
+    expect(request['chat_id'], 7);
+    // The last second of the day: TDLib looks back from the date given.
+    expect(
+      request['date'],
+      DateTime(2025, 10, 10).millisecondsSinceEpoch ~/ 1000 - 1,
+    );
+
+    json.byDateError = 404;
+    expect(await controller.messageByDate(7, DateTime(2020)), isNull);
+    json.byDateError = 500;
+    expect(
+      () => controller.messageByDate(7, DateTime(2020)),
+      throwsA(isA<td.TdException>()),
+    );
+  });
+
   test('marks a reply as missing only when TDLib has no original', () async {
     await controller.start();
 
@@ -851,6 +875,7 @@ final class _FakeTdJson implements td.TdJson {
 
   /// When set, getRepliedMessage fails with this TDLib error code.
   int? repliedError;
+  int? byDateError;
 
   /// When set, reactions come back unavailable for this reason.
   Map<String, Object?>? reactionsUnavailable;
@@ -976,6 +1001,16 @@ final class _FakeTdJson implements td.TdJson {
         'are_tags': false,
         'unavailability_reason': reactionsUnavailable,
       },
+      'getChatMessageByDate' when byDateError != null => {
+        '@type': 'error',
+        'code': byDateError,
+        'message': 'Failed',
+      },
+      'getChatMessageByDate' => _message(
+        id: 10,
+        chatId: 7,
+        text: 'That day',
+      ).toJson(),
       'getRepliedMessage' when repliedError != null => {
         '@type': 'error',
         'code': repliedError,

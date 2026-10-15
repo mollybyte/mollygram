@@ -23,6 +23,7 @@ import '../chat/forward_picker.dart';
 import '../chat/media_viewer.dart';
 import '../chat/message_actions.dart';
 import '../chat/message_tile.dart';
+import '../chat/timeline.dart';
 import '../chat/timeline_scroll.dart';
 import '../chat/timeline_view.dart';
 import '../profile/peer_info_state.dart';
@@ -1056,6 +1057,54 @@ class _ChatViewState extends ConsumerState<ChatView> {
     );
   }
 
+  /// The calendar under a date pill: picking a day goes to its last
+  /// message, as in the official app.
+  Future<void> _openCalendar(DateTime day, Offset position) async {
+    final l10n = AppLocalizations.of(context);
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final weekdayFormat = DateFormat.E(locale);
+    final store = _conversations.store;
+    final chatId = widget.chatId;
+    // The oldest loaded message bounds the calendar once the start of the
+    // chat is in.
+    final oldest =
+        store.reachedStart(chatId) && store.messagesFor(chatId).isNotEmpty
+        ? dayOf(store.messagesFor(chatId).last)
+        : null;
+    DateTime? picked;
+    await showMgPopover(
+      context,
+      position: position,
+      child: MgCalendar(
+        month: day,
+        today: DateTime.now(),
+        first: oldest,
+        monthTitle: (month) => DateFormat.yMMMM(locale).format(month),
+        weekdays: [
+          for (var i = 0; i < 7; i++)
+            // 2024-01-01 is a Monday.
+            weekdayFormat.format(DateTime(2024, 1, 1 + i)).characters.first,
+        ],
+        previousTooltip: l10n.previousMonth,
+        nextTooltip: l10n.nextMonth,
+        onPick: (day) {
+          picked = day;
+          Navigator.of(context).pop();
+        },
+      ),
+    );
+    final target = picked;
+    if (target == null || !mounted || widget.chatId != chatId) return;
+    final ConversationMessage? message;
+    try {
+      message = await _conversations.messageByDate(chatId, target);
+    } on Object {
+      return;
+    }
+    if (message == null || !mounted || widget.chatId != chatId) return;
+    await _jumpTo(message.id);
+  }
+
   /// Down to the newest message, the next mention and the next reaction,
   /// stacked over the composer's right end like in the official app.
   Widget _jumpButtons(AppLocalizations l10n, ConversationStore store) {
@@ -1212,6 +1261,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
                   flash: _flash,
                   topInset: _topInset,
                   selection: _selected,
+                  onDateTap: (day, position) =>
+                      unawaited(_openCalendar(day, position)),
                   onShown: _shown,
                   onNearTop: _loadOlder,
                   onNearBottom: _loadNewer,

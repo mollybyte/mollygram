@@ -62,7 +62,7 @@ M8 calls and macOS release, M9 after release.
 | Pinned message bar with cycling and the pinned list | partial | Pinned PR: bar with cycling, pin and unpin from the menu; no pinned list view | S | M2 |
 | Jump to a replied message and back | done | Jump with a highlight; the down button returns to where the user was | | |
 | Date headers and sticky date | done | Date pills, and the top row's date floats while scrolling | | |
-| Jump to date (calendar) | missing | `ChatCalendarModalController` | M | M2 |
+| Jump to date (calendar) | done | Click a date pill: calendar, `getChatMessageByDate`; no media calendar | M | M2 |
 | Header status: online, last seen, members, typing | done (#40) | | S | M1 |
 | Join and mute buttons for channels and groups you are not in | done | Join in place of the composer; Mute and Unmute in channels you only read | | |
 | Open `t.me` and `tg://` links, usernames, hashtags, bot commands | partial | Links, mentions, invites and `tg://` work (`links/`); hashtags, bot commands, mention names and the jump to a linked message are missing | S | M1 |
