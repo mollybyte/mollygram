@@ -8,6 +8,7 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../chat/message_tile.dart' show SenderAvatar;
+import '../session/accounts.dart';
 import '../session/providers.dart';
 import 'settings_style.dart';
 import 'settings_window.dart';
@@ -17,18 +18,14 @@ final accountProfileProvider = FutureProvider.autoDispose<AccountProfile>(
   (ref) => ref.watch(telegramSessionProvider).requireValue.account.profile(),
 );
 
-/// Signs out: TDLib drops the account and closes the client, then a new
-/// session starts at the sign-in screen.
-final logOutProvider = Provider<Future<void> Function()>((ref) {
-  final session = ref.watch(telegramSessionProvider).requireValue;
-  return () async {
-    await session.authorization.logOut();
-    // The closed client still holds the database; it has to go before a
-    // new one opens it.
-    await session.dispose();
-    ref.invalidate(telegramSessionProvider);
-  };
-});
+/// Signs out of the open account and wipes what it kept here; the next
+/// account opens, or sign-in when it was the only one.
+final logOutProvider = Provider<Future<void> Function()>(
+  (ref) => () async {
+    final index = await ref.read(accountsProvider.future);
+    await ref.read(accountsProvider.notifier).logOut(index.active);
+  },
+);
 
 /// "+79991234567" for TDLib's digits; TDLib gives no grouping.
 String formatPhone(String digits) => digits.isEmpty ? '' : '+$digits';
@@ -485,6 +482,7 @@ class _AccountFormState extends ConsumerState<_AccountForm> {
             ),
           ],
         ),
+        const AccountsGroup(),
         const SizedBox(height: 18),
         Align(
           alignment: Alignment.centerRight,
@@ -499,6 +497,92 @@ class _AccountFormState extends ConsumerState<_AccountForm> {
             child: SettingsFooter(_logOutError!, error: true),
           ),
       ],
+    );
+  }
+}
+
+/// The accounts on this computer: click one to switch to it, log out of
+/// the others here (the open one has the button below), or add one.
+class AccountsGroup extends ConsumerWidget {
+  const AccountsGroup({super.key});
+
+  Future<void> _logOut(
+    BuildContext context,
+    WidgetRef ref,
+    AccountEntry account,
+    String title,
+  ) async {
+    final l10n = AppLocalizations.of(context);
+    final notifier = ref.read(accountsProvider.notifier);
+    if (account.isSignedIn) {
+      final confirmed = await showMgConfirm(
+        context,
+        title: l10n.logOutAccountTitle(title),
+        message: l10n.logOutMessage,
+        confirmLabel: l10n.logOut,
+        cancelLabel: l10n.cancel,
+        destructive: true,
+      );
+      if (confirmed == null) return;
+    }
+    await notifier.logOut(account.slot);
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final c = MgColors.of(context);
+    final l10n = AppLocalizations.of(context);
+    final index = ref.watch(accountsProvider).value;
+    if (index == null) return const SizedBox.shrink();
+    final notifier = ref.read(accountsProvider.notifier);
+    final canAdd = index.accounts.length < AccountStorage.maxAccounts;
+    return SettingsGroup(
+      key: const ValueKey('accounts'),
+      title: l10n.accounts,
+      footer: SettingsFooter(l10n.accountsAbout(AccountStorage.maxAccounts)),
+      children: [
+        for (final (i, account) in index.accounts.indexed)
+          _accountRow(context, ref, c, l10n, account, i + 1, index.active),
+        SettingsRow(
+          key: const ValueKey('addAccount'),
+          title: l10n.addAccount,
+          onTap: canAdd ? () => unawaited(notifier.add()) : null,
+        ),
+      ],
+    );
+  }
+
+  Widget _accountRow(
+    BuildContext context,
+    WidgetRef ref,
+    MgColors c,
+    AppLocalizations l10n,
+    AccountEntry account,
+    int number,
+    int active,
+  ) {
+    final title = accountTitle(account, l10n, number);
+    final isActive = account.slot == active;
+    return SettingsRow(
+      key: ValueKey('account-${account.slot}'),
+      leading: MonogramAvatar(name: title, size: 28),
+      title: title,
+      subtitle: account.isSignedIn
+          ? formatPhone(account.phoneNumber)
+          : l10n.notSignedIn,
+      trailing: isActive
+          ? MgIcon(MgIcons.sent, size: 16, color: c.accent)
+          : SettingsButton(
+              key: ValueKey('logOut-${account.slot}'),
+              label: l10n.logOut,
+              destructive: true,
+              onPressed: () => unawaited(_logOut(context, ref, account, title)),
+            ),
+      onTap: isActive
+          ? null
+          : () => unawaited(
+              ref.read(accountsProvider.notifier).switchTo(account.slot),
+            ),
     );
   }
 }

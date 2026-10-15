@@ -203,7 +203,7 @@ M8 calls and macOS release, M9 after release.
 | Contacts list, add and edit contact | partial | Contacts sheet: list with status, add by phone, delete; editing a contact's name is not there yet | S | M6 |
 | New message / compose (pick a user) | done | ⌘N sheet: recent chats, contacts, username search | | |
 | Edit own profile: name, bio, username, photo, birthday | partial | Name, username and bio in Settings; photo and birthday missing | M | M6 |
-| Multiple accounts and switching | missing | Several TDLib clients | L | M6 |
+| Multiple accounts and switching | done | Up to 3 accounts in Settings, Account: switch, add, log out per account. One TDLib client runs at a time; a switch restarts the session on the chosen slot. Layout is per account, preferences shared. Palette commands `app.account.<n>` | L | M6 |
 | Log out | done | Settings, My profile, Log out | | |
 
 ### Settings

@@ -891,5 +891,24 @@
   "deleteChannelMessage": "Every subscriber loses the channel and all its posts. This can't be undone.",
   "leaveFailed": "Couldn't leave. Try again.",
   "deleteFailed": "Couldn't delete it. Try again.",
-  "folderDeletedChat": "Deleted chat"
+  "folderDeletedChat": "Deleted chat",
+  "accounts": "Accounts",
+  "accountsAbout": "Up to {count} accounts, each with its own chats and tabs.",
+  "@accountsAbout": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "addAccount": "Add account",
+  "accountNumber": "Account {number}",
+  "@accountNumber": {
+    "placeholders": { "number": { "type": "int" } }
+  },
+  "switchToAccount": "Switch to {name}",
+  "@switchToAccount": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "notSignedIn": "Not signed in",
+  "logOutAccountTitle": "Log out of {name}?",
+  "@logOutAccountTitle": {
+    "placeholders": { "name": { "type": "String" } }
+  }
 }

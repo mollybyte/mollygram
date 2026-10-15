@@ -14,6 +14,7 @@ import '../notifications/notification_service.dart';
 import '../privacy/ghost_mode_capsule.dart';
 import '../profile/new_chat_sheet.dart';
 import '../profile/peer_info_host.dart';
+import '../session/accounts.dart';
 import '../session/connection_status_capsule.dart';
 import '../settings/appearance.dart';
 import '../settings/settings_window.dart';
@@ -59,6 +60,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     super.initState();
     _registry
       ..register('app', _commands)
+      ..register('accounts', _accountCommands)
       ..register('shell', _shellCommands);
   }
 
@@ -75,9 +77,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void dispose() {
     _registry
       ..unregister('app', _commands)
+      ..unregister('accounts', _accountCommands)
       ..unregister('shell', _shellCommands);
     super.dispose();
   }
+
+  List<PaletteCommand> _accountCommands() => accountCommands(
+    ref.read(accountsProvider).value,
+    _l10n,
+    (slot) => unawaited(ref.read(accountsProvider.notifier).switchTo(slot)),
+  );
 
   List<PaletteCommand> _commands() {
     final l10n = _l10n;

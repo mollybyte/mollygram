@@ -131,6 +131,103 @@ void main() {
     });
   });
 
+  group('slots', () {
+    test('adds accounts up to the limit, each on a new slot', () async {
+      await storage.prepareActive();
+
+      final second = await storage.addAccount();
+      expect(second.active, 1);
+      expect((await storage.prepareActive()).slot, 1);
+      final third = await storage.addAccount();
+      expect(third.accounts.map((a) => a.slot), [0, 1, 2]);
+
+      expect(storage.addAccount, throwsStateError);
+    });
+
+    test('switches the active slot and keeps it', () async {
+      await storage.prepareActive();
+      await storage.addAccount();
+
+      await storage.activate(0);
+
+      expect((await AccountStorage(root.path).readIndex())!.active, 0);
+      expect((await storage.prepareActive()).slot, 0);
+    });
+
+    test('remembers who is signed in to a slot', () async {
+      await storage.prepareActive();
+      await storage.describe(
+        const AccountEntry(
+          slot: 0,
+          userId: 42,
+          name: 'Anna Petrova',
+          phoneNumber: '79991234567',
+        ),
+      );
+
+      final entry = (await storage.readIndex())!.activeAccount;
+      expect(entry.name, 'Anna Petrova');
+      expect(entry.phoneNumber, '79991234567');
+      expect(entry.isSignedIn, isTrue);
+    });
+
+    test('removing an account wipes its folder and keys', () async {
+      await storage.prepareActive();
+      await storage.addAccount();
+      await storage.prepareActive();
+      await File(path('accounts/1/mollygram.db')).writeAsString('secret');
+      final secrets = _MemoryStore({
+        for (final name in [
+          ...AccountStorage.secretNamesFor(0),
+          ...AccountStorage.secretNamesFor(1),
+        ])
+          name: 'key',
+      });
+
+      final index = await storage.remove(1, secrets);
+
+      expect(index.active, 0);
+      expect(index.accounts.map((a) => a.slot), [0]);
+      expect(Directory(path('accounts/1')).existsSync(), isFalse);
+      expect(Directory(path('accounts/0')).existsSync(), isTrue);
+      expect(secrets.values.keys, AccountStorage.secretNamesFor(0));
+    });
+
+    test('a removed slot number is never handed out again', () async {
+      await storage.prepareActive();
+      await storage.addAccount();
+      await storage.remove(1, _MemoryStore({}));
+
+      final index = await storage.addAccount();
+
+      expect(index.active, 2);
+      expect((await storage.readIndex())!.nextSlot, 3);
+    });
+
+    test('removing the last account leaves a fresh empty slot', () async {
+      await storage.prepareActive();
+
+      final index = await storage.remove(0, _MemoryStore({}));
+
+      expect(index.accounts.map((a) => a.slot), [1]);
+      expect(index.active, 1);
+      expect((await storage.prepareActive()).slot, 1);
+      expect(Directory(path('accounts/0')).existsSync(), isFalse);
+    });
+
+    test('an index without next_slot reads as one past the last', () {
+      final index = AccountIndex.fromJson({
+        'version': 1,
+        'active': 4,
+        'accounts': [
+          {'slot': 0},
+          {'slot': 4},
+        ],
+      });
+      expect(index.nextSlot, 5);
+    });
+  });
+
   group('databaseKeyFor', () {
     test('moves the old key to slot 0', () async {
       final key = base64UrlEncode(List<int>.filled(32, 7));

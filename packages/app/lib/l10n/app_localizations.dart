@@ -3859,6 +3859,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Deleted chat'**
   String get folderDeletedChat;
+
+  /// No description provided for @accounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Accounts'**
+  String get accounts;
+
+  /// No description provided for @accountsAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to {count} accounts, each with its own chats and tabs.'**
+  String accountsAbout(int count);
+
+  /// No description provided for @addAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Add account'**
+  String get addAccount;
+
+  /// No description provided for @accountNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Account {number}'**
+  String accountNumber(int number);
+
+  /// No description provided for @switchToAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to {name}'**
+  String switchToAccount(String name);
+
+  /// No description provided for @notSignedIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Not signed in'**
+  String get notSignedIn;
+
+  /// No description provided for @logOutAccountTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Log out of {name}?'**
+  String logOutAccountTitle(String name);
 }
 
 class _AppLocalizationsDelegate

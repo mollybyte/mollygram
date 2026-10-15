@@ -627,5 +627,12 @@
   "deleteChannelMessage": "Канал и все его публикации пропадут у всех подписчиков. Это нельзя отменить.",
   "leaveFailed": "Не удалось выйти. Попробуйте ещё раз.",
   "deleteFailed": "Не удалось удалить. Попробуйте ещё раз.",
-  "folderDeletedChat": "Удалённый чат"
+  "folderDeletedChat": "Удалённый чат",
+  "accounts": "Аккаунты",
+  "accountsAbout": "До {count} аккаунтов, у каждого свои чаты и вкладки.",
+  "addAccount": "Добавить аккаунт",
+  "accountNumber": "Аккаунт {number}",
+  "switchToAccount": "Переключиться на {name}",
+  "notSignedIn": "Вход не выполнен",
+  "logOutAccountTitle": "Выйти из аккаунта {name}?"
 }

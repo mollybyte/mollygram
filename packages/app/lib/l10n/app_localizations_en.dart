@@ -2271,4 +2271,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get folderDeletedChat => 'Deleted chat';
+
+  @override
+  String get accounts => 'Accounts';
+
+  @override
+  String accountsAbout(int count) {
+    return 'Up to $count accounts, each with its own chats and tabs.';
+  }
+
+  @override
+  String get addAccount => 'Add account';
+
+  @override
+  String accountNumber(int number) {
+    return 'Account $number';
+  }
+
+  @override
+  String switchToAccount(String name) {
+    return 'Switch to $name';
+  }
+
+  @override
+  String get notSignedIn => 'Not signed in';
+
+  @override
+  String logOutAccountTitle(String name) {
+    return 'Log out of $name?';
+  }
 }

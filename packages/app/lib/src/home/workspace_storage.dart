@@ -5,6 +5,8 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../session/accounts.dart';
+
 /// Where the window layout (tabs, split panes) is kept between launches.
 abstract interface class WorkspaceStorage {
   /// The saved layout as decoded JSON, or null when there is none.
@@ -16,13 +18,30 @@ abstract interface class WorkspaceStorage {
   Future<void> clear();
 }
 
-final workspaceStorageProvider = Provider<WorkspaceStorage>(
-  (ref) => FileWorkspaceStorage(),
-);
+/// The open account's layout; a new storage for each account.
+final workspaceStorageProvider = Provider<WorkspaceStorage>((ref) {
+  final slot = ref.watch(activeSlotProvider);
+  return FileWorkspaceStorage(() async {
+    final storage = await ref.read(accountStorageProvider.future);
+    return storage.slotPath(slot ?? (await storage.index()).active);
+  });
+});
 
-/// `workspace.json` next to the TDLib database, which holds one account.
+/// `workspace.json` in the account's folder (`accounts/<slot>/`), so each
+/// account keeps its own tabs and is wiped with it.
+///
+/// Versions before multiple accounts kept one `workspace.json` in the
+/// application support folder. The first account to read it after the
+/// update moves it into its folder: that is the account it belonged to.
 final class FileWorkspaceStorage implements WorkspaceStorage {
-  Future<File> _file() async {
+  FileWorkspaceStorage(this._folder);
+
+  final Future<String> Function() _folder;
+
+  Future<File> _file() async =>
+      File('${await _folder()}${Platform.pathSeparator}workspace.json');
+
+  Future<File> _legacy() async {
     final support = await getApplicationSupportDirectory();
     return File('${support.path}${Platform.pathSeparator}workspace.json');
   }
@@ -31,6 +50,13 @@ final class FileWorkspaceStorage implements WorkspaceStorage {
   Future<Object?> read() async {
     final file = await _file();
     try {
+      if (!await file.exists()) {
+        final legacy = await _legacy();
+        if (await legacy.exists()) {
+          await file.parent.create(recursive: true);
+          await legacy.rename(file.path);
+        }
+      }
       return jsonDecode(await file.readAsString());
     } on Object {
       // Missing or broken: start with an empty window.
@@ -41,6 +67,7 @@ final class FileWorkspaceStorage implements WorkspaceStorage {
   @override
   Future<void> write(Object? json) async {
     final file = await _file();
+    await file.parent.create(recursive: true);
     // Written next to the file and renamed, so a crash mid-write never
     // leaves half a layout behind.
     final temp = File('${file.path}.tmp');

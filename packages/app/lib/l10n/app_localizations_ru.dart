@@ -2293,4 +2293,33 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get folderDeletedChat => 'Удалённый чат';
+
+  @override
+  String get accounts => 'Аккаунты';
+
+  @override
+  String accountsAbout(int count) {
+    return 'До $count аккаунтов, у каждого свои чаты и вкладки.';
+  }
+
+  @override
+  String get addAccount => 'Добавить аккаунт';
+
+  @override
+  String accountNumber(int number) {
+    return 'Аккаунт $number';
+  }
+
+  @override
+  String switchToAccount(String name) {
+    return 'Переключиться на $name';
+  }
+
+  @override
+  String get notSignedIn => 'Вход не выполнен';
+
+  @override
+  String logOutAccountTitle(String name) {
+    return 'Выйти из аккаунта $name?';
+  }
 }
