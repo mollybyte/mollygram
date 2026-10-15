@@ -747,4 +747,48 @@ class AppLocalizationsRu extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get mediaSaved => 'Сохранено';
+
+  @override
+  String get mediaSaveFailed => 'Не удалось сохранить файл';
+
+  @override
+  String get mediaCopied => 'Скопировано';
+
+  @override
+  String mediaCounter(int index, int count) {
+    return '$index из $count';
+  }
+
+  @override
+  String get mediaCopy => 'Копировать';
+
+  @override
+  String get mediaSave => 'Сохранить';
+
+  @override
+  String get mediaPrevious => 'Назад';
+
+  @override
+  String get mediaNext => 'Вперёд';
+
+  @override
+  String get mediaPause => 'Пауза';
+
+  @override
+  String get mediaPlay => 'Воспроизвести';
+
+  @override
+  String get mediaSpeed => 'Скорость';
+
+  @override
+  String get mediaLoop => 'Повтор';
+
+  @override
+  String get mediaUnmute => 'Включить звук';
+
+  @override
+  String get mediaMute => 'Выключить звук';
 }

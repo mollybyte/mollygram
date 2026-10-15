@@ -430,6 +430,25 @@ void main() {
     });
   });
 
+  test('finds photos and videos around a message, oldest first', () async {
+    await controller.start();
+
+    final found = await controller.mediaAround(7, 20, newer: 5, limit: 11);
+
+    final search = json.sent.lastWhere(
+      (r) => r['@type'] == 'searchChatMessages',
+    );
+    expect(search['chat_id'], 7);
+    expect(search['from_message_id'], 20);
+    expect(search['offset'], -5);
+    expect(search['limit'], 11);
+    expect(
+      (search['filter']! as Map)['@type'],
+      'searchMessagesFilterPhotoAndVideo',
+    );
+    expect(found.map((m) => m.id), [18, 20, 22]);
+  });
+
   test('sends a caption too long for media as its own message', () async {
     await controller.start();
 
@@ -646,6 +665,15 @@ final class _FakeTdJson implements td.TdJson {
           _message(id: 30, chatId: 7, text: '').toJson(),
           _message(id: 31, chatId: 7, text: '').toJson(),
         ],
+      },
+      'searchChatMessages' => {
+        '@type': 'foundChatMessages',
+        'total_count': 3,
+        'messages': [
+          for (final id in [22, 20, 18])
+            _message(id: id, chatId: 7, text: '').toJson(),
+        ],
+        'next_from_message_id': 18,
       },
       'forwardMessages' => {
         '@type': 'messages',

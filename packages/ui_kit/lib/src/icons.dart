@@ -232,6 +232,30 @@ abstract final class MgIcons {
     '<path d="M12 20a8 8 0 1 0-7.1-4.3L4 20l4.3-.9A8 8 0 0 0 12 20z"/>',
   );
 
+  // Media viewer.
+  static const forward = MgIconData(
+    'forward',
+    '<path d="M14 5l7 7-7 7M21 12h-9a8 8 0 0 0-8 8"/>',
+  );
+  static const copy = MgIconData(
+    'copy',
+    '<rect x="8" y="8" width="12" height="12" rx="2.5"/>'
+        '<path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
+  );
+  static const loop = MgIconData(
+    'loop',
+    '<path d="M17 3l3 3-3 3M20 6H8a4 4 0 0 0-4 4v1M7 21l-3-3 3-3M4 18h12a4 4 0 0 0 4-4v-1"/>',
+  );
+  static const volume = MgIconData(
+    'volume',
+    '<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/>'
+        '<path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/>',
+  );
+  static const muted = MgIconData(
+    'muted',
+    '<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4zM16 9.5l5 5M21 9.5l-5 5"/>',
+  );
+
   static const List<MgIconData> all = [
     compose,
     search,
@@ -279,6 +303,11 @@ abstract final class MgIcons {
     sticker,
     views,
     comment,
+    forward,
+    copy,
+    loop,
+    volume,
+    muted,
   ];
 }
 
