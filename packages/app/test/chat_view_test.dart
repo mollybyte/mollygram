@@ -1922,6 +1922,46 @@ void main() {
     );
   });
 
+  testWidgets('draws a custom emoji as its sticker', (tester) async {
+    json.history = [
+      td.Message.fromJson({
+        ..._message(id: 14, senderId: 2, text: '').toJson(),
+        'content': {
+          '@type': 'messageText',
+          'text': {
+            '@type': 'formattedText',
+            'text': 'Hot 🔥 take',
+            'entities': [
+              {
+                '@type': 'textEntity',
+                'offset': 4,
+                'length': 2,
+                'type': {
+                  '@type': 'textEntityTypeCustomEmoji',
+                  'custom_emoji_id': 777,
+                },
+              },
+            ],
+          },
+          'link_preview_options': null,
+        },
+      }),
+      ..._history,
+    ];
+    await pump(tester);
+    expect(find.byType(StickerContent), findsNothing);
+    // The stickers arrive in one batch after the first build.
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    final request = json.sent.lastWhere(
+      (r) => r['@type'] == 'getCustomEmojiStickers',
+    );
+    expect(request['custom_emoji_ids'], ['777']);
+    expect(find.byType(StickerContent), findsOneWidget);
+    expect(find.textContaining('Hot ', findRichText: true), findsOneWidget);
+    expect(find.textContaining('🔥', findRichText: true), findsNothing);
+  });
+
   testWidgets('sends a sticker from the panel and closes it', (tester) async {
     await pump(tester);
     await tester.tap(find.byTooltip('Emoji and stickers'));
@@ -2254,6 +2294,22 @@ final class _FakeTdJson implements td.TdJson {
       'searchStickers' => {
         '@type': 'stickers',
         'stickers': [_sticker(4, '😻')],
+      },
+      'getCustomEmojiStickers' => {
+        '@type': 'stickers',
+        'stickers': [
+          // Int64 ids travel as strings.
+          for (final id in decoded['custom_emoji_ids']! as List)
+            if ('$id' == '777')
+              {
+                ..._sticker(7, '🔥'),
+                'full_type': {
+                  '@type': 'stickerFullTypeCustomEmoji',
+                  'custom_emoji_id': 777,
+                  'needs_repainting': false,
+                },
+              },
+        ],
       },
       'getInstalledStickerSets' => {
         '@type': 'stickerSets',
