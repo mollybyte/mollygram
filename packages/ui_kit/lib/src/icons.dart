@@ -346,6 +346,30 @@ abstract final class MgIcons {
   );
   static const plus = MgIconData('plus', '<path d="M12 5v14M5 12h14"/>');
 
+  // Message menu.
+  static const reply = MgIconData(
+    'reply',
+    '<path d="M10 5 3 12l7 7M3 12h9a8 8 0 0 1 8 8"/>',
+  );
+  static const quote = MgIconData(
+    'quote',
+    '<path d="M10 7.5C7 8 5 10 5 13.5V17h4.5v-4.5H7M19 7.5c-3 .5-5 2.5-5 6V17h4.5v-4.5H16"/>',
+    stroke: 1.6,
+  );
+  static const edit = MgIconData(
+    'edit',
+    '<path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17z"/><path d="m14 7 3 3"/>',
+  );
+  static const link = MgIconData(
+    'link',
+    '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/>'
+        '<path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+  );
+  static const select = MgIconData(
+    'select',
+    '<circle cx="12" cy="12" r="8.5"/><path d="m8.5 12.3 2.4 2.4 4.6-5"/>',
+  );
+
   static const List<MgIconData> all = [
     group,
     channel,
@@ -413,6 +437,11 @@ abstract final class MgIcons {
     heart,
     check,
     plus,
+    reply,
+    quote,
+    edit,
+    link,
+    select,
   ];
 }
 
