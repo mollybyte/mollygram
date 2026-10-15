@@ -424,6 +424,123 @@ void main() {
     expect(store.slowModeUntil(7), isNotNull);
   });
 
+  test('keeps the server draft and saves the user\'s own', () async {
+    await controller.start();
+    json.push({
+      '@type': 'updateChatDraftMessage',
+      'chat_id': 7,
+      'draft_message': {
+        '@type': 'draftMessage',
+        'date': 1700000000,
+        'content': {
+          '@type': 'draftMessageContentText',
+          'text': {
+            '@type': 'formattedText',
+            'text': 'Unsent',
+            'entities': <Object?>[],
+          },
+        },
+        'effect_id': 0,
+      },
+      'positions': <Object?>[],
+    });
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    final store = controller.store;
+    expect(
+      (store.draft(7)!.content as td.DraftMessageContentText).text.text,
+      'Unsent',
+    );
+
+    await controller.saveDraft(
+      7,
+      text: const td.FormattedText(text: 'Hi there', entities: []),
+      replyTo: 10,
+    );
+    var sent = json.sent.last;
+    expect(sent['@type'], 'setChatDraftMessage');
+    final draft = sent['draft_message']! as Map;
+    expect(((draft['content']! as Map)['text']! as Map)['text'], 'Hi there');
+    expect((draft['reply_to']! as Map)['message_id'], 10);
+
+    // The same draft again is not sent twice.
+    final before = json.sent.length;
+    await controller.saveDraft(
+      7,
+      text: const td.FormattedText(text: 'Hi there', entities: []),
+      replyTo: 10,
+    );
+    expect(json.sent.length, before);
+
+    await controller.saveDraft(7);
+    sent = json.sent.last;
+    expect(sent['@type'], 'setChatDraftMessage');
+    expect(sent.containsKey('draft_message'), isFalse);
+    expect(store.draft(7), isNull);
+  });
+
+  test('previews the link in a draft and sends how it should show', () async {
+    await controller.start();
+
+    final none = await controller.linkPreview(
+      const td.FormattedText(text: 'Plain words', entities: []),
+    );
+    expect(none, isNull);
+
+    final preview = await controller.linkPreview(
+      const td.FormattedText(text: 'See https://example.com/a', entities: []),
+    );
+    expect(preview?.title, 'An example page');
+    expect(json.sent.last['@type'], 'getLinkPreview');
+
+    await controller.sendText(
+      7,
+      'See https://example.com/a',
+      linkPreviewOptions: const td.LinkPreviewOptions(
+        isDisabled: false,
+        url: 'https://example.com/a',
+        forceSmallMedia: false,
+        forceLargeMedia: false,
+        showAboveText: true,
+      ),
+    );
+    final sent = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    final options =
+        (sent['input_message_content']! as Map)['link_preview_options']! as Map;
+    expect(options['show_above_text'], isTrue);
+    expect(options['url'], 'https://example.com/a');
+
+    // A draft that drops its preview differs from one that keeps it.
+    await controller.saveDraft(
+      7,
+      text: const td.FormattedText(
+        text: 'See https://example.com/a',
+        entities: [],
+      ),
+    );
+    final before = json.sent.length;
+    await controller.saveDraft(
+      7,
+      text: const td.FormattedText(
+        text: 'See https://example.com/a',
+        entities: [],
+      ),
+      linkPreviewOptions: const td.LinkPreviewOptions(
+        isDisabled: true,
+        url: '',
+        forceSmallMedia: false,
+        forceLargeMedia: false,
+        showAboveText: false,
+      ),
+    );
+    expect(json.sent.length, before + 1);
+    final draft = json.sent.last['draft_message']! as Map;
+    expect(
+      ((draft['content']! as Map)['link_preview_options']!
+          as Map)['is_disabled'],
+      isTrue,
+    );
+  });
+
   test('reports messages step by step as the server asks', () async {
     await controller.start();
 
@@ -916,6 +1033,14 @@ void main() {
     expect(await controller.quickReactions(7, 1), isEmpty);
   });
 
+  test('translates a message with Telegram', () async {
+    expect(await controller.translate(7, 1, 'en'), 'Hello (en)');
+    final request = json.sent.last;
+    expect(request['@type'], 'translateMessageText');
+    expect(request['chat_id'], 7);
+    expect(request['message_id'], 1);
+  });
+
   test('announces a new avatar or colour of a sender', () async {
     await controller.start();
     var changes = 0;
@@ -1220,6 +1345,11 @@ final class _FakeTdJson implements td.TdJson {
         'next_from_message_id': 18,
       },
       'joinChat' => {'@type': 'chatJoinResultSuccess'},
+      'translateMessageText' => {
+        '@type': 'formattedText',
+        'text': 'Hello (${decoded['to_language_code']})',
+        'entities': <Object?>[],
+      },
       'forwardMessages' => {
         '@type': 'messages',
         'total_count': 0,
@@ -1313,6 +1443,35 @@ final class _FakeTdJson implements td.TdJson {
       'getOption' when decoded['name'] == 'message_caption_length_max' => {
         '@type': 'optionValueInteger',
         'value': '10',
+      },
+      'getLinkPreview'
+          when ((decoded['text']! as Map)['text']! as String).contains(
+            'example.com',
+          ) =>
+        {
+          '@type': 'linkPreview',
+          'url': 'https://example.com/a',
+          'display_url': 'example.com/a',
+          'site_name': 'Example',
+          'title': 'An example page',
+          'description': {
+            '@type': 'formattedText',
+            'text': 'Nothing to see',
+            'entities': <Object?>[],
+          },
+          'author': '',
+          'type': {'@type': 'linkPreviewTypeArticle'},
+          'has_large_media': false,
+          'show_large_media': false,
+          'show_media_above_description': false,
+          'skip_confirmation': false,
+          'show_above_text': false,
+          'instant_view_version': 0,
+        },
+      'getLinkPreview' => {
+        '@type': 'error',
+        'code': 404,
+        'message': 'Not Found',
       },
       _ => {'@type': 'ok'},
     };

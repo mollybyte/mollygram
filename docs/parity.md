@@ -106,7 +106,7 @@ M8 calls and macOS release, M9 after release.
 | Text, Enter to send, Shift+Enter newline | done | | | |
 | Attach photos, videos, files: pick, drop, paste, albums | done | #31 | | |
 | Edit mode and reply panel | done | #30 | | |
-| Drafts saved to the server and synced | partial | Draft is local to the open view; `SetChatDraftMessage` not called | S | M1 |
+| Drafts saved to the server and synced | done | Composer loads the chat's draft and saves its own (text, formatting, reply) after a pause and on leaving | | |
 | Emoji picker | done | #34: groups, recent, keyword search | | |
 | Sticker panel, recent and favourite stickers, sticker search | partial | #34: recent, favourites, installed sets; no search, no set management | S | M1 |
 | GIF panel and GIF search | missing | `GifKeyboardController` | M | M2 |
@@ -131,7 +131,7 @@ M8 calls and macOS release, M9 after release.
 | Media editor: filters and adjustments (brightness, contrast, saturation, warmth, vignette) | done | `packages/media_editor`: seven looks, six sliders | | |
 | Video editor: trim, mute, cover frame, quality | partial | `packages/media_editor`: trim, mute and cover done (macOS, AVFoundation); quality presets pending | S | M4 |
 | Slowmode and restriction notices | done | Members who may not write see why instead of the composer; slowmode counts down under it (`chat/slow_mode.dart`) | | |
-| Link preview control (remove, above/below) | missing | | S | M2 |
+| Link preview control (remove, above/below) | done | The composer shows the preview of the first link in the draft, with a button to put it above the text and one to drop it; the choice goes with the draft and the message | | |
 
 ### Media
 
@@ -218,10 +218,10 @@ M8 calls and macOS release, M9 after release.
 | Passcode lock and Touch ID | missing | `PasscodeSettingsViewController`, `LocalAuth` | M | M7 |
 | Data and storage: cache usage, clear, limits, network usage | partial | Usage by kind, clear by kind, download folder; auto-download switches are stored but not yet applied; no limits or network usage | M | M7 |
 | Appearance: theme, accent, night mode schedule, chat background, text size | partial | Theme, accent, wallpaper on or off, message text size, reduce motion; no night schedule or custom backgrounds | M | M7 |
-| Language: UI language picker, translation settings | partial | RU and EN follow the system | S | M7 |
+| Language: UI language picker, translation settings | partial | System, English or Russian in Settings, Language, applied at once; no translation settings or TDLib language packs | S | M7 |
 | Stickers and emoji: packs, reorder, archived, suggest, large emoji | missing | `InstalledStickerPacksController` | M | M7 |
 | Quick reaction choice | missing | | S | M7 |
-| Proxy: SOCKS5, MTProto, list, share | missing | `ProxyListController` | M | M7 |
+| Proxy: SOCKS5, MTProto, list, share | partial | SOCKS5, HTTP and MTProto in Settings, Proxy: "Use proxy", ping per proxy, add, edit, remove, `tg://proxy` and `t.me/proxy` links, a Proxy button on the sign-in screens; no share link or QR. TDLib keeps proxies per account database, so a new account slot starts without them (mirroring them is for the accounts work) | S | M7 |
 | Connection status in the window ("Connecting…") | done | `ConnectionMonitor`, capsule in the sidebar title bar | | |
 | Keyboard shortcuts list | done | Settings, Keyboard shortcuts: every command by group with key caps, rebinding with a conflict check, restore one or all; kept in preferences.json and applied live to the window, the palette and the shell | | |
 | Auto-delete messages default | missing | | S | M7 |

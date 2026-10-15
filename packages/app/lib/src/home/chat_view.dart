@@ -22,6 +22,7 @@ import '../chat/describe.dart';
 import '../chat/emoji_sticker_panel.dart';
 import '../chat/formatted_text.dart';
 import '../chat/forward_picker.dart';
+import '../chat/link_preview_bar.dart';
 import '../chat/media_viewer.dart';
 import '../chat/message_actions.dart';
 import '../chat/message_tile.dart';
@@ -58,6 +59,17 @@ class _ChatViewState extends ConsumerState<ChatView> {
 
   /// The message the next one answers, shown above the composer.
   ConversationMessage? _replyTo;
+  Timer? _draftTimer;
+
+  /// The preview of the first link in the draft, shown above the field,
+  /// the link it is for, and how the user wants it: dropped, or above the
+  /// text. A new link starts afresh; the same link keeps the choice.
+  td.LinkPreview? _preview;
+  String _previewUrl = '';
+  bool _previewRemoved = false;
+  bool _previewAbove = false;
+  Timer? _previewTimer;
+  int _previewSeq = 0;
 
   /// The part of [_replyTo]'s text the reply quotes, if any.
   QuoteSelection? _replyQuote;
@@ -143,6 +155,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
         .requireValue
         .conversations;
     _draft.addListener(_clearSendError);
+    _draft.addListener(_draftChanged);
+    _draft.addListener(_previewChanged);
     _mentions
       ..search = _mentionSearch()
       ..addListener(_mentionsChanged);
@@ -162,11 +176,14 @@ class _ChatViewState extends ConsumerState<ChatView> {
   void didUpdateWidget(ChatView old) {
     super.didUpdateWidget(old);
     if (old.chatId == widget.chatId) return;
+    // An edit belongs to the old chat: give back the draft it set aside.
+    if (_editing != null) _draft.setFormatted(_setAside, _setAsideRanges);
+    _editing = null;
+    _saveDraft(old.chatId);
     _close(old.chatId);
     _viewed.clear();
     _toView.clear();
-    // An edit belongs to the old chat: give back the draft it set aside.
-    if (_editing != null) _draft.setFormatted(_setAside, _setAsideRanges);
+    _draft.clear();
     _mentions
       ..search = _mentionSearch()
       ..reset();
@@ -174,6 +191,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _replyTo = null;
     _replyQuote = null;
     _editing = null;
+    _resetPreview();
     _setAside = '';
     _setAsideRanges = const [];
     _replyAside = null;
@@ -195,6 +213,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
 
   @override
   void dispose() {
+    _draftTimer?.cancel();
+    _previewTimer?.cancel();
+    if (_editing == null) _saveDraft(widget.chatId);
     _close(widget.chatId);
     _mentions.dispose();
     _draft.dispose();
@@ -216,6 +237,126 @@ class _ChatViewState extends ConsumerState<ChatView> {
     if (!store.hasPinned(chatId)) {
       unawaited(_quiet(_conversations.loadPinned(chatId)));
     }
+    _loadDraft(chatId);
+  }
+
+  /// Puts the draft TDLib keeps for [chatId] into the empty composer: its
+  /// text with formatting, and the message it answers when that is loaded.
+  void _loadDraft(int chatId) {
+    if (_draft.text.isNotEmpty) return;
+    final draft = _conversations.store.draft(chatId);
+    if (draft == null) return;
+    if (draft.content case td.DraftMessageContentText(:final text)) {
+      _draft.setFormatted(text.text, draftRanges(text));
+    }
+    if (draft.replyTo case td.InputMessageReplyToMessage(:final messageId)) {
+      _replyTo = _conversations.store.message(chatId, messageId);
+    }
+    if (draft.content case td.DraftMessageContentText(
+      linkPreviewOptions: final options?,
+    )) {
+      _previewUrl = options.url;
+      _previewRemoved = options.isDisabled;
+      _previewAbove = options.showAboveText;
+    }
+  }
+
+  /// Looks the link in the draft up a moment after typing stops, so the
+  /// preview appears as it would under the sent message.
+  void _previewChanged() {
+    if (_editing != null) return;
+    _previewTimer?.cancel();
+    final text = _draft.text;
+    // No dot, no link: nothing to ask TDLib about.
+    if (!text.contains('.')) {
+      if (_preview != null || _previewUrl.isNotEmpty) {
+        _resetPreview(notify: true);
+      }
+      return;
+    }
+    _previewTimer = Timer(const Duration(milliseconds: 400), () {
+      if (mounted) unawaited(_lookUpPreview());
+    });
+  }
+
+  Future<void> _lookUpPreview() async {
+    final chatId = widget.chatId;
+    final seq = ++_previewSeq;
+    final text = formattedDraft(_draft.text, _draft.ranges);
+    final preview = await _conversations.linkPreview(text);
+    if (!mounted || widget.chatId != chatId || seq != _previewSeq) return;
+    if (preview == null) {
+      if (_preview != null) setState(() => _preview = null);
+      return;
+    }
+    setState(() {
+      // Another link: the choice made for the last one no longer holds.
+      if (preview.url != _previewUrl) {
+        _previewUrl = preview.url;
+        _previewRemoved = false;
+        _previewAbove = preview.showAboveText;
+      }
+      _preview = preview;
+    });
+  }
+
+  /// How the message carries its link preview, or null for the default:
+  /// the preview Telegram makes, under the text.
+  td.LinkPreviewOptions? get _previewOptions {
+    if (_previewUrl.isEmpty || (!_previewRemoved && !_previewAbove)) {
+      return null;
+    }
+    return td.LinkPreviewOptions(
+      isDisabled: _previewRemoved,
+      url: _previewRemoved ? '' : _previewUrl,
+      forceSmallMedia: false,
+      forceLargeMedia: false,
+      showAboveText: _previewAbove,
+    );
+  }
+
+  void _resetPreview({bool notify = false}) {
+    _previewTimer?.cancel();
+    _previewSeq++;
+    void reset() {
+      _preview = null;
+      _previewUrl = '';
+      _previewRemoved = false;
+      _previewAbove = false;
+    }
+
+    if (notify && mounted) {
+      setState(reset);
+    } else {
+      reset();
+    }
+  }
+
+  /// Saves the draft a while after the last keystroke, so a chat left or
+  /// an app quit loses nothing and the other devices catch up.
+  void _draftChanged() {
+    if (_editing != null) return;
+    _draftTimer?.cancel();
+    _draftTimer = Timer(const Duration(milliseconds: 1200), () {
+      if (mounted) _saveDraft(widget.chatId);
+    });
+  }
+
+  void _saveDraft(int chatId) {
+    _draftTimer?.cancel();
+    final text = _draft.text;
+    unawaited(
+      _quiet(
+        _conversations.saveDraft(
+          chatId,
+          text: text.trim().isEmpty
+              ? null
+              : formattedDraft(text, _draft.ranges),
+          replyTo: _replyTo?.id,
+          linkPreviewOptions: _previewOptions,
+        ),
+      ),
+    );
   }
 
   /// The bar's click: to the pinned message it shows, then on to the
@@ -974,12 +1115,14 @@ class _ChatViewState extends ConsumerState<ChatView> {
     final ranges = _draft.ranges;
     final formatted = formattedDraft(text, ranges);
     if (formatted.text.isEmpty) return;
+    final previewOptions = _previewOptions;
     _draft.clear();
     setState(() {
       _failure = null;
       _replyTo = null;
       _replyQuote = null;
     });
+    _resetPreview();
     unawaited(_toLatestForSend());
     try {
       await _conversations.sendText(
@@ -989,6 +1132,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
         entities: formatted.entities,
         quote: quote?.text,
         quotePosition: quote?.position ?? 0,
+        linkPreviewOptions: previewOptions,
       );
     } catch (error) {
       // TDLib names the wait under slowmode: SLOWMODE_WAIT_27.
@@ -1253,16 +1397,35 @@ class _ChatViewState extends ConsumerState<ChatView> {
       );
     }
     final reply = _replyTo;
-    if (reply == null) return null;
-    return ComposerContextBar(
-      title: nameOfSender(l10n, _conversations.store, reply.sender),
-      text: _replyQuote?.text ?? describeContent(l10n, reply.content),
-      closeTooltip: l10n.close,
-      onClose: () => setState(() {
-        _replyTo = null;
-        _replyQuote = null;
-      }),
-    );
+    final preview = _previewRemoved ? null : _preview;
+    final bars = <Widget>[
+      if (reply != null)
+        ComposerContextBar(
+          title: nameOfSender(l10n, _conversations.store, reply.sender),
+          text: _replyQuote?.text ?? describeContent(l10n, reply.content),
+          closeTooltip: l10n.close,
+          onClose: () => setState(() {
+            _replyTo = null;
+            _replyQuote = null;
+          }),
+        ),
+      if (preview != null)
+        ComposerLinkPreview(
+          preview: preview,
+          aboveText: _previewAbove,
+          onToggleAbove: () => setState(() => _previewAbove = !_previewAbove),
+          onRemove: () => setState(() => _previewRemoved = true),
+        ),
+    ];
+    return switch (bars.length) {
+      0 => null,
+      1 => bars.single,
+      _ => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: bars,
+      ),
+    };
   }
 
   /// The calendar under a date pill: picking a day goes to its last

@@ -366,5 +366,39 @@ void main() {
       expect(await p.runCommand('/tr', args: 6), 'permission_denied');
       expect(await p.runCommand('/lang'), 'de:en');
     });
+
+    test(
+      'on_command translates only the chat of the running command',
+      () async {
+        final p = load(
+          '''
+        mg.command("/tr", async (chat) => {
+          try { return (await mg.messages.translate(chat, 1, {to: "en"})).text; }
+          catch (e) { return e.code; }
+        });
+        mg.on("ui.action", async () => {
+          try { return [{type: "text", text: (await mg.messages.translate(5, 1, {to: "en"})).text}]; }
+          catch (e) { return [{type: "text", text: e.code}]; }
+        });
+      ''',
+          m: manifest(
+            sdk: '^1.1',
+            permissions: '  messages.read: on_command',
+            extra: 'commands:\n  - { name: /tr, title: Tr }',
+          ),
+        );
+        expect(
+          await p.runCommand('/tr', chatId: 5, args: 5),
+          'translated to en',
+        );
+        expect(
+          await p.runCommand('/tr', chatId: 5, args: 6),
+          'permission_denied',
+        );
+        // Outside a command, nothing.
+        final r = await p.dispatch(PluginEvent.uiAction, {});
+        expect((r as EventHandled).ui.single['text'], 'permission_denied');
+      },
+    );
   });
 }

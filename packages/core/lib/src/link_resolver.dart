@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 
+import 'proxy_controller.dart';
 import 'telegram_links.dart';
 
 /// What a clicked link leads to, once TDLib has looked at it.
@@ -28,6 +29,12 @@ final class ChatLinkTarget extends LinkTarget {
 final class JoinLinkTarget extends LinkTarget {
   const JoinLinkTarget(this.preview);
   final ChatJoinPreview preview;
+}
+
+/// A `tg://proxy` or `t.me/proxy` link: the app offers to add the proxy.
+final class ProxyLinkTarget extends LinkTarget {
+  const ProxyLinkTarget(this.proxy);
+  final ProxySettings proxy;
 }
 
 /// A link that runs one of the app's commands, such as `tg://settings`.
@@ -172,6 +179,11 @@ final class LinkResolver {
         return _message(url);
       case td.InternalLinkTypeSavedMessages():
         return _savedMessages();
+      case td.InternalLinkTypeProxy(:final proxy):
+        // A proxy of a kind TDLib doesn't describe, as from a newer app.
+        return proxy == null
+            ? const UnsupportedLinkTarget()
+            : ProxyLinkTarget(ProxySettings.fromTd(proxy));
       case td.InternalLinkTypeSettings():
         return const CommandLinkTarget('app.settings');
       default:

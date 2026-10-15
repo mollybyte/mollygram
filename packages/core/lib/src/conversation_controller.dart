@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
@@ -430,6 +431,86 @@ final class ConversationController {
     }
   }
 
+  /// Saves what the user has typed in [chatId] as its draft, so the other
+  /// devices show it too: [text] with its formatting and the message it
+  /// answers. Without text or a reply the draft is cleared. Nothing goes
+  /// out when the draft TDLib has already reads the same.
+  Future<void> saveDraft(
+    int chatId, {
+    td.FormattedText? text,
+    int? replyTo,
+    td.LinkPreviewOptions? linkPreviewOptions,
+  }) async {
+    final draft = text == null && replyTo == null
+        ? null
+        : td.DraftMessage(
+            replyTo: replyTo == null
+                ? null
+                : td.InputMessageReplyToMessage(
+                    messageId: replyTo,
+                    checklistTaskId: 0,
+                    pollOptionId: '',
+                  ),
+            date: 0,
+            content: td.DraftMessageContentText(
+              text: text ?? const td.FormattedText(text: '', entities: []),
+              linkPreviewOptions: linkPreviewOptions,
+            ),
+            effectId: 0,
+          );
+    if (!_draftDiffers(store.draft(chatId), draft)) return;
+    store.setDraft(chatId, draft);
+    await _client.send(
+      td.SetChatDraftMessage(chatId: chatId, draftMessage: draft),
+    );
+  }
+
+  static bool _draftDiffers(td.DraftMessage? a, td.DraftMessage? b) {
+    if (a == null || b == null) return (a == null) != (b == null);
+    final (aText, aPreview) = switch (a.content) {
+      td.DraftMessageContentText(:final text, :final linkPreviewOptions) => (
+        text,
+        linkPreviewOptions,
+      ),
+      _ => (null, null),
+    };
+    final (bText, bPreview) = switch (b.content) {
+      td.DraftMessageContentText(:final text, :final linkPreviewOptions) => (
+        text,
+        linkPreviewOptions,
+      ),
+      _ => (null, null),
+    };
+    final aReply = switch (a.replyTo) {
+      td.InputMessageReplyToMessage(:final messageId) => messageId,
+      _ => null,
+    };
+    final bReply = switch (b.replyTo) {
+      td.InputMessageReplyToMessage(:final messageId) => messageId,
+      _ => null,
+    };
+    return aReply != bReply ||
+        aText?.text != bText?.text ||
+        aText?.entities.length != bText?.entities.length ||
+        jsonEncode(aPreview?.toJson()) != jsonEncode(bPreview?.toJson());
+  }
+
+  /// The preview Telegram would attach to [text], for the first link in
+  /// it, under [options] when they are given; null when there is no link
+  /// or the site gives nothing to show.
+  Future<td.LinkPreview?> linkPreview(
+    td.FormattedText text, {
+    td.LinkPreviewOptions? options,
+  }) async {
+    try {
+      return await _client.send(
+        td.GetLinkPreview(text: text, linkPreviewOptions: options),
+      );
+    } on td.TdException {
+      return null;
+    }
+  }
+
   /// Remembers that TDLib refused a message for [seconds] under slowmode,
   /// so the composer can count down.
   void noteSlowModeWait(int chatId, int seconds) {
@@ -465,7 +546,8 @@ final class ConversationController {
 
   /// Sends [text] with its formatting [entities], as a reply to [replyTo]
   /// when it is set, quoting [quote] of its text at [quotePosition] when
-  /// that is given.
+  /// that is given. [linkPreviewOptions] shape the preview of a link in
+  /// the text, or drop it; null leaves it to Telegram's defaults.
   Future<void> sendText(
     int chatId,
     String text, {
@@ -473,6 +555,7 @@ final class ConversationController {
     List<td.TextEntity> entities = const [],
     String? quote,
     int quotePosition = 0,
+    td.LinkPreviewOptions? linkPreviewOptions,
   }) async {
     if (text.trim().isEmpty) {
       throw ArgumentError.value(
@@ -499,6 +582,7 @@ final class ConversationController {
               ),
         inputMessageContent: td.InputMessageText(
           text: td.FormattedText(text: text, entities: entities),
+          linkPreviewOptions: linkPreviewOptions,
           clearDraft: true,
         ),
       ),
@@ -865,6 +949,20 @@ final class ConversationController {
     return link.link;
   }
 
+  /// The message's text translated into [to] by Telegram, free of Premium
+  /// when asked for one message at a time.
+  Future<String> translate(int chatId, int messageId, String to) async {
+    final text = await _client.send(
+      td.TranslateMessageText(
+        chatId: chatId,
+        messageId: messageId,
+        toLanguageCode: to,
+        tone: '',
+      ),
+    );
+    return text.text;
+  }
+
   /// Announces a change, unless the controller is already closed: a reply
   /// can land after the session started shutting down.
   void _notify() {
@@ -904,7 +1002,10 @@ final class ConversationController {
           })
           ..setChatType(chat.id, chat.type)
           ..setPermissions(chat.id, chat.permissions)
+          ..setDraft(chat.id, chat.draftMessage)
           ..setMuteFor(chat.id, chat.notificationSettings.muteFor);
+      case td.UpdateChatDraftMessage(:final chatId, :final draftMessage):
+        if (store.setDraft(chatId, draftMessage)) _notify();
       case td.UpdateChatPermissions(:final chatId, :final permissions):
         if (store.setPermissions(chatId, permissions)) _notify();
       case td.UpdateSupergroupFullInfo(

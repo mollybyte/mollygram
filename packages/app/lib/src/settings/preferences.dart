@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:ui' show PlatformDispatcher;
+import 'dart:ui' show Locale, PlatformDispatcher;
 
 import 'package:flutter/material.dart' show ThemeMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -42,6 +42,18 @@ final class AutoDownload {
   int get hashCode => Object.hash(wifi, other);
 }
 
+/// The language the app speaks: the system's, or one chosen in Language.
+enum AppLanguage {
+  system(null),
+  english(Locale('en')),
+  russian(Locale('ru'));
+
+  const AppLanguage(this.locale);
+
+  /// Null follows the system.
+  final Locale? locale;
+}
+
 /// The user's choices from Appearance and Data and storage. They belong to
 /// the app, not to an account, and survive signing out.
 final class Preferences {
@@ -54,6 +66,7 @@ final class Preferences {
     this.autoDownload = defaultAutoDownload,
     this.downloadFolder,
     this.shortcuts = const {},
+    this.language = AppLanguage.system,
   });
 
   static const minTextSize = 12;
@@ -86,6 +99,7 @@ final class Preferences {
   /// Keyboard shortcuts the user changed, by action id: an encoded
   /// `ShortcutKey`, or null for an action they took the key from.
   final Map<String, String?> shortcuts;
+  final AppLanguage language;
 
   AutoDownload autoDownloadOf(AutoDownloadKind kind) =>
       autoDownload[kind] ?? defaultAutoDownload[kind]!;
@@ -99,6 +113,7 @@ final class Preferences {
     Map<AutoDownloadKind, AutoDownload>? autoDownload,
     String? downloadFolder,
     Map<String, String?>? shortcuts,
+    AppLanguage? language,
   }) => Preferences(
     theme: theme ?? this.theme,
     accent: accent ?? this.accent,
@@ -108,6 +123,7 @@ final class Preferences {
     autoDownload: autoDownload ?? this.autoDownload,
     downloadFolder: downloadFolder ?? this.downloadFolder,
     shortcuts: shortcuts ?? this.shortcuts,
+    language: language ?? this.language,
   );
 
   /// The same with [kind] changed.
@@ -126,6 +142,7 @@ final class Preferences {
     },
     'downloadFolder': ?downloadFolder,
     if (shortcuts.isNotEmpty) 'shortcuts': shortcuts,
+    'language': language.name,
   };
 
   /// Reads what [toJson] wrote. Anything missing or unknown, say from an
@@ -159,6 +176,8 @@ final class Preferences {
             if (key is String && (value == null || value is String))
               key: value as String?,
       },
+      language:
+          _byName(AppLanguage.values, json['language']) ?? defaults.language,
     );
   }
 }
