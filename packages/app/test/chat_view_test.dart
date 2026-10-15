@@ -402,6 +402,86 @@ void main() {
     expect(unpin['message_id'], 12);
   });
 
+  testWidgets('says why a member may not write in a group', (tester) async {
+    json.chat = [for (var id = 1; id <= 10; id++) id];
+    json
+      ..push(
+        _chat(
+          lastRead: 10,
+          unread: 0,
+          last: 10,
+          type: {
+            '@type': 'chatTypeSupergroup',
+            'supergroup_id': 99,
+            'is_channel': false,
+          },
+          canSendText: false,
+        ),
+      )
+      ..push(
+        _supergroup(99, {
+          '@type': 'chatMemberStatusMember',
+          'member_since_date': 0,
+        }),
+      );
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await pump(tester, group: false);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(Composer), findsNothing);
+    expect(
+      find.text("Text messages aren't allowed in this group"),
+      findsOneWidget,
+    );
+
+    // The group opens up again, but this member is restricted for a while.
+    json
+      ..push({
+        '@type': 'updateChatPermissions',
+        'chat_id': 7,
+        'permissions': {
+          '@type': 'chatPermissions',
+          'can_send_basic_messages': true,
+        },
+      })
+      ..push(
+        _supergroup(99, {
+          '@type': 'chatMemberStatusRestricted',
+          'is_member': true,
+          'restricted_until_date': 1800000000,
+          'permissions': {'@type': 'chatPermissions'},
+        }),
+      );
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+    expect(find.byType(Composer), findsNothing);
+    expect(find.textContaining("You can't write here until"), findsOneWidget);
+
+    // Free to write, under slowmode.
+    json
+      ..push(
+        _supergroup(99, {
+          '@type': 'chatMemberStatusMember',
+          'member_since_date': 0,
+        }),
+      )
+      ..push({
+        '@type': 'updateSupergroupFullInfo',
+        'supergroup_id': 99,
+        'supergroup_full_info': {
+          '@type': 'supergroupFullInfo',
+          'slow_mode_delay': 30,
+          'slow_mode_delay_expires_in': 25.0,
+        },
+      });
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+    expect(find.byType(Composer), findsOneWidget);
+    expect(find.textContaining('Slowmode is on'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 30));
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('offers to join a channel, then to mute it', (tester) async {
     json.chat = [for (var id = 1; id <= 10; id++) id];
     json
@@ -1045,6 +1125,7 @@ Map<String, Object?> _chat({
   required int unread,
   required int last,
   Map<String, Object?> type = const {'@type': 'chatTypePrivate', 'user_id': 2},
+  bool canSendText = true,
 }) => {
   '@type': 'updateNewChat',
   'chat': {
@@ -1060,7 +1141,10 @@ Map<String, Object?> _chat({
     'unread_count': unread,
     'last_read_inbox_message_id': lastRead,
     'last_read_outbox_message_id': 0,
-    'permissions': {'@type': 'chatPermissions'},
+    'permissions': {
+      '@type': 'chatPermissions',
+      'can_send_basic_messages': canSendText,
+    },
     'positions': <Object?>[],
     'chat_lists': <Object?>[],
     'notification_settings': {'@type': 'chatNotificationSettings'},

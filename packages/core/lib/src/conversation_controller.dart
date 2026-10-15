@@ -410,6 +410,38 @@ final class ConversationController {
   /// their updates only while open.
   Future<void> openChat(int chatId) async {
     await _client.send(td.OpenChat(chatId: chatId));
+    // The slowmode of a supergroup comes with its full info; TDLib sends
+    // changes on its own once it has been asked.
+    final supergroupId = store.supergroupIdOf(chatId);
+    if (supergroupId == null) return;
+    try {
+      final full = await _client.send(
+        td.GetSupergroupFullInfo(supergroupId: supergroupId),
+      );
+      store.setSlowMode(
+        supergroupId,
+        delay: full.slowModeDelay,
+        expiresIn: full.slowModeDelayExpiresIn,
+      );
+      _notify();
+    } on Object {
+      // Without the full info the chat still works; slowmode shows up on
+      // the first send.
+    }
+  }
+
+  /// Remembers that TDLib refused a message for [seconds] under slowmode,
+  /// so the composer can count down.
+  void noteSlowModeWait(int chatId, int seconds) {
+    final supergroupId = store.supergroupIdOf(chatId);
+    if (supergroupId == null) return;
+    final delay = store.slowModeDelay(chatId);
+    store.setSlowMode(
+      supergroupId,
+      delay: delay > 0 ? delay : seconds,
+      expiresIn: seconds.toDouble(),
+    );
+    _notify();
   }
 
   /// Tells TDLib the chat is no longer on screen.
@@ -871,7 +903,20 @@ final class ConversationController {
             _ => false,
           })
           ..setChatType(chat.id, chat.type)
+          ..setPermissions(chat.id, chat.permissions)
           ..setMuteFor(chat.id, chat.notificationSettings.muteFor);
+      case td.UpdateChatPermissions(:final chatId, :final permissions):
+        if (store.setPermissions(chatId, permissions)) _notify();
+      case td.UpdateSupergroupFullInfo(
+        :final supergroupId,
+        :final supergroupFullInfo,
+      ):
+        store.setSlowMode(
+          supergroupId,
+          delay: supergroupFullInfo.slowModeDelay,
+          expiresIn: supergroupFullInfo.slowModeDelayExpiresIn,
+        );
+        _notify();
       case td.UpdateSupergroup(:final supergroup):
         if (store.setSupergroupStatus(supergroup.id, supergroup.status) !=
             null) {
