@@ -131,6 +131,32 @@ class AppearancePage extends ConsumerWidget {
             ),
           ],
         ),
+        if (Platform.isMacOS)
+          SettingsGroup(
+            footer: SettingsFooter(l10n.blurThemeHint),
+            children: [
+              SettingsSwitchRow(
+                key: const ValueKey('blurTheme'),
+                title: l10n.blurTheme,
+                value: p.blurTheme,
+                onChanged: (v) => update((p) => p.copyWith(blurTheme: v)),
+              ),
+              _Reveal(
+                shown: p.blurTheme,
+                child: SettingsRow(
+                  title: l10n.blurOpacity,
+                  trailing: SizedBox(
+                    width: 180,
+                    child: _BlurOpacitySlider(
+                      value: p.blurOpacity,
+                      onChanged: (v) =>
+                          update((p) => p.copyWith(blurOpacity: v)),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         SettingsGroup(
           title: l10n.chatBackground,
           footer: SettingsFooter(l10n.chatBackgroundHint),
@@ -951,6 +977,44 @@ class _TextSizeSlider extends StatelessWidget {
         divisions: Preferences.maxTextSize - Preferences.minTextSize,
         semanticFormatterCallback: (_) => label,
         onChanged: (v) => onChanged(v.round()),
+      ),
+    );
+  }
+}
+
+/// The window opacity of the blurred theme, 70 to 95 percent.
+class _BlurOpacitySlider extends StatelessWidget {
+  const _BlurOpacitySlider({required this.value, required this.onChanged});
+
+  final double value;
+  final ValueChanged<double> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    return SliderTheme(
+      data: SliderThemeData(
+        trackHeight: 4,
+        activeTrackColor: c.accent,
+        inactiveTrackColor: c.field,
+        thumbColor: const Color(0xFFFFFFFF),
+        overlayShape: SliderComponentShape.noOverlay,
+        thumbShape: const RoundSliderThumbShape(
+          enabledThumbRadius: 8,
+          elevation: 1.5,
+        ),
+        showValueIndicator: ShowValueIndicator.never,
+      ),
+      child: Slider(
+        key: const ValueKey('blurOpacity'),
+        value: value.clamp(
+          Preferences.minBlurOpacity,
+          Preferences.maxBlurOpacity,
+        ),
+        min: Preferences.minBlurOpacity,
+        max: Preferences.maxBlurOpacity,
+        semanticFormatterCallback: (v) => '${(v * 100).round()}%',
+        onChanged: onChanged,
       ),
     );
   }

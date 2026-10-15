@@ -165,6 +165,8 @@ final class Preferences {
     this.wallpaperImage,
     this.wallpaperBlur = false,
     this.nightSchedule = const NightSchedule(),
+    this.blurTheme = false,
+    this.blurOpacity = defaultBlurOpacity,
     this.mediaCorner = MediaCorner.medium,
     this.compactLayout = false,
     this.appIcon = AppIconChoice.crimson,
@@ -187,6 +189,11 @@ final class Preferences {
   static const minTextSize = 12;
   static const maxTextSize = 17;
   static const defaultTextSize = 13;
+
+  /// How opaque the window stays in the blurred theme.
+  static const minBlurOpacity = 0.7;
+  static const maxBlurOpacity = 0.95;
+  static const defaultBlurOpacity = 0.82;
 
   /// Photos download everywhere, videos on Wi-Fi, files when asked.
   static const defaultAutoDownload = {
@@ -213,6 +220,14 @@ final class Preferences {
 
   /// Dark theme by the clock, on top of [theme].
   final NightSchedule nightSchedule;
+
+  /// The Vesper Blur theme (macOS only): a dark, matte window that blurs
+  /// what lies under it. Takes over the theme above while on.
+  final bool blurTheme;
+
+  /// How opaque the blurred window is, between [minBlurOpacity] and
+  /// [maxBlurOpacity]; less shows more of the desktop behind it.
+  final double blurOpacity;
   final MediaCorner mediaCorner;
 
   /// Tighter chat list rows and less air between messages.
@@ -279,6 +294,8 @@ final class Preferences {
     bool clearWallpaperImage = false,
     bool? wallpaperBlur,
     NightSchedule? nightSchedule,
+    bool? blurTheme,
+    double? blurOpacity,
     MediaCorner? mediaCorner,
     bool? compactLayout,
     AppIconChoice? appIcon,
@@ -307,6 +324,8 @@ final class Preferences {
         : wallpaperImage ?? this.wallpaperImage,
     wallpaperBlur: wallpaperBlur ?? this.wallpaperBlur,
     nightSchedule: nightSchedule ?? this.nightSchedule,
+    blurTheme: blurTheme ?? this.blurTheme,
+    blurOpacity: blurOpacity ?? this.blurOpacity,
     mediaCorner: mediaCorner ?? this.mediaCorner,
     compactLayout: compactLayout ?? this.compactLayout,
     appIcon: appIcon ?? this.appIcon,
@@ -344,6 +363,8 @@ final class Preferences {
     'wallpaperImage': ?wallpaperImage,
     'wallpaperBlur': wallpaperBlur,
     'nightSchedule': nightSchedule.toJson(),
+    'blurTheme': blurTheme,
+    'blurOpacity': blurOpacity,
     'mediaCorner': mediaCorner.name,
     'compactLayout': compactLayout,
     'appIcon': appIcon.name,
@@ -408,6 +429,14 @@ final class Preferences {
       wallpaperImage: image is String && image.isNotEmpty ? image : null,
       wallpaperBlur: _bool(json['wallpaperBlur']) ?? defaults.wallpaperBlur,
       nightSchedule: NightSchedule.fromJson(json['nightSchedule']),
+      blurTheme: _bool(json['blurTheme']) ?? defaults.blurTheme,
+      blurOpacity: switch (json['blurOpacity']) {
+        final num v => v.toDouble().clamp(
+          Preferences.minBlurOpacity,
+          Preferences.maxBlurOpacity,
+        ),
+        _ => defaults.blurOpacity,
+      },
       mediaCorner:
           _byName(MediaCorner.values, json['mediaCorner']) ??
           defaults.mediaCorner,

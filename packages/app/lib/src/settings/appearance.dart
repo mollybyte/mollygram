@@ -57,22 +57,61 @@ import 'preferences.dart';
       ? surfaceTint(preferences.wallpaperPreset)
       : surfaceTint(WallpaperPreset.mist);
   final light = tint?.light(MgColors.light) ?? MgColors.light;
-  final dark = tint?.dark(MgColors.dark) ?? MgColors.dark;
+  final blur = blurThemeActive(preferences);
+  final dark = blur
+      ? vesperBlur(MgColors.dark, preferences.blurOpacity)
+      : tint?.dark(MgColors.dark) ?? MgColors.dark;
   return (
     light: buildMgTheme(light.copyWith(accent: accent.light), metrics: metrics),
     dark: buildMgTheme(
-      dark.copyWith(
-        accent: accent.dark,
-        // The light violet of the dark theme is too pale under the white
-        // text of the selected row.
-        selection: preferences.accent == AccentChoice.violet
-            ? const Color(0xFF6F4FEA)
-            : null,
-      ),
+      // Vesper Blur brings its own amber accent.
+      blur
+          ? dark
+          : dark.copyWith(
+              accent: accent.dark,
+              // The light violet of the dark theme is too pale under the
+              // white text of the selected row.
+              selection: preferences.accent == AccentChoice.violet
+                  ? const Color(0xFF6F4FEA)
+                  : null,
+            ),
       metrics: metrics,
     ),
   );
 }
+
+/// Whether the Vesper Blur theme is on and can be shown: the blur is a
+/// macOS window effect, so elsewhere the choice is kept but not applied.
+bool blurThemeActive(Preferences preferences) =>
+    preferences.blurTheme && Platform.isMacOS;
+
+/// The Vesper Blur palette: a deep warm graphite with a soft amber accent.
+///
+/// The frame and the card are translucent so the blurred desktop shows
+/// through ([opacity] is how much of the window stays); the glass layer
+/// above them keeps its own fill. The text is warm off-white, bright enough
+/// to stay above 4.5:1 on the frame over any desktop the blur can show (the
+/// native material darkens it first).
+MgColors vesperBlur(MgColors base, double opacity) => base.copyWith(
+  fg: const Color(0xFFF3EEE7),
+  fg2: const Color(0xFFC6BCB0),
+  muted: const Color(0xFF9D9388),
+  accent: const Color(0xFFE0A458),
+  onAccent: const Color(0xFF1B1611),
+  onAccentSecondary: const Color(0xB31B1611),
+  separator: const Color(0x1FF3EEE7),
+  hover: const Color(0x0FF3EEE7),
+  field: const Color(0x14F3EEE7),
+  avatarTop: const Color(0xFF5C544B),
+  avatarBottom: const Color(0xFF443E37),
+  glass: const Color(0x8C26221E),
+  glassSolid: const Color(0xF026221E),
+  rim: const Color(0x1AFFFFFF),
+  highlight: const Color(0x24FFFFFF),
+  frame: const Color(0xFF1A1714).withValues(alpha: opacity),
+  card: const Color(0xFF24201C)
+      .withValues(alpha: (opacity + 0.1).clamp(0.0, 1.0)),
+);
 
 /// One wallpaper's tint of the window and the text: the window frame and
 /// the chat card, the glass fill and rim, the secondary and muted text, so
@@ -177,6 +216,10 @@ final effectiveThemeModeProvider = Provider<ThemeMode>((ref) {
   final schedule = ref.watch(
     preferencesProvider.select((p) => p.nightSchedule),
   );
+  // The blurred theme is dark only.
+  if (ref.watch(preferencesProvider.select(blurThemeActive))) {
+    return ThemeMode.dark;
+  }
   if (!schedule.enabled) return theme;
   final now = ref.watch(clockProvider)();
   final timer = Timer(
