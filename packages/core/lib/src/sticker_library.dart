@@ -28,6 +28,37 @@ final class StickerLibrary {
   Future<List<td.Sticker>> favorites() async =>
       (await _client.send(const td.GetFavoriteStickers())).stickers;
 
+  /// Emoji whose Telegram keywords start with [query], each with the
+  /// keyword that matched, best matches first and no emoji twice.
+  Future<List<({String emoji, String keyword})>> emojiSuggestions(
+    String query, {
+    List<String> languages = const ['en'],
+  }) async {
+    final text = query.trim();
+    if (text.isEmpty) return const [];
+    final found = await _client.send(
+      td.SearchEmojis(text: text, inputLanguageCodes: languages),
+    );
+    final seen = <String>{};
+    return [
+      for (final keyword in found.emojiKeywords)
+        if (seen.add(keyword.emoji))
+          (emoji: keyword.emoji, keyword: keyword.keyword),
+    ];
+  }
+
+  /// Stickers that stand for [emoji], from the installed sets and the
+  /// recent ones, for the strip above the composer.
+  Future<List<td.Sticker>> stickersFor(String emoji, {int chatId = 0}) async =>
+      (await _client.send(
+        td.GetStickers(
+          stickerType: const td.StickerTypeRegular(),
+          query: emoji,
+          limit: 24,
+          chatId: chatId,
+        ),
+      )).stickers;
+
   /// Emoji whose Telegram keywords start with [query], in the given
   /// languages (IETF codes such as `ru`), best matches first.
   Future<List<String>> searchEmoji(

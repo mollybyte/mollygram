@@ -266,6 +266,26 @@ void main() {
       expect(c.typingFormats, isEmpty);
     });
 
+    test('finds the :word at the caret and inserts an emoji', () {
+      final c = RichTextEditingController(text: 'ok :smi')
+        ..selection = const TextSelection.collapsed(offset: 7);
+      expect(c.emojiQuery, 'smi');
+      c.insertEmoji('😀');
+      expect(c.text, 'ok 😀');
+      expect(c.selection.baseOffset, 5);
+
+      c.value = const TextEditingValue(
+        text: 'at 10:30',
+        selection: TextSelection.collapsed(offset: 8),
+      );
+      expect(c.emojiQuery, isNull);
+      c.value = const TextEditingValue(
+        text: ':s',
+        selection: TextSelection.collapsed(offset: 2),
+      );
+      expect(c.emojiQuery, isNull);
+    });
+
     test('finds the @word at the caret and inserts a mention', () {
       final c = RichTextEditingController(text: 'hi @ve')
         ..selection = const TextSelection.collapsed(offset: 6);

@@ -11,6 +11,7 @@ import 'package:mollygram/l10n/app_localizations.dart';
 import 'package:mollygram/src/chat/media_content.dart';
 import 'package:mollygram/src/chat/recent_emoji.dart';
 import 'package:mollygram/src/chat/save_file.dart';
+import 'package:mollygram/src/chat/sticker_suggestions.dart';
 import 'package:mollygram/src/chat/timeline_view.dart';
 import 'package:mollygram/src/home/chat_view.dart';
 import 'package:mollygram/src/session/providers.dart';
@@ -899,6 +900,45 @@ void main() {
     expect(find.text('Menu'), findsOneWidget);
   });
 
+  testWidgets('offers emoji for a :word and stickers for an emoji', (
+    tester,
+  ) async {
+    await pump(tester);
+    await tester.enterText(find.byType(TextField), 'ok :smi');
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    expect(find.text('smile'), findsOneWidget);
+    expect(find.text('smile cat'), findsOneWidget);
+
+    // Past the popup's fade-in.
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.tap(find.text('smile cat'));
+    await tester.pump();
+    final field = tester.widget<TextField>(find.byType(TextField));
+    expect(field.controller!.text, 'ok 😸');
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(find.text('smile'), findsNothing);
+
+    await tester.enterText(find.byType(TextField), '🐱');
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    await tester.pump();
+    expect(find.byType(StickerSuggestionStrip), findsOneWidget);
+    expect(find.byType(StickerContent), findsOneWidget);
+
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.tap(find.byType(StickerContent));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    final send = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    final content = send['input_message_content']! as Map;
+    expect(content['@type'], 'inputMessageSticker');
+    expect(field.controller!.text, isEmpty);
+    expect(find.byType(StickerSuggestionStrip), findsNothing);
+  });
+
   testWidgets('lists the scheduled messages and acts on one', (tester) async {
     json.chat = [for (var id = 1; id <= 10; id++) id];
     json.push(_chat(lastRead: 10, unread: 0, last: 10, scheduled: true));
@@ -1629,6 +1669,18 @@ final class _FakeTdJson implements td.TdJson {
         text: 'Edited',
         outgoing: true,
       ).toJson(),
+      'searchEmojis' => {
+        '@type': 'emojiKeywords',
+        'emoji_keywords': [
+          for (final (emoji, keyword) in [('😀', 'smile'), ('😸', 'smile cat')])
+            if (keyword.startsWith(decoded['text']! as String))
+              {'@type': 'emojiKeyword', 'emoji': emoji, 'keyword': keyword},
+        ],
+      },
+      'getStickers' => {
+        '@type': 'stickers',
+        'stickers': [if (decoded['query'] == '🐱') _sticker(1, '🐱')],
+      },
       'getRecentStickers' => {
         '@type': 'stickers',
         'stickers': [_sticker(1, '🐱')],
