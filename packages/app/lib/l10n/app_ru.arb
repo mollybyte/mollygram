@@ -487,6 +487,7 @@
   "mediaSaveFailed": "Не удалось сохранить файл",
   "mediaCopied": "Скопировано",
   "mediaCounter": "{index} из {count}",
+  "mediaRotate": "Повернуть",
   "mediaCopy": "Копировать",
   "mediaSave": "Сохранить",
   "mediaPrevious": "Назад",

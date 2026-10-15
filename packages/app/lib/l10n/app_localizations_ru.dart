@@ -1793,6 +1793,9 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String get mediaRotate => 'Повернуть';
+
+  @override
   String get mediaCopy => 'Копировать';
 
   @override

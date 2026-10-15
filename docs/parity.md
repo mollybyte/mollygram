@@ -143,8 +143,8 @@ M8 calls and macOS release, M9 after release.
 | Video circles playback at 120 fps | done | `packages/media` | | |
 | Files and music: download, open, cancel | done | | | |
 | Fullscreen media viewer on a dimmed backdrop, open and close animation | done | Viewer PR | | |
-| Viewer: arrows and swipe between the chat's photos and videos, thumbnail strip | partial | Arrows and keys over `SearchChatMessages`; a thumbnail strip under the page, centered on the one on screen, jumps to any of them; no swipe | S | M2 |
-| Viewer: zoom (pinch, scroll, double click) and pan, rotate | partial | Viewer PR: zoom and pan; no rotate | S | M2 |
+| Viewer: arrows and swipe between the chat's photos and videos, thumbnail strip | done | Arrows and keys over `SearchChatMessages`; a thumbnail strip under the page, centered on the one on screen, jumps to any of them; a two-finger swipe turns the page unless the photo is zoomed in | S | M2 |
+| Viewer: zoom (pinch, scroll, double click) and pan, rotate | done | Zoom and pan; a Rotate button and R turn photos and videos by quarters, shrinking a sideways page to fit | S | M2 |
 | Viewer: video scrubbing, loop, playback speed, volume, fullscreen | partial | Viewer PR: scrubbing, loop, speed, mute; plays once downloaded, no streaming | S | M2 |
 | Viewer: GIFs and video stickers looped | partial | Viewer PR: GIFs looped; video stickers not yet | S | M2 |
 | Viewer: save, copy, forward, delete, show in chat, keyboard shortcuts | done | Save, copy, forward, show in chat (closes the viewer at the message), delete (asks over the viewer, Delete or Backspace key); Esc, arrows, Space, ⌘S, ⌘C | S | M2 |

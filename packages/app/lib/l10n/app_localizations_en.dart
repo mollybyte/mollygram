@@ -1775,6 +1775,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get mediaRotate => 'Rotate';
+
+  @override
   String get mediaCopy => 'Copy';
 
   @override
