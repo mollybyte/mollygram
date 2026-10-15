@@ -18,6 +18,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../chat/attachment_preview.dart';
+import '../chat/audio_player_bar.dart';
 import '../chat/bot_keyboard.dart';
 import '../chat/contact_picker.dart';
 import '../chat/describe.dart';
@@ -2658,7 +2659,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
                                 '',
                       onTap: () => togglePeerInfo(ref, widget.chatId),
                     ),
-              actions: const SizedBox.shrink(),
+              actions: AudioPlayerCapsule(chatId: widget.chatId),
               fill: const WindowDragArea(),
             ),
           ),

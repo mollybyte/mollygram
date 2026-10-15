@@ -77,6 +77,9 @@ class AudioTrackPlayer {
 
   Future<void> pause() async => _instance?.pause();
 
+  /// Goes on playing the loaded track after [pause].
+  Future<void> resume() async => _instance?.play();
+
   Future<void> seek(Duration position) async => _instance?.seek(position);
 
   /// Unloads the track.
@@ -97,6 +100,19 @@ class AudioTrackPlayer {
   /// Acts as if the loaded track reached its end.
   @visibleForTesting
   void debugComplete() => _onCompleted();
+
+  /// Acts as if [play] loaded [key] and it is playing, without libmpv.
+  @visibleForTesting
+  void debugLoad(
+    Object key, {
+    Duration duration = Duration.zero,
+    Duration position = Duration.zero,
+  }) {
+    _track.value = key;
+    _duration.value = duration;
+    _position.value = position;
+    _playing.value = true;
+  }
 
   Future<void> dispose() async {
     for (final s in _subscriptions) {
