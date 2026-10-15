@@ -4,14 +4,17 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
 import 'formatted_text.dart';
+import 'poll_content.dart';
 
 /// The text lines of contents that have no media of their own: places,
 /// contacts, polls, calls, games, invoices. Null for anything else.
-/// [isOutgoing] tells a call the user made from one they received.
+/// [isOutgoing] tells a call the user made from one they received;
+/// [onPollVote] lets a poll be voted in.
 Widget? otherContent(
   BuildContext context,
   td.MessageContent content, {
   bool isOutgoing = false,
+  void Function(List<int> optionIds)? onPollVote,
 }) {
   final l10n = AppLocalizations.of(context);
   return switch (content) {
@@ -39,7 +42,11 @@ Widget? otherContent(
       ].where((s) => s.isNotEmpty).join(' '),
       subtitle: contact.phoneNumber,
     ),
-    td.MessagePoll(:final poll) => _Poll(poll),
+    td.MessagePoll(:final poll, :final description) => PollContent(
+      poll: poll,
+      description: description,
+      onVote: onPollVote,
+    ),
     td.MessageCall(:final isVideo, :final discardReason, :final duration) =>
       _Labeled(
         icon: isVideo ? '📹' : '📞',
@@ -166,92 +173,6 @@ class _Muted extends StatelessWidget {
 
 /// The question, then each option with its share of the votes. Voting
 /// arrives with the message actions.
-class _Poll extends StatelessWidget {
-  const _Poll(this.poll);
-
-  final td.Poll poll;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = MgColors.of(context);
-    final l10n = AppLocalizations.of(context);
-    final showResults = poll.canSeeResults || poll.isClosed;
-    return SizedBox(
-      width: 280,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            poll.question.text,
-            style: mgTextStyle(c, weight: FontWeight.w600),
-          ),
-          Text(
-            poll.type is td.PollTypeQuiz ? l10n.contentQuiz : l10n.contentPoll,
-            style: MessageMeta.styleOf(c),
-          ),
-          const SizedBox(height: 6),
-          for (final option in poll.options)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      if (showResults)
-                        SizedBox(
-                          width: 38,
-                          child: Text(
-                            '${option.votePercentage}%',
-                            style: mgTextStyle(c, weight: FontWeight.w600),
-                          ),
-                        ),
-                      Expanded(
-                        child: Text(
-                          option.text.text,
-                          style: mgTextStyle(
-                            c,
-                            weight: option.isChosen
-                                ? FontWeight.w600
-                                : FontWeight.w400,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (showResults)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 3),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(2),
-                        child: SizedBox(
-                          height: 3,
-                          child: LayoutBuilder(
-                            builder: (context, box) => Align(
-                              alignment: Alignment.centerLeft,
-                              child: Container(
-                                width:
-                                    box.maxWidth * option.votePercentage / 100,
-                                color: c.accent,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          Text(
-            l10n.pollVotes(poll.totalVoterCount),
-            style: MessageMeta.styleOf(c),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _Checklist extends StatelessWidget {
   const _Checklist(this.list);
 

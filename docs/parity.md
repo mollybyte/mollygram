@@ -74,7 +74,7 @@ M8 calls and macOS release, M9 after release.
 | Reply threads in groups | missing | | M | M2 |
 | Secret chats | missing | TDLib supports them; key view, TTL | L | M6 |
 | Spoilers, custom emoji in text | partial | `concealed.dart` covers spoilers; custom emoji need sticker rendering | M | M2 |
-| Polls and quizzes: vote, results | partial | Rendered; voting unverified | M | M2 |
+| Polls and quizzes: vote, results | partial | Vote with radios or checkboxes and a Vote button, Retract vote, live results with bars, quiz answers coloured with the explanation, Stop poll from the menu; no voters list for public polls yet | S | M2 |
 | Checklists (todo messages) | missing | `ChatTodoItem` | S | M9 |
 | Dice and slot animations | partial | | S | M9 |
 | Live location view | missing | | M | M2 |

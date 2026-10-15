@@ -612,6 +612,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
     ),
     onNeedReplied: (reply) =>
         unawaited(_quiet(_conversations.loadReplied(reply.chatId, reply.id))),
+    onPollVote: (message, optionIds) => unawaited(
+      _quiet(_conversations.votePoll(message.chatId, message.id, optionIds)),
+    ),
     onMenu: (row, position) => unawaited(_showMenu(row, position)),
     onViewMedia: (message) => unawaited(
       showChatMediaViewer(

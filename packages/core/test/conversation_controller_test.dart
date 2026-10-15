@@ -966,6 +966,35 @@ void main() {
     expect(mention?.id, 30);
   });
 
+  test('follows a poll and votes in it', () async {
+    json.history = (_) => [
+      td.Message.fromJson({
+        ..._message(id: 10, chatId: 7, text: 'Poll').toJson(),
+        'content': td.MessagePoll(
+          poll: _poll(chosen: null),
+          description: const td.FormattedText(text: '', entities: []),
+          canAddOption: false,
+        ).toJson(),
+      }),
+    ];
+    await controller.start();
+    await controller.loadHistory(7);
+
+    await controller.votePoll(7, 10, [1]);
+    final vote = json.sent.lastWhere((r) => r['@type'] == 'setPollAnswer');
+    expect(vote['message_id'], 10);
+    expect(vote['option_ids'], [1]);
+
+    json.push({'@type': 'updatePoll', 'poll': _poll(chosen: 1).toJson()});
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    final content = controller.store.message(7, 10)!.content as td.MessagePoll;
+    expect(content.poll.options[1].isChosen, isTrue);
+    expect(content.poll.totalVoterCount, 4);
+
+    await controller.stopPoll(7, 10);
+    expect(json.sent.last['@type'], 'stopPoll');
+  });
+
   test('keeps the pinned messages of a chat up to date', () async {
     await controller.start();
     await controller.loadPinned(7);
@@ -1250,6 +1279,38 @@ Map<String, Object?> _supergroup(int id, Map<String, Object?> status) => {
     'paid_message_star_count': 0,
   },
 };
+
+td.Poll _poll({required int? chosen}) => td.Poll(
+  id: 555,
+  question: const td.FormattedText(text: 'Tea or coffee?', entities: []),
+  options: [
+    for (final (i, text) in ['Tea', 'Coffee'].indexed)
+      td.PollOption(
+        id: '$i',
+        text: td.FormattedText(text: text, entities: const []),
+        voterCount: i == chosen ? 3 : 1,
+        votePercentage: i == chosen ? 75 : 25,
+        recentVoterIds: const [],
+        isChosen: i == chosen,
+        isBeingChosen: false,
+        additionDate: 0,
+      ),
+  ],
+  totalVoterCount: chosen == null ? 3 : 4,
+  recentVoterIds: const [],
+  canGetVoters: false,
+  canSeeResults: chosen != null,
+  isAnonymous: true,
+  allowsMultipleAnswers: false,
+  allowsRevoting: true,
+  membersOnly: false,
+  countryCodes: const [],
+  optionOrder: const [0, 1],
+  type: const td.PollTypeRegular(),
+  openPeriod: 0,
+  closeDate: 0,
+  isClosed: false,
+);
 
 td.Message _message({
   required int id,

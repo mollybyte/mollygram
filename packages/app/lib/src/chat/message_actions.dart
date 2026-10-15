@@ -135,6 +135,18 @@ Future<void> showMessageMenu(
         label: l10n.menuEdit,
         onSelected: () => handlers.onEdit(target),
       ),
+    if ((properties?.canBeEdited ?? false) && _isOpenPoll(target))
+      MgMenuItem(
+        label: l10n.menuStopPoll,
+        onSelected: () => unawaited(
+          _confirmStopPoll(
+            context,
+            conversations: conversations,
+            message: target,
+            isShown: isShown,
+          ),
+        ),
+      ),
     if (target.text.isNotEmpty && !protected)
       MgMenuItem(
         label: l10n.menuCopyText,
@@ -457,6 +469,33 @@ final class _MessageInfo {
 
 /// Text messages and media with a caption; stickers, polls and the like
 /// have nothing to edit here.
+bool _isOpenPoll(ConversationMessage message) => switch (message.content) {
+  td.MessagePoll(:final poll) => !poll.isClosed,
+  _ => false,
+};
+
+/// Asks before closing a poll for good, then closes it.
+Future<void> _confirmStopPoll(
+  BuildContext context, {
+  required ConversationController conversations,
+  required ConversationMessage message,
+  required bool Function() isShown,
+}) async {
+  final l10n = AppLocalizations.of(context);
+  final confirmed = await showMgConfirm(
+    context,
+    title: l10n.stopPollTitle,
+    message: l10n.stopPollMessage,
+    confirmLabel: l10n.menuStopPoll,
+    cancelLabel: l10n.cancel,
+    destructive: true,
+  );
+  if (confirmed == null || !isShown()) return;
+  await conversations
+      .stopPoll(message.chatId, message.id)
+      .catchError((Object _) {});
+}
+
 bool _isEditable(ConversationMessage message) => switch (message.content) {
   td.MessageText() ||
   td.MessagePhoto() ||

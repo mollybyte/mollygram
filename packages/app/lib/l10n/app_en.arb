@@ -327,6 +327,18 @@
   "@pollVotes": {
     "placeholders": { "count": { "type": "int" } }
   },
+  "pollAnonymous": "Anonymous poll",
+  "pollAnonymousQuiz": "Anonymous quiz",
+  "pollFinalResults": "Final results",
+  "pollVote": "Vote",
+  "pollRetractVote": "Retract vote",
+  "quizAnswers": "{count, plural, =0{Nobody answered yet} =1{1 answered} other{{count} answered}}",
+  "@quizAnswers": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "menuStopPoll": "Stop poll",
+  "stopPollTitle": "Stop this poll?",
+  "stopPollMessage": "Nobody will be able to vote in it any more.",
   "contentGame": "Game",
   "contentInvoice": "Invoice",
   "contentStory": "Story",

@@ -904,6 +904,43 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String get pollAnonymous => 'Анонимный опрос';
+
+  @override
+  String get pollAnonymousQuiz => 'Анонимная викторина';
+
+  @override
+  String get pollFinalResults => 'Окончательные результаты';
+
+  @override
+  String get pollVote => 'Голосовать';
+
+  @override
+  String get pollRetractVote => 'Отозвать голос';
+
+  @override
+  String quizAnswers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ответов',
+      few: '$count ответа',
+      one: '$count ответ',
+      zero: 'Пока никто не ответил',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get menuStopPoll => 'Остановить опрос';
+
+  @override
+  String get stopPollTitle => 'Остановить опрос?';
+
+  @override
+  String get stopPollMessage => 'Больше никто не сможет в нём проголосовать.';
+
+  @override
   String get contentGame => 'Игра';
 
   @override

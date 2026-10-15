@@ -93,6 +93,7 @@ class MessageRowActions {
     this.onJump,
     this.onSelectToggle,
     this.onTextSelected,
+    this.onPollVote,
   });
 
   /// Adds the reaction, or takes it back when the user had chosen it.
@@ -126,6 +127,11 @@ class MessageRowActions {
   /// it is selected. Turns on text selection in the timeline.
   final void Function(ConversationMessage message, QuoteSelection? quote)?
   onTextSelected;
+
+  /// A vote in a poll for the options with [optionIds]; an empty list
+  /// takes the vote back.
+  final void Function(ConversationMessage message, List<int> optionIds)?
+  onPollVote;
 }
 
 /// A message, or an album, in Telegram's flat layout: no bubbles, the
@@ -604,7 +610,15 @@ class _MessageBody extends StatelessWidget {
             : [media, const SizedBox(height: 4), text],
       );
     }
-    return otherContent(context, content, isOutgoing: message.isOutgoing) ??
+    final onPollVote = actions.onPollVote;
+    return otherContent(
+          context,
+          content,
+          isOutgoing: message.isOutgoing,
+          onPollVote: onPollVote == null
+              ? null
+              : (optionIds) => onPollVote(message, optionIds),
+        ) ??
         Text(describeContent(l10n, content));
   }
 
