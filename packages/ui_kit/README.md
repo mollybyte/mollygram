@@ -1,7 +1,7 @@
 # mollygram_ui_kit
 
 The Mollygram design system in Flutter, ported from `design/*.dc.html` and the
-`prototype/`.
+glass prototype from #4.
 
 - **Tokens**: `MgColors.light` / `MgColors.dark` (a `ThemeExtension`),
   `buildMgTheme`, the `MgType` scale and `mgTextStyle` (system font, 13 px).

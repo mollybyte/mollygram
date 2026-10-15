@@ -25,7 +25,7 @@ Updated 2026-10-15.
 
 | # | Milestone | Status | Goal | Done when |
 |---|---|---|---|---|
-| — | Prototype | done (#4) | Glass, 5000-message feed, 640 circle at 120 fps | p99 frame time under 8.3 ms on ProMotion |
+| — | Prototype | done (#4), removed from the repo once the app existed | Glass, 5000-message feed, 640 circle at 120 fps | p99 frame time under 8.3 ms on ProMotion: 119–120 fps on 120 Hz (1x and ProMotion 2x) and 165 fps on 165 Hz, under 1% missed vsyncs, raster p95 under 6 ms, blur about 0.5 ms; media_kit and AVFoundation equal |
 | — | Foundation and sign-in | done (#5, #16, #24) | Monorepo, TDLib FFI and generated types, QR/phone/2FA sign-in, chat list and folders | Release build signs in, 500+ chats scroll smoothly, restart keeps the session |
 | — | Tabs, split, palette | done (#17, #27, #28) | Workspace model, ⌘K palette with `>` `@` `#`, layout restore | Tabs and split survive a restart |
 | M1 | Daily driver | in progress | Notifications, unread handling and jumps, statuses, chat list actions and archive, emoji and stickers, voice recording, rich text, links, profiles, basic settings | A week of daily use instead of the official client with no crash |
@@ -85,7 +85,7 @@ Decisions from the original plan checked against `main` on 2026-10-15.
 | Own drift + SQLCipher database for deleted messages, edit history, workspace, plugin data | Not yet; the workspace is saved to `workspace.json` | Database lands with M3; the workspace can stay in JSON |
 | Ghost mode as one filter on outgoing TDLib requests | Not yet: `viewMessages` is called directly from `ConversationController` | Route through one filter in M3 |
 | Windows and Linux builds on every PR | Changed: desktop builds run on `main` and on PRs labelled `full-ci` (#12) | Accepted to save CI time |
-| macOS integration tests and a frame-budget check in CI | Not yet: only the prototype benchmark runs in `prototype.yml` | Add before M8 |
+| macOS integration tests and a frame-budget check in CI | Not yet: frame numbers come from `packages/media/example` on a real Mac | Add before M8; the removed prototype's glass + feed benchmark (`prototype/lib/perf` in #4) is a starting point |
 
 ## Not in the plan
 

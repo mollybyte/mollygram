@@ -12,7 +12,7 @@ Outputs:
   assets/icon/mollygram.icns          macOS icon file
   assets/icon/mollygram.ico           Windows icon file
   assets/icon/linux/<size>.png        Linux hicolor sizes
-and copies the sets into the Flutter projects (packages/app, prototype).
+and copies the sets into the Flutter app (packages/app).
 
 The artwork itself (gradient, bubble, "m") matches docs/assets/icon.svg.
 Only the outer shape differs: macOS gets Apple's continuous-corner squircle
@@ -127,8 +127,7 @@ def main() -> None:
     for size in (16, 24, 32, 48, 64, 128, 256, 512):
         resized(flat, size).save(linux / f"{size}.png", optimize=True)
 
-    for project in ("packages/app", "prototype"):
-        write_appiconset(mac, ROOT / project / "macos/Runner/Assets.xcassets/AppIcon.appiconset")
+    write_appiconset(mac, ROOT / "packages/app/macos/Runner/Assets.xcassets/AppIcon.appiconset")
 
     win = ROOT / "packages/app/windows/runner/resources/app_icon.ico"
     shutil.copyfile(OUT / "mollygram.ico", win)

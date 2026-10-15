@@ -43,7 +43,6 @@ jobs:
             plugin_sdk
             plugins_ui
             calls
-            prototype
             design
             web
             docs
