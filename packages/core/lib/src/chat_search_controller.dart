@@ -27,7 +27,7 @@ final class ChatSearchPage {
   const ChatSearchPage({
     required this.messages,
     required this.totalCount,
-    required this.nextFromMessageId,
+    required this.next,
   });
 
   final List<ConversationMessage> messages;
@@ -35,30 +35,55 @@ final class ChatSearchPage {
   /// TDLib's estimate of all matches; -1 when it does not know.
   final int totalCount;
 
-  /// Where the next, older page starts; 0 when this was the last one.
-  final int nextFromMessageId;
+  /// Where the next, older page starts, to pass back as `from`; empty
+  /// when this was the last one.
+  final String next;
 
-  bool get hasMore => nextFromMessageId != 0;
+  bool get hasMore => next.isNotEmpty;
 }
 
-/// Searches inside one chat (`searchChatMessages`): by text for ⌘F, and by
-/// kind for the shared media tabs.
+/// Searches inside one chat: by text for ⌘F, and by kind for the shared
+/// media tabs. Secret chats live only on this device, so TDLib searches
+/// them with `searchSecretMessages` instead of `searchChatMessages`.
 final class ChatSearchController {
   ChatSearchController(this._client);
 
   final td.TdClient _client;
 
-  /// Messages of [chatId] older than [fromMessageId] (0: from the newest)
-  /// that contain [query], are of [kind] and, with [senderUserId], come
-  /// from that user.
+  /// Messages of [chatId] from [from] (a page's [ChatSearchPage.next];
+  /// empty: from the newest) on, that contain [query], are of [kind] and,
+  /// with [senderUserId], come from that user. Secret chats can't be
+  /// searched by sender, so there [senderUserId] finds nothing.
   Future<ChatSearchPage> search(
     int chatId, {
     String query = '',
     SharedMediaKind? kind,
     int? senderUserId,
-    int fromMessageId = 0,
+    String from = '',
     int limit = 50,
   }) async {
+    final chat = await _client.send(td.GetChat(chatId: chatId));
+    if (chat.type is td.ChatTypeSecret) {
+      if (senderUserId != null) {
+        return const ChatSearchPage(messages: [], totalCount: 0, next: '');
+      }
+      final found = await _client.send(
+        td.SearchSecretMessages(
+          chatId: chatId,
+          query: query,
+          offset: from,
+          limit: limit,
+          filter: kind?.filter,
+        ),
+      );
+      return ChatSearchPage(
+        messages: [
+          for (final message in found.messages) ConversationMessage(message),
+        ],
+        totalCount: found.totalCount,
+        next: found.nextOffset,
+      );
+    }
     final found = await _client.send(
       td.SearchChatMessages(
         chatId: chatId,
@@ -66,7 +91,7 @@ final class ChatSearchController {
         senderId: senderUserId == null
             ? null
             : td.MessageSenderUser(userId: senderUserId),
-        fromMessageId: fromMessageId,
+        fromMessageId: int.tryParse(from) ?? 0,
         offset: 0,
         limit: limit,
         filter: kind?.filter,
@@ -77,7 +102,7 @@ final class ChatSearchController {
         for (final message in found.messages) ConversationMessage(message),
       ],
       totalCount: found.totalCount,
-      nextFromMessageId: found.nextFromMessageId,
+      next: found.nextFromMessageId == 0 ? '' : '${found.nextFromMessageId}',
     );
   }
 
@@ -88,19 +113,17 @@ final class ChatSearchController {
           chatId,
           query: query,
           senderUserId: senderUserId,
-          fromMessageId: from,
+          from: from,
           limit: 30,
         ),
       );
 
   /// Every message of [kind] in [chatId], page by page.
   SharedMediaList sharedMedia(int chatId, SharedMediaKind kind) =>
-      SharedMediaList._(
-        (from) => search(chatId, kind: kind, fromMessageId: from),
-      );
+      SharedMediaList._((from) => search(chatId, kind: kind, from: from));
 }
 
-typedef _PageLoader = Future<ChatSearchPage> Function(int fromMessageId);
+typedef _PageLoader = Future<ChatSearchPage> Function(String from);
 
 /// The results of one search in a chat, for the "3 of 12" counter and its
 /// arrows. Results are ordered newest first: [older] moves up the chat,
@@ -111,7 +134,7 @@ final class ChatSearchResults {
   final _PageLoader _load;
   final _ids = <int>[];
   var _total = 0;
-  var _next = 0;
+  var _next = '';
   var _started = false;
   int? _index;
   Future<void>? _loading;
@@ -126,16 +149,17 @@ final class ChatSearchResults {
   int? get messageId => _index == null ? null : _ids[_index!];
 
   bool get hasOlder =>
-      _index != null && (_index! + 1 < _ids.length || _next != 0);
+      _index != null && (_index! + 1 < _ids.length || _next.isNotEmpty);
 
   bool get hasNewer => _index != null && _index! > 0;
 
   /// Loads the first page and moves to the newest result. Returns its
-  /// message, or null when nothing matches.
+  /// message, or null when nothing matches. When the page fails to load
+  /// the error comes through, and the next call tries again.
   Future<int?> start() async {
     if (!_started) {
-      _started = true;
       await _loadPage();
+      _started = true;
     }
     _index = _ids.isEmpty ? null : 0;
     return messageId;
@@ -143,20 +167,25 @@ final class ChatSearchResults {
 
   /// Moves to the next older result, loading a page when needed. Returns
   /// the message to show, or null when this is the oldest. Presses that
-  /// come while a page loads are taken one after another.
-  Future<int?> older() {
-    final step = _steps.then((_) => _older());
+  /// come while a page loads, either way, are taken one after another.
+  Future<int?> older() => _step(_older);
+
+  /// Moves to the next newer result; null when this is the newest.
+  Future<int?> newer() => _step(() async => _newer());
+
+  Future<void> _steps = Future.value();
+
+  Future<int?> _step(Future<int?> Function() move) {
+    final step = _steps.then((_) => move());
     _steps = step.then((_) {}, onError: (Object _) {});
     return step;
   }
-
-  Future<void> _steps = Future.value();
 
   Future<int?> _older() async {
     final index = _index;
     if (index == null) return null;
     if (index + 1 >= _ids.length) {
-      if (_next == 0) return null;
+      if (_next.isEmpty) return null;
       await _loadPage();
       if (index + 1 >= _ids.length) return null;
     }
@@ -164,8 +193,7 @@ final class ChatSearchResults {
     return messageId;
   }
 
-  /// Moves to the next newer result; null when this is the newest.
-  int? newer() {
+  int? _newer() {
     final index = _index;
     if (index == null || index == 0) return null;
     _index = index - 1;
@@ -180,7 +208,7 @@ final class ChatSearchResults {
         if (!_ids.contains(message.id)) _ids.add(message.id);
       }
       _total = page.totalCount;
-      _next = page.nextFromMessageId;
+      _next = page.next;
     } finally {
       _loading = null;
     }
@@ -194,7 +222,7 @@ final class SharedMediaList {
 
   final _PageLoader _load;
   final _messages = <ConversationMessage>[];
-  var _next = 0;
+  var _next = '';
   var _total = -1;
   var _done = false;
   Future<bool>? _loading;
@@ -220,7 +248,7 @@ final class SharedMediaList {
             if (known.add(m.id)) m,
         ]);
         _total = page.totalCount;
-        _next = page.nextFromMessageId;
+        _next = page.next;
         _done = !page.hasMore;
         return _messages.length > before;
       } finally {

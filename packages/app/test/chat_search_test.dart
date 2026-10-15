@@ -140,6 +140,46 @@ void main() {
       await tester.pump(const Duration(milliseconds: 200));
       expect(find.text('No results'), findsNothing);
     });
+
+    testWidgets('lets go of the old results as soon as the query changes', (
+      tester,
+    ) async {
+      await open(tester);
+      await type(tester, 'lease');
+      expect(find.text('1 of 3'), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField), 'leases');
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(find.text('1 of 3'), findsNothing);
+      expect(
+        tester
+            .widget<MgIconButton>(
+              find.ancestor(
+                of: find.byTooltip('Previous result'),
+                matching: find.byType(MgIconButton),
+              ),
+            )
+            .onPressed,
+        isNull,
+      );
+      await tester.pump(ChatSearchBar.debounce);
+      await settle(tester);
+      expect(shown, [30]);
+    });
+
+    testWidgets('searches again on Return after a failure', (tester) async {
+      await open(tester);
+      json.fail = true;
+      await type(tester, 'lease');
+      expect(find.text('No results'), findsOneWidget);
+
+      json.fail = false;
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await settle(tester);
+      expect(shown, [30]);
+      expect(find.text('1 of 3'), findsOneWidget);
+    });
   });
 
   group('shared media', () {
@@ -338,6 +378,9 @@ final class _FakeTdJson implements td.TdJson {
   final sent = <Map<String, Object?>>[];
   var _nextClientId = 0;
 
+  /// Whether searches fail.
+  var fail = false;
+
   @override
   int createClientId() => ++_nextClientId;
 
@@ -382,7 +425,25 @@ final class _FakeTdJson implements td.TdJson {
     }
     final response = switch (type) {
       'getAuthorizationState' => {'@type': 'authorizationStateReady'},
+      'searchChatMessages' when fail => {
+        '@type': 'error',
+        'code': 500,
+        'message': 'Failed',
+      },
       'searchChatMessages' => _search(decoded),
+      'getChat' => {
+        '@type': 'chat',
+        'id': decoded['chat_id'],
+        'type': {'@type': 'chatTypePrivate', 'user_id': 2},
+        'title': 'Chat',
+        'permissions': {'@type': 'chatPermissions'},
+        'notification_settings': {'@type': 'chatNotificationSettings'},
+        'available_reactions': {
+          '@type': 'chatAvailableReactionsAll',
+          'max_reaction_count': 11,
+        },
+        'video_chat': {'@type': 'videoChat'},
+      },
       'downloadFile' => _file(decoded['file_id']! as int),
       _ => {'@type': 'ok'},
     };

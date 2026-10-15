@@ -54,6 +54,14 @@ class _ChatSearchBarState extends State<ChatSearchBar> {
   }
 
   void _onChanged(String _) {
+    // The old query's results are gone: anything still on its way for
+    // them is dropped, and the counter waits for the new ones.
+    if (_results != null) {
+      setState(() {
+        _results = null;
+        _searching = false;
+      });
+    }
     _debounce?.cancel();
     _debounce = Timer(ChatSearchBar.debounce, () => unawaited(_run()));
   }
@@ -90,6 +98,9 @@ class _ChatSearchBarState extends State<ChatSearchBar> {
     if (_debounce?.isActive ?? false) return _run();
     final results = _results;
     if (results == null) return;
+    // No result to move on from: nothing matched or the search failed,
+    // so ⏎ searches again.
+    if (results.index == null) return _run();
     int? id;
     try {
       id = await results.older();
@@ -101,8 +112,16 @@ class _ChatSearchBarState extends State<ChatSearchBar> {
     if (id != null) widget.onResult(id);
   }
 
-  void _newer() {
-    final id = _results?.newer();
+  Future<void> _newer() async {
+    final results = _results;
+    if (results == null) return;
+    int? id;
+    try {
+      id = await results.newer();
+    } on Object {
+      id = null;
+    }
+    if (!mounted || !identical(results, _results)) return;
     setState(() {});
     if (id != null) widget.onResult(id);
   }
@@ -120,6 +139,7 @@ class _ChatSearchBarState extends State<ChatSearchBar> {
       _ => l10n.searchCounter(index + 1, results.count),
     };
     void older() => unawaited(_older());
+    void newer() => unawaited(_newer());
 
     return CallbackShortcuts(
       bindings: {
@@ -127,8 +147,8 @@ class _ChatSearchBarState extends State<ChatSearchBar> {
         const SingleActivator(LogicalKeyboardKey.enter): older,
         const SingleActivator(LogicalKeyboardKey.numpadEnter): older,
         const SingleActivator(LogicalKeyboardKey.arrowUp): older,
-        const SingleActivator(LogicalKeyboardKey.enter, shift: true): _newer,
-        const SingleActivator(LogicalKeyboardKey.arrowDown): _newer,
+        const SingleActivator(LogicalKeyboardKey.enter, shift: true): newer,
+        const SingleActivator(LogicalKeyboardKey.arrowDown): newer,
       },
       child: Glass(
         radius: 22,
@@ -171,7 +191,7 @@ class _ChatSearchBarState extends State<ChatSearchBar> {
             MgIconButton(
               icon: MgIcons.arrowDown,
               tooltip: l10n.searchNewer,
-              onPressed: results?.hasNewer ?? false ? _newer : null,
+              onPressed: results?.hasNewer ?? false ? newer : null,
             ),
             MgIconButton(
               icon: MgIcons.close,
