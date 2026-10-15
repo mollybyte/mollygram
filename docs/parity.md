@@ -149,7 +149,7 @@ M8 calls and macOS release, M9 after release.
 | Viewer: save, copy, forward, delete, show in chat, keyboard shortcuts | partial | Viewer PR: save, copy, forward, Esc, arrows, Space, ⌘S, ⌘C; no delete or show in chat | S | M2 |
 | Global audio player with playlist and header bar | missing | `InlineAudioPlayerView` | M | M2 |
 | Picture-in-picture for video and circles | missing | `PIPVideoWindow` | M | M4 |
-| Voice playback speed and continuous play | missing | | S | M1 |
+| Voice playback speed and continuous play | partial | Speed 1×, 1.5×, 2× and waveform scrubbing done; continuous play missing | S | M1 |
 | Downloads manager (list, pause, show in Finder) | missing | `DownloadsController` | M | M7 |
 | Autodownload rules | missing | Data and storage | M | M7 |
 | Quick Look for documents | missing | | S | M2 |
