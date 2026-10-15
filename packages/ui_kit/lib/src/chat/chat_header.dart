@@ -1,15 +1,14 @@
 import 'package:flutter/widgets.dart';
 
 import '../avatar.dart';
-import '../glass/glass.dart';
 import '../theme/colors.dart';
 import '../theme/theme.dart';
 import 'status_text.dart';
 
-/// The chat header: one glass bar across the top of the message list, the
-/// title at the left edge and the actions at the right. [fill] lies under
-/// both and takes the whole bar but the actions (the app puts its window
-/// drag area there).
+/// The chat header: a solid bar across the top of the chat card, in the
+/// card's colour with a hairline under it, the title at the left edge and
+/// the actions at the right. [fill] lies under both and takes the whole bar
+/// but the actions (the app puts its window drag area there).
 class ChatHeaderBar extends StatelessWidget {
   const ChatHeaderBar({
     super.key,
@@ -25,22 +24,28 @@ class ChatHeaderBar extends StatelessWidget {
   final Widget actions;
   final Widget? fill;
 
-  static const double height = 48;
-  static const double radius = 14;
+  static const double height = 54;
 
   @override
   Widget build(BuildContext context) {
-    return Glass(
-      radius: radius,
-      child: SizedBox(
-        height: height,
-        child: CustomMultiChildLayout(
-          delegate: _HeaderLayout(),
-          children: [
-            if (fill != null) LayoutId(id: _Slot.fill, child: fill!),
-            LayoutId(id: _Slot.actions, child: actions),
-            LayoutId(id: _Slot.title, child: title),
-          ],
+    final c = MgColors.of(context);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: c.card,
+        border: Border(bottom: BorderSide(color: c.separator, width: 0.5)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 12, 0),
+        child: SizedBox(
+          height: height,
+          child: CustomMultiChildLayout(
+            delegate: _HeaderLayout(),
+            children: [
+              if (fill != null) LayoutId(id: _Slot.fill, child: fill!),
+              LayoutId(id: _Slot.actions, child: actions),
+              LayoutId(id: _Slot.title, child: title),
+            ],
+          ),
         ),
       ),
     );
@@ -83,7 +88,7 @@ class _HeaderLayout extends MultiChildLayoutDelegate {
 }
 
 /// The title at the bar's left: avatar, chat name and the status line under
-/// it. It draws no glass of its own; the bar does.
+/// it. It draws no fill of its own; the bar does.
 class ChatTitleCapsule extends StatelessWidget {
   const ChatTitleCapsule({
     super.key,
@@ -122,7 +127,7 @@ class ChatTitleCapsule extends StatelessWidget {
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(9, 0, 14, 0),
+        padding: const EdgeInsets.only(right: 14),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -130,10 +135,10 @@ class ChatTitleCapsule extends StatelessWidget {
               width: 32,
               height: 32,
               child: Center(
-                child: avatar ?? MonogramAvatar(name: title, size: 30),
+                child: avatar ?? MonogramAvatar(name: title, size: 32),
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 12),
             Flexible(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -153,7 +158,7 @@ class ChatTitleCapsule extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: mgTextStyle(
                             c,
-                            size: MgType.title,
+                            size: 14,
                             weight: FontWeight.w600,
                             height: 1.2,
                           ),
@@ -195,12 +200,12 @@ class ChatActionsCapsule extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
+      padding: const EdgeInsets.only(left: 8),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           for (var i = 0; i < children.length; i++) ...[
-            if (i > 0) const SizedBox(width: 2),
+            if (i > 0) const SizedBox(width: 4),
             children[i],
           ],
         ],

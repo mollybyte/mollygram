@@ -626,6 +626,12 @@ abstract class AppLocalizations {
   /// **'Mollygram has no access to the camera.'**
   String get videoCameraDenied;
 
+  /// No description provided for @senderYou.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get senderYou;
+
   /// No description provided for @previewYou.
   ///
   /// In en, this message translates to:
@@ -3043,6 +3049,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Accent color'**
   String get accentColor;
+
+  /// No description provided for @accentViolet.
+  ///
+  /// In en, this message translates to:
+  /// **'Violet'**
+  String get accentViolet;
 
   /// No description provided for @accentBlue.
   ///

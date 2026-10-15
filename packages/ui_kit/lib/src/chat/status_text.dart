@@ -21,6 +21,9 @@ class MgStatusText extends StatelessWidget {
     this.accentColor,
     this.lead,
     this.leadColor,
+    this.leading,
+    this.maxLines = 1,
+    this.lineHeight,
   });
 
   final String text;
@@ -38,13 +41,27 @@ class MgStatusText extends StatelessWidget {
   final String? lead;
   final Color? leadColor;
 
+  /// A small widget inline before the text, such as a media thumbnail.
+  final Widget? leading;
+
+  /// The text wraps to this many lines before it is cut with an ellipsis.
+  final int maxLines;
+
+  /// The line height as a multiple of the font size; 1.2 by default.
+  final double? lineHeight;
+
   static const Duration duration = Duration(milliseconds: 220);
 
   @override
   Widget build(BuildContext context) {
     final c = MgColors.of(context);
     final tint = accent ? (accentColor ?? c.accent) : (color ?? c.fg2);
-    final style = mgTextStyle(c, size: size, color: tint, height: 1.2);
+    final style = mgTextStyle(
+      c,
+      size: size,
+      color: tint,
+      height: lineHeight ?? 1.2,
+    );
     return AnimatedSwitcher(
       duration: duration,
       switchInCurve: Curves.easeOutCubic,
@@ -64,13 +81,21 @@ class MgStatusText extends StatelessWidget {
         ),
       ),
       child: Row(
-        key: ValueKey((text, accent, activity, lead)),
+        key: ValueKey((text, accent, activity, lead, leading?.key)),
         mainAxisSize: MainAxisSize.min,
         children: [
           Flexible(
             child: Text.rich(
               TextSpan(
                 children: [
+                  if (leading case final leading?)
+                    WidgetSpan(
+                      alignment: PlaceholderAlignment.middle,
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 5),
+                        child: leading,
+                      ),
+                    ),
                   if (lead case final lead?)
                     TextSpan(
                       text: '$lead ',
@@ -79,7 +104,7 @@ class MgStatusText extends StatelessWidget {
                   TextSpan(text: text),
                 ],
               ),
-              maxLines: 1,
+              maxLines: maxLines,
               overflow: TextOverflow.ellipsis,
               style: style,
             ),

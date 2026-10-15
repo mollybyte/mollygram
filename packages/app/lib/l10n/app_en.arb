@@ -94,6 +94,7 @@
   "voiceSendFailed": "Couldn't send the voice message",
   "videoHoldToRecord": "Hold to record a video message",
   "videoCameraDenied": "Mollygram has no access to the camera.",
+  "senderYou": "You",
   "previewYou": "You: {text}",
   "@previewYou": {
     "placeholders": { "text": { "type": "String" } }
@@ -750,6 +751,7 @@
   "themeLight": "Light",
   "themeDark": "Dark",
   "accentColor": "Accent color",
+  "accentViolet": "Violet",
   "accentBlue": "Blue",
   "accentIndigo": "Indigo",
   "accentTeal": "Teal",

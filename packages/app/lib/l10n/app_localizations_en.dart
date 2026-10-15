@@ -301,6 +301,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get videoCameraDenied => 'Mollygram has no access to the camera.';
 
   @override
+  String get senderYou => 'You';
+
+  @override
   String previewYou(String text) {
     return 'You: $text';
   }
@@ -1828,6 +1831,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accentColor => 'Accent color';
+
+  @override
+  String get accentViolet => 'Violet';
 
   @override
   String get accentBlue => 'Blue';

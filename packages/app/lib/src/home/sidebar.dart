@@ -11,7 +11,6 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 import '../../l10n/app_localizations.dart';
 import '../avatar/peer_avatar.dart';
 import '../downloads/downloads_bar.dart';
-import '../folders/folder_icons.dart';
 import '../privacy/ghost_mode_capsule.dart';
 import '../session/providers.dart';
 import '../window_drag_area.dart';
@@ -127,58 +126,65 @@ class _SidebarState extends ConsumerState<Sidebar> {
     final select = ref.read(selectedChatListProvider.notifier).select;
     final showArchive = list.isMain && query.isEmpty && archived.isNotEmpty;
 
-    // The way back from the archive sits where the folder tabs used to be;
-    // the folders themselves live on the rail.
-    final Widget? header = list.isArchive
-        ? FolderTabBar(
+    // In the archive the way back takes the folders' place.
+    final Widget header = list.isArchive
+        ? Align(
             key: const ValueKey('archive'),
-            children: [
-              _BackPill(
-                label: l10n.archivedChats,
-                tooltip: l10n.back,
+            alignment: Alignment.centerLeft,
+            child: _BackPill(
+              label: l10n.archivedChats,
+              tooltip: l10n.back,
+              onTap: () => select(const ChatListLocation.main()),
+            ),
+          )
+        : FolderSegments(
+            key: const ValueKey('folders'),
+            selected: list.isMain
+                ? 0
+                : 1 +
+                      folders.indexWhere(
+                        (folder) => list == ChatListLocation.folder(folder.id),
+                      ),
+            segments: [
+              FolderSegment(
+                label: l10n.folderAll,
                 onTap: () => select(const ChatListLocation.main()),
               ),
+              for (final folder in folders)
+                FolderSegment(
+                  label: folder.title,
+                  onTap: () => select(ChatListLocation.folder(folder.id)),
+                ),
             ],
-          )
-        : null;
+          );
 
     return SidebarIsland(
-      rail: FolderRail(
-        topFill: const WindowDragArea(),
-        trailing: [
-          MgIconButton(
-            icon: MgIcons.settings,
-            tooltip: l10n.settings,
-            onPressed: widget.onSettings,
-          ),
-        ],
-        children: [
-          FolderRailItem(
-            icon: folderIcon('All'),
-            label: l10n.folderAll,
-            selected: list.isMain || list.isArchive,
-            onTap: () => select(const ChatListLocation.main()),
-          ),
-          for (final folder in folders)
-            FolderRailItem(
-              icon: folderIcon(folder.iconName),
-              label: folder.title,
-              selected: list == ChatListLocation.folder(folder.id),
-              onTap: () => select(ChatListLocation.folder(folder.id)),
-            ),
-        ],
-      ),
+      titleBarFill: const WindowDragArea(),
       search: MgSearchField(hintText: l10n.searchHint, controller: _search),
       actions: [
         GhostModeCapsule(onTap: widget.onPrivacy),
+        MgIconButton(
+          icon: MgIcons.settings,
+          tooltip: l10n.settings,
+          onPressed: widget.onSettings,
+        ),
         MgIconButton(
           icon: MgIcons.compose,
           tooltip: l10n.newMessage,
           onPressed: widget.onNewMessage,
         ),
       ],
+      folders: AnimatedSwitcher(
+        duration: _listSwitch,
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeInCubic,
+        layoutBuilder: (current, previous) => Stack(
+          alignment: Alignment.centerLeft,
+          children: [...previous, ?current],
+        ),
+        child: header,
+      ),
       banner: const DownloadsBar(),
-      folders: header,
       body: AnimatedSwitcher(
         duration: _listSwitch,
         switchInCurve: Curves.easeOutCubic,
@@ -328,6 +334,8 @@ class _ChatList extends ConsumerStatefulWidget {
 
   final ChatListLocation list;
   final List<ChatListEntry> chats;
+
+  /// Pinned chats for the grid over the list; they are not in [chats].
 
   /// Archived chats, for the archive row at the top; null hides it.
   final List<ChatListEntry>? archived;
@@ -616,6 +624,24 @@ class _ChatRowState extends ConsumerState<_ChatRow>
     final actors = ref.watch(chatActivityProvider(chat.id)).value ?? const [];
     final online = ref.watch(chatOnlineProvider(chat.id)).value ?? false;
     final draft = chat.draft;
+    final info =
+        ref.watch(chatRowInfoProvider(chat.id)).value ??
+        (sender: '', verified: false);
+    // In a group, who wrote last gets a line of their own with their
+    // small avatar, and so does "You" anywhere but a channel; otherwise
+    // the message takes both lines.
+    final named =
+        last != null &&
+        draft == null &&
+        (chat.isGroup || (last.isOutgoing && chat.type != ChatType.channel));
+    final sender = !named
+        ? null
+        : last.isOutgoing
+        ? l10n.senderYou
+        : info.sender.isEmpty
+        ? null
+        : info.sender;
+    final thumbnail = draft == null ? last?.thumbnail : null;
     final tile = ChatListTile(
       title: chat.title,
       avatar: PeerAvatar.chat(
@@ -624,8 +650,30 @@ class _ChatRowState extends ConsumerState<_ChatRow>
         photo: chat.photo,
       ),
       subtitle: draft == null
-          ? formatPreview(l10n, last)
+          ? formatPreview(l10n, last, you: sender == null)
           : draftText(l10n, draft),
+      sender: sender,
+      // "You" needs no face of its own.
+      senderAvatar: sender == null || last!.isOutgoing
+          ? null
+          : _senderAvatar(ref, sender, last),
+      thumbnails: [?thumbnail == null ? null : MemoryImage(thumbnail)],
+      kind: switch (chat.type) {
+        ChatType.basicGroup || ChatType.supergroup => ChatRowKind.group,
+        ChatType.channel => ChatRowKind.channel,
+        _ => ChatRowKind.private,
+      },
+      status: switch (last) {
+        _ when draft != null => MessageStatus.none,
+        ChatPreview(isOutgoing: true, sendState: PreviewSendState.sending) =>
+          MessageStatus.sending,
+        ChatPreview(isOutgoing: true, sendState: PreviewSendState.failed) =>
+          MessageStatus.failed,
+        ChatPreview(isOutgoing: true) when chat.type != ChatType.channel =>
+          chat.lastMessageRead ? MessageStatus.read : MessageStatus.sent,
+        _ => MessageStatus.none,
+      },
+      verified: info.verified,
       draftLabel: draft == null ? null : l10n.draftLabel,
       time: switch ((draft, last)) {
         (final draft?, _) => formatChatTime(draft.date, locale),
@@ -662,6 +710,28 @@ class _ChatRowState extends ConsumerState<_ChatRow>
       child: tile,
     );
   }
+}
+
+/// The small avatar before the sender's name in a group's row: the user's
+/// profile photo, or the chat's when a chat posted.
+Widget _senderAvatar(WidgetRef ref, String name, ChatPreview last) {
+  final session = ref.read(telegramSessionProvider).requireValue;
+  const size = ChatListTile.senderAvatarSize;
+  if (last.senderChatId != 0) {
+    return PeerAvatar.chat(
+      name: name,
+      size: size,
+      photo: session.chatLists.store.chat(last.senderChatId)?.photo,
+    );
+  }
+  final userId = last.isOutgoing ? session.presence.myId : last.senderUserId;
+  final photo = session.presence.photoOf(userId);
+  return PeerAvatar(
+    name: name,
+    size: size,
+    photo: photo?.small,
+    minithumbnail: photo?.minithumbnail,
+  );
 }
 
 /// The first row of the main list: the archive, with the names of the
@@ -715,15 +785,8 @@ class _ArchiveAvatar extends StatelessWidget {
       width: ChatListTile.avatarSize,
       height: ChatListTile.avatarSize,
       alignment: Alignment.center,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [c.avatarTop, c.avatarBottom],
-        ),
-      ),
-      child: const MgIcon(MgIcons.archive, size: 21, color: Color(0xFFFFFFFF)),
+      decoration: BoxDecoration(shape: BoxShape.circle, color: c.field),
+      child: MgIcon(MgIcons.archive, size: 19, color: c.fg2),
     );
   }
 }

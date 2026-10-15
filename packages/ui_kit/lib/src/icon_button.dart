@@ -69,22 +69,26 @@ class _MgIconButtonState extends State<MgIconButton> {
   }
 }
 
-/// The filled round send button that replaces the microphone when the
-/// composer has a draft.
+/// The filled send button, an accent rounded square, that replaces the
+/// microphone when the composer has a draft.
 class MgSendButton extends StatelessWidget {
   const MgSendButton({
     super.key,
     required this.tooltip,
+    this.icon = MgIcons.send,
     this.onPressed,
     this.onMenu,
   });
 
   final String tooltip;
+  final MgIconData icon;
   final VoidCallback? onPressed;
 
   /// A right click or a long press, with where it happened: the place for
   /// a menu of other ways to send, such as without sound or later.
   final void Function(Offset position)? onMenu;
+
+  static const double radius = 10;
 
   @override
   Widget build(BuildContext context) {
@@ -112,13 +116,20 @@ class MgSendButton extends StatelessWidget {
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: c.accent,
-                shape: BoxShape.circle,
+                borderRadius: BorderRadius.circular(radius),
               ),
-              child: MgIcon(MgIcons.send, size: 16, color: c.onAccent),
+              child: MgIcon(icon, size: 15, stroke: 1.9, color: c.onAccent),
             ),
           ),
         ),
       ),
     );
   }
+}
+
+/// The microphone in the send button's place while there is no draft: the
+/// same accent square.
+class MgRecordButton extends MgSendButton {
+  const MgRecordButton({super.key, required super.tooltip, super.onPressed})
+    : super(icon: MgIcons.mic);
 }

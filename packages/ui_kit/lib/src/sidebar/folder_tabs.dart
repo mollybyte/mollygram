@@ -3,34 +3,197 @@ import 'package:flutter/material.dart';
 import '../theme/colors.dart';
 import '../theme/theme.dart';
 
-/// A horizontally scrolling row of [FolderTab]s.
-class FolderTabBar extends StatelessWidget {
-  const FolderTabBar({super.key, required this.children});
+/// One folder of [FolderSegments].
+@immutable
+class FolderSegment {
+  const FolderSegment({required this.label, this.count = 0, this.onTap});
 
-  final List<Widget> children;
+  final String label;
+
+  /// Unread chats in the folder; hidden when zero.
+  final int count;
+  final VoidCallback? onTap;
+}
+
+/// The chat folders as a segmented control: a soft track with the selected
+/// folder on a raised card-coloured thumb that slides to the folder picked.
+/// The track scrolls sideways when the folders don't fit, keeping the
+/// selected one in view.
+class FolderSegments extends StatefulWidget {
+  const FolderSegments({
+    super.key,
+    required this.segments,
+    required this.selected,
+  });
+
+  final List<FolderSegment> segments;
+
+  /// The index of the selected segment; -1 for none.
+  final int selected;
+
+  static const double height = 34;
+
+  @override
+  State<FolderSegments> createState() => _FolderSegmentsState();
+}
+
+class _FolderSegmentsState extends State<FolderSegments> {
+  static const _pad = 4.0;
+  static const _slide = Duration(milliseconds: 260);
+
+  final _scroll = ScrollController();
+  final _rowKey = GlobalKey();
+  var _keys = <GlobalKey>[];
+
+  /// The thumb's place in the row; null until the row is laid out.
+  Rect? _thumb;
+
+  /// The first placement doesn't slide in from nowhere.
+  var _placed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _syncKeys();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _measure());
+  }
+
+  @override
+  void didUpdateWidget(FolderSegments old) {
+    super.didUpdateWidget(old);
+    _syncKeys();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _measure());
+  }
+
+  void _syncKeys() {
+    final n = widget.segments.length;
+    if (_keys.length != n) {
+      _keys = [
+        for (var i = 0; i < n; i++) i < _keys.length ? _keys[i] : GlobalKey(),
+      ];
+    }
+  }
+
+  void _measure() {
+    if (!mounted) return;
+    final i = widget.selected;
+    final row = _rowKey.currentContext?.findRenderObject() as RenderBox?;
+    final box = i >= 0 && i < _keys.length
+        ? _keys[i].currentContext?.findRenderObject() as RenderBox?
+        : null;
+    if (row == null || box == null || !row.hasSize || !box.hasSize) {
+      if (_thumb != null) setState(() => _thumb = null);
+      return;
+    }
+    final origin = box.localToGlobal(Offset.zero, ancestor: row);
+    final rect = origin & box.size;
+    if (rect != _thumb) {
+      setState(() => _thumb = rect);
+      _reveal(rect);
+    }
+    if (!_placed) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _placed = true);
+      });
+    }
+  }
+
+  /// Scrolls the track so the selected folder is fully shown.
+  void _reveal(Rect rect) {
+    if (!_scroll.hasClients) return;
+    final view = _scroll.position.viewportDimension;
+    final at = _scroll.offset;
+    double? to;
+    if (rect.left - _pad < at) {
+      to = rect.left - _pad;
+    } else if (rect.right + _pad > at + view) {
+      to = rect.right + _pad - view;
+    }
+    if (to == null) return;
+    to = to.clamp(0.0, _scroll.position.maxScrollExtent);
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _scroll.jumpTo(to);
+    } else {
+      _scroll.animateTo(to, duration: _slide, curve: Curves.easeOutCubic);
+    }
+  }
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      child: Row(
-        children: [
-          for (final child in children)
-            Padding(padding: const EdgeInsets.only(right: 2), child: child),
-        ],
+    final c = MgColors.of(context);
+    final thumb = _thumb;
+    final still = !_placed || MediaQuery.disableAnimationsOf(context);
+    return Container(
+      height: FolderSegments.height,
+      decoration: BoxDecoration(
+        color: c.field,
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(15),
+        child: SingleChildScrollView(
+          controller: _scroll,
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.all(_pad),
+          child: Stack(
+            key: _rowKey,
+            children: [
+              if (thumb != null)
+                AnimatedPositioned(
+                  duration: still ? Duration.zero : _slide,
+                  curve: Curves.easeOutCubic,
+                  left: thumb.left,
+                  top: 0,
+                  width: thumb.width,
+                  height: thumb.height,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: c.card,
+                      borderRadius: BorderRadius.circular(thumb.height / 2),
+                      boxShadow: [_thumbShadow(c)],
+                    ),
+                  ),
+                ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final (i, segment) in widget.segments.indexed)
+                    FolderTab(
+                      key: _keys[i],
+                      label: segment.label,
+                      count: segment.count,
+                      selected: i == widget.selected,
+                      // Until the thumb is placed, the selected folder
+                      // draws its own, so the first frame has one too.
+                      raised: thumb == null && i == widget.selected,
+                      onTap: segment.onTap,
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
 
-/// A chat folder pill (`.tabf`): label and an optional unread counter.
+/// One folder in [FolderSegments]: its label and an optional unread count.
+/// It draws no fill when selected, unless [raised]; the sliding thumb under
+/// it does.
 class FolderTab extends StatefulWidget {
   const FolderTab({
     super.key,
     required this.label,
     this.count = 0,
     this.selected = false,
+    this.raised = false,
     this.onTap,
   });
 
@@ -39,6 +202,9 @@ class FolderTab extends StatefulWidget {
   /// Unread chats in the folder; hidden when zero.
   final int count;
   final bool selected;
+
+  /// Draws the raised thumb itself instead of leaving it to the track.
+  final bool raised;
   final VoidCallback? onTap;
 
   @override
@@ -61,26 +227,31 @@ class _FolderTabState extends State<FolderTab> {
         onExit: (_) => setState(() => _hover = false),
         child: GestureDetector(
           onTap: widget.onTap,
+          behavior: HitTestBehavior.opaque,
           child: Container(
-            height: 26,
+            height: FolderSegments.height - 8,
             padding: const EdgeInsets.symmetric(horizontal: 10),
             alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: on ? c.field : const Color(0x00000000),
-              borderRadius: BorderRadius.circular(13),
-            ),
+            decoration: widget.raised
+                ? BoxDecoration(
+                    color: c.card,
+                    borderRadius: BorderRadius.circular(13),
+                    boxShadow: [_thumbShadow(c)],
+                  )
+                : null,
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  widget.label,
+                AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 160),
                   style: mgTextStyle(
                     c,
-                    size: MgType.tab,
-                    weight: FontWeight.w500,
+                    size: MgType.small,
+                    weight: MgWeight.medium,
                     color: on || _hover ? c.fg : c.fg2,
                     height: 1.2,
                   ),
+                  child: Text(widget.label),
                 ),
                 if (widget.count > 0) ...[
                   const SizedBox(width: 5),
@@ -89,7 +260,8 @@ class _FolderTabState extends State<FolderTab> {
                     style: mgTextStyle(
                       c,
                       size: MgType.caption,
-                      color: c.fg2,
+                      weight: MgWeight.medium,
+                      color: c.accent,
                       height: 1.2,
                     ),
                   ),
@@ -102,3 +274,10 @@ class _FolderTabState extends State<FolderTab> {
     );
   }
 }
+
+/// The soft shadow that lifts the selected folder off the track.
+BoxShadow _thumbShadow(MgColors c) => BoxShadow(
+  color: c.isDark ? const Color(0x40000000) : const Color(0x14000000),
+  blurRadius: 2,
+  offset: const Offset(0, 1),
+);

@@ -195,8 +195,23 @@ abstract final class MgIcons {
   // Chat list (TelegramSwift's dialog row and context menu).
   static const pin = MgIconData(
     'pin',
-    '<path d="M9 4h6l-1 6 3 3H7l3-3zM12 13v7"/>',
-    stroke: 1.7,
+    '<path d="M15 3l6 6-3 1-4 4 1 5-2 2-4-4-5 5-1-1 5-5-4-4 2-2 5 1 4-4z" '
+        'fill="currentColor" stroke="none"/>',
+  );
+
+  /// Before the title of a group in the chat list.
+  static const group = MgIconData(
+    'group',
+    '<circle cx="9" cy="8" r="3.5"/>'
+        '<path d="M2 20a7 7 0 0 1 14 0M16 4.5a3.5 3.5 0 0 1 0 7"/>',
+    stroke: 2,
+  );
+
+  /// Before the title of a channel in the chat list.
+  static const channel = MgIconData(
+    'channel',
+    '<path d="M4 10v4h3l6 4V6L7 10z"/>',
+    stroke: 2,
   );
   static const archive = MgIconData(
     'archive',
@@ -326,6 +341,8 @@ abstract final class MgIcons {
   static const plus = MgIconData('plus', '<path d="M12 5v14M5 12h14"/>');
 
   static const List<MgIconData> all = [
+    group,
+    channel,
     compose,
     search,
     call,

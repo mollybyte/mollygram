@@ -171,11 +171,19 @@ bool _samePresence(UserPresence a, UserPresence b) => switch ((a, b)) {
 };
 
 final class _User {
-  _User(this.firstName, this.presence, {required this.kind});
+  _User(
+    this.firstName,
+    this.presence, {
+    required this.kind,
+    this.photo,
+    this.verified = false,
+  });
 
   String firstName;
   UserPresence presence;
   _UserKind kind;
+  td.ProfilePhoto? photo;
+  bool verified;
 }
 
 enum _UserKind { regular, bot, deleted }
@@ -196,6 +204,7 @@ final class PresenceController {
   final _basicGroupMembers = <int, int>{};
   final _supergroupMembers = <int, int>{};
   final _onlineMembers = <int, int>{};
+  final _verifiedSupergroups = <int>{};
   final _requestedFullInfo = <int>{};
 
   /// Per chat, who is doing what, in the order they started.
@@ -289,6 +298,22 @@ final class PresenceController {
     }
   }
 
+  /// The first name of [userId] (the last name when there is none), as a
+  /// group's chat-list row names who wrote last; empty when unknown.
+  String firstNameOf(int userId) => _users[userId]?.firstName ?? '';
+
+  /// The profile photo of [userId], for the sender's small avatar in the
+  /// chat list; null when they have none or are unknown.
+  td.ProfilePhoto? photoOf(int userId) => _users[userId]?.photo;
+
+  /// Whether Telegram verified the user, group or channel behind [chat].
+  bool isVerified(ChatListEntry chat) => switch (chat.type) {
+    ChatType.private => _users[chat.peerId]?.verified ?? false,
+    ChatType.supergroup ||
+    ChatType.channel => _verifiedSupergroups.contains(chat.peerId),
+    _ => false,
+  };
+
   String _nameOf(_SenderKey sender) => sender.isChat
       ? _chatTitle(sender.id)
       : (_users[sender.id]?.firstName ?? '');
@@ -320,6 +345,8 @@ final class PresenceController {
             td.UserTypeDeleted() => _UserKind.deleted,
             _ => _UserKind.regular,
           },
+          photo: user.profilePhoto,
+          verified: user.verificationStatus?.isVerified ?? false,
         );
       case td.UpdateUserStatus(:final userId, :final status):
         final user = _users[userId];
@@ -331,6 +358,15 @@ final class PresenceController {
         }
         _basicGroupMembers[basicGroup.id] = basicGroup.memberCount;
       case td.UpdateSupergroup(:final supergroup):
+        final verified = supergroup.verificationStatus?.isVerified ?? false;
+        if (verified != _verifiedSupergroups.contains(supergroup.id)) {
+          verified
+              ? _verifiedSupergroups.add(supergroup.id)
+              : _verifiedSupergroups.remove(supergroup.id);
+          _setSupergroupMembers(supergroup.id, supergroup.memberCount);
+          _emit();
+          return;
+        }
         _setSupergroupMembers(supergroup.id, supergroup.memberCount);
         return;
       case td.UpdateSupergroupFullInfo(

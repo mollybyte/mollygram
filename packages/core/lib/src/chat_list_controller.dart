@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 
@@ -276,6 +277,15 @@ final class ChatListController {
         store.updatePhoto(chatId, photo);
       case td.UpdateChatReadInbox(:final chatId, :final unreadCount):
         store.updateUnreadCount(chatId, unreadCount);
+      case td.UpdateChatReadOutbox(
+        :final chatId,
+        :final lastReadOutboxMessageId,
+      ):
+        store.update(
+          chatId,
+          (chat) =>
+              chat.copyWith(lastReadOutboxMessageId: lastReadOutboxMessageId),
+        );
       case td.UpdateChatLastMessage(
         :final chatId,
         :final lastMessage,
@@ -354,6 +364,7 @@ ChatListEntry _entryFrom(td.Chat chat) {
     positions: _positionsFrom(chat.positions),
     lastMessage: _previewFrom(chat.lastMessage),
     draft: _draftFrom(chat.draftMessage),
+    lastReadOutboxMessageId: chat.lastReadOutboxMessageId,
   );
 }
 
@@ -407,7 +418,40 @@ ChatPreview? _previewFrom(td.Message? message) {
     text: text,
     date: message.date,
     isOutgoing: message.isOutgoing,
+    senderUserId: switch (message.senderId) {
+      td.MessageSenderUser(:final userId) => userId,
+      td.MessageSenderChat() => 0,
+    },
+    senderChatId: switch (message.senderId) {
+      td.MessageSenderChat(:final chatId) => chatId,
+      td.MessageSenderUser() => 0,
+    },
+    thumbnail: _thumbnailOf(message.content),
+    sendState: switch (message.sendingState) {
+      td.MessageSendingStatePending() => PreviewSendState.sending,
+      td.MessageSendingStateFailed() => PreviewSendState.failed,
+      null => PreviewSendState.sent,
+    },
   );
+}
+
+/// The minithumbnail a chat-list row shows beside the text: photos,
+/// videos, GIFs, round videos and documents that have one. Media behind a
+/// spoiler or in a self-destructing message keep their secret.
+Uint8List? _thumbnailOf(td.MessageContent content) {
+  final mini = switch (content) {
+    td.MessagePhoto(:final photo, hasSpoiler: false, isSecret: false) =>
+      photo.minithumbnail,
+    td.MessageVideo(:final video, hasSpoiler: false, isSecret: false) =>
+      video.minithumbnail,
+    td.MessageAnimation(:final animation, hasSpoiler: false, isSecret: false) =>
+      animation.minithumbnail,
+    td.MessageVideoNote(:final videoNote, isSecret: false) =>
+      videoNote.minithumbnail,
+    td.MessageDocument(:final document) => document.minithumbnail,
+    _ => null,
+  };
+  return mini?.data;
 }
 
 List<ChatListPosition> _positionsFrom(List<td.ChatPosition> positions) => [

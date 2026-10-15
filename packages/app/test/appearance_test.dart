@@ -18,9 +18,12 @@ void main() {
       expect(light.fg2, isNot(MgColors.light.fg2));
       expect(dark.glass, isNot(MgColors.dark.glass));
       expect(dark.fg2, isNot(MgColors.dark.fg2));
-      // The accent and the primary text are untouched.
-      expect(light.accent, MgColors.light.accent);
-      expect(light.fg, MgColors.light.fg);
+      // The accent is the one picked, whatever the wallpaper.
+      final plain = colorsOf(
+        appThemes(const Preferences(wallpaperPreset: WallpaperPreset.classic))
+            .light,
+      );
+      expect(light.accent, plain.accent);
     });
 
     test('the classic gradient keeps the design tokens', () {

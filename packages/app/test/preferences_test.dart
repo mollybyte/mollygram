@@ -155,7 +155,7 @@ void main() {
         },
       });
       expect(restored.theme, ThemeMode.system);
-      expect(restored.accent, AccentChoice.blue);
+      expect(restored.accent, AccentChoice.violet);
       expect(restored.wallpaper, isTrue);
       expect(restored.textSize, Preferences.maxTextSize);
       expect(
@@ -163,7 +163,21 @@ void main() {
         const AutoDownload(wifi: false, other: true),
       );
       expect(Preferences.fromJson(null).textSize, 13);
-      expect(Preferences.fromJson('broken').accent, AccentChoice.blue);
+      expect(Preferences.fromJson('broken').accent, AccentChoice.violet);
+    });
+
+    test('moves the old default blue to violet once, then keeps a '
+        'chosen blue', () {
+      expect(
+        Preferences.fromJson({'accent': 'blue'}).accent,
+        AccentChoice.violet,
+      );
+      final chosen = const Preferences().copyWith(accent: AccentChoice.blue);
+      expect(Preferences.fromJson(chosen.toJson()).accent, AccentChoice.blue);
+      expect(
+        Preferences.fromJson({'accent': 'teal'}).accent,
+        AccentChoice.teal,
+      );
     });
 
     test('keeps the text size within 12 to 17', () {
