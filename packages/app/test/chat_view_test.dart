@@ -1061,6 +1061,23 @@ void main() {
     expect(sent['marked_as_not_done_task_ids'], isEmpty);
   });
 
+  testWidgets('draws a dice as its result sticker and a slot machine as its '
+      'parts', (tester) async {
+    json.history = [_diceMessage(), _slotMachineMessage(), ..._history];
+    await pump(tester);
+    expect(find.text('🎲'), findsNothing);
+    expect(
+      find.byWidgetPredicate((w) => w is StickerContent && w.sticker.id == 109),
+      findsOneWidget,
+    );
+    expect(
+      find.byWidgetPredicate(
+        (w) => w is StickerContent && w.sticker.emoji == '🎰',
+      ),
+      findsNWidgets(5),
+    );
+  });
+
   testWidgets('lists who voted for an option of a public poll', (tester) async {
     json.history = [_pollMessage(chosen: 1, public: true), ..._history];
     await pump(tester);
@@ -2750,6 +2767,43 @@ td.Message _pollMessage({
     description: const td.FormattedText(text: '', entities: []),
     canAddOption: false,
   ).toJson(),
+});
+
+td.Message _diceMessage() => td.Message.fromJson({
+  ..._message(id: 19, senderId: 3, text: '').toJson(),
+  'content': {
+    '@type': 'messageDice',
+    'initial_state': {
+      '@type': 'diceStickersRegular',
+      'sticker': _sticker(8, '🎲'),
+    },
+    'final_state': {
+      '@type': 'diceStickersRegular',
+      'sticker': _sticker(9, '🎲'),
+    },
+    'emoji': '🎲',
+    'value': 4,
+    'success_animation_frame_number': 0,
+  },
+});
+
+td.Message _slotMachineMessage() => td.Message.fromJson({
+  ..._message(id: 20, senderId: 2, text: '').toJson(),
+  'content': {
+    '@type': 'messageDice',
+    'initial_state': null,
+    'final_state': {
+      '@type': 'diceStickersSlotMachine',
+      'background': _sticker(10, '🎰'),
+      'lever': _sticker(11, '🎰'),
+      'left_reel': _sticker(12, '🎰'),
+      'center_reel': _sticker(13, '🎰'),
+      'right_reel': _sticker(14, '🎰'),
+    },
+    'emoji': '🎰',
+    'value': 7,
+    'success_animation_frame_number': 0,
+  },
 });
 
 td.Message _checklistMessage() => td.Message.fromJson({
