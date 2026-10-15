@@ -4,7 +4,8 @@ import '../theme/colors.dart';
 
 /// The shared surface of the bars under the chat header (pinned message,
 /// translation, saved tags): a solid strip in the card colour that spans
-/// the chat, with a hairline below it. No glass, no floating capsule.
+/// the chat, tinted a shade off the card so it reads as its own band, with
+/// a hairline below it. No glass, no floating capsule.
 class BarStrip extends StatelessWidget {
   const BarStrip({
     super.key,
@@ -20,7 +21,10 @@ class BarStrip extends StatelessWidget {
     final c = MgColors.of(context);
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: c.card,
+        color: Color.alphaBlend(
+          c.fg.withValues(alpha: c.isDark ? 0.07 : 0.04),
+          c.card,
+        ),
         border: Border(bottom: BorderSide(color: c.separator, width: 0.5)),
       ),
       child: Padding(padding: padding, child: child),

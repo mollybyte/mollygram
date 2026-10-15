@@ -2337,13 +2337,14 @@ class _ChatViewState extends ConsumerState<ChatView> {
   /// The id of the message whose keyboard the user hid; 0 for none.
   var _keyboardHiddenFor = 0;
 
-  /// The height of the bot keyboard on screen, which the timeline makes
-  /// room for; 0 without one.
-  var _keyboardHeight = 0.0;
+  /// The height of the bot keyboard and the composer together, which the
+  /// timeline makes room for; 0 until they are laid out.
+  var _bottomHeight = 0.0;
 
   /// The space the timeline leaves under its newest message: the composer
-  /// and the bot keyboard above it.
-  double get _bottomInset => TimelineView.composerInset + _keyboardHeight;
+  /// and the bot keyboard above it, with a little air.
+  double get _bottomInset =>
+      _bottomHeight > 0 ? _bottomHeight + 8 : TimelineView.composerInset;
 
   /// The bot keyboard the chat shows in place of its own, loaded when the
   /// message carrying it isn't at hand yet.
@@ -2459,19 +2460,12 @@ class _ChatViewState extends ConsumerState<ChatView> {
       return null;
     }
     final (id, markup) = keyboard;
-    return Measured(
-      onSize: (size) {
-        if (mounted && size.height != _keyboardHeight) {
-          setState(() => _keyboardHeight = size.height);
-        }
+    return ReplyKeyboard(
+      rows: markup.rows,
+      onPressed: (button) {
+        unawaited(_pressKeyboardButton(id, button));
+        if (markup.oneTime) setState(() => _keyboardHiddenFor = id);
       },
-      child: ReplyKeyboard(
-        rows: markup.rows,
-        onPressed: (button) {
-          unawaited(_pressKeyboardButton(id, button));
-          if (markup.oneTime) setState(() => _keyboardHiddenFor = id);
-        },
-      ),
     );
   }
 
@@ -3688,9 +3682,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
                   flashId: _flashId,
                   flash: _flash,
                   topInset: _topInset,
-                  bottomInset: keyboardPanel == null
-                      ? TimelineView.composerInset
-                      : _bottomInset,
+                  bottomInset: _bottomInset,
                   selection: _selected,
                   onDateTap: (day, position) =>
                       unawaited(_openCalendar(day, position)),
@@ -3925,87 +3917,102 @@ class _ChatViewState extends ConsumerState<ChatView> {
                     ],
                   ),
                 ),
-                // A bot's keyboard is a solid strip above the composer, so
-                // messages never scroll through the gaps between buttons.
-                if (keyboardPanel != null)
-                  DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: c.card,
-                      border: Border(
-                        top: BorderSide(color: c.separator, width: 0.5),
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
-                      child: keyboardPanel,
-                    ),
-                  ),
-                // The composer is the card's own bottom edge; the other
-                // bars still float over the messages.
-                if (_thread case final thread?)
-                  _threadComposer(l10n, thread)
-                else if (_forum || _savedOpen)
-                  const SizedBox.shrink()
-                else if (switch (null) {
-                      _ when _scheduledOpen => _scheduledBar(l10n),
-                      _ when _pinnedListOpen => _unpinAllBar(l10n, store),
-                      _ when _selected != null => _selectionBar(l10n),
-                      _ when secret?.status == SecretChatStatus.closed =>
-                        SecretChatClosedBar(chatId: widget.chatId),
-                      _ => _actionBar(l10n, store),
+                // The bot keyboard and the composer: measured together, so
+                // the timeline leaves room for whatever they grow to.
+                Measured(
+                  onSize: (size) {
+                    if (mounted && size.height != _bottomHeight) {
+                      setState(() => _bottomHeight = size.height);
                     }
-                    case final bar?)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
-                    child: bar,
-                  )
-                else
-                  TapRegion(
-                    groupId: _EmojiPanelRegion,
-                    child: VoiceRecordComposer(
-                      onRecorded: _sendVoice,
-                      onRecordedVideo: _sendVideoNote,
-                      builder: (context, recordButton, recordingBar) =>
-                          Composer(
-                            suggestions: _suggester.suggestions,
-                            onSuggestion: _suggester.pick,
-                            onDismissSuggestions: _suggester.dismiss,
-                            controller: _draft,
-                            focusNode: _focus,
-                            header: _composerHeader(l10n),
-                            onCancel:
-                                _panelOpen ||
-                                    _editing != null ||
-                                    _replyTo != null
-                                ? _cancel
-                                : null,
-                            onEditLast: () => unawaited(_editLast()),
-                            onAttachMenu: (position) =>
-                                unawaited(_attachMenu(position)),
-                            onEmoji: _togglePanel,
-                            leading:
-                                _botMenuButton(l10n, store) ??
-                                _sendAsButton(store),
-                            extraButton: _composerExtras(l10n, store),
-                            onPaste: _paste,
-                            allowEmpty:
-                                _editing != null && _isCaption(_editing!),
-                            labels: ComposerLabels(
-                              hint: l10n.messageHint,
-                              attach: l10n.attach,
-                              emoji: l10n.emoji,
-                              record: l10n.record,
-                              send: l10n.send,
-                              format: formatLabelsOf(l10n),
+                  },
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // A bot's keyboard is a solid strip above the composer, so
+                      // messages never scroll through the gaps between buttons.
+                      if (keyboardPanel != null)
+                        DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: c.card,
+                            border: Border(
+                              top: BorderSide(color: c.separator, width: 0.5),
                             ),
-                            onSend: (text) => unawaited(_send(text)),
-                            onSendMenu: (text, position) =>
-                                unawaited(_sendMenu(text, position)),
-                            recordButton: recordButton,
-                            replacement: recordingBar,
                           ),
-                    ),
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
+                            child: keyboardPanel,
+                          ),
+                        ),
+                      // The composer is the card's own bottom edge; the other
+                      // bars still float over the messages.
+                      if (_thread case final thread?)
+                        _threadComposer(l10n, thread)
+                      else if (_forum || _savedOpen)
+                        const SizedBox.shrink()
+                      else if (switch (null) {
+                            _ when _scheduledOpen => _scheduledBar(l10n),
+                            _ when _pinnedListOpen => _unpinAllBar(l10n, store),
+                            _ when _selected != null => _selectionBar(l10n),
+                            _ when secret?.status == SecretChatStatus.closed =>
+                              SecretChatClosedBar(chatId: widget.chatId),
+                            _ => _actionBar(l10n, store),
+                          }
+                          case final bar?)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+                          child: bar,
+                        )
+                      else
+                        TapRegion(
+                          groupId: _EmojiPanelRegion,
+                          child: VoiceRecordComposer(
+                            onRecorded: _sendVoice,
+                            onRecordedVideo: _sendVideoNote,
+                            builder: (context, recordButton, recordingBar) =>
+                                Composer(
+                                  suggestions: _suggester.suggestions,
+                                  onSuggestion: _suggester.pick,
+                                  onDismissSuggestions: _suggester.dismiss,
+                                  controller: _draft,
+                                  focusNode: _focus,
+                                  header: _composerHeader(l10n),
+                                  onCancel:
+                                      _panelOpen ||
+                                          _editing != null ||
+                                          _replyTo != null
+                                      ? _cancel
+                                      : null,
+                                  onEditLast: () => unawaited(_editLast()),
+                                  onAttachMenu: (position) =>
+                                      unawaited(_attachMenu(position)),
+                                  onEmoji: _togglePanel,
+                                  leading:
+                                      _botMenuButton(l10n, store) ??
+                                      _sendAsButton(store),
+                                  extraButton: _composerExtras(l10n, store),
+                                  onPaste: _paste,
+                                  allowEmpty:
+                                      _editing != null && _isCaption(_editing!),
+                                  labels: ComposerLabels(
+                                    hint: l10n.messageHint,
+                                    attach: l10n.attach,
+                                    emoji: l10n.emoji,
+                                    record: l10n.record,
+                                    send: l10n.send,
+                                    format: formatLabelsOf(l10n),
+                                  ),
+                                  onSend: (text) => unawaited(_send(text)),
+                                  onSendMenu: (text, position) =>
+                                      unawaited(_sendMenu(text, position)),
+                                  recordButton: recordButton,
+                                  replacement: recordingBar,
+                                ),
+                          ),
+                        ),
+                    ],
                   ),
+                ),
               ],
             ),
           ),
