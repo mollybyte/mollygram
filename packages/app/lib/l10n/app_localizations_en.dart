@@ -1283,4 +1283,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatActionFailed => 'Couldn\'t do that, try again';
+
+  @override
+  String get menuSelect => 'Select';
+
+  @override
+  String selectedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count selected',
+      one: '$count selected',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get clearSelection => 'Clear selection';
+
+  @override
+  String get copy => 'Copy';
 }
