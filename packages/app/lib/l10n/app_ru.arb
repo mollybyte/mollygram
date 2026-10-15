@@ -257,6 +257,8 @@
   "menuStopPoll": "Остановить опрос",
   "stopPollTitle": "Остановить опрос?",
   "stopPollMessage": "Больше никто не сможет в нём проголосовать.",
+  "botMenu": "Меню",
+  "webAppUnavailable": "Не удалось открыть приложение бота",
   "botKeyboard": "Клавиатура бота",
   "botNoAnswer": "Бот не ответил",
   "attachFile": "Файл…",

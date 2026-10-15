@@ -485,16 +485,31 @@ final class ConversationController {
         if (store.setBot(userId, user.type is td.UserTypeBot)) _notify();
         if (user.type is! td.UserTypeBot) return;
         final full = await _client.send(td.GetUserFullInfo(userId: userId));
-        final commands = [
-          if (full.botInfo case final info?)
-            td.BotCommands(botUserId: userId, commands: info.commands),
-        ];
-        if (_setBotCommands(chatId, commands)) _notify();
+        if (_setBotInfo(chatId, userId, full.botInfo)) _notify();
       }
     } on Object {
       // Without the full info the chat still works; slowmode shows up on
       // the first send and the bot's commands can still be typed.
     }
+  }
+
+  /// Stores what a bot's full info says about its commands and menu
+  /// button; true when either changed.
+  bool _setBotInfo(int? chatId, int userId, td.BotInfo? info) {
+    if (chatId == null) return false;
+    final commands = _setBotCommands(chatId, [
+      if (info != null)
+        td.BotCommands(botUserId: userId, commands: info.commands),
+    ]);
+    final menu = switch (info) {
+      null => null,
+      td.BotInfo(menuButton: null) => const BotMenu(text: '', url: ''),
+      td.BotInfo(menuButton: final button?) => BotMenu(
+        text: button.text,
+        url: button.url,
+      ),
+    };
+    return store.setBotMenu(chatId, menu) || commands;
   }
 
   /// Stores the commands of [chatId]'s bots from [sets]; true when they
@@ -511,6 +526,26 @@ final class ConversationController {
               description: command.description,
             ),
     ]);
+  }
+
+  /// The address of a bot's Web App at [url], signed for this user, with
+  /// the app's [theme] when one is given.
+  Future<String> webAppUrl(
+    int botUserId,
+    String url, {
+    td.ThemeParameters? theme,
+  }) async {
+    final result = await _client.send(
+      td.GetWebAppUrl(
+        botUserId: botUserId,
+        url: url,
+        parameters: td.WebAppOpenParameters(
+          theme: theme,
+          applicationName: 'mollygram',
+        ),
+      ),
+    );
+    return result.url;
   }
 
   /// Presses Start in a chat with a bot, which sends /start.
@@ -1300,10 +1335,11 @@ final class ConversationController {
           _notify();
         }
       case td.UpdateUserFullInfo(:final userId, :final userFullInfo):
-        if (_setBotCommands(store.chatOfPrivateUser(userId), [
-          if (userFullInfo.botInfo case final info?)
-            td.BotCommands(botUserId: userId, commands: info.commands),
-        ])) {
+        if (_setBotInfo(
+          store.chatOfPrivateUser(userId),
+          userId,
+          userFullInfo.botInfo,
+        )) {
           _notify();
         }
       case td.UpdateSupergroup(:final supergroup):

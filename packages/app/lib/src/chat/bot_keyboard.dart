@@ -200,3 +200,101 @@ class _KeyState extends State<_Key> {
     );
   }
 }
+
+/// The bot's menu button at the left of the composer: a small accent pill
+/// that lists the bot's commands or opens its Web App, as the official
+/// clients draw it.
+class BotMenuPill extends StatefulWidget {
+  const BotMenuPill({super.key, required this.label, required this.onPressed});
+
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  State<BotMenuPill> createState() => _BotMenuPillState();
+}
+
+class _BotMenuPillState extends State<BotMenuPill> {
+  var _hover = false;
+  var _down = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    final animate = !MediaQuery.disableAnimationsOf(context);
+    return Padding(
+      padding: const EdgeInsets.only(right: 2, bottom: 4),
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _hover = true),
+        onExit: (_) => setState(() => _hover = false),
+        child: GestureDetector(
+          onTapDown: (_) => setState(() => _down = true),
+          onTapUp: (_) => setState(() => _down = false),
+          onTapCancel: () => setState(() => _down = false),
+          onTap: widget.onPressed,
+          child: AnimatedContainer(
+            duration: Duration(milliseconds: animate ? 120 : 0),
+            height: 24,
+            constraints: const BoxConstraints(maxWidth: 120),
+            padding: const EdgeInsets.symmetric(horizontal: 9),
+            alignment: Alignment.center,
+            transformAlignment: Alignment.center,
+            transform: Matrix4.diagonal3Values(
+              _down ? 0.96 : 1,
+              _down ? 0.96 : 1,
+              1,
+            ),
+            decoration: BoxDecoration(
+              color: _hover ? Color.lerp(c.accent, c.fg, 0.08) : c.accent,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                MgIcon(MgIcons.list, size: 13, color: c.onAccent),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    widget.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: mgTextStyle(
+                      c,
+                      size: MgType.caption,
+                      weight: FontWeight.w600,
+                      color: c.onAccent,
+                      height: 1.2,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The app's colors, for a bot's Web App to match the window.
+td.ThemeParameters webAppTheme(MgColors c) {
+  int argb(Color color) => color.toARGB32() & 0xFFFFFF;
+  return td.ThemeParameters(
+    backgroundColor: argb(c.windowBackground),
+    secondaryBackgroundColor: argb(c.field),
+    headerBackgroundColor: argb(c.windowBackground),
+    bottomBarBackgroundColor: argb(c.windowBackground),
+    sectionBackgroundColor: argb(c.field),
+    sectionSeparatorColor: argb(c.separator),
+    textColor: argb(c.fg),
+    accentTextColor: argb(c.accent),
+    sectionHeaderTextColor: argb(c.fg2),
+    subtitleTextColor: argb(c.fg2),
+    destructiveTextColor: argb(_danger),
+    hintColor: argb(c.fg2),
+    linkColor: argb(c.accent),
+    buttonColor: argb(c.accent),
+    buttonTextColor: argb(c.onAccent),
+  );
+}

@@ -52,6 +52,7 @@ class Composer extends StatefulWidget {
     this.onSend,
     this.onSendMenu,
     this.extraButton,
+    this.leading,
     this.onAttach,
     this.onAttachMenu,
     this.onEmoji,
@@ -84,6 +85,9 @@ class Composer extends StatefulWidget {
   /// A button before the emoji one, such as the way to the chat's
   /// scheduled messages while it has some.
   final Widget? extraButton;
+
+  /// A control before the attach button, such as a bot's menu button.
+  final Widget? leading;
   final VoidCallback? onAttach;
 
   /// A click on the attach button, with the point above it where a menu
@@ -414,6 +418,7 @@ class _ComposerState extends State<Composer> {
     final fieldRow = Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
+        ?widget.leading,
         Builder(
           builder: (context) => MgIconButton(
             icon: MgIcons.attach,

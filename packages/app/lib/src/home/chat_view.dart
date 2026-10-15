@@ -1399,6 +1399,48 @@ class _ChatViewState extends ConsumerState<ChatView> {
     };
   }
 
+  /// The bot's menu button before the attach one: its commands, or the
+  /// Web App it names.
+  Widget? _botMenuButton(AppLocalizations l10n, ConversationStore store) {
+    final chatId = widget.chatId;
+    // A menu is only ever stored for a chat with a bot.
+    final botUserId = store.privateUserIdOf(chatId);
+    final menu = store.botMenu(chatId);
+    if (botUserId == null || menu == null) return null;
+    if (menu.isCommands) {
+      if (store.botCommands(chatId).isEmpty) return null;
+      return BotMenuPill(
+        label: l10n.botMenu,
+        onPressed: () {
+          // A lone slash lists every command in the popup.
+          _draft.setFormatted('/', const []);
+          _focus.requestFocus();
+        },
+      );
+    }
+    return BotMenuPill(
+      label: menu.text.isEmpty ? l10n.botMenu : menu.text,
+      onPressed: () => unawaited(_openWebApp(botUserId, menu.url)),
+    );
+  }
+
+  /// Opens a bot's Web App in the browser, signed for this user.
+  Future<void> _openWebApp(int botUserId, String url) async {
+    final theme = webAppTheme(MgColors.of(context));
+    try {
+      final signed = await _conversations.webAppUrl(
+        botUserId,
+        url,
+        theme: theme,
+      );
+      await launchExternal(Uri.parse(signed));
+    } on Object {
+      if (mounted) {
+        showMgToast(context, AppLocalizations.of(context).webAppUnavailable);
+      }
+    }
+  }
+
   /// The buttons the composer gets besides its own: the bot keyboard
   /// toggle and the scheduled list.
   Widget? _composerExtras(AppLocalizations l10n, ConversationStore store) {
@@ -2632,6 +2674,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
                             onAttachMenu: (position) =>
                                 unawaited(_attachMenu(position)),
                             onEmoji: _togglePanel,
+                            leading: _botMenuButton(l10n, store),
                             extraButton: _composerExtras(l10n, store),
                             onPaste: _paste,
                             allowEmpty:
