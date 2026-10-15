@@ -43,7 +43,7 @@ M8 calls and macOS release, M9 after release.
 | Typing and online dot in the list | missing | `UpdateChatAction`, `UpdateUserStatus` | S | M1 |
 | Draft preview in the list ("Draft: …") | partial | `UpdateChatDraftMessage` is stored, not shown | S | M1 |
 | Pinned chats order with drag | missing | `SetPinnedChats` | S | M6 |
-| Folder editor: create, edit, delete, reorder, include/exclude, recommended | missing | TelegramSwift `ChatListFilterController` | M | M6 |
+| Folder editor: create, edit, delete, reorder, include/exclude, recommended | done | Settings > Chat folders: drag reorder, editor sheet with icon, chat types and a chat picker, delete with chats to leave, recommended folders; `ChatFoldersController` in core. No pinning inside a folder or "All chats" position yet | | M6 |
 | Folder sidebar (vertical tabs) and folder icons | missing | Official offers left-side folders | M | M7 |
 | Shared folders (chat folder invite links) | missing | `CreateChatFolderInviteLink` | M | M9 |
 | Saved Messages as a list of sub-chats | missing | Saved Messages tags and per-source chats | M | M2 |

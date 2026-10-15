@@ -689,6 +689,59 @@
   },
   "clearSelection": "Clear selection",
   "copy": "Copy",
+  "chatFolders": "Chat folders",
+  "chatFoldersHint": "Sort chats into folders and switch between them in the sidebar.",
+  "createFolder": "Create folder",
+  "newFolder": "New folder",
+  "editFolder": "Edit folder",
+  "folderName": "Folder name",
+  "folderIcon": "Folder icon",
+  "folderIncluded": "Included chats",
+  "folderExcluded": "Excluded chats",
+  "folderAddChats": "Add chats",
+  "folderExcludeChats": "Exclude chats",
+  "folderIncludedHint": "Choose chats or kinds of chats that will appear in this folder.",
+  "folderExcludedHint": "Choose chats or kinds of chats that will never appear in this folder.",
+  "folderContacts": "Contacts",
+  "folderNonContacts": "Non-contacts",
+  "folderGroups": "Groups",
+  "folderChannels": "Channels",
+  "folderBots": "Bots",
+  "folderMuted": "Muted",
+  "folderRead": "Read",
+  "folderArchived": "Archived",
+  "folderChatTypes": "Chat types",
+  "folderChats": "Chats",
+  "folderBot": "bot",
+  "folderGroup": "group",
+  "folderChannel": "channel",
+  "folderSavedMessages": "Saved Messages",
+  "folderRemove": "Remove",
+  "folderAdd": "Add",
+  "folderReorder": "Drag to reorder",
+  "folderReorderHint": "Drag the handles to change the order of folders in the sidebar.",
+  "recommendedFolders": "Recommended folders",
+  "deleteFolder": "Delete folder",
+  "deleteFolderMessage": "The chats in it won't be deleted.",
+  "deleteFolderLeave": "The chats in it won't be deleted. You can also leave the chats this folder was shared with you through:",
+  "delete": "Delete",
+  "save": "Save",
+  "deleteFolderTitle": "Delete “{name}”?",
+  "@deleteFolderTitle": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "folderLimit": "You can have up to {count} folders.",
+  "@folderLimit": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "folderChatsLimit": "A folder can have up to {count} chats.",
+  "@folderChatsLimit": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "folderChatsCounter": "{count} of {max}",
+  "@folderChatsCounter": {
+    "placeholders": { "count": { "type": "int" }, "max": { "type": "int" } }
+  },
   "previousMonth": "Previous month",
   "nextMonth": "Next month",
   "pinnedList": "Pinned messages",
@@ -701,5 +754,6 @@
   "unpinAllTitle": "{count, plural, one{Unpin {count} message?} other{Unpin all {count} messages?}}",
   "@unpinAllTitle": {
     "placeholders": { "count": { "type": "int" } }
-  }
+  },
+  "folderDeletedChat": "Deleted chat"
 }
