@@ -1718,6 +1718,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatUnavailable => 'You can\'t take part in this chat';
 
   @override
+  String get textNotAllowed => 'Text messages aren\'t allowed in this group';
+
+  @override
+  String restrictedUntil(String date) {
+    return 'You can\'t write here until $date';
+  }
+
+  @override
+  String slowModeWait(String time) {
+    return 'Slowmode is on, next message in $time';
+  }
+
+  @override
   String get chatActionFailed => 'Couldn\'t do that, try again';
 
   @override

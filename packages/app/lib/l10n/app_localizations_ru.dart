@@ -1736,6 +1736,19 @@ class AppLocalizationsRu extends AppLocalizations {
   String get chatUnavailable => 'Вы не можете участвовать в этом чате';
 
   @override
+  String get textNotAllowed => 'Текстовые сообщения в этой группе запрещены';
+
+  @override
+  String restrictedUntil(String date) {
+    return 'Вы не можете писать здесь до $date';
+  }
+
+  @override
+  String slowModeWait(String time) {
+    return 'Медленный режим, следующее сообщение через $time';
+  }
+
+  @override
   String get chatActionFailed => 'Не получилось, попробуйте ещё раз';
 
   @override

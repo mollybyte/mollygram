@@ -2906,6 +2906,24 @@ abstract class AppLocalizations {
   /// **'You can\'t take part in this chat'**
   String get chatUnavailable;
 
+  /// No description provided for @textNotAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'Text messages aren\'t allowed in this group'**
+  String get textNotAllowed;
+
+  /// No description provided for @restrictedUntil.
+  ///
+  /// In en, this message translates to:
+  /// **'You can\'t write here until {date}'**
+  String restrictedUntil(String date);
+
+  /// No description provided for @slowModeWait.
+  ///
+  /// In en, this message translates to:
+  /// **'Slowmode is on, next message in {time}'**
+  String slowModeWait(String time);
+
   /// No description provided for @chatActionFailed.
   ///
   /// In en, this message translates to:
