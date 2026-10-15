@@ -415,6 +415,17 @@ final class ConversationController {
     ),
   );
 
+  /// The identities the user may post as in [chatId]: their own account
+  /// and the channels they own, each with whether Premium is needed.
+  Future<List<td.ChatMessageSender>> availableSenders(int chatId) async =>
+      (await _client.send(td.GetChatAvailableMessageSenders(chatId: chatId)))
+          .senders;
+
+  /// Posts as [sender] in [chatId] from now on; TDLib confirms with
+  /// `updateChatMessageSender`.
+  Future<void> setMessageSender(int chatId, td.MessageSender sender) => _client
+      .send(td.SetChatMessageSender(chatId: chatId, messageSenderId: sender));
+
   /// Presses a bot's inline button that carries [data]: the bot's answer,
   /// a notification or a URL to open, or nothing.
   Future<td.CallbackQueryAnswer> callbackQuery(
@@ -1385,12 +1396,15 @@ final class ConversationController {
           })
           ..setChatType(chat.id, chat.type)
           ..setPermissions(chat.id, chat.permissions)
+          ..setMessageSender(chat.id, chat.messageSenderId)
           ..setDraft(chat.id, chat.draftMessage)
           ..setMuteFor(chat.id, chat.notificationSettings.muteFor);
       case td.UpdateChatDraftMessage(:final chatId, :final draftMessage):
         if (store.setDraft(chatId, draftMessage)) _notify();
       case td.UpdateChatPermissions(:final chatId, :final permissions):
         if (store.setPermissions(chatId, permissions)) _notify();
+      case td.UpdateChatMessageSender(:final chatId, :final messageSenderId):
+        if (store.setMessageSender(chatId, messageSenderId)) _notify();
       case td.UpdateSupergroupFullInfo(
         :final supergroupId,
         :final supergroupFullInfo,

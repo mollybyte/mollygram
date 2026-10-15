@@ -944,6 +944,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get webAppUnavailable => 'Couldn\'t open the bot\'s app';
 
   @override
+  String get sendAs => 'Send as';
+
+  @override
+  String get sendAsPersonal => 'Personal account';
+
+  @override
+  String get sendAsChannel => 'Channel';
+
+  @override
+  String get sendAsPremium => 'Telegram Premium';
+
+  @override
   String get botKeyboard => 'Bot keyboard';
 
   @override

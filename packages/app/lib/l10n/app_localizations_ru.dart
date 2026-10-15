@@ -956,6 +956,18 @@ class AppLocalizationsRu extends AppLocalizations {
   String get webAppUnavailable => 'Не удалось открыть приложение бота';
 
   @override
+  String get sendAs => 'Отправлять как';
+
+  @override
+  String get sendAsPersonal => 'Личный аккаунт';
+
+  @override
+  String get sendAsChannel => 'Канал';
+
+  @override
+  String get sendAsPremium => 'Telegram Premium';
+
+  @override
   String get botKeyboard => 'Клавиатура бота';
 
   @override

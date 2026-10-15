@@ -1658,6 +1658,30 @@ abstract class AppLocalizations {
   /// **'Couldn\'t open the bot\'s app'**
   String get webAppUnavailable;
 
+  /// No description provided for @sendAs.
+  ///
+  /// In en, this message translates to:
+  /// **'Send as'**
+  String get sendAs;
+
+  /// No description provided for @sendAsPersonal.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal account'**
+  String get sendAsPersonal;
+
+  /// No description provided for @sendAsChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Channel'**
+  String get sendAsChannel;
+
+  /// No description provided for @sendAsPremium.
+  ///
+  /// In en, this message translates to:
+  /// **'Telegram Premium'**
+  String get sendAsPremium;
+
   /// No description provided for @botKeyboard.
   ///
   /// In en, this message translates to:
