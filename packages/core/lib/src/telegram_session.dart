@@ -45,6 +45,7 @@ final class TelegramSession {
   /// The connection state, for the "Connecting…" status in the window.
   final ConnectionMonitor connection;
   final _errors = StreamController<Object>.broadcast(sync: true);
+  final _closedElsewhere = Completer<void>();
   StreamSubscription<AuthorizationStage>? _stageSubscription;
   Future<void>? _firstReconcile;
   var _disposed = false;
@@ -76,6 +77,12 @@ final class TelegramSession {
       initializer: TdlibInitializer(client, parameters: parameters),
     );
     session._stageSubscription = authorization.stages.listen(session._onStage);
+    unawaited(
+      authorization.closed.then((_) {
+        if (session._disposed || authorization.logOutRequested) return;
+        session._closedElsewhere.complete();
+      }),
+    );
     try {
       await conversations.start();
       await files.start();
@@ -94,6 +101,13 @@ final class TelegramSession {
     }
     return session;
   }
+
+  /// Completes when TDLib closes the client without this app asking, such
+  /// as when the session is terminated from another device: TDLib logs
+  /// out, deletes the local data and closes. The client can't be used
+  /// again; the app disposes the session and starts a new one, which
+  /// begins at sign-in.
+  Future<void> get closedElsewhere => _closedElsewhere.future;
 
   /// Initialization and synchronization errors suitable for user-facing UI.
   Stream<Object> get errors => _errors.stream;

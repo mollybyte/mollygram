@@ -28,7 +28,19 @@ final telegramSessionProvider = FutureProvider<TelegramSession>((ref) async {
   final session = await ref
       .watch(telegramSessionLauncherProvider)
       .start(config);
-  ref.onDispose(() => unawaited(session.dispose()));
+  var disposed = false;
+  ref.onDispose(() {
+    disposed = true;
+    unawaited(session.dispose());
+  });
+  // Terminated from another device: TDLib has logged out and closed the
+  // client, so a new session starts and the app lands on sign-in.
+  unawaited(
+    session.closedElsewhere.then((_) async {
+      await session.dispose();
+      if (!disposed) ref.invalidateSelf();
+    }),
+  );
   return session;
 });
 

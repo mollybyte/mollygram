@@ -25,6 +25,15 @@ final class AuthorizationController {
   /// The latest stage received from TDLib, if [start] has completed.
   AuthorizationStage? get currentStage => _currentStage;
 
+  /// Completes when TDLib reports this client closed.
+  Future<void> get closed => _closed.future;
+
+  /// Whether this app asked TDLib to log out. A close it didn't ask for
+  /// comes from elsewhere, such as the session being terminated on another
+  /// device.
+  bool get logOutRequested => _logOutRequested;
+  var _logOutRequested = false;
+
   /// Starts observing TDLib and publishes its current authorization state.
   Future<void> start() async {
     if (_subscription != null) return;
@@ -51,6 +60,7 @@ final class AuthorizationController {
   Future<void> abandonQrCode({
     Duration timeout = const Duration(seconds: 10),
   }) async {
+    _logOutRequested = true;
     try {
       await _client.send(const td.LogOut());
     } on td.TdClientClosed {

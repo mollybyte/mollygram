@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -52,6 +53,77 @@ void main() {
       await session.dispose();
     },
   );
+
+  group('closedElsewhere', () {
+    Future<TelegramSession> attach() => TelegramSession.attach(
+      tdlib,
+      parameters: TdlibParameters(
+        api: const TelegramApiConfig(
+          apiId: 12345,
+          apiHash: '0123456789abcdef0123456789abcdef',
+        ),
+        databaseDirectory: '/tmp/mollygram/database',
+        filesDirectory: '/tmp/mollygram/files',
+        databaseEncryptionKey: Uint8List.fromList([1, 2, 3]),
+        systemLanguageCode: 'en',
+        deviceModel: 'Mac',
+        applicationVersion: '0.1.0',
+      ),
+    );
+
+    void state(String type) => json.push({
+      '@type': 'updateAuthorizationState',
+      'authorization_state': {'@type': type},
+    });
+
+    test('completes when the session is terminated elsewhere', () async {
+      final session = await attach();
+      var closed = false;
+      unawaited(session.closedElsewhere.then((_) => closed = true));
+      state('authorizationStateReady');
+      state('authorizationStateLoggingOut');
+      state('authorizationStateClosing');
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+      expect(closed, isFalse);
+
+      state('authorizationStateClosed');
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+      expect(closed, isTrue);
+      await session.dispose();
+    });
+
+    test('stays pending when the app logs out itself', () async {
+      final session = await attach();
+      var closed = false;
+      unawaited(session.closedElsewhere.then((_) => closed = true));
+      json.push({
+        '@type': 'updateAuthorizationState',
+        'authorization_state': {
+          '@type': 'authorizationStateWaitOtherDeviceConfirmation',
+          'link': 'tg://login?token=a',
+        },
+      });
+      final leaving = session.authorization.abandonQrCode();
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+      state('authorizationStateLoggingOut');
+      state('authorizationStateClosed');
+      await leaving;
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+
+      expect(closed, isFalse);
+      await session.dispose();
+    });
+
+    test('stays pending when the session is disposed', () async {
+      final session = await attach();
+      var closed = false;
+      unawaited(session.closedElsewhere.then((_) => closed = true));
+      await session.dispose();
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+
+      expect(closed, isFalse);
+    });
+  });
 
   test('fails to start when TDLib rejects its parameters', () async {
     // Missing credentials are refused before anything is sent; a wrong
