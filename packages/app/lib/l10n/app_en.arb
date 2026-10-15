@@ -55,6 +55,13 @@
   "emoji": "Emoji and stickers",
   "record": "Record a voice or video message",
   "send": "Send",
+  "voiceHoldToRecord": "Hold to record a voice message",
+  "voiceReleaseToCancel": "Release to cancel",
+  "voiceDelete": "Delete recording",
+  "voiceMicrophoneDenied": "Mollygram has no access to the microphone.",
+  "voiceOpenSettings": "Open System Settings",
+  "voiceRecordFailed": "Couldn't start recording",
+  "voiceSendFailed": "Couldn't send the voice message",
   "previewYou": "You: {text}",
   "@previewYou": {
     "placeholders": { "text": { "type": "String" } }
@@ -502,5 +509,14 @@
   "unreadMessages": "Unread messages",
   "scrollToBottom": "Scroll to the newest message",
   "nextMention": "Next mention",
-  "nextReaction": "Next reaction"
+  "nextReaction": "Next reaction",
+  "menuPin": "Pin",
+  "menuUnpin": "Unpin",
+  "pinnedMessage": "Pinned message",
+  "pinnedMessageNumber": "Pinned message #{number}",
+  "@pinnedMessageNumber": {
+    "placeholders": { "number": { "type": "int" } }
+  },
+  "hidePinned": "Hide pinned messages",
+  "backToPrevious": "Back to where you were"
 }

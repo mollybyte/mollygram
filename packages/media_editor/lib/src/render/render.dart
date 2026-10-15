@@ -8,6 +8,9 @@ import 'package:flutter/painting.dart';
 import 'package:image/image.dart' as img;
 
 import '../model/media_edit.dart';
+import '../model/stroke.dart';
+import 'overlays.dart';
+import 'strokes.dart';
 
 /// Paints the edited picture so that [viewport], a rectangle of the
 /// oriented picture in its pixels, lands on [dest].
@@ -23,6 +26,7 @@ void paintEdited(
   required Rect viewport,
   required Rect dest,
   double opacity = 1,
+  Stroke? liveStroke,
 }) {
   if (viewport.isEmpty || dest.isEmpty) return;
   final oriented = edit.orientedSize(source);
@@ -30,7 +34,15 @@ void paintEdited(
     ..save()
     ..translate(dest.left, dest.top)
     ..scale(dest.width / viewport.width, dest.height / viewport.height)
-    ..translate(-viewport.left, -viewport.top)
+    ..translate(-viewport.left, -viewport.top);
+  if (opacity < 1) {
+    canvas.saveLayer(
+      Offset.zero & oriented,
+      Paint()..color = Color.fromRGBO(0, 0, 0, opacity),
+    );
+  }
+  canvas
+    ..save()
     ..translate(oriented.width / 2, oriented.height / 2);
   if (edit.flipped) canvas.scale(-1, 1);
   canvas
@@ -42,10 +54,13 @@ void paintEdited(
       Offset.zero & source,
       Paint()
         ..filterQuality = FilterQuality.high
-        ..isAntiAlias = true
-        ..color = Color.fromRGBO(0, 0, 0, opacity),
+        ..isAntiAlias = true,
     )
     ..restore();
+  paintStrokes(canvas, edit.strokes, oriented, live: liveStroke);
+  paintOverlays(canvas, edit.overlays, oriented);
+  if (opacity < 1) canvas.restore();
+  canvas.restore();
 }
 
 /// The largest side of an exported picture. Larger crops are scaled down

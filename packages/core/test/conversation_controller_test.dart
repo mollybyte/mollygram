@@ -1,5 +1,6 @@
 import 'dart:collection';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
@@ -430,6 +431,29 @@ void main() {
     });
   });
 
+  test('sends a voice message with its waveform', () async {
+    await controller.start();
+
+    await controller.sendVoiceNote(
+      7,
+      path: '/tmp/voice.ogg',
+      duration: const Duration(milliseconds: 2400),
+      waveform: Uint8List.fromList([1, 2, 3]),
+      replyTo: 10,
+    );
+
+    final send = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    expect(send['reply_to'], containsPair('message_id', 10));
+    final content = send['input_message_content']! as Map;
+    expect(content['@type'], 'inputMessageVoiceNote');
+    expect(content['voice_note'], {
+      '@type': 'inputVoiceNote',
+      'voice_note': {'@type': 'inputFileLocal', 'path': '/tmp/voice.ogg'},
+      'duration': 3,
+      'waveform': base64Encode([1, 2, 3]),
+    });
+  });
+
   test('opens a chat with unread messages at the last read one', () async {
     json.chat = [for (var id = 1; id <= 200; id++) id];
     await controller.start();
@@ -486,6 +510,28 @@ void main() {
 
     final mention = await controller.firstUnread(7);
     expect(mention?.id, 30);
+  });
+
+  test('keeps the pinned messages of a chat up to date', () async {
+    await controller.start();
+    await controller.loadPinned(7);
+    expect(controller.store.pinnedIds(7), [50, 20]);
+    expect(controller.store.message(7, 20)?.text, 'Pinned');
+
+    json.push({
+      '@type': 'updateMessageIsPinned',
+      'chat_id': 7,
+      'message_id': 20,
+      'is_pinned': false,
+    });
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    expect(controller.store.pinnedIds(7), [50]);
+
+    await controller.setPinned(7, 60, pinned: true);
+    final pin = json.sent.lastWhere((r) => r['@type'] == 'pinChatMessage');
+    expect(pin['message_id'], 60);
+    await controller.setPinned(7, 50, pinned: false);
+    expect(json.sent.last['@type'], 'unpinChatMessage');
   });
 
   test('finds photos and videos around a message, oldest first', () async {
@@ -758,6 +804,21 @@ final class _FakeTdJson implements td.TdJson {
             _message(id: id, chatId: 7, text: 'm$id').toJson(),
         ],
       },
+      'searchChatMessages'
+          when (decoded['filter']! as Map)['@type'] ==
+              'searchMessagesFilterPinned' =>
+        {
+          '@type': 'foundChatMessages',
+          'total_count': 2,
+          'messages': [
+            for (final id in [50, 20])
+              {
+                ..._message(id: id, chatId: 7, text: 'Pinned').toJson(),
+                'is_pinned': true,
+              },
+          ],
+          'next_from_message_id': 0,
+        },
       'searchChatMessages'
           when (decoded['filter']! as Map)['@type'] ==
               'searchMessagesFilterUnreadMention' =>

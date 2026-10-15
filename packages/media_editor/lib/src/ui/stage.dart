@@ -6,6 +6,7 @@ import 'package:flutter/rendering.dart';
 
 import '../model/crop_geometry.dart';
 import '../model/media_edit.dart';
+import '../model/stroke.dart';
 import '../render/render.dart';
 
 /// Where the picture sits on the stage for one frame.
@@ -70,6 +71,7 @@ class StagePainter extends CustomPainter {
     required this.outsideOpacity,
     required this.frameOpacity,
     required this.gridOpacity,
+    this.liveStroke,
   });
 
   final ui.Image image;
@@ -85,6 +87,9 @@ class StagePainter extends CustomPainter {
 
   /// Opacity of the rule-of-thirds grid inside the frame.
   final double gridOpacity;
+
+  /// The stroke being drawn right now.
+  final Stroke? liveStroke;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -119,6 +124,7 @@ class StagePainter extends CustomPainter {
     viewport: layout.viewport,
     dest: layout.dest,
     opacity: opacity,
+    liveStroke: liveStroke,
   );
 
   void _frame(Canvas canvas, Rect crop) {
@@ -232,7 +238,8 @@ class StagePainter extends CustomPainter {
       old.layout.crop != layout.crop ||
       old.outsideOpacity != outsideOpacity ||
       old.frameOpacity != frameOpacity ||
-      old.gridOpacity != gridOpacity;
+      old.gridOpacity != gridOpacity ||
+      old.liveStroke != liveStroke;
 }
 
 /// The crop handle under [point], with [crop] in stage coordinates. Corners

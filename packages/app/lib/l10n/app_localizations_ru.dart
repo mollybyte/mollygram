@@ -167,6 +167,27 @@ class AppLocalizationsRu extends AppLocalizations {
   String get send => 'Отправить';
 
   @override
+  String get voiceHoldToRecord => 'Удерживайте, чтобы записать голосовое';
+
+  @override
+  String get voiceReleaseToCancel => 'Отпустите для отмены';
+
+  @override
+  String get voiceDelete => 'Удалить запись';
+
+  @override
+  String get voiceMicrophoneDenied => 'У Mollygram нет доступа к микрофону.';
+
+  @override
+  String get voiceOpenSettings => 'Открыть Системные настройки';
+
+  @override
+  String get voiceRecordFailed => 'Не удалось начать запись';
+
+  @override
+  String get voiceSendFailed => 'Не удалось отправить голосовое';
+
+  @override
   String previewYou(String text) {
     return 'Вы: $text';
   }
@@ -1195,4 +1216,24 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get nextReaction => 'Следующая реакция';
+
+  @override
+  String get menuPin => 'Закрепить';
+
+  @override
+  String get menuUnpin => 'Открепить';
+
+  @override
+  String get pinnedMessage => 'Закреплённое сообщение';
+
+  @override
+  String pinnedMessageNumber(int number) {
+    return 'Закреплённое сообщение #$number';
+  }
+
+  @override
+  String get hidePinned => 'Скрыть закреплённые';
+
+  @override
+  String get backToPrevious => 'Вернуться назад';
 }

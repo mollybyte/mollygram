@@ -59,9 +59,9 @@ M8 calls and macOS release, M9 after release.
 | "New messages" separator and opening at the first unread | done | Unread PR: `TimelineView` grows both ways from the first unread | | |
 | Scroll-to-bottom button with unread counter | done | Unread PR | | |
 | Jump to next mention and reaction | done | Unread PR: `SearchChatMessages` with the unread filters | | |
-| Pinned message bar with cycling and the pinned list | missing | `UpdateMessageIsPinned` is handled, no bar | M | M1 |
-| Jump to a replied message and back | partial | Unread PR: jump with a highlight; no "back" button yet | S | M1 |
-| Date headers and sticky date | partial | Date pills exist, not sticky while scrolling | S | M1 |
+| Pinned message bar with cycling and the pinned list | partial | Pinned PR: bar with cycling, pin and unpin from the menu; no pinned list view | S | M2 |
+| Jump to a replied message and back | done | Jump with a highlight; the down button returns to where the user was | | |
+| Date headers and sticky date | done | Date pills, and the top row's date floats while scrolling | | |
 | Jump to date (calendar) | missing | `ChatCalendarModalController` | M | M2 |
 | Header status: online, last seen, members, typing | missing | Header has the slot | S | M1 |
 | Join and mute buttons for channels and groups you are not in | missing | `JoinChat` | S | M1 |
@@ -115,7 +115,7 @@ M8 calls and macOS release, M9 after release.
 | Mentions autocomplete (@) | missing | `SearchChatMembers` | S | M1 |
 | Bot command autocomplete (/) and bot keyboards | missing | `ReplyMarkupNode` | M | M2 |
 | Inline bots (@gif, @vid) | missing | `GetInlineQueryResults` | M | M9 |
-| Voice message recording | missing | Mic button is a placeholder | M | M1 |
+| Voice message recording | done | Hold, lock, cancel; Opus in Ogg via AudioToolbox on macOS | M | M1 |
 | Video message (circle) recording | missing | Playback done in `packages/media` | L | M4 |
 | Silent send and scheduled messages, scheduled list | missing | `MessageSchedulingStateSendAtDate` | M | M2 |
 | Send as (channel identity) | missing | `ChatInputSendAsView` | S | M6 |
@@ -125,9 +125,9 @@ M8 calls and macOS release, M9 after release.
 | Send preview: caption, send as files, albums | done | #31 | | |
 | Send preview: spoiler, self-destruct timer, compression choice | missing | `hasSpoiler`, `selfDestructType`; uncompressed default planned | S | M2 |
 | Media editor: crop, rotate, flip, aspect presets | done | `packages/media_editor` | | |
-| Media editor: drawing (pen, marker, neon, eraser, colours, sizes) | missing | | M | M4 |
-| Media editor: text, stickers and emoji placed on the image | missing | | M | M4 |
-| Media editor: arrows and shapes, blur and pixelate brush | missing | | M | M4 |
+| Media editor: drawing (pen, marker, arrow, eraser, colours, thickness) | done | `packages/media_editor` | | |
+| Media editor: text, stickers and emoji placed on the image | partial | Text and emoji done; stickers need the app’s sticker picker | M | M4 |
+| Media editor: arrows and shapes, blur and pixelate brush | partial | Arrows and shapes done; blur and pixelate next | M | M4 |
 | Media editor: filters and adjustments (brightness, contrast, saturation, warmth, vignette) | missing | | M | M4 |
 | Video editor: trim, mute, cover frame, quality | missing | `VideoEditorModalController` | M | M4 |
 | Slowmode and restriction notices | missing | | S | M2 |

@@ -49,6 +49,13 @@
   "emoji": "Эмодзи и стикеры",
   "record": "Записать голосовое или видеосообщение",
   "send": "Отправить",
+  "voiceHoldToRecord": "Удерживайте, чтобы записать голосовое",
+  "voiceReleaseToCancel": "Отпустите для отмены",
+  "voiceDelete": "Удалить запись",
+  "voiceMicrophoneDenied": "У Mollygram нет доступа к микрофону.",
+  "voiceOpenSettings": "Открыть Системные настройки",
+  "voiceRecordFailed": "Не удалось начать запись",
+  "voiceSendFailed": "Не удалось отправить голосовое",
   "previewYou": "Вы: {text}",
   "previewPhoto": "Фото",
   "previewVideo": "Видео",
@@ -325,5 +332,11 @@
   "unreadMessages": "Непрочитанные сообщения",
   "scrollToBottom": "К последнему сообщению",
   "nextMention": "Следующее упоминание",
-  "nextReaction": "Следующая реакция"
+  "nextReaction": "Следующая реакция",
+  "menuPin": "Закрепить",
+  "menuUnpin": "Открепить",
+  "pinnedMessage": "Закреплённое сообщение",
+  "pinnedMessageNumber": "Закреплённое сообщение #{number}",
+  "hidePinned": "Скрыть закреплённые",
+  "backToPrevious": "Вернуться назад"
 }

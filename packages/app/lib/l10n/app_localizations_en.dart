@@ -166,6 +166,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get send => 'Send';
 
   @override
+  String get voiceHoldToRecord => 'Hold to record a voice message';
+
+  @override
+  String get voiceReleaseToCancel => 'Release to cancel';
+
+  @override
+  String get voiceDelete => 'Delete recording';
+
+  @override
+  String get voiceMicrophoneDenied =>
+      'Mollygram has no access to the microphone.';
+
+  @override
+  String get voiceOpenSettings => 'Open System Settings';
+
+  @override
+  String get voiceRecordFailed => 'Couldn\'t start recording';
+
+  @override
+  String get voiceSendFailed => 'Couldn\'t send the voice message';
+
+  @override
   String previewYou(String text) {
     return 'You: $text';
   }
@@ -1186,4 +1208,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nextReaction => 'Next reaction';
+
+  @override
+  String get menuPin => 'Pin';
+
+  @override
+  String get menuUnpin => 'Unpin';
+
+  @override
+  String get pinnedMessage => 'Pinned message';
+
+  @override
+  String pinnedMessageNumber(int number) {
+    return 'Pinned message #$number';
+  }
+
+  @override
+  String get hidePinned => 'Hide pinned messages';
+
+  @override
+  String get backToPrevious => 'Back to where you were';
 }

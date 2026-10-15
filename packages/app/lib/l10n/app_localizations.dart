@@ -392,6 +392,48 @@ abstract class AppLocalizations {
   /// **'Send'**
   String get send;
 
+  /// No description provided for @voiceHoldToRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold to record a voice message'**
+  String get voiceHoldToRecord;
+
+  /// No description provided for @voiceReleaseToCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Release to cancel'**
+  String get voiceReleaseToCancel;
+
+  /// No description provided for @voiceDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete recording'**
+  String get voiceDelete;
+
+  /// No description provided for @voiceMicrophoneDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Mollygram has no access to the microphone.'**
+  String get voiceMicrophoneDenied;
+
+  /// No description provided for @voiceOpenSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open System Settings'**
+  String get voiceOpenSettings;
+
+  /// No description provided for @voiceRecordFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t start recording'**
+  String get voiceRecordFailed;
+
+  /// No description provided for @voiceSendFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t send the voice message'**
+  String get voiceSendFailed;
+
   /// No description provided for @previewYou.
   ///
   /// In en, this message translates to:
@@ -2053,6 +2095,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Next reaction'**
   String get nextReaction;
+
+  /// No description provided for @menuPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Pin'**
+  String get menuPin;
+
+  /// No description provided for @menuUnpin.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpin'**
+  String get menuUnpin;
+
+  /// No description provided for @pinnedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinned message'**
+  String get pinnedMessage;
+
+  /// No description provided for @pinnedMessageNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinned message #{number}'**
+  String pinnedMessageNumber(int number);
+
+  /// No description provided for @hidePinned.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide pinned messages'**
+  String get hidePinned;
+
+  /// No description provided for @backToPrevious.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to where you were'**
+  String get backToPrevious;
 }
 
 class _AppLocalizationsDelegate
