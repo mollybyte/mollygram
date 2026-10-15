@@ -1058,6 +1058,9 @@ void main() {
     expect(thread.replyCount, 2);
     await thread.load();
     expect(thread.messages.map((m) => m.id), [42, 41, 40]);
+    // A short page is not the end: TDLib may still have older comments.
+    expect(thread.reachedStart, isFalse);
+    await thread.loadOlder();
     expect(thread.reachedStart, isTrue);
 
     json.push({
@@ -1906,10 +1909,13 @@ final class _FakeTdJson implements td.TdJson {
       'getMessageThreadHistory' => {
         '@type': 'messages',
         'total_count': 2,
-        'messages': [
-          _message(id: 42, chatId: -100, text: 'Second').toJson(),
-          _message(id: 41, chatId: -100, text: 'First').toJson(),
-        ],
+        // Only the newest page has comments; an older one is empty.
+        'messages': decoded['from_message_id'] == 0
+            ? [
+                _message(id: 42, chatId: -100, text: 'Second').toJson(),
+                _message(id: 41, chatId: -100, text: 'First').toJson(),
+              ]
+            : <Object?>[],
       },
       'sendMessage' => {
         ..._message(

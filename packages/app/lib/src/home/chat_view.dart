@@ -272,6 +272,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
       ..search = _inlineSearch()
       ..addListener(_mentionsChanged);
     _scroll.addListener(_followScroll);
+    _scroll.addListener(() => _topUp(_scroll));
+    _threadScroll.addListener(() => _topUp(_threadScroll));
     _open(widget.chatId);
     WidgetsBinding.instance.addPostFrameCallback((_) => _takeJump());
   }
@@ -1674,6 +1676,21 @@ class _ChatViewState extends ConsumerState<ChatView> {
       setState(() => _returnTo = null);
     }
     _away.value = !atEnd || fromBottom > 360 || _returnTo != null;
+  }
+
+  /// Rows ask for more history as they are built, but a page that came
+  /// back short or empty builds nothing new: the scroll position asks
+  /// again, so the top of a chat or of comments is never a dead end.
+  void _topUp(ScrollController controller) {
+    if (!controller.hasClients) return;
+    final position = controller.position;
+    if (!position.hasContentDimensions) return;
+    if (position.maxScrollExtent - position.pixels > 600) return;
+    if (controller == _threadScroll) {
+      unawaited(_quiet(_thread?.loadOlder() ?? Future<void>.value()));
+    } else if (!_conversations.store.reachedStart(widget.chatId)) {
+      _loadOlder();
+    }
   }
 
   /// Scrolls to [messageId], loading the history around it when it is
