@@ -22,6 +22,7 @@ void main() {
           ),
         ),
       );
+      await tester.pumpAndSettle();
     }
     expect(regular, ChatListTile.extent);
     expect(compact, lessThan(regular));
