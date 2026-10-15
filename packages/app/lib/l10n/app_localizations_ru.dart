@@ -187,6 +187,63 @@ class AppLocalizationsRu extends AppLocalizations {
   String get previewOther => 'Сообщение';
 
   @override
+  String get notifications => 'Уведомления';
+
+  @override
+  String get notificationsSectionAlerts => 'Оповещения';
+
+  @override
+  String get notificationsSectionBadge => 'Значок в Dock';
+
+  @override
+  String get notificationsShow => 'Показывать уведомления';
+
+  @override
+  String get notificationsShowHint =>
+      'Баннеры появляются, пока Mollygram в фоне. Чаты без звука не беспокоят.';
+
+  @override
+  String get notificationsPreview => 'Показывать текст сообщения';
+
+  @override
+  String get notificationsPreviewHint =>
+      'Если выключено, в уведомлении видно только, кто написал.';
+
+  @override
+  String get notificationsSound => 'Звук';
+
+  @override
+  String get notificationsBadge => 'Показывать число непрочитанных';
+
+  @override
+  String get notificationsBadgeMuted => 'Учитывать чаты без звука';
+
+  @override
+  String get notificationsBadgeMessages => 'Считать сообщения, а не чаты';
+
+  @override
+  String get notificationsDenied =>
+      'Уведомления для Mollygram выключены в Системных настройках.';
+
+  @override
+  String get notificationsOpenSystemSettings => 'Открыть Системные настройки';
+
+  @override
+  String get notificationHiddenText => 'Новое сообщение';
+
+  @override
+  String get notificationReply => 'Ответить';
+
+  @override
+  String get notificationSend => 'Отправить';
+
+  @override
+  String get notificationReplyPlaceholder => 'Сообщение';
+
+  @override
+  String get notificationMarkRead => 'Отметить прочитанным';
+
+  @override
   String get sendFailed => 'Сообщение не отправлено. Попробуйте ещё раз';
 
   @override
