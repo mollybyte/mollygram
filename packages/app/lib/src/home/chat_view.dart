@@ -874,12 +874,20 @@ class _ChatViewState extends ConsumerState<ChatView> {
   }
 
   Future<void> _forward(List<ConversationMessage> messages) async {
-    final target = await pickForwardTarget(context);
-    if (target == null || messages.isEmpty) return;
+    final hasCaptions = messages.any(
+      (message) =>
+          message.content is! td.MessageText && message.text.isNotEmpty,
+    );
+    final choice = await pickForwardTarget(context, hasCaptions: hasCaptions);
+    if (choice == null || messages.isEmpty) return;
     try {
-      await _conversations.forwardMessages(target, messages.first.chatId, [
-        for (final message in messages) message.id,
-      ]);
+      await _conversations.forwardMessages(
+        choice.chatId,
+        messages.first.chatId,
+        [for (final message in messages) message.id],
+        hideSender: choice.hideSender,
+        hideCaptions: choice.hideCaptions,
+      );
     } catch (_) {
       // Such as a channel the user can't post in.
       if (mounted) setState(() => _failure = _Failure.forward);

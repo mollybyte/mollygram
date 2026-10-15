@@ -558,6 +558,27 @@ void main() {
     final forward = json.sent.lastWhere((r) => r['@type'] == 'forwardMessages');
     expect(forward['chat_id'], 9);
     expect(forward['message_ids'], [12]);
+    expect(forward['send_copy'], isFalse);
+  });
+
+  testWidgets('forwards without the sender name when asked', (tester) async {
+    await pump(tester);
+
+    await rightClick(tester, 'From Vera');
+    await tester.tap(find.text('Forward'));
+    await tester.pump();
+    await tester.pump();
+    // A text message has no caption to hide.
+    expect(find.text('Hide captions'), findsNothing);
+    await tester.tap(find.text('Hide sender names'));
+    await tester.pump();
+    await tester.tap(find.text('Saved'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+
+    final forward = json.sent.lastWhere((r) => r['@type'] == 'forwardMessages');
+    expect(forward['send_copy'], isTrue);
+    expect(forward['remove_caption'], isFalse);
   });
 
   Future<void> selectTwo(WidgetTester tester) async {

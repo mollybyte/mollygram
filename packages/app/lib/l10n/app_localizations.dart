@@ -1034,6 +1034,18 @@ abstract class AppLocalizations {
   /// **'Search chats'**
   String get forwardSearch;
 
+  /// No description provided for @forwardHideSender.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide sender names'**
+  String get forwardHideSender;
+
+  /// No description provided for @forwardHideCaptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide captions'**
+  String get forwardHideCaptions;
+
   /// No description provided for @noChatsFound.
   ///
   /// In en, this message translates to:

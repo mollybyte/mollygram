@@ -415,6 +415,22 @@ void main() {
     );
     expect(forward['chat_id'], 8);
     expect(forward['from_chat_id'], 7);
+    expect(forward['send_copy'], isFalse);
+
+    // Without the senders' names the messages go as copies; captions can
+    // only be dropped then.
+    await controller.forwardMessages(8, 7, [3], hideCaptions: true);
+    expect(json.sent.last['send_copy'], isFalse);
+    expect(json.sent.last['remove_caption'], isFalse);
+    await controller.forwardMessages(
+      8,
+      7,
+      [3],
+      hideSender: true,
+      hideCaptions: true,
+    );
+    expect(json.sent.last['send_copy'], isTrue);
+    expect(json.sent.last['remove_caption'], isTrue);
   });
 
   test('sends files as albums with the caption on the first', () async {
