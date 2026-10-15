@@ -2651,7 +2651,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get deleteSecretChatTitle =>
-      'Удалить этот секретный чат? Его сообщения есть только на этом компьютере.';
+      'Удалить этот секретный чат? Он закроется для вас обоих, а его сообщения будут удалены здесь.';
 
   @override
   String get encryptionKey => 'Ключ шифрования';
@@ -2746,5 +2746,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get secretScreenshotsOff =>
-      'По умолчанию секретные чаты не попадают в снимки экрана';
+      'По умолчанию секретные чаты не попадают в снимки экрана; на macOS 15 и новее — по возможности';
+
+  @override
+  String get selfDestructFailed =>
+      'Не удалось изменить таймер самоуничтожения. Секретный чат ещё не готов или нет соединения.';
 }

@@ -2622,7 +2622,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteSecretChatTitle =>
-      'Delete this secret chat? Its messages are on this computer only.';
+      'Delete this secret chat? It closes for both of you and its messages are removed here.';
 
   @override
   String get encryptionKey => 'Encryption key';
@@ -2706,5 +2706,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get secretScreenshotsOff =>
-      'Secret chats are kept out of screenshots by default';
+      'Secret chats are kept out of screenshots by default; on macOS 15 and later this is best effort';
+
+  @override
+  String get selfDestructFailed =>
+      'Couldn\'t change the self-destruct timer. The secret chat isn\'t ready yet, or the connection was lost.';
 }

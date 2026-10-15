@@ -73,6 +73,17 @@ void main() {
     expect(await secrets.load(42), isNull);
   });
 
+  test('an update that arrives while asking is not overwritten', () async {
+    json
+      ..answers['getSecretChat'] = _secretChat(5, 'secretChatStatePending')
+      ..before['getSecretChat'] = [_update(5, 'secretChatStateReady')];
+
+    final info = await secrets.load(chatId);
+
+    expect(info!.status, SecretChatStatus.ready);
+    expect(secrets.forChat(chatId)!.status, SecretChatStatus.ready);
+  });
+
   test('creates a secret chat with a user', () async {
     json
       ..answers['createNewSecretChat'] = _chat(chatId, 5, autoDelete: 0)
@@ -217,6 +228,9 @@ final class _FakeTdJson implements td.TdJson {
   final sent = <Map<String, Object?>>[];
   final answers = <String, Map<String, Object?>>{};
 
+  /// Updates delivered just before the answer to a request type.
+  final before = <String, List<Map<String, Object?>>>{};
+
   @override
   int createClientId() => 1;
 
@@ -232,6 +246,7 @@ final class _FakeTdJson implements td.TdJson {
     final decoded = jsonDecode(request) as Map<String, Object?>;
     final type = decoded['@type']! as String;
     if (type != 'close') sent.add(decoded);
+    before.remove(type)?.forEach(push);
     _queue.add(
       jsonEncode({
         ...answers[type] ?? {'@type': 'ok'},

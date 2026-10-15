@@ -384,6 +384,7 @@ void main() {
       const title = 'Allow screenshots in secret chats';
       await tester.ensureVisible(find.text(title));
       expect(switchOn(tester, title), isFalse);
+      expect(find.textContaining('Risky'), findsNothing);
 
       await tester.tap(find.text('Ghost mode'));
       await tester.pumpAndSettle();
@@ -400,6 +401,7 @@ void main() {
         PrivacySettings.fromJson(storage.saved).allowSecretScreenshots,
         isTrue,
       );
+      expect(find.textContaining('Risky'), findsOneWidget);
     });
 
     testWidgets('each switch turns on only itself', (tester) async {

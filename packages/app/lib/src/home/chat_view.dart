@@ -34,6 +34,7 @@ import '../chat_search/chat_search_bar.dart';
 import '../compose/mention_suggester.dart';
 import '../compose/rich_text_bridge.dart';
 import '../profile/peer_info_state.dart';
+import '../secret/secret_chat.dart';
 import '../session/providers.dart';
 import '../shared_media/message_jump.dart';
 import '../voice/voice_record_composer.dart';
@@ -1610,6 +1611,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
     final l10n = AppLocalizations.of(context);
     final session = ref.watch(telegramSessionProvider).requireValue;
     final chat = ref.watch(chatEntryProvider(widget.chatId)).value;
+    // Null for any other chat; a secret chat's title is the other person.
+    final secret = ref.watch(secretChatProvider(widget.chatId)).value;
     ref.listen(messageJumpProvider.select((jumps) => jumps[widget.chatId]), (
       _,
       jump,
@@ -1715,6 +1718,15 @@ class _ChatViewState extends ConsumerState<ChatView> {
                     )
                   : ChatTitleCapsule(
                       title: chat?.title ?? '',
+                      titleIcon: secret == null ? null : const SecretChatLock(),
+                      subtitle: secret == null
+                          ? ''
+                          : secretChatStatusText(
+                                  secret,
+                                  chat?.title ?? '',
+                                  l10n,
+                                ) ??
+                                '',
                       onTap: () => togglePeerInfo(ref, widget.chatId),
                     ),
               actions: const SizedBox.shrink(),
@@ -1777,6 +1789,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
                   _unpinAllBar(l10n, store)
                 else if (_selected != null)
                   _selectionBar(l10n)
+                else if (secret?.status == SecretChatStatus.closed)
+                  SecretChatClosedBar(chatId: widget.chatId)
                 else if (_actionBar(l10n, store) case final bar?)
                   bar
                 else

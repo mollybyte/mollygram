@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,16 +24,31 @@ SecretChatsController _controller(Ref ref) =>
 /// The secret chat in a chat, following its state; null when the chat is
 /// not a secret chat.
 final secretChatProvider = StreamProvider.autoDispose
-    .family<SecretChatInfo?, int>((ref, chatId) async* {
+    .family<SecretChatInfo?, int>((ref, chatId) {
       if (SecretChatsController.secretChatIdOf(chatId) == null) {
-        yield null;
-        return;
+        return Stream.value(null);
       }
       final secrets = _controller(ref);
-      yield await secrets.load(chatId).catchError((Object _) => null);
-      await for (final changed in secrets.changes) {
-        if (changed == chatId) yield secrets.forChat(chatId);
-      }
+      // Listen before asking, so an update that lands while the answer is
+      // on its way is not lost; the answer then yields to what is stored.
+      final out = StreamController<SecretChatInfo?>();
+      final sub = secrets.changes.listen((changed) {
+        if (changed == chatId) out.add(secrets.forChat(chatId));
+      });
+      ref.onDispose(() {
+        unawaited(sub.cancel());
+        unawaited(out.close());
+      });
+      unawaited(
+        secrets
+            .load(chatId)
+            .then<SecretChatInfo?>((v) => v)
+            .catchError((Object _) => null)
+            .then((info) {
+              if (!out.isClosed) out.add(secrets.forChat(chatId) ?? info);
+            }),
+      );
+      return out.stream;
     });
 
 /// The self-destruct time of new messages in a secret chat, in seconds.
@@ -111,8 +127,9 @@ class SecretChatClosedBar extends ConsumerWidget {
     if (chat?.status != SecretChatStatus.closed) return const SizedBox.shrink();
     final c = MgColors.of(context);
     final l10n = AppLocalizations.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+    return Glass(
+      radius: 22,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Row(
         children: [
           const SecretChatLock(),
@@ -147,9 +164,24 @@ Future<void> showSelfDestructPicker(BuildContext context, int chatId) async {
   );
   if (picked == null) return;
   final secrets = container.read(telegramSessionProvider).requireValue;
-  await secrets.secretChats
-      .setSelfDestructTime(chatId, times[picked])
-      .catchError((Object _) {});
+  final ready =
+      secrets.secretChats.forChat(chatId)?.status == SecretChatStatus.ready;
+  var failed = !ready;
+  if (ready) {
+    try {
+      await secrets.secretChats.setSelfDestructTime(chatId, times[picked]);
+    } on Object {
+      failed = true;
+    }
+  }
+  if (failed && context.mounted) {
+    await showMgConfirm(
+      context,
+      title: l10n.selfDestructFailed,
+      confirmLabel: l10n.done,
+      cancelLabel: l10n.cancel,
+    );
+  }
 }
 
 /// The encryption key of [chatId]: the picture and hex both people
@@ -257,17 +289,28 @@ class SecretKeySheet extends ConsumerWidget {
 class SecretKeyPicture extends StatelessWidget {
   const SecretKeyPicture({super.key, required this.keyHash, this.size = 120});
 
-  final List<int> keyHash;
+  final Uint8List keyHash;
   final double size;
 
   @override
-  Widget build(BuildContext context) => ClipRRect(
-    borderRadius: BorderRadius.circular(6),
-    child: CustomPaint(
-      size: Size.square(size),
-      painter: _KeyPainter(SecretKeyImage.pixels(Uint8List.fromList(keyHash))),
-    ),
-  );
+  Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(6);
+    return DecoratedBox(
+      // A hairline keeps the white squares off the glass in dark mode.
+      position: DecorationPosition.foreground,
+      decoration: BoxDecoration(
+        borderRadius: radius,
+        border: Border.all(color: MgColors.of(context).separator, width: 0.5),
+      ),
+      child: ClipRRect(
+        borderRadius: radius,
+        child: CustomPaint(
+          size: Size.square(size),
+          painter: _KeyPainter(SecretKeyImage.pixels(keyHash)),
+        ),
+      ),
+    );
+  }
 }
 
 class _KeyPainter extends CustomPainter {
@@ -294,7 +337,7 @@ class _KeyPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_KeyPainter old) => old.pixels != pixels;
+  bool shouldRepaint(_KeyPainter old) => !listEquals(old.pixels, pixels);
 }
 
 /// 32 hex pairs in four rows of eight, in a fixed-width face.
@@ -319,7 +362,11 @@ class _HexGrid extends StatelessWidget {
             child: Text(
               hex.skip(row * 8).take(8).join('  '),
               textAlign: TextAlign.center,
-              style: style.copyWith(fontFamily: 'Menlo', letterSpacing: 0.4),
+              style: style.copyWith(
+                fontFamily: 'Menlo',
+                fontFamilyFallback: const ['SF Mono', 'Consolas', 'monospace'],
+                letterSpacing: 0.4,
+              ),
             ),
           ),
       ],
@@ -347,12 +394,13 @@ List<PaletteCommand> secretChatCommands(
       run: () =>
           unawaited(showSecretKeySheet(context, chatId: chatId, name: name)),
     ),
-    if (chat.status != SecretChatStatus.closed) ...[
+    if (chat.status == SecretChatStatus.ready)
       PaletteCommand(
         id: 'secret.selfDestruct',
         title: l10n.selfDestructTitle,
         run: () => unawaited(showSelfDestructPicker(context, chatId)),
       ),
+    if (chat.status != SecretChatStatus.closed)
       PaletteCommand(
         id: 'secret.close',
         title: l10n.closeSecretChat,
@@ -360,15 +408,15 @@ List<PaletteCommand> secretChatCommands(
           session.secretChats.close(chatId).catchError((Object _) {}),
         ),
       ),
-    ],
   ];
 }
 
 const _window = MethodChannel('mollygram/window');
 
-/// Keeps the window out of screenshots and screen recordings while a
-/// secret chat is focused, unless the user allowed it in Privacy extras.
-/// macOS only for now; elsewhere the call does nothing.
+/// Keeps the window out of screenshots and screen recordings while any
+/// pane of the active tab shows a secret chat, unless the user allowed it
+/// in Privacy extras. macOS only for now, and best effort there: macOS 15
+/// and later may still capture the window. Elsewhere the call does nothing.
 class SecretScreenProtection extends ConsumerStatefulWidget {
   const SecretScreenProtection({super.key, required this.child});
 
@@ -391,7 +439,9 @@ class _SecretScreenProtectionState
     super.initState();
     _workspace.addListener(_update);
     ref.listenManual(privacySettingsProvider, (_, _) => _update());
-    _update();
+    // The window may still be protected from before (a hot restart, a
+    // previous session), so say what holds now even when it is "off".
+    _set(_shouldProtect());
   }
 
   @override
@@ -401,13 +451,18 @@ class _SecretScreenProtectionState
     super.dispose();
   }
 
+  bool _shouldProtect() {
+    if (ref.read(privacySettingsProvider).allowSecretScreenshots) {
+      return false;
+    }
+    return _workspace.value.activeTab.panes.any(
+      (chat) =>
+          chat != null && SecretChatsController.secretChatIdOf(chat) != null,
+    );
+  }
+
   void _update() {
-    final focused = _workspace.value.focusedChat;
-    final allowed = ref.read(privacySettingsProvider).allowSecretScreenshots;
-    final protect =
-        !allowed &&
-        focused != null &&
-        SecretChatsController.secretChatIdOf(focused) != null;
+    final protect = _shouldProtect();
     if (protect != _protected) _set(protect);
   }
 

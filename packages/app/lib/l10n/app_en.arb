@@ -1007,7 +1007,7 @@
   "secretChatClosed": "Secret chat closed",
   "closeSecretChat": "Close secret chat",
   "deleteChat": "Delete chat",
-  "deleteSecretChatTitle": "Delete this secret chat? Its messages are on this computer only.",
+  "deleteSecretChatTitle": "Delete this secret chat? It closes for both of you and its messages are removed here.",
   "encryptionKey": "Encryption key",
   "encryptionKeyHint": "If this picture and these numbers look the same on {name}'s device, your chat is end-to-end encrypted.",
   "@encryptionKeyHint": {
@@ -1038,5 +1038,6 @@
   },
   "allowSecretScreenshots": "Allow screenshots in secret chats",
   "allowSecretScreenshotsHint": "Risky: the other person expects secret chats to stay off screenshots and screen recordings",
-  "secretScreenshotsOff": "Secret chats are kept out of screenshots by default"
+  "secretScreenshotsOff": "Secret chats are kept out of screenshots by default; on macOS 15 and later this is best effort",
+  "selfDestructFailed": "Couldn't change the self-destruct timer. The secret chat isn't ready yet, or the connection was lost."
 }

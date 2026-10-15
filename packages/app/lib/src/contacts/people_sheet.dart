@@ -158,18 +158,30 @@ class _PeopleSheetState extends ConsumerState<PeopleSheet> {
 
   List<_Row> _rows(AppLocalizations l10n, List<ContactUser>? contacts) {
     final query = _search.text.trim().toLowerCase();
-    final chatLists = ref.read(telegramSessionProvider).requireValue.chatLists;
+    final session = ref.read(telegramSessionProvider).requireValue;
+    final chatLists = session.chatLists;
     final rows = <_Row>[];
-    final shown = <int>{};
+    // A secret chat needs another person: bots and the user themselves
+    // cannot take part, so they are left out (counted as already shown).
+    final shown = <int>{
+      if (_mode == PeopleSheetMode.newSecretChat) ...[
+        ?session.peers.myId,
+        for (final user in [...?contacts, ...?_found])
+          if (user.isBot) user.id,
+      ],
+    };
     if (query.isEmpty) {
       if (_mode != PeopleSheetMode.contacts) {
         // In TDLib a private chat has the id of its user.
-        final recent = [
-          for (final chat in chatLists.store.chatsFor(
-            const ChatListLocation.main(),
-          ))
-            ?_contacts.user(chat.id),
-        ].where((user) => !user.isBot).take(PeopleSheet.recentCount);
+        final recent =
+            [
+                  for (final chat in chatLists.store.chatsFor(
+                    const ChatListLocation.main(),
+                  ))
+                    ?_contacts.user(chat.id),
+                ]
+                .where((user) => !user.isBot && !shown.contains(user.id))
+                .take(PeopleSheet.recentCount);
         if (recent.isNotEmpty) {
           rows.add(_Section(l10n.recentChats));
           for (final user in recent) {

@@ -66,12 +66,12 @@ class PrivacyExtrasPage extends ConsumerWidget {
             ),
           ],
         ),
-        // Risky, so on its own and with the warning in the footer.
+        // Risky, so on its own, with the warning in the footer once on.
         SettingsGroup(
           key: const ValueKey('secretScreenshots'),
           footer: settings.allowSecretScreenshots
               ? SettingsFooter(l10n.allowSecretScreenshotsHint, error: true)
-              : SettingsFooter(l10n.allowSecretScreenshotsHint),
+              : null,
           children: [
             _SwitchRow(
               title: l10n.allowSecretScreenshots,

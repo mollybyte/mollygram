@@ -4487,7 +4487,7 @@ abstract class AppLocalizations {
   /// No description provided for @deleteSecretChatTitle.
   ///
   /// In en, this message translates to:
-  /// **'Delete this secret chat? Its messages are on this computer only.'**
+  /// **'Delete this secret chat? It closes for both of you and its messages are removed here.'**
   String get deleteSecretChatTitle;
 
   /// No description provided for @encryptionKey.
@@ -4565,8 +4565,14 @@ abstract class AppLocalizations {
   /// No description provided for @secretScreenshotsOff.
   ///
   /// In en, this message translates to:
-  /// **'Secret chats are kept out of screenshots by default'**
+  /// **'Secret chats are kept out of screenshots by default; on macOS 15 and later this is best effort'**
   String get secretScreenshotsOff;
+
+  /// No description provided for @selfDestructFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t change the self-destruct timer. The secret chat isn\'t ready yet, or the connection was lost.'**
+  String get selfDestructFailed;
 }
 
 class _AppLocalizationsDelegate

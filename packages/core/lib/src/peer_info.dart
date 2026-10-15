@@ -136,6 +136,9 @@ final class PeerInfoController {
   /// The signed-in user, from TDLib's `my_id` option.
   int? _myId;
 
+  /// The signed-in user's id, once TDLib has sent it.
+  int? get myId => _myId;
+
   /// Fires after anything [info] depends on has changed.
   Stream<void> get changes => _changes.stream;
 

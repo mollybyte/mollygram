@@ -175,7 +175,8 @@ final class SecretChatsController {
     final info = SecretChatInfo.from(
       await _client.send(td.GetSecretChat(secretChatId: id)),
     );
-    return _chats[id] = info;
+    // An update that arrived while asking is newer than the answer.
+    return _chats.putIfAbsent(id, () => info);
   }
 
   /// Starts a secret chat with [userId]; completes with its chat id. The
@@ -186,9 +187,9 @@ final class SecretChatsController {
       final secret = await _client.send(
         td.GetSecretChat(secretChatId: secretChatId),
       );
-      _chats[secretChatId] = SecretChatInfo.from(secret);
+      _chats.putIfAbsent(secretChatId, () => SecretChatInfo.from(secret));
     }
-    _timers[chat.id] = chat.messageAutoDeleteTime;
+    _timers.putIfAbsent(chat.id, () => chat.messageAutoDeleteTime);
     return chat.id;
   }
 
