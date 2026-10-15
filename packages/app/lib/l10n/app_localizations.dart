@@ -980,6 +980,30 @@ abstract class AppLocalizations {
   /// **'Forward'**
   String get menuForward;
 
+  /// No description provided for @menuSaveAs.
+  ///
+  /// In en, this message translates to:
+  /// **'Save as…'**
+  String get menuSaveAs;
+
+  /// No description provided for @menuSaveToDownloads.
+  ///
+  /// In en, this message translates to:
+  /// **'Save to Downloads'**
+  String get menuSaveToDownloads;
+
+  /// No description provided for @menuShowInFinder.
+  ///
+  /// In en, this message translates to:
+  /// **'Show in Finder'**
+  String get menuShowInFinder;
+
+  /// No description provided for @menuShowInFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Show in folder'**
+  String get menuShowInFolder;
+
   /// No description provided for @menuDelete.
   ///
   /// In en, this message translates to:

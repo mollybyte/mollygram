@@ -1,5 +1,6 @@
 import 'dart:collection';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -9,9 +10,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mollygram/l10n/app_localizations.dart';
 import 'package:mollygram/src/chat/media_content.dart';
 import 'package:mollygram/src/chat/recent_emoji.dart';
+import 'package:mollygram/src/chat/save_file.dart';
 import 'package:mollygram/src/chat/timeline_view.dart';
 import 'package:mollygram/src/home/chat_view.dart';
 import 'package:mollygram/src/session/providers.dart';
+import 'package:mollygram/src/settings/preferences.dart';
 import 'package:mollygram/src/shared_media/message_jump.dart';
 import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
@@ -46,7 +49,11 @@ void main() {
 
   tearDown(() => session.dispose());
 
-  Future<void> pump(WidgetTester tester, {bool group = true}) async {
+  Future<void> pump(
+    WidgetTester tester, {
+    bool group = true,
+    String? downloadFolder,
+  }) async {
     tester.view
       ..physicalSize = const Size(1200, 800)
       ..devicePixelRatio = 1;
@@ -55,6 +62,12 @@ void main() {
       ProviderScope(
         overrides: [
           telegramSessionProvider.overrideWith((ref) async => session),
+          initialPreferencesProvider.overrideWithValue(
+            Preferences(downloadFolder: downloadFolder),
+          ),
+          preferencesStorageProvider.overrideWithValue(
+            MemoryPreferencesStorage(),
+          ),
           recentEmojiStorageProvider.overrideWithValue(
             MemoryRecentEmojiStorage(),
           ),
@@ -1026,6 +1039,49 @@ void main() {
     expect(find.text('1 of 2'), findsNothing);
   });
 
+  testWidgets('saves a file to the download folder and shows it', (
+    tester,
+  ) async {
+    // Real files: created and removed outside the test's fake clock.
+    final folder = await tester.runAsync(
+      () => Directory.systemTemp.createTemp('mollygram_save'),
+    );
+    addTearDown(() => folder!.delete(recursive: true));
+    final source = File('${folder!.path}/td_70.pdf')..writeAsStringSync('pdf');
+    json.history = [
+      td.Message.fromJson(_document(16, source.path)),
+      ..._history,
+    ];
+    await pump(tester, downloadFolder: folder.path);
+
+    await rightClick(tester, 'route_saturday.pdf');
+    await tester.tap(find.text('Save to Downloads'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    expect(File('${folder.path}/route_saturday.pdf').existsSync(), isTrue);
+    expect(find.text('Saved'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 3));
+
+    // Again: the first copy stays, the next gets a number.
+    await rightClick(tester, 'route_saturday.pdf');
+    await tester.tap(find.text('Save to Downloads'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    expect(File('${folder.path}/route_saturday 2.pdf').existsSync(), isTrue);
+    await tester.pump(const Duration(seconds: 3));
+
+    String? revealed;
+    final system = revealFile;
+    revealFile = (path) async => revealed = path;
+    addTearDown(() => revealFile = system);
+    await rightClick(tester, 'route_saturday.pdf');
+    await tester.tap(
+      find.text(Platform.isMacOS ? 'Show in Finder' : 'Show in folder'),
+    );
+    await tester.pump();
+    expect(revealed, source.path);
+  });
+
   testWidgets('copies the text of a message', (tester) async {
     String? copied;
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
@@ -1553,6 +1609,30 @@ final class _FakeTdJson implements td.TdJson {
     }
   }
 }
+
+/// A downloaded PDF from Boris, kept at [path].
+Map<String, Object?> _document(int id, String path) => {
+  ..._message(id: id, senderId: 2, text: '').toJson(),
+  'content': {
+    '@type': 'messageDocument',
+    'document': {
+      '@type': 'document',
+      'file_name': 'route_saturday.pdf',
+      'mime_type': 'application/pdf',
+      'document': {
+        ..._stickerFile(70),
+        'local': {
+          '@type': 'localFile',
+          'path': path,
+          'can_be_downloaded': true,
+          'is_downloading_active': false,
+          'is_downloading_completed': true,
+        },
+      },
+    },
+    'caption': {'@type': 'formattedText', 'text': '', 'entities': <Object?>[]},
+  },
+};
 
 /// A photo from Boris as TDLib sends it.
 Map<String, Object?> _photo(int id) => {
