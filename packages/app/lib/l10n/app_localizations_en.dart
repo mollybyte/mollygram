@@ -547,6 +547,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get menuForward => 'Forward';
 
   @override
+  String get menuChooseChat => 'Choose chat…';
+
+  @override
   String get menuSaveAs => 'Save as…';
 
   @override

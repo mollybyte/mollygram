@@ -8,6 +8,7 @@ import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../avatar/peer_avatar.dart';
 import '../home/format.dart';
 import 'custom_emoji.dart';
 import 'describe.dart';
@@ -22,6 +23,8 @@ final class MessageMenuHandlers {
     required this.onReply,
     required this.onEdit,
     required this.onForward,
+    this.recentChats,
+    this.onForwardTo,
     this.onSelect,
     required this.onQuote,
     this.onEditHistory,
@@ -34,6 +37,14 @@ final class MessageMenuHandlers {
   onQuote;
   final void Function(ConversationMessage message) onEdit;
   final void Function(List<ConversationMessage> messages) onForward;
+
+  /// The chats offered right in the menu under Forward, most recent first;
+  /// without them Forward opens the picker at once.
+  final List<ChatListEntry> Function()? recentChats;
+
+  /// Forwards [messages] to [chatId] without asking again.
+  final void Function(List<ConversationMessage> messages, int chatId)?
+  onForwardTo;
 
   /// Starts selecting messages with this row, or adds it to the selection;
   /// a list without selection, such as a comments thread, leaves it out.
@@ -235,6 +246,30 @@ Future<void> showMessageMenu(
         label: l10n.menuForward,
         icon: MgIcons.forward,
         onSelected: () => handlers.onForward(row.messages),
+        submenu: [
+          if (handlers.onForwardTo case final forwardTo?)
+            for (final chat
+                in handlers.recentChats?.call() ?? const <ChatListEntry>[])
+              MgMenuItem(
+                label: chat.title,
+                leading: PeerAvatar.chat(
+                  name: chat.title,
+                  size: 18,
+                  photo: chat.photo,
+                ),
+                onSelected: () => forwardTo(row.messages, chat.id),
+              ),
+          if (handlers.onForwardTo != null &&
+              (handlers.recentChats?.call().isNotEmpty ?? false))
+            const MgMenuItem.divider(),
+          if (handlers.onForwardTo != null &&
+              (handlers.recentChats?.call().isNotEmpty ?? false))
+            MgMenuItem(
+              label: l10n.menuChooseChat,
+              icon: MgIcons.search,
+              onSelected: () => handlers.onForward(row.messages),
+            ),
+        ],
       ),
     if (properties?.canBePinned ?? false)
       MgMenuItem(
