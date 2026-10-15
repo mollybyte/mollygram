@@ -83,6 +83,10 @@ final class _FakePlugin implements RunningPlugin {
   @override
   Future<void> updateSetting(String key, Object? value) async {}
   @override
+  Future<Object?> runCommand(String name, {int? chatId}) async => null;
+  @override
+  Stream<String> get logLines => const Stream.empty();
+  @override
   Stream<PluginStatus> get statusChanges => status.stream;
   @override
   String? disabledReason;
@@ -98,7 +102,7 @@ void main() {
 
   setUp(() async {
     temp = await Directory.systemTemp.createTemp('plugins_test');
-    store = MemoryPluginStore();
+    store = MemoryPluginStore(data: temp);
     launched = [];
     lie = false;
   });
@@ -127,12 +131,23 @@ void main() {
         'highlighter source',
       ),
     ],
-    launch: (m, source, {required settings, required locale}) async {
-      final p = _FakePlugin(lie: lie, disabledReason: loadError, fails: fails);
-      addTearDown(p.close);
-      launched.add(p);
-      return p;
-    },
+    launch:
+        (
+          m,
+          source, {
+          required settings,
+          required locale,
+          required services,
+        }) async {
+          final p = _FakePlugin(
+            lie: lie,
+            disabledReason: loadError,
+            fails: fails,
+          );
+          addTearDown(p.close);
+          launched.add(p);
+          return p;
+        },
     pick: () async => manifestOf(picked),
     locale: 'en',
   );

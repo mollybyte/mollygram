@@ -2290,4 +2290,10 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get folderDeletedChat => 'Удалённый чат';
+
+  @override
+  String get pluginShowMessage => 'Показать';
+
+  @override
+  String get pluginFilteredMessage => 'Скрыто плагином';
 }

@@ -626,5 +626,7 @@
   "deleteChannelMessage": "Канал и все его публикации пропадут у всех подписчиков. Это нельзя отменить.",
   "leaveFailed": "Не удалось выйти. Попробуйте ещё раз.",
   "deleteFailed": "Не удалось удалить. Попробуйте ещё раз.",
-  "folderDeletedChat": "Удалённый чат"
+  "folderDeletedChat": "Удалённый чат",
+  "pluginShowMessage": "Показать",
+  "pluginFilteredMessage": "Скрыто плагином"
 }
