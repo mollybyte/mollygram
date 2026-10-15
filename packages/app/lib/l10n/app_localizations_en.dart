@@ -1770,23 +1770,36 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get keepDeletedMessagesHint =>
-      'Messages others delete stay readable here';
+      'Save messages others delete for everyone';
 
   @override
   String get keepEditHistory => 'Keep edit history';
 
   @override
-  String get keepEditHistoryHint =>
-      'Earlier versions of edited messages stay readable here';
+  String get keepEditHistoryHint => 'Save earlier versions of edited messages';
 
   @override
   String get storedMessagesAbout =>
-      'Kept encrypted on this Mac only, for messages Mollygram saw while it was open. Nothing is sent anywhere.';
+      'Saved encrypted on this computer only, for messages Mollygram saw while it was open. Nothing is sent anywhere. Showing them in chats comes later.';
 
   @override
-  String get clearStoredData => 'Clear stored data';
+  String get clearStoredData => 'Stored data';
 
   @override
   String get clearStoredDataTitle =>
-      'Clear the deleted messages and edit history kept on this Mac?';
+      'Clear the deleted messages and edit history saved on this computer?';
+
+  @override
+  String get storedDataUnreadable => 'Stored data can\'t be read';
+
+  @override
+  String get storedDataUnreadableHint =>
+      'Its key is missing from the keychain. Reset to start again.';
+
+  @override
+  String get resetStoredData => 'Reset';
+
+  @override
+  String get resetStoredDataTitle =>
+      'Delete the stored data that can\'t be read and start again?';
 }

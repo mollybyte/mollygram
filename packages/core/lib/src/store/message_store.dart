@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:drift/drift.dart';
+import 'package:drift/isolate.dart' show DriftRemoteException;
 import 'package:drift/native.dart';
 import 'package:sqlite3/sqlite3.dart' as sqlite;
 
@@ -17,6 +18,16 @@ final class StoreNotEncrypted implements Exception {
   String toString() => 'StoreNotEncrypted: SQLCipher is not available';
 }
 
+/// The store's key is gone or wrong (the keychain entry was lost or
+/// reset), so its file can't be read. The only way on is to delete the
+/// file and start again; there is no other copy of the key.
+final class StoreKeyLost implements Exception {
+  const StoreKeyLost();
+
+  @override
+  String toString() => 'StoreKeyLost: the store key does not open the store';
+}
+
 /// Mollygram's own database for one account, next to TDLib's: the
 /// messages TDLib forgets, kept only while the user asks for it (deleted
 /// messages, edit history). Encrypted with SQLCipher; the schema is in
@@ -26,35 +37,86 @@ final class MessageStore {
     : deleted = DeletedMessagesStore(_db),
       edits = EditHistoryStore(_db);
 
-  /// Opens or creates the store at [path], encrypted with [key].
+  /// Opens or creates the store at [path], encrypted with [key]. SQLite
+  /// runs on a background isolate, so writes never hold up a frame.
+  ///
+  /// Throws [StoreKeyLost] when [key] does not open an existing file, and
+  /// [StoreNotEncrypted] when SQLCipher is missing. There is no way to
+  /// change the key of an existing store.
   static Future<MessageStore> open({
     required String path,
     required List<int> key,
   }) async {
     final file = File(path);
     await file.parent.create(recursive: true);
-    final store = MessageStore._(
-      StoreDatabase(NativeDatabase(file, setup: (db) => _unlock(db, key))),
-    );
-    await store._db.ready();
-    return store;
-  }
-
-  /// A store in memory, for tests.
-  static Future<MessageStore> memory({List<int>? key}) async {
-    final store = MessageStore._(
-      StoreDatabase(
-        NativeDatabase.memory(
-          setup: key == null ? null : (db) => _unlock(db, key),
+    final copy = List<int>.of(key);
+    final check = cipherCheck;
+    return _ready(
+      MessageStore._(
+        StoreDatabase(
+          NativeDatabase.createInBackground(
+            file,
+            setup: (db) => _unlock(db, copy, check),
+          ),
         ),
       ),
     );
-    await store._db.ready();
-    return store;
   }
 
-  static void _unlock(sqlite.Database db, List<int> key) {
-    final version = db.select('PRAGMA cipher_version');
+  /// A store in memory, for tests; [key] makes it require SQLCipher.
+  static Future<MessageStore> memory({List<int>? key}) => _ready(
+    MessageStore._(
+      StoreDatabase(
+        NativeDatabase.memory(
+          setup: key == null ? null : (db) => _unlock(db, key, cipherCheck),
+        ),
+      ),
+    ),
+  );
+
+  static Future<MessageStore> _ready(MessageStore store) async {
+    try {
+      await store._db.ready();
+      return store;
+    } catch (error) {
+      await store._db.close().catchError((Object _) {});
+      final cause = error is DriftRemoteException ? error.remoteCause : error;
+      // SQLITE_NOTADB: the key does not decrypt the file.
+      if (cause is sqlite.SqliteException && cause.resultCode == 26) {
+        throw const StoreKeyLost();
+      }
+      if (cause is StoreNotEncrypted) throw cause;
+      rethrow;
+    }
+  }
+
+  /// The files of the store at [path]: the database and SQLite's journals.
+  static List<File> filesAt(String path) => [
+    for (final suffix in ['', '-journal', '-wal', '-shm']) File('$path$suffix'),
+  ];
+
+  /// What the store at [path] takes on disk, without opening it.
+  static Future<int> sizeOnDisk(String path) async {
+    var size = 0;
+    for (final file in filesAt(path)) {
+      if (await file.exists()) size += await file.length();
+    }
+    return size;
+  }
+
+  /// Deletes the store at [path]; it must be closed.
+  static Future<void> deleteAt(String path) async {
+    for (final file in filesAt(path)) {
+      if (await file.exists()) await file.delete();
+    }
+  }
+
+  /// The query that tells SQLCipher from plain SQLite: only SQLCipher
+  /// answers it. Tests point it at one that answers like plain SQLite.
+  static var cipherCheck = 'PRAGMA cipher_version';
+
+  static void _unlock(sqlite.Database db, List<int> key, String check) {
+    final version = db.select(check);
     if (version.isEmpty) throw const StoreNotEncrypted();
     final hex = [for (final byte in key) byte.toRadixString(16).padLeft(2, '0')]
         .join();
@@ -66,6 +128,23 @@ final class MessageStore {
   final StoreDatabase _db;
   final DeletedMessagesStore deleted;
   final EditHistoryStore edits;
+
+  /// How many messages and versions are kept.
+  Future<int> count() async {
+    final row = await _db
+        .customSelect(
+          'SELECT (SELECT count(*) FROM deleted_messages) + '
+          '(SELECT count(*) FROM message_versions) AS n',
+        )
+        .getSingle();
+    return row.read<int>('n');
+  }
+
+  /// The schema version the file was written with.
+  Future<int> schemaVersion() async {
+    final row = await _db.customSelect('PRAGMA user_version').getSingle();
+    return row.read<int>('user_version');
+  }
 
   /// How much space the store takes, in bytes.
   Future<int> sizeInBytes() async {

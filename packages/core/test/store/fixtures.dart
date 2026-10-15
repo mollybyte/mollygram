@@ -16,6 +16,9 @@ Map<String, Object?> messageJson(
   int date = 1700000000,
   int editDate = 0,
   bool selfDestruct = false,
+  bool outgoing = false,
+  bool scheduled = false,
+  bool failed = false,
 }) => {
   '@type': 'message',
   'id': id,
@@ -24,6 +27,18 @@ Map<String, Object?> messageJson(
   'date': date,
   'edit_date': editDate,
   'content': textContent(text),
+  'is_outgoing': outgoing,
+  if (scheduled)
+    'scheduling_state': {
+      '@type': 'messageSchedulingStateSendAtDate',
+      'send_date': date + 3600,
+    },
+  if (failed)
+    'sending_state': {
+      '@type': 'messageSendingStateFailed',
+      'error': {'@type': 'error', 'code': 400, 'message': 'FAILED'},
+      'can_retry': true,
+    },
   if (selfDestruct)
     'self_destruct_type': {
       '@type': 'messageSelfDestructTypeTimer',

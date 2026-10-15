@@ -40,20 +40,34 @@ final class DeletedMessagesStore {
   final StoreDatabase _db;
 
   /// Keeps [message], deleted at [deletedAt].
-  Future<void> save(td.Message message, {required DateTime deletedAt}) async {
-    await _db.customInsert(
-      'INSERT OR REPLACE INTO $table '
-      '(chat_id, message_id, sender_id, date, deleted_at, message) '
-      'VALUES (?, ?, ?, ?, ?, ?)',
-      variables: [
-        Variable.withInt(message.chatId),
-        Variable.withInt(message.id),
-        Variable.withInt(DeletedMessage.senderIdOf(message.senderId)),
-        Variable.withInt(message.date),
-        Variable.withInt(deletedAt.millisecondsSinceEpoch ~/ 1000),
-        Variable.withString(jsonEncode(message.toJson())),
-      ],
-    );
+  Future<void> save(td.Message message, {required DateTime deletedAt}) =>
+      saveAll([message], deletedAt: deletedAt);
+
+  /// Keeps [messages], deleted together at [deletedAt], in one
+  /// transaction.
+  Future<void> saveAll(
+    List<td.Message> messages, {
+    required DateTime deletedAt,
+  }) async {
+    if (messages.isEmpty) return;
+    final at = deletedAt.millisecondsSinceEpoch ~/ 1000;
+    await _db.transaction(() async {
+      for (final message in messages) {
+        await _db.customInsert(
+          'INSERT OR REPLACE INTO $table '
+          '(chat_id, message_id, sender_id, date, deleted_at, message) '
+          'VALUES (?, ?, ?, ?, ?, ?)',
+          variables: [
+            Variable.withInt(message.chatId),
+            Variable.withInt(message.id),
+            Variable.withInt(DeletedMessage.senderIdOf(message.senderId)),
+            Variable.withInt(message.date),
+            Variable.withInt(at),
+            Variable.withString(jsonEncode(message.toJson())),
+          ],
+        );
+      }
+    });
     _db.notifyUpdates({const TableUpdate(table)});
   }
 

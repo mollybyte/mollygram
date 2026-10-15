@@ -39,28 +39,64 @@ final messageStoreSecretsProvider = Provider<SecretStore>(
 );
 
 /// Opens the active account's store with its key; the session's
-/// [MessageCapture] calls it the first time it keeps something.
+/// [MessageCapture] calls it the first time it keeps something. When the
+/// file exists but its key is gone, throws [StoreKeyLost] rather than
+/// making a new key that can't read it.
 final messageStoreOpenerProvider = Provider<MessageStoreOpener>(
   (ref) => () async {
     final location = await ref.read(messageStoreLocationProvider.future);
     final key = await messageStoreKeyFor(
       location.slot,
       ref.read(messageStoreSecretsProvider),
+      storeExists: await File(location.path).exists(),
     );
     return MessageStore.open(path: location.path, key: key);
   },
 );
 
-/// How much the store takes on disk, for the privacy extras page. A store
-/// that was never written is not created just to measure it.
-final storedMessagesSizeProvider = FutureProvider.autoDispose<int>((ref) async {
-  final session = await ref.watch(telegramSessionProvider.future);
-  final location = await ref.watch(messageStoreLocationProvider.future);
-  if (!await File(location.path).exists()) return 0;
-  final store = session.capture.store;
-  if (store == null) return 0;
-  return (await store).sizeInBytes();
-});
+/// What the store holds, for the privacy extras page.
+final class StoredMessagesStatus {
+  const StoredMessagesStatus({
+    this.size = 0,
+    this.count = 0,
+    this.unreadable = false,
+  });
+
+  /// Bytes on disk, read from the files.
+  final int size;
+
+  /// Deleted messages and versions kept.
+  final int count;
+
+  /// The key no longer opens the store: it can only be reset.
+  final bool unreadable;
+}
+
+/// The store's size and contents. A store that was never written is not
+/// created just to look at it; the status follows every write.
+final storedMessagesStatusProvider =
+    FutureProvider.autoDispose<StoredMessagesStatus>((ref) async {
+      final session = await ref.watch(telegramSessionProvider.future);
+      final location = await ref.watch(messageStoreLocationProvider.future);
+      final capture = session.capture;
+      final changes = capture.changes.listen((_) => ref.invalidateSelf());
+      ref.onDispose(changes.cancel);
+      final size = await MessageStore.sizeOnDisk(location.path);
+      if (capture.failure is StoreKeyLost) {
+        return StoredMessagesStatus(size: size, unreadable: true);
+      }
+      if (size == 0) return const StoredMessagesStatus();
+      final store = capture.store;
+      if (store == null) return StoredMessagesStatus(size: size);
+      try {
+        return StoredMessagesStatus(
+          size: size,
+          count: await (await store).count(),
+        );
+      } on StoreKeyLost {
+        return StoredMessagesStatus(size: size, unreadable: true);
+      }
+    });
 
 /// Forgets the deleted messages and edit history kept so far.
 final clearStoredMessagesProvider = Provider<Future<void> Function()>(
@@ -68,7 +104,23 @@ final clearStoredMessagesProvider = Provider<Future<void> Function()>(
     final session = await ref.read(telegramSessionProvider.future);
     final store = session.capture.store;
     if (store != null) await (await store).clear();
-    ref.invalidate(storedMessagesSizeProvider);
+    ref.invalidate(storedMessagesStatusProvider);
+  },
+);
+
+/// Deletes a store whose key is lost, and its key: the next thing kept
+/// starts a new one.
+final resetStoredMessagesProvider = Provider<Future<void> Function()>(
+  (ref) => () async {
+    final session = await ref.read(telegramSessionProvider.future);
+    final location = await ref.read(messageStoreLocationProvider.future);
+    await session.capture.closeStore();
+    await MessageStore.deleteAt(location.path);
+    await deleteMessageStoreKey(
+      location.slot,
+      ref.read(messageStoreSecretsProvider),
+    );
+    ref.invalidate(storedMessagesStatusProvider);
   },
 );
 

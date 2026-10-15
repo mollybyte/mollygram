@@ -116,7 +116,48 @@ void main() {
 
       await expectLater(
         MessageStore.open(path: path, key: List.filled(32, 9)),
-        throwsA(anything),
+        throwsA(isA<StoreKeyLost>()),
+      );
+    });
+
+    test('version 1 files keep opening', () async {
+      final path = '${dir.path}/mollygram.db';
+      await (await MessageStore.open(path: path, key: key)).close();
+      final again = await MessageStore.open(path: path, key: key);
+      expect(await again.schemaVersion(), 1);
+      await again.close();
+    });
+
+    test('measures and deletes its files without opening them', () async {
+      final path = '${dir.path}/mollygram.db';
+      expect(await MessageStore.sizeOnDisk(path), 0);
+      final opened = await MessageStore.open(path: path, key: key);
+      await opened.deleted.saveAll([
+        message(7, 1, 'a'),
+        message(7, 2, 'b'),
+      ], deletedAt: DateTime(2026));
+      expect(await opened.count(), 2);
+      await opened.close();
+
+      expect(await MessageStore.sizeOnDisk(path), await File(path).length());
+      await MessageStore.deleteAt(path);
+      expect(await MessageStore.sizeOnDisk(path), 0);
+      expect(File(path).existsSync(), isFalse);
+    });
+
+    test('is not opened without SQLCipher', () async {
+      // Plain SQLite has no answer to the check.
+      MessageStore.cipherCheck = 'SELECT 1 WHERE 0';
+      addTearDown(() => MessageStore.cipherCheck = 'PRAGMA cipher_version');
+      final path = '${dir.path}/mollygram.db';
+
+      await expectLater(
+        MessageStore.open(path: path, key: key),
+        throwsA(isA<StoreNotEncrypted>()),
+      );
+      await expectLater(
+        MessageStore.memory(key: key),
+        throwsA(isA<StoreNotEncrypted>()),
       );
     });
   });
@@ -132,6 +173,24 @@ void main() {
     expect(first, hasLength(32));
     expect(await messageStoreKeyFor(3, secrets), first);
     expect(secrets.values.keys, ['mollygram.store.database-key.v1.account-3']);
+  });
+
+  test('no new key for a store that exists: its key is lost', () async {
+    final secrets = _MemorySecrets();
+    await expectLater(
+      messageStoreKeyFor(3, secrets, storeExists: true),
+      throwsA(isA<StoreKeyLost>()),
+    );
+    expect(secrets.values, isEmpty);
+
+    secrets.values[messageStoreKeyNameFor(3)] = 'not base64!';
+    await expectLater(
+      messageStoreKeyFor(3, secrets, storeExists: true),
+      throwsA(isA<StoreKeyLost>()),
+    );
+
+    await deleteMessageStoreKey(3, secrets);
+    expect(await messageStoreKeyFor(3, secrets), hasLength(32));
   });
 }
 

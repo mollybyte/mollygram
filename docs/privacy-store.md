@@ -19,8 +19,16 @@ Code: [packages/core/lib/src/store](../packages/core/lib/src/store).
   SQLite has no `cipher_version`, so it is never written in the clear.
 - The key is 32 random bytes in the system keychain, under
   `mollygram.store.database-key.v1.account-<slot>`, next to the TDLib key.
-- drift runs the queries; the schema is plain SQL, without generated table
+- drift runs the queries on a background isolate
+  (`NativeDatabase.createInBackground`), so opening, writes and `VACUUM`
+  never hold up a frame. The schema is plain SQL, without generated table
   classes.
+- There is no way to change the key of an existing store (no `rekey`). A
+  key that no longer opens the file (the keychain entry was lost or reset)
+  is reported as `StoreKeyLost`; no new key is made while the file exists.
+  Privacy extras then shows "Stored data can't be read" with a Reset
+  button, which deletes the file and the key; the next thing kept starts a
+  new store.
 
 ## Schema (version 1)
 
@@ -47,28 +55,58 @@ CREATE TABLE message_versions (
 ```
 
 Rows that no longer decode after a TDLib update are skipped, not fatal.
+A later schema adds a migration step in `StoreDatabase.migration`; version 1
+files must keep opening (there is a test for it).
 
 ## Capture
 
-TDLib cannot return a message after it is deleted, so `MessageCapture`
-remembers recently seen messages in memory (300 per chat, 100 chats): from
-`updateNewMessage` and from every response that carries messages, through
-`TdClient.responses`. Then:
+With both switches off the capture does nothing at all. Otherwise, since
+TDLib cannot return a message after it is deleted, `MessageCapture`
+remembers recently seen messages in memory (100 per chat, 100 chats, least
+recently used first out): from `updateNewMessage` and from every response
+that carries messages, through `TdClient.responses`. A search across chats
+only refreshes chats already remembered. Then:
 
 - `updateDeleteMessages` with `is_permanent` and not `from_cache` keeps the
-  remembered message. Messages deleted from this app (`deleteMessages`,
-  `deleteChatHistory` and the like, seen through `TdClient.requests`) and
-  self-destructing or auto-deleting messages are not kept.
+  remembered messages, in one transaction per update.
 - `updateMessageContent` followed by `updateMessageEdited` keeps the
   content that was replaced. A content change without an edit, such as poll
-  votes, is not kept.
+  votes, is not a version; a later edit keeps the latest content before it.
+- `updateMessageSendSucceeded` and `updateMessageSendFailed` move a message
+  to its new id.
 
-Only messages the app saw while it was open can be kept.
+Not kept:
+
+- Messages deleted from this app: `deleteMessages` by id, and bulk
+  deletions (`deleteChatHistory`, `deleteChat`,
+  `deleteChatMessagesBySender` for that sender only,
+  `deleteChatMessagesByDate`, `deleteForumTopic`, the saved messages and
+  direct messages topic deletions). A bulk deletion covers matching
+  updates for one minute after it is asked for.
+- The user's own messages in private and secret chats: TDLib reports a
+  deletion from another of the user's devices the same way as one by the
+  other person, so these are left out. In groups and channels the user's
+  own messages can still be kept when deleted from another device; TDLib
+  gives no way to tell those apart.
+- Scheduled messages (sending one deletes the scheduled copy for good),
+  messages still sending or failed, and messages that delete themselves on
+  a timer or by auto-delete.
+- Anything the app did not see while it was open.
+
+A failed write closes the store and tries again, up to three times with a
+growing wait. A lost key is not retried; it is shown on the page.
+
+The saved messages are not shown in chats yet: a "deleted" mark and the
+edit history view come with the chat work.
 
 ## API
 
 - `MessageStore.deleted`: `forChat`, `watchChat` (a stream per chat, for
   a "deleted" mark in the chat), `find`.
 - `MessageStore.edits`: `versions(chatId, messageId)`, `watchVersions`.
-- `MessageStore.sizeInBytes`, `clear` (the "Clear stored data" row).
-- `TelegramSession.capture.store` opens the account's store on first use.
+- `MessageStore.count`, `clear` (the "Stored data" row, Clear enabled
+  while something is kept); `MessageStore.sizeOnDisk` and `deleteAt` work
+  on the files without opening them.
+- `TelegramSession.capture.store` opens the account's store on first use;
+  `capture.changes` fires after each write, `capture.failure` holds the
+  last write error.

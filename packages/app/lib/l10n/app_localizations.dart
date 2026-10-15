@@ -2993,7 +2993,7 @@ abstract class AppLocalizations {
   /// No description provided for @keepDeletedMessagesHint.
   ///
   /// In en, this message translates to:
-  /// **'Messages others delete stay readable here'**
+  /// **'Save messages others delete for everyone'**
   String get keepDeletedMessagesHint;
 
   /// No description provided for @keepEditHistory.
@@ -3005,26 +3005,50 @@ abstract class AppLocalizations {
   /// No description provided for @keepEditHistoryHint.
   ///
   /// In en, this message translates to:
-  /// **'Earlier versions of edited messages stay readable here'**
+  /// **'Save earlier versions of edited messages'**
   String get keepEditHistoryHint;
 
   /// No description provided for @storedMessagesAbout.
   ///
   /// In en, this message translates to:
-  /// **'Kept encrypted on this Mac only, for messages Mollygram saw while it was open. Nothing is sent anywhere.'**
+  /// **'Saved encrypted on this computer only, for messages Mollygram saw while it was open. Nothing is sent anywhere. Showing them in chats comes later.'**
   String get storedMessagesAbout;
 
   /// No description provided for @clearStoredData.
   ///
   /// In en, this message translates to:
-  /// **'Clear stored data'**
+  /// **'Stored data'**
   String get clearStoredData;
 
   /// No description provided for @clearStoredDataTitle.
   ///
   /// In en, this message translates to:
-  /// **'Clear the deleted messages and edit history kept on this Mac?'**
+  /// **'Clear the deleted messages and edit history saved on this computer?'**
   String get clearStoredDataTitle;
+
+  /// No description provided for @storedDataUnreadable.
+  ///
+  /// In en, this message translates to:
+  /// **'Stored data can\'t be read'**
+  String get storedDataUnreadable;
+
+  /// No description provided for @storedDataUnreadableHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Its key is missing from the keychain. Reset to start again.'**
+  String get storedDataUnreadableHint;
+
+  /// No description provided for @resetStoredData.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get resetStoredData;
+
+  /// No description provided for @resetStoredDataTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete the stored data that can\'t be read and start again?'**
+  String get resetStoredDataTitle;
 }
 
 class _AppLocalizationsDelegate

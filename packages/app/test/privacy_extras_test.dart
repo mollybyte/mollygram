@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -14,6 +15,7 @@ import 'package:mollygram/src/privacy/privacy_settings.dart';
 import 'package:mollygram/src/session/providers.dart';
 import 'package:mollygram/src/session/telegram_session_launcher.dart';
 import 'package:mollygram/src/settings/privacy_extras_page.dart';
+import 'package:mollygram/src/settings/settings_style.dart';
 import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
@@ -24,15 +26,25 @@ void main() {
     late List<_FakeTdJson> clients;
 
     /// [gate] holds TDLib's start until it completes.
-    ProviderContainer create(Object? saved, {Future<void>? gate}) {
+    /// [store] puts a real store there instead of one in memory.
+    ProviderContainer create(
+      Object? saved, {
+      Future<void>? gate,
+      (MessageStoreLocation, SecretStore)? store,
+    }) {
       storage = MemoryPrivacySettingsStorage(saved);
       clients = [];
       final container = ProviderContainer(
         overrides: [
           privacySettingsStorageProvider.overrideWithValue(storage),
-          messageStoreOpenerProvider.overrideWithValue(
-            () => MessageStore.memory(),
-          ),
+          if (store == null)
+            messageStoreOpenerProvider.overrideWithValue(
+              () => MessageStore.memory(),
+            )
+          else ...[
+            messageStoreLocationProvider.overrideWith((ref) async => store.$1),
+            messageStoreSecretsProvider.overrideWithValue(store.$2),
+          ],
           telegramApiConfigProvider.overrideWithValue(
             const TelegramApiConfig(
               apiId: 12345,
@@ -100,6 +112,48 @@ void main() {
       expect(session.capture.keepEdits, isTrue);
     });
 
+    test('a store whose key is lost reads as unreadable until reset', () async {
+      final dir = await Directory.systemTemp.createTemp('store');
+      addTearDown(() => dir.delete(recursive: true));
+      final location = MessageStoreLocation(
+        slot: 0,
+        path: messageStorePathFor(dir.path, 0),
+      );
+      // Written with a key the keychain no longer has.
+      final old = await MessageStore.open(
+        path: location.path,
+        key: List.filled(32, 7),
+      );
+      await old.close();
+      final secrets = _MemorySecrets();
+      final container = create(
+        const PrivacySettings(keepDeletedMessages: true).toJson(),
+        store: (location, secrets),
+      );
+      final subscription = container.listen(
+        storedMessagesStatusProvider,
+        (_, _) {},
+      );
+      addTearDown(subscription.close);
+
+      final lost = await container.read(storedMessagesStatusProvider.future);
+      expect(lost.unreadable, isTrue);
+      expect(lost.size, greaterThan(0));
+      expect(secrets.values, isEmpty, reason: 'no new key for an old file');
+
+      await container.read(resetStoredMessagesProvider)();
+      final fresh = await container.read(storedMessagesStatusProvider.future);
+      expect(fresh.unreadable, isFalse);
+      expect(fresh.size, 0);
+      expect(File(location.path).existsSync(), isFalse);
+
+      // The next store starts with a new key.
+      final session = await container.read(telegramSessionProvider.future);
+      final store = await session.capture.store!;
+      expect(await store.count(), 0);
+      expect(secrets.values, hasLength(1));
+    });
+
     test('a change reaches the running session and is saved', () async {
       final container = create(null);
       final subscription = container.listen(telegramSessionProvider, (_, _) {});
@@ -142,12 +196,14 @@ void main() {
 
   group('page and capsule', () {
     late MemoryPrivacySettingsStorage storage;
-    var storedSize = 0;
+    var stored = const StoredMessagesStatus();
     var cleared = 0;
+    var reset = 0;
 
     setUp(() {
-      storedSize = 0;
+      stored = const StoredMessagesStatus();
       cleared = 0;
+      reset = 0;
     });
 
     Future<ProviderContainer> pump(WidgetTester tester, Widget child) async {
@@ -160,10 +216,12 @@ void main() {
             telegramSessionProvider.overrideWith(
               (ref) => Completer<TelegramSession>().future,
             ),
-            storedMessagesSizeProvider.overrideWith((ref) async => storedSize),
+            storedMessagesStatusProvider.overrideWith((ref) async => stored),
             clearStoredMessagesProvider.overrideWithValue(() async {
               cleared++;
-              storedSize = 0;
+            }),
+            resetStoredMessagesProvider.overrideWithValue(() async {
+              reset++;
             }),
           ],
           child: MaterialApp(
@@ -269,24 +327,54 @@ void main() {
     });
 
     testWidgets('clears the stored data after asking', (tester) async {
-      storedSize = 4200;
+      stored = const StoredMessagesStatus(size: 4200, count: 3);
       await pump(tester, const PrivacyExtrasPage());
-      final row = find.byKey(const ValueKey('clearStoredData'));
-      await tester.ensureVisible(row);
+      final button = find.byKey(const ValueKey('clearStoredData'));
+      await tester.ensureVisible(button);
       expect(find.text('4.2 KB'), findsOneWidget);
 
-      await tester.tap(row);
+      await tester.tap(button);
       await tester.pumpAndSettle();
       expect(
         find.text(
-          'Clear the deleted messages and edit history kept on this Mac?',
+          'Clear the deleted messages and edit history saved on this '
+          'computer?',
         ),
         findsOneWidget,
       );
-      await tester.tap(find.text('Clear'));
+      await tester.tap(find.text('Clear').last);
       await tester.pumpAndSettle();
 
       expect(cleared, 1);
+    });
+
+    testWidgets('nothing to clear while nothing is kept', (tester) async {
+      stored = const StoredMessagesStatus(size: 8192);
+      await pump(tester, const PrivacyExtrasPage());
+      final button = find.byKey(const ValueKey('clearStoredData'));
+      await tester.ensureVisible(button);
+
+      expect(tester.widget<SettingsButton>(button).onPressed, isNull);
+    });
+
+    testWidgets('a store whose key is lost can be reset', (tester) async {
+      stored = const StoredMessagesStatus(size: 8192, unreadable: true);
+      await pump(tester, const PrivacyExtrasPage());
+      final button = find.byKey(const ValueKey('resetStoredData'));
+      await tester.ensureVisible(button);
+      expect(find.text("Stored data can't be read"), findsOneWidget);
+      expect(find.byKey(const ValueKey('clearStoredData')), findsNothing);
+
+      await tester.tap(button);
+      await tester.pumpAndSettle();
+      expect(
+        find.text("Delete the stored data that can't be read and start again?"),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Reset').last);
+      await tester.pumpAndSettle();
+
+      expect(reset, 1);
     });
 
     testWidgets('each switch turns on only itself', (tester) async {
@@ -382,4 +470,17 @@ final class _FakeTdJson implements td.TdJson {
       );
     }
   }
+}
+
+final class _MemorySecrets implements SecretStore {
+  final values = <String, String>{};
+
+  @override
+  Future<String?> read(String key) async => values[key];
+
+  @override
+  Future<void> write(String key, String value) async => values[key] = value;
+
+  @override
+  Future<void> delete(String key) async => values.remove(key);
 }

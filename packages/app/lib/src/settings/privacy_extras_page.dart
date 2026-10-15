@@ -82,7 +82,7 @@ class PrivacyExtrasPage extends ConsumerWidget {
               value: settings.keepEditHistory,
               onChanged: (on) => update((s) => s.copyWith(keepEditHistory: on)),
             ),
-            const _ClearStoredRow(),
+            const _StoredDataRow(),
           ],
         ),
       ],
@@ -90,40 +90,73 @@ class PrivacyExtrasPage extends ConsumerWidget {
   }
 }
 
-/// "Clear stored data" with the store's size, after a confirmation.
-class _ClearStoredRow extends ConsumerWidget {
-  const _ClearStoredRow();
+/// The stored data's size with "Clear", after a confirmation; when its
+/// key is lost, "Reset" instead.
+class _StoredDataRow extends ConsumerWidget {
+  const _StoredDataRow();
 
-  Future<void> _clear(BuildContext context, WidgetRef ref) async {
+  Future<void> _run(
+    BuildContext context,
+    WidgetRef ref, {
+    required String title,
+    required String label,
+    required Future<void> Function() action,
+  }) async {
     final l10n = AppLocalizations.of(context);
     final confirmed = await showMgConfirm(
       context,
-      title: l10n.clearStoredDataTitle,
-      confirmLabel: l10n.clear,
+      title: title,
+      confirmLabel: label,
       cancelLabel: l10n.cancel,
       destructive: true,
     );
     // Null when cancelled; otherwise the (unused) option's value.
     if (confirmed == null) return;
-    await ref.read(clearStoredMessagesProvider)();
+    await action();
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final c = MgColors.of(context);
     final locale = Localizations.localeOf(context).toLanguageTag();
-    final size = ref.watch(storedMessagesSizeProvider).value;
+    final status = ref.watch(storedMessagesStatusProvider).value;
+    if (status != null && status.unreadable) {
+      return SettingsRow(
+        key: const ValueKey('storedDataUnreadable'),
+        title: l10n.storedDataUnreadable,
+        subtitle: l10n.storedDataUnreadableHint,
+        trailing: SettingsButton(
+          key: const ValueKey('resetStoredData'),
+          label: l10n.resetStoredData,
+          destructive: true,
+          onPressed: () => _run(
+            context,
+            ref,
+            title: l10n.resetStoredDataTitle,
+            label: l10n.resetStoredData,
+            action: ref.read(resetStoredMessagesProvider),
+          ),
+        ),
+      );
+    }
     return SettingsRow(
-      key: const ValueKey('clearStoredData'),
+      key: const ValueKey('storedData'),
       title: l10n.clearStoredData,
-      trailing: size == null
-          ? null
-          : Text(
-              formatBytes(size, l10n, locale),
-              style: mgTextStyle(c, color: c.fg2),
-            ),
-      onTap: size == null || size == 0 ? null : () => _clear(context, ref),
+      subtitle: status == null ? null : formatBytes(status.size, l10n, locale),
+      trailing: SettingsButton(
+        key: const ValueKey('clearStoredData'),
+        label: l10n.clear,
+        destructive: true,
+        onPressed: status == null || status.count == 0
+            ? null
+            : () => _run(
+                context,
+                ref,
+                title: l10n.clearStoredDataTitle,
+                label: l10n.clear,
+                action: ref.read(clearStoredMessagesProvider),
+              ),
+      ),
     );
   }
 }

@@ -1790,23 +1790,37 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get keepDeletedMessagesHint =>
-      'Сообщения, которые удалили другие, останутся здесь';
+      'Сохранять сообщения, которые другие удалили для всех';
 
   @override
   String get keepEditHistory => 'Сохранять историю правок';
 
   @override
   String get keepEditHistoryHint =>
-      'Прежние версии изменённых сообщений останутся здесь';
+      'Сохранять прежние версии изменённых сообщений';
 
   @override
   String get storedMessagesAbout =>
-      'Хранится в зашифрованном виде только на этом Mac, для сообщений, которые Mollygram видел, пока был открыт. Никуда не отправляется.';
+      'Хранится в зашифрованном виде только на этом компьютере, для сообщений, которые Mollygram видел, пока был открыт. Никуда не отправляется. Показ в чатах появится позже.';
 
   @override
-  String get clearStoredData => 'Очистить сохранённые данные';
+  String get clearStoredData => 'Сохранённые данные';
 
   @override
   String get clearStoredDataTitle =>
-      'Удалить сохранённые на этом Mac удалённые сообщения и историю правок?';
+      'Удалить удалённые сообщения и историю правок, сохранённые на этом компьютере?';
+
+  @override
+  String get storedDataUnreadable => 'Сохранённые данные не читаются';
+
+  @override
+  String get storedDataUnreadableHint =>
+      'Ключа нет в связке ключей. Сбросьте, чтобы начать заново.';
+
+  @override
+  String get resetStoredData => 'Сбросить';
+
+  @override
+  String get resetStoredDataTitle =>
+      'Удалить нечитаемые сохранённые данные и начать заново?';
 }

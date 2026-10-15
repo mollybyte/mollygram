@@ -14,8 +14,10 @@ void main() {
   late MessageStore store;
   late MessageCapture capture;
   var opened = 0;
+  var clock = now;
 
   setUp(() async {
+    clock = now;
     json = FakeTdJson();
     tdlib = td.Td.custom(json, td.InlineTdEventSource(json));
     client = tdlib.createClient();
@@ -29,8 +31,9 @@ void main() {
       },
       keepDeleted: true,
       keepEdits: true,
-      now: () => now,
+      now: () => clock,
       messagesPerChat: 3,
+      retryDelay: Duration.zero,
     );
   });
 
@@ -48,10 +51,21 @@ void main() {
     int chatId,
     int id,
     String text, {
+    int sender = 42,
     bool selfDestruct = false,
+    bool outgoing = false,
+    bool scheduled = false,
   }) => json.push({
     '@type': 'updateNewMessage',
-    'message': messageJson(chatId, id, text, selfDestruct: selfDestruct),
+    'message': messageJson(
+      chatId,
+      id,
+      text,
+      sender: sender,
+      selfDestruct: selfDestruct,
+      outgoing: outgoing,
+      scheduled: scheduled,
+    ),
   });
 
   void delete(
@@ -151,6 +165,90 @@ void main() {
       expect(await keptIds(7), isEmpty);
     });
 
+    test('keeps no scheduled message: sending one deletes it', () async {
+      newMessage(7, 1, 'later', scheduled: true);
+      await settle();
+      delete(7, [1]);
+      await settle();
+
+      expect(await keptIds(7), isEmpty);
+    });
+
+    test('keeps none of your own messages in private chats, but '
+        'does in groups', () async {
+      const group = -1001;
+      newMessage(7, 1, 'mine', outgoing: true);
+      newMessage(group, 1, 'mine', outgoing: true);
+      await settle();
+      delete(7, [1]);
+      delete(group, [1]);
+      await settle();
+
+      expect(await keptIds(7), isEmpty);
+      expect(await keptIds(group), [1]);
+    });
+
+    test('a deletion by sender asked for here covers only that sender, '
+        'for a minute', () async {
+      const group = -1001;
+      newMessage(group, 1, 'spam', sender: 42);
+      newMessage(group, 2, 'other', sender: 43);
+      newMessage(group, 3, 'spam again', sender: 42);
+      await settle();
+      await client.send(
+        const td.DeleteChatMessagesBySender(
+          chatId: group,
+          senderId: td.MessageSenderUser(userId: 42),
+        ),
+      );
+      delete(group, [1, 2]);
+      await settle();
+      expect(await keptIds(group), [2]);
+
+      clock = now.add(MessageCapture.hereWindow);
+      delete(group, [3]);
+      await settle();
+      expect(await keptIds(group), [2, 3]);
+    });
+
+    test('forgets a message that failed to send under its new id', () async {
+      newMessage(7, 100, 'sending');
+      json.push({
+        '@type': 'updateMessageSendFailed',
+        'message': messageJson(7, 6, 'sending', failed: true),
+        'old_message_id': 100,
+        'error': {'@type': 'error', 'code': 400, 'message': 'FAILED'},
+      });
+      await settle();
+      expect(capture.recent(7, 100), isNull);
+      expect(capture.recent(7, 6), isNotNull);
+
+      delete(7, [6]);
+      await settle();
+      expect(await keptIds(7), isEmpty);
+    });
+
+    test('a search across chats does not add chats', () async {
+      json.answers['searchMessages'] = {
+        '@type': 'foundMessages',
+        'total_count': 1,
+        'messages': [messageJson(9, 1, 'found')],
+        'next_offset': '',
+      };
+      await client.send(
+        const td.SearchMessages(
+          query: 'found',
+          offset: '',
+          limit: 1,
+          minDate: 0,
+          maxDate: 0,
+        ),
+      );
+      await settle();
+
+      expect(capture.recent(9, 1), isNull);
+    });
+
     test('keeps nothing while the switch is off', () async {
       capture.keepDeleted = false;
       newMessage(7, 1, 'a');
@@ -237,6 +335,23 @@ void main() {
       expect(opened, 0);
     });
 
+    test('an edit after a poll change keeps the content it replaced', () async {
+      newMessage(7, 1, 'poll');
+      await settle();
+      json.push({
+        '@type': 'updateMessageContent',
+        'chat_id': 7,
+        'message_id': 1,
+        'new_content': textContent('votes changed'),
+      });
+      edit(7, 1, 'edited', 1700000100);
+      await settle();
+
+      final versions = await store.edits.versions(7, 1);
+      expect([for (final v in versions) textOf(v.content)], ['votes changed']);
+      expect(versions.single.date.millisecondsSinceEpoch, 1700000000000);
+    });
+
     test('keeps nothing while the switch is off', () async {
       capture.keepEdits = false;
       newMessage(7, 1, 'first');
@@ -256,5 +371,84 @@ void main() {
     await settle();
 
     expect(opened, 1);
+  });
+
+  test('remembers nothing while both switches are off', () async {
+    capture
+      ..keepDeleted = false
+      ..keepEdits = false;
+    newMessage(7, 1, 'a');
+    await settle();
+
+    expect(capture.recent(7, 1), isNull);
+  });
+
+  group('writes', () {
+    late List<MessageStore> stores;
+
+    MessageCapture captureWith(Future<MessageStore> Function(int) open) {
+      stores = [];
+      opened = 0;
+      return MessageCapture(
+        client,
+        openStore: () async {
+          final store = await open(opened++);
+          stores.add(store);
+          return store;
+        },
+        keepDeleted: true,
+        now: () => clock,
+        retryDelay: Duration.zero,
+      );
+    }
+
+    test('a failed write closes the store and tries again', () async {
+      await capture.dispose();
+      capture = captureWith((attempt) async {
+        final store = await MessageStore.memory();
+        // The first store is already closed: writing to it fails.
+        if (attempt == 0) await store.close();
+        return store;
+      });
+      newMessage(7, 1, 'a');
+      await settle();
+      delete(7, [1]);
+      await settle();
+
+      expect(opened, 2);
+      expect(capture.failure, isNull);
+      expect(await stores.last.deleted.forChat(7), hasLength(1));
+      await stores.last.close();
+    });
+
+    test('a lost key is reported, not retried', () async {
+      await capture.dispose();
+      capture = captureWith((_) async => throw const StoreKeyLost());
+      final changes = <void>[];
+      final subscription = capture.changes.listen(changes.add);
+      addTearDown(subscription.cancel);
+      newMessage(7, 1, 'a');
+      await settle();
+      delete(7, [1]);
+      await settle();
+
+      expect(opened, 1);
+      expect(capture.failure, isA<StoreKeyLost>());
+      expect(changes, hasLength(1));
+
+      await capture.closeStore();
+      expect(capture.failure, isNull);
+    });
+
+    test('dispose closes the store', () async {
+      newMessage(7, 1, 'a');
+      await settle();
+      delete(7, [1]);
+      await settle();
+      expect(opened, 1);
+
+      await capture.dispose();
+      await expectLater(store.count(), throwsA(anything));
+    });
   });
 }
