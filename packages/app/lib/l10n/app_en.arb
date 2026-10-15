@@ -443,6 +443,7 @@
   "terminateOthersTitle": "Terminate all other sessions?",
   "logOutFailed": "Couldn't log out. Check the connection and try again.",
   "connectedBot": "Connected business bot",
+  "connectedBotFailed": "Couldn't load the connected bot",
   "connectedBotHint": "This bot can read and answer your business chats.",
   "disconnect": "Disconnect",
   "disconnectBotTitle": "Disconnect {name}?",

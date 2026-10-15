@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -104,6 +106,31 @@ void main() {
       expect(storage.writes, 1);
     });
 
+    test('flush waits for a write already under way', () async {
+      final storage = _SlowStorage();
+      final container = ProviderContainer(
+        overrides: [preferencesStorageProvider.overrideWithValue(storage)],
+      );
+      addTearDown(container.dispose);
+      final notifier = container.read(preferencesProvider.notifier);
+      notifier.update((p) => p.copyWith(wallpaper: false));
+      final first = notifier.flush();
+      await Future<void>.delayed(Duration.zero);
+      expect(storage.started, 1);
+
+      // Nothing new is waiting, yet flush must not finish before the write.
+      var done = false;
+      unawaited(notifier.flush().then((_) => done = true));
+      await Future<void>.delayed(Duration.zero);
+      expect(done, isFalse);
+
+      storage.finish.complete();
+      await first;
+      await Future<void>.delayed(Duration.zero);
+      expect(done, isTrue);
+      expect((storage.saved! as Map)['wallpaper'], isFalse);
+    });
+
     test('writes a waiting change when the app closes', () async {
       final storage = MemoryPreferencesStorage();
       final container = ProviderContainer(
@@ -173,4 +200,56 @@ void main() {
       );
     });
   });
+
+  testWidgets('save panels start in the chosen download folder', (
+    tester,
+  ) async {
+    late BuildContext inside;
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          initialPreferencesProvider.overrideWithValue(
+            const Preferences(downloadFolder: '/Users/anna/Telegram'),
+          ),
+          preferencesStorageProvider.overrideWithValue(
+            MemoryPreferencesStorage(),
+          ),
+        ],
+        child: Builder(
+          builder: (context) {
+            inside = context;
+            return const SizedBox();
+          },
+        ),
+      ),
+    );
+    expect(await downloadFolderOf(inside), '/Users/anna/Telegram');
+
+    await tester.pumpWidget(
+      Builder(
+        builder: (context) {
+          inside = context;
+          return const SizedBox();
+        },
+      ),
+    );
+    expect(await downloadFolderOf(inside), isNull);
+  });
+}
+
+/// Storage whose writes finish only when told to.
+final class _SlowStorage implements PreferencesStorage {
+  final finish = Completer<void>();
+  var started = 0;
+  Object? saved;
+
+  @override
+  Future<Object?> read() async => null;
+
+  @override
+  Future<void> write(Object? json) async {
+    started++;
+    await finish.future;
+    saved = json;
+  }
 }

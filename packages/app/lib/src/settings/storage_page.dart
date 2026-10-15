@@ -26,6 +26,19 @@ final downloadFolderProvider = FutureProvider<String?>((ref) async {
   return (await getDownloadsDirectory())?.path;
 });
 
+/// The download folder, for save panels outside the settings (the media
+/// viewer's Save). Null without a [ProviderScope] or a known folder.
+Future<String?> downloadFolderOf(BuildContext context) async {
+  try {
+    return await ProviderScope.containerOf(
+      context,
+      listen: false,
+    ).read(downloadFolderProvider.future);
+  } on Object {
+    return null;
+  }
+}
+
 /// A size the way Finder writes it: decimal units, one decimal below 10
 /// ("4.2 MB", "38 MB"), in the locale's number format.
 String formatBytes(int bytes, AppLocalizations l10n, String locale) {

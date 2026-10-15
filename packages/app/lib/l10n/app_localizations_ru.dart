@@ -1049,6 +1049,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get connectedBot => 'Подключённый бизнес-бот';
 
   @override
+  String get connectedBotFailed => 'Не удалось загрузить подключённого бота';
+
+  @override
   String get connectedBotHint =>
       'Этот бот может читать ваши бизнес-чаты и отвечать в них.';
 

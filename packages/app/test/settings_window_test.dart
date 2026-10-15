@@ -199,6 +199,41 @@ void main() {
     );
   });
 
+  testWidgets('drops a username check answered after the text changed', (
+    tester,
+  ) async {
+    await pump(tester);
+    final field = find.descendant(
+      of: find.byKey(const ValueKey('username')),
+      matching: find.byType(TextField),
+    );
+    json.hold.add('checkChatUsername');
+    await tester.enterText(field, 'anna_new');
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(
+      json.sent,
+      contains(
+        equals({
+          '@type': 'checkChatUsername',
+          'chat_id': 42,
+          'username': 'anna_new',
+        }),
+      ),
+    );
+
+    // Back to the current username while the check is still out.
+    await tester.enterText(field, 'anna');
+    await tester.pump();
+    json.release();
+    await settle(tester);
+
+    expect(find.text('@anna_new is available.'), findsNothing);
+    expect(
+      find.textContaining('People can find you by this username'),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('refuses an empty first name', (tester) async {
     await pump(tester);
     final field = find.descendant(
@@ -352,6 +387,21 @@ void main() {
     expect(find.text('Shop bot'), findsNothing);
   });
 
+  testWidgets('says when the connected bot cannot be loaded', (tester) async {
+    json.botFails = true;
+    await pump(tester, section: 'privacy');
+    await tester.tap(find.byKey(const ValueKey('activeSessions')));
+    await settle(tester);
+    expect(find.text("Couldn't load the connected bot"), findsOneWidget);
+
+    json
+      ..botFails = false
+      ..bot = true;
+    await tester.tap(find.text('Try again'));
+    await settle(tester);
+    expect(find.text('Shop bot'), findsOneWidget);
+  });
+
   testWidgets('appearance choices apply and are saved', (tester) async {
     await pump(tester, section: 'appearance');
     final container = ProviderScope.containerOf(
@@ -475,8 +525,21 @@ final class _FakeTdJson implements td.TdJson {
   /// Whether a business bot is connected.
   var bot = false;
 
+  /// Whether loading the business bot fails with a server error.
+  var botFails = false;
+
   /// Whether the photo cache was cleared.
   var cleared = false;
+
+  /// Request types whose answers wait for [release].
+  final hold = <String>{};
+  final _held = <String>[];
+
+  void release() {
+    _queue.addAll(_held);
+    _held.clear();
+  }
+
   var _sessions = [
     _session(2, 'Telegram iOS', '11.2', lastActive: 1700000000),
     _session(1, 'Mollygram', '0.1.0', current: true),
@@ -567,6 +630,11 @@ final class _FakeTdJson implements td.TdJson {
         '@type': 'storageStatisticsFast',
         'database_size': 12000000,
       },
+      'getBusinessConnectedBot' when botFails => {
+        '@type': 'error',
+        'code': 500,
+        'message': 'Internal',
+      },
       'getBusinessConnectedBot' when bot => {
         '@type': 'businessConnectedBotInfo',
         'bot': {
@@ -590,9 +658,12 @@ final class _FakeTdJson implements td.TdJson {
       },
       _ => {'@type': 'ok'},
     };
-    _queue.add(
-      jsonEncode({...response, '@client_id': clientId, '@extra': extra}),
-    );
+    final answer = jsonEncode({
+      ...response,
+      '@client_id': clientId,
+      '@extra': extra,
+    });
+    hold.contains(type) ? _held.add(answer) : _queue.add(answer);
     if (type == 'close') {
       _queue.add(
         jsonEncode({

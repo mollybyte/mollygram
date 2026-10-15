@@ -257,19 +257,26 @@ class PreferencesNotifier extends Notifier<Preferences> {
     _save = Timer(saveDelay, () => unawaited(flush()));
   }
 
-  /// Writes a change that is still waiting. A failed write is dropped:
-  /// the choice still applies until the app quits.
-  Future<void> flush() async {
+  /// The chain of writes, so they land in order and [flush] can wait for
+  /// one already under way.
+  Future<void> _writes = Future.value();
+
+  /// Writes a change that is still waiting, and completes once every
+  /// earlier write has finished too. A failed write is dropped: the choice
+  /// still applies until the app quits.
+  Future<void> flush() {
     _save?.cancel();
     _save = null;
     final pending = _pending;
-    if (pending == null) return;
+    if (pending == null) return _writes;
     _pending = null;
-    try {
-      await _storage.write(pending.toJson());
-    } on Object {
-      // Nothing to tell the user; see above.
-    }
+    return _writes = _writes.then((_) async {
+      try {
+        await _storage.write(pending.toJson());
+      } on Object {
+        // Nothing to tell the user; see above.
+      }
+    });
   }
 }
 

@@ -1748,6 +1748,12 @@ abstract class AppLocalizations {
   /// **'Connected business bot'**
   String get connectedBot;
 
+  /// No description provided for @connectedBotFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the connected bot'**
+  String get connectedBotFailed;
+
   /// No description provided for @connectedBotHint.
   ///
   /// In en, this message translates to:

@@ -193,9 +193,12 @@ class _MessageFlashState extends State<MessageFlash>
       animation: _controller,
       builder: (context, child) {
         final t = _controller.value;
-        // Quick to light, held, then a long calm fade.
-        final strength = !_controller.isAnimating && t == 0
+        // Quick to light, held, then a long calm fade. With reduce motion
+        // the highlight stays still for the same time and goes at once.
+        final strength = !_controller.isAnimating
             ? 0.0
+            : MediaQuery.disableAnimationsOf(context)
+            ? 1.0
             : t < 0.1
             ? t / 0.1
             : t < 0.35

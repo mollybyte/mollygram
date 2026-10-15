@@ -214,22 +214,24 @@ final class AccountSettings {
   /// The business bot connected to the account, or null when there is
   /// none. TDLib asks apps to show it with the active sessions.
   Future<ConnectedBot?> connectedBot() async {
+    final td.BusinessConnectedBotInfo info;
     try {
-      final info = await _client.send(const td.GetBusinessConnectedBot());
-      final id = info.bot.botUserId;
-      final user = await _client.send(td.GetUser(userId: id));
-      return ConnectedBot(
-        userId: id,
-        name: [
-          user.firstName,
-          user.lastName,
-        ].where((s) => s.isNotEmpty).join(' '),
-        username: user.usernames?.activeUsernames.firstOrNull ?? '',
-      );
-    } on td.TdException {
-      // Not found: no bot is connected.
-      return null;
+      info = await _client.send(const td.GetBusinessConnectedBot());
+    } on td.TdException catch (e) {
+      // Only "not found" means no bot; anything else is a failure to load.
+      if (e.code == 404) return null;
+      rethrow;
     }
+    final id = info.bot.botUserId;
+    final user = await _client.send(td.GetUser(userId: id));
+    return ConnectedBot(
+      userId: id,
+      name: [
+        user.firstName,
+        user.lastName,
+      ].where((s) => s.isNotEmpty).join(' '),
+      username: user.usernames?.activeUsernames.firstOrNull ?? '',
+    );
   }
 
   Future<void> disconnectBot(int botUserId) =>

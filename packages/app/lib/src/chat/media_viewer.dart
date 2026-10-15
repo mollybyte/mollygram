@@ -13,6 +13,7 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 import 'package:pasteboard/pasteboard.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../settings/storage_page.dart' show downloadFolderOf;
 import 'describe.dart';
 import 'formatted_text.dart';
 import 'media_gallery.dart';
@@ -184,7 +185,10 @@ class _MediaViewerState extends State<_MediaViewer> {
     final path = file == null ? null : downloadedPath(file);
     if (path == null || !_canSave) return;
     final name = _fileName(_gallery.current, path);
-    final location = await getSaveLocation(suggestedName: name);
+    final location = await getSaveLocation(
+      suggestedName: name,
+      initialDirectory: await downloadFolderOf(context),
+    );
     if (location == null) return;
     try {
       await File(path).copy(location.path);
@@ -770,10 +774,7 @@ class _Photo extends StatefulWidget {
 
 class _PhotoState extends State<_Photo> with SingleTickerProviderStateMixin {
   final _transform = TransformationController();
-  late final _zoom = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 260),
-  );
+  late final _zoom = AnimationController(vsync: this);
   Animation<Matrix4>? _tween;
   Offset _doubleTapAt = Offset.zero;
 
@@ -785,6 +786,16 @@ class _PhotoState extends State<_Photo> with SingleTickerProviderStateMixin {
     _zoom.addListener(() {
       if (_tween case final tween?) _transform.value = tween.value;
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Reduce motion (the system's or the app's, see ReduceMotionScope):
+    // the zoom jumps instead of gliding.
+    _zoom.duration = MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : const Duration(milliseconds: 260);
   }
 
   @override

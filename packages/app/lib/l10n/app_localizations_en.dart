@@ -1040,6 +1040,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connectedBot => 'Connected business bot';
 
   @override
+  String get connectedBotFailed => 'Couldn\'t load the connected bot';
+
+  @override
   String get connectedBotHint =>
       'This bot can read and answer your business chats.';
 

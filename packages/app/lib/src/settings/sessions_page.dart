@@ -188,7 +188,8 @@ class _ActiveSessionsPageState extends ConsumerState<ActiveSessionsPage> {
       for (final s in sessions)
         if (!s.isCurrent && !_ending.contains(s.id)) s,
     ];
-    final bot = ref.watch(connectedBotProvider).value;
+    final botState = ref.watch(connectedBotProvider);
+    final bot = botState.value;
     return SettingsPage(
       children: [
         // TDLib asks for the connected bot to be shown with the sessions.
@@ -206,6 +207,20 @@ class _ActiveSessionsPageState extends ConsumerState<ActiveSessionsPage> {
                   label: l10n.disconnect,
                   destructive: true,
                   onPressed: () => _disconnect(bot),
+                ),
+              ),
+            ],
+          ),
+        if (bot == null && botState.hasError)
+          SettingsGroup(
+            key: const ValueKey('connectedBotFailed'),
+            title: l10n.connectedBot,
+            children: [
+              SettingsRow(
+                title: l10n.connectedBotFailed,
+                trailing: SettingsButton(
+                  label: l10n.tryAgain,
+                  onPressed: () => ref.invalidate(connectedBotProvider),
                 ),
               ),
             ],

@@ -168,6 +168,16 @@ void main() {
       },
     });
     expect(await none.connectedBot(), isNull);
+    await tdlib.close();
+
+    final (failing, _) = account({
+      'getBusinessConnectedBot': {
+        '@type': 'error',
+        'code': 500,
+        'message': 'Internal',
+      },
+    });
+    await expectLater(failing.connectedBot(), throwsA(isA<td.TdException>()));
   });
 
   test('terminates one session or all the others', () async {
