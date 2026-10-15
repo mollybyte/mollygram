@@ -138,6 +138,13 @@ class _ChatViewState extends ConsumerState<ChatView> {
   /// The timeline shows only the pinned messages, from the bar's button.
   var _pinnedListOpen = false;
 
+  /// The chat's scheduled messages, shown in place of the timeline while
+  /// [_scheduledOpen]; loaded again whenever the store counts a change.
+  var _scheduledOpen = false;
+  var _scheduled = const <ConversationMessage>[];
+  var _scheduledSeen = -1;
+  final _scheduledScroll = TimelineScrollController();
+
   /// A join or mute request on its way.
   var _actionPending = false;
 
@@ -205,6 +212,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _returnTo = null;
     _pinnedIndex = 0;
     _pinnedListOpen = false;
+    _scheduledOpen = false;
+    _scheduled = const [];
+    _scheduledSeen = -1;
     _selected = null;
     _selectedProperties = null;
     _flashTimer?.cancel();
@@ -224,6 +234,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _focus.dispose();
     _scroll.dispose();
     _pinnedScroll.dispose();
+    _scheduledScroll.dispose();
     _away.dispose();
     _flashTimer?.cancel();
     super.dispose();
@@ -403,6 +414,110 @@ class _ChatViewState extends ConsumerState<ChatView> {
     if (!_pinnedListOpen) return;
     setState(() => _pinnedListOpen = false);
     _focus.requestFocus();
+  }
+
+  /// A list in place of the timeline: the pinned or the scheduled messages.
+  bool get _listOpen => _pinnedListOpen || _scheduledOpen;
+
+  void _openScheduled() {
+    setState(() {
+      _scheduledOpen = true;
+      _selected = null;
+    });
+    unawaited(_loadScheduled());
+  }
+
+  void _closeScheduled() {
+    if (!_scheduledOpen) return;
+    setState(() => _scheduledOpen = false);
+    _focus.requestFocus();
+  }
+
+  Future<void> _loadScheduled() async {
+    final chatId = widget.chatId;
+    final store = _conversations.store;
+    final version = store.scheduledVersion(chatId);
+    _scheduledSeen = version;
+    final List<ConversationMessage> messages;
+    try {
+      messages = await _conversations.scheduledMessages(chatId);
+    } on Object {
+      return;
+    }
+    if (!mounted || widget.chatId != chatId) return;
+    setState(() => _scheduled = messages);
+    // Nothing left to wait for: back to the chat.
+    if (messages.isEmpty && !store.hasScheduledMessages(chatId)) {
+      _closeScheduled();
+    }
+  }
+
+  /// The bar under the scheduled list: back to the chat, also on Esc.
+  Widget _scheduledBar(AppLocalizations l10n) => Focus(
+    autofocus: true,
+    onKeyEvent: (node, event) {
+      if (event is KeyDownEvent &&
+          event.logicalKey == LogicalKeyboardKey.escape) {
+        _closeScheduled();
+        return KeyEventResult.handled;
+      }
+      return KeyEventResult.ignored;
+    },
+    child: ComposerActionBar(
+      label: l10n.backToChat,
+      onPressed: _closeScheduled,
+    ),
+  );
+
+  late final _scheduledActions = MessageRowActions(
+    onReaction: (message, reaction, chosen) {},
+    onNeedReplied: (reply) =>
+        unawaited(_quiet(_conversations.loadReplied(reply.chatId, reply.id))),
+    onMenu: (row, position) => unawaited(_scheduledMenu(row, position)),
+    onViewMedia: (message) => unawaited(
+      showChatMediaViewer(
+        context,
+        message: message,
+        conversations: _conversations,
+      ),
+    ),
+  );
+
+  /// The menu of a scheduled message, as in Telegram for macOS: send it
+  /// now, move it, or drop it.
+  Future<void> _scheduledMenu(MessageRow row, Offset position) async {
+    final l10n = AppLocalizations.of(context);
+    final chatId = widget.chatId;
+    final ids = [for (final message in row.messages) message.id];
+    await showMgMenu(
+      context,
+      position: position,
+      items: [
+        MgMenuItem(
+          label: l10n.menuSendNow,
+          onSelected: () => unawaited(
+            _quiet(_conversations.sendScheduledNow(chatId, row.primary.id)),
+          ),
+        ),
+        MgMenuItem(
+          label: l10n.menuReschedule,
+          onSelected: () => unawaited(_rescheduleMessage(row.primary.id)),
+        ),
+        MgMenuItem(
+          label: l10n.menuDelete,
+          destructive: true,
+          onSelected: () =>
+              unawaited(_quiet(_conversations.deleteScheduled(chatId, ids))),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _rescheduleMessage(int messageId) async {
+    final chatId = widget.chatId;
+    final when = await pickScheduleTime(context);
+    if (when == null || !mounted || widget.chatId != chatId) return;
+    await _quiet(_conversations.reschedule(chatId, messageId, when));
   }
 
   /// The pinned messages, newest first, as the timeline wants them.
@@ -1667,6 +1782,13 @@ class _ChatViewState extends ConsumerState<ChatView> {
     });
     final messages = ref.watch(conversationProvider(widget.chatId));
     final store = session.conversations.store;
+    if (_scheduledOpen &&
+        store.scheduledVersion(widget.chatId) != _scheduledSeen) {
+      _scheduledSeen = store.scheduledVersion(widget.chatId);
+      scheduleMicrotask(() {
+        if (mounted) unawaited(_loadScheduled());
+      });
+    }
 
     final view = DropTarget(
       onDragEntered: (_) => setState(() => _dragging = true),
@@ -1687,6 +1809,19 @@ class _ChatViewState extends ConsumerState<ChatView> {
               AsyncData(value: final list)
                   when list.isEmpty && store.reachedStart(widget.chatId) =>
                 Center(child: DatePill(l10n.noMessages)),
+              AsyncData() when _scheduledOpen => TimelineView(
+                key: const ValueKey('scheduledList'),
+                messages: _scheduled,
+                store: store,
+                chatId: widget.chatId,
+                isGroup: chat?.isGroup ?? false,
+                controller: _scheduledScroll,
+                topInset: _topInset,
+                onShown: (_) {},
+                onNearTop: () {},
+                onNearBottom: () {},
+                actions: _scheduledActions,
+              ),
               AsyncData() when _pinnedListOpen => TimelineView(
                 key: const ValueKey('pinnedList'),
                 messages: _pinnedMessages(store),
@@ -1726,7 +1861,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
               _ => const SizedBox.shrink(),
             },
           ),
-          if (!_pinnedListOpen)
+          if (!_listOpen)
             if (_pinnedBar(l10n, store) case final bar?)
               Positioned(
                 top: 10 + ChatHeaderBar.height + 8,
@@ -1749,6 +1884,16 @@ class _ChatViewState extends ConsumerState<ChatView> {
                         onResult: (id) => unawaited(_jumpTo(id)),
                         onClose: _closeSearch,
                       ),
+                    )
+                  : _scheduledOpen
+                  ? ChatTitleCapsule(
+                      title: l10n.scheduledCount(_scheduled.length),
+                      avatar: MgIconButton(
+                        icon: MgIcons.back,
+                        tooltip: l10n.backToChat,
+                        onPressed: _closeScheduled,
+                      ),
+                      onTap: _closeScheduled,
                     )
                   : _pinnedListOpen
                   ? ChatTitleCapsule(
@@ -1786,7 +1931,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (!_panelOpen && !_pinnedListOpen) _jumpButtons(l10n, store),
+                if (!_panelOpen && !_listOpen) _jumpButtons(l10n, store),
                 if (store.slowModeUntil(widget.chatId) case final until?)
                   SlowModeNotice(
                     key: ValueKey(until),
@@ -1831,7 +1976,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
                       ),
                     ),
                   ),
-                if (_pinnedListOpen)
+                if (_scheduledOpen)
+                  _scheduledBar(l10n)
+                else if (_pinnedListOpen)
                   _unpinAllBar(l10n, store)
                 else if (_selected != null)
                   _selectionBar(l10n)
@@ -1862,6 +2009,15 @@ class _ChatViewState extends ConsumerState<ChatView> {
                             onEditLast: () => unawaited(_editLast()),
                             onAttach: () => unawaited(_chooseFiles()),
                             onEmoji: _togglePanel,
+                            extraButton:
+                                store.hasScheduledMessages(widget.chatId)
+                                ? MgIconButton(
+                                    icon: MgIcons.recent,
+                                    tooltip: l10n.scheduledList,
+                                    iconSize: 18,
+                                    onPressed: _openScheduled,
+                                  )
+                                : null,
                             onPaste: _paste,
                             allowEmpty:
                                 _editing != null && _isCaption(_editing!),

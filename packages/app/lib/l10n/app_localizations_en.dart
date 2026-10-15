@@ -536,6 +536,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get scheduleAction => 'Schedule';
 
   @override
+  String get scheduledList => 'Scheduled messages';
+
+  @override
+  String scheduledCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count scheduled messages',
+      one: '$count scheduled message',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get menuSendNow => 'Send now';
+
+  @override
+  String get menuReschedule => 'Reschedule…';
+
+  @override
   String scheduledFor(String date) {
     return 'Scheduled for $date';
   }
@@ -1524,7 +1544,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get stickersFailed => 'Couldn\'t load stickers';
 
   @override
-  String get noStickerSets => 'No stickers yet';
+  String get noStickerSets => 'No sets yet';
 
   @override
   String get forwardedMessages => 'Forwarded messages';
@@ -2804,6 +2824,102 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get selfDestructFailed =>
       'Couldn\'t change the self-destruct timer. The secret chat isn\'t ready yet, or the connection was lost.';
+
+  @override
+  String get stickersAndEmoji => 'Stickers and emoji';
+
+  @override
+  String get largeEmoji => 'Large emoji';
+
+  @override
+  String get largeEmojiHint => 'A message of up to three emoji is shown large.';
+
+  @override
+  String get loopStickers => 'Loop animated stickers';
+
+  @override
+  String get animatedEmoji => 'Animated emoji';
+
+  @override
+  String get myStickers => 'My stickers';
+
+  @override
+  String get myEmoji => 'My emoji';
+
+  @override
+  String get customEmoji => 'Custom emoji';
+
+  @override
+  String get trendingStickers => 'Trending stickers';
+
+  @override
+  String get trendingEmoji => 'Trending emoji';
+
+  @override
+  String get archivedStickers => 'Archived stickers';
+
+  @override
+  String get archivedEmoji => 'Archived emoji';
+
+  @override
+  String get stickerSetsHint =>
+      'Drag to reorder. Right-click a set to archive or remove it.';
+
+  @override
+  String get archiveSet => 'Archive';
+
+  @override
+  String get restoreSet => 'Restore';
+
+  @override
+  String get addSet => 'Add';
+
+  @override
+  String get addByLink => 'Add by link';
+
+  @override
+  String get openSetLink => 'Open';
+
+  @override
+  String get stickerSetNotFound => 'There is no set at this link.';
+
+  @override
+  String get noArchivedSets => 'Nothing archived';
+
+  @override
+  String get stickerSetLoadFailed => 'Couldn\'t load the sets.';
+
+  @override
+  String stickerCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count stickers',
+      one: '$count sticker',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String emojiCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count emoji',
+      one: '$count emoji',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get removeStickerSetTitle => 'Remove this sticker set?';
+
+  @override
+  String get removeEmojiSetTitle => 'Remove this emoji set?';
+
+  @override
+  String get stickerSetLookupFailed =>
+      'Couldn\'t open the set. Check your connection and try again.';
 
   @override
   String get keyboardShortcuts => 'Keyboard shortcuts';

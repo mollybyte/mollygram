@@ -16,6 +16,7 @@ import 'privacy_extras_page.dart';
 import 'proxy_page.dart';
 import 'settings_style.dart';
 import 'shortcuts/shortcuts_page.dart';
+import 'stickers/stickers_page.dart';
 import 'storage_page.dart';
 
 /// One entry of the settings source list and the page it opens.
@@ -132,6 +133,7 @@ final settingsSections = <SettingsSection>[
   ),
   foldersSection,
   languageSection,
+  stickersSection,
   shortcutsSection,
   SettingsSection(
     id: 'plugins',

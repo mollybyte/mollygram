@@ -181,6 +181,13 @@
   "scheduleHint": "Pick the day and the time it goes out.",
   "scheduleTimeHint": "HH:MM",
   "scheduleAction": "Schedule",
+  "scheduledList": "Scheduled messages",
+  "scheduledCount": "{count, plural, one{{count} scheduled message} other{{count} scheduled messages}}",
+  "@scheduledCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "menuSendNow": "Send now",
+  "menuReschedule": "Reschedule…",
   "scheduledFor": "Scheduled for {date}",
   "@scheduledFor": {
     "placeholders": { "date": { "type": "String" } }
@@ -1089,6 +1096,39 @@
   "allowSecretScreenshotsHint": "Risky: the other person expects secret chats to stay off screenshots and screen recordings",
   "secretScreenshotsOff": "Secret chats are kept out of screenshots by default; on macOS 15 and later this is best effort",
   "selfDestructFailed": "Couldn't change the self-destruct timer. The secret chat isn't ready yet, or the connection was lost.",
+  "stickersAndEmoji": "Stickers and emoji",
+  "largeEmoji": "Large emoji",
+  "largeEmojiHint": "A message of up to three emoji is shown large.",
+  "loopStickers": "Loop animated stickers",
+  "animatedEmoji": "Animated emoji",
+  "myStickers": "My stickers",
+  "myEmoji": "My emoji",
+  "customEmoji": "Custom emoji",
+  "trendingStickers": "Trending stickers",
+  "trendingEmoji": "Trending emoji",
+  "archivedStickers": "Archived stickers",
+  "archivedEmoji": "Archived emoji",
+  "stickerSetsHint": "Drag to reorder. Right-click a set to archive or remove it.",
+  "archiveSet": "Archive",
+  "restoreSet": "Restore",
+  "addSet": "Add",
+  "addByLink": "Add by link",
+  "openSetLink": "Open",
+  "stickerSetNotFound": "There is no set at this link.",
+  "noStickerSets": "No sets yet",
+  "noArchivedSets": "Nothing archived",
+  "stickerSetLoadFailed": "Couldn't load the sets.",
+  "stickerCount": "{count, plural, one{{count} sticker} other{{count} stickers}}",
+  "@stickerCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "emojiCount": "{count, plural, one{{count} emoji} other{{count} emoji}}",
+  "@emojiCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "removeStickerSetTitle": "Remove this sticker set?",
+  "removeEmojiSetTitle": "Remove this emoji set?",
+  "stickerSetLookupFailed": "Couldn't open the set. Check your connection and try again.",
   "keyboardShortcuts": "Keyboard shortcuts",
   "shortcutsSearch": "Search shortcuts",
   "shortcutsHint": "Click a shortcut, then press the new keys. Esc cancels, Delete removes the shortcut.",

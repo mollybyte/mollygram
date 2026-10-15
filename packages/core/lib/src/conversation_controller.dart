@@ -595,6 +595,57 @@ final class ConversationController {
     _add(message);
   }
 
+  /// The messages of [chatId] waiting to be sent later, soonest first.
+  Future<List<ConversationMessage>> scheduledMessages(int chatId) async {
+    final found = await _client.send(
+      td.GetChatScheduledMessages(chatId: chatId),
+    );
+    return [
+      for (final message in found.messages.reversed)
+        ConversationMessage(message),
+    ];
+  }
+
+  /// Sends scheduled message [messageId] of [chatId] right away.
+  Future<void> sendScheduledNow(int chatId, int messageId) =>
+      _reschedule(chatId, messageId, null);
+
+  /// Moves scheduled message [messageId] of [chatId] to [when].
+  Future<void> reschedule(int chatId, int messageId, DateTime when) =>
+      _reschedule(
+        chatId,
+        messageId,
+        td.MessageSchedulingStateSendAtDate(
+          sendDate: when.millisecondsSinceEpoch ~/ 1000,
+          repeatPeriod: 0,
+        ),
+      );
+
+  Future<void> _reschedule(
+    int chatId,
+    int messageId,
+    td.MessageSchedulingState? state,
+  ) async {
+    await _client.send(
+      td.EditMessageSchedulingState(
+        chatId: chatId,
+        messageId: messageId,
+        schedulingState: state,
+      ),
+    );
+    store.bumpScheduled(chatId);
+    _notify();
+  }
+
+  /// Deletes scheduled messages of [chatId] before they go out.
+  Future<void> deleteScheduled(int chatId, List<int> messageIds) async {
+    await _client.send(
+      td.DeleteMessages(chatId: chatId, messageIds: messageIds, revoke: true),
+    );
+    store.bumpScheduled(chatId);
+    _notify();
+  }
+
   /// The send options for a silent or scheduled message; null for the
   /// defaults, so a plain message carries none.
   static td.MessageSendOptions? sendOptions({
@@ -1022,6 +1073,7 @@ final class ConversationController {
           ..setUnreadCount(chat.id, chat.unreadCount)
           ..setUnreadMentionCount(chat.id, chat.unreadMentionCount)
           ..setUnreadReactionCount(chat.id, chat.unreadReactionCount)
+          ..setHasScheduled(chat.id, chat.hasScheduledMessages)
           ..setChannel(chat.id, switch (chat.type) {
             td.ChatTypeSupergroup(:final isChannel) => isChannel,
             _ => false,
@@ -1187,17 +1239,29 @@ final class ConversationController {
         :final fromCache,
       ):
         if (fromCache) return;
-        store.remove(chatId, messageIds);
+        store
+          ..remove(chatId, messageIds)
+          // Scheduled messages go the same way; a view of them reloads.
+          ..bumpScheduled(chatId);
         _notify();
+      case td.UpdateChatHasScheduledMessages(
+        :final chatId,
+        :final hasScheduledMessages,
+      ):
+        if (store.setHasScheduled(chatId, hasScheduledMessages)) _notify();
       default:
         return;
     }
   }
 
   void _add(td.Message message) {
-    // A scheduled message waits in the chat's scheduled list, not here.
-    if (message.schedulingState != null) return;
     final chatId = message.chatId;
+    // A scheduled message waits in the chat's scheduled list, not here.
+    if (message.schedulingState != null) {
+      store.bumpScheduled(chatId);
+      _notify();
+      return;
+    }
     _arrivedDuringLoad[chatId]?.add(message.id);
     // A window around an older message has a gap after it; what arrives
     // beyond the gap waits for the newer pages.

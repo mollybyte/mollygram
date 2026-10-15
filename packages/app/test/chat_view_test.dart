@@ -796,6 +796,45 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
   });
 
+  testWidgets('lists the scheduled messages and acts on one', (tester) async {
+    json.chat = [for (var id = 1; id <= 10; id++) id];
+    json.push(_chat(lastRead: 10, unread: 0, last: 10, scheduled: true));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await pump(tester);
+
+    await tester.tap(find.byTooltip('Scheduled messages'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    expect(find.text('1 scheduled message'), findsOneWidget);
+    expect(find.text('Later one'), findsOneWidget);
+    expect(find.text('Message 10'), findsNothing);
+
+    await rightClick(tester, 'Later one');
+    await tester.tap(find.text('Send now'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    var sent = json.sent.lastWhere(
+      (r) => r['@type'] == 'editMessageSchedulingState',
+    );
+    expect(sent['message_id'], 30);
+    expect(sent.containsKey('scheduling_state'), isFalse);
+
+    await rightClick(tester, 'Later one');
+    await tester.tap(find.text('Delete'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    sent = json.sent.lastWhere((r) => r['@type'] == 'deleteMessages');
+    expect(sent['message_ids'], [30]);
+    expect(sent['revoke'], isTrue);
+
+    // Back to the chat on Esc.
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.text('1 scheduled message'), findsNothing);
+    expect(find.byType(Composer), findsOneWidget);
+    expect(find.text('Message 10'), findsOneWidget);
+  });
+
   testWidgets('reports a message with a reason and details', (tester) async {
     await pump(tester);
 
@@ -1317,11 +1356,13 @@ Map<String, Object?> _chat({
   Map<String, Object?> type = const {'@type': 'chatTypePrivate', 'user_id': 2},
   bool canSendText = true,
   String? draft,
+  bool scheduled = false,
 }) => {
   '@type': 'updateNewChat',
   'chat': {
     '@type': 'chat',
     'id': 7,
+    'has_scheduled_messages': scheduled,
     'type': type,
     'title': 'Boris',
     'last_message': _message(
@@ -1632,6 +1673,26 @@ final class _FakeTdJson implements td.TdJson {
         '@type': 'error',
         'code': 404,
         'message': 'Not Found',
+      },
+      'getChatScheduledMessages' => {
+        '@type': 'messages',
+        'total_count': 1,
+        'messages': [
+          {
+            ..._message(
+              id: 30,
+              senderId: 1,
+              text: 'Later one',
+              outgoing: true,
+            ).toJson(),
+            'date': 1900000000,
+            'scheduling_state': {
+              '@type': 'messageSchedulingStateSendAtDate',
+              'send_date': 1900000000,
+              'repeat_period': 0,
+            },
+          },
+        ],
       },
       _ => {'@type': 'ok'},
     };
