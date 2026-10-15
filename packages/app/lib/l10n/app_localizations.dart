@@ -3985,6 +3985,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Log out of {name}?'**
   String logOutAccountTitle(String name);
+
+  /// No description provided for @backToAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to {name}'**
+  String backToAccount(String name);
+
+  /// No description provided for @loggingOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Logging out…'**
+  String get loggingOut;
+
+  /// No description provided for @accountsFull.
+  ///
+  /// In en, this message translates to:
+  /// **'That\'s the limit of {count} accounts. Log out of one to add another.'**
+  String accountsFull(int count);
+
+  /// No description provided for @accountsLegacy.
+  ///
+  /// In en, this message translates to:
+  /// **'The data folder from an earlier version couldn\'t be moved, so only this account can be used. Restart Mollygram to try again.'**
+  String get accountsLegacy;
+
+  /// No description provided for @duplicateAccountTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is already signed in here'**
+  String duplicateAccountTitle(String name);
+
+  /// No description provided for @duplicateAccountMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to it and log out of this copy?'**
+  String get duplicateAccountMessage;
+
+  /// No description provided for @switchAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch'**
+  String get switchAccount;
 }
 
 class _AppLocalizationsDelegate

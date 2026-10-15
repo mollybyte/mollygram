@@ -74,7 +74,16 @@ final class AccountStorage {
     var index = await readIndex();
     if (index == null) {
       if (!await _moveLegacy()) return _create(0, _legacy);
-      index = await _indexFromDisk();
+      final broken = File(_indexPath);
+      // A broken index is kept aside; the rebuilt one can't tell who was
+      // signed in, so its entries are marked as recovered.
+      final recovered = await broken.exists();
+      if (recovered) {
+        await broken
+            .copy('$_indexPath.broken')
+            .catchError((Object _) => broken);
+      }
+      index = await _indexFromDisk(recovered: recovered);
       // When the index can't be written it is rebuilt from the folders on
       // the next launch, so this is not fatal.
       await writeIndex(index).catchError((Object _) {});
@@ -100,7 +109,7 @@ final class AccountStorage {
     }
   }
 
-  Future<AccountIndex> _indexFromDisk() async {
+  Future<AccountIndex> _indexFromDisk({bool recovered = false}) async {
     final slots = <int>[];
     final accounts = Directory(_accounts);
     if (await accounts.exists()) {
@@ -114,7 +123,10 @@ final class AccountStorage {
     slots.sort();
     return AccountIndex(
       active: slots.first,
-      accounts: [for (final slot in slots) AccountEntry(slot: slot)],
+      accounts: [
+        for (final slot in slots)
+          AccountEntry(slot: slot, recovered: recovered),
+      ],
     );
   }
 
@@ -131,12 +143,45 @@ final class AccountStorage {
     return folders;
   }
 
-  /// The index, after [prepareActive] has made sure there is one.
+  /// The index, after [prepareActive] has made sure there is one. While
+  /// the old single-account folder is still in use (it could not be
+  /// moved), the index is [AccountIndex.legacy]: one account, which can't
+  /// be removed and next to which none can be added.
   Future<AccountIndex> index() async {
     final index = await readIndex();
     if (index != null) return index;
-    await prepareActive();
+    final folders = await prepareActive();
+    if (folders.databaseDirectory.startsWith(_legacy + _sep)) {
+      return AccountIndex(
+        active: 0,
+        accounts: const [AccountEntry(slot: 0, recovered: true)],
+        legacy: true,
+      );
+    }
     return await readIndex() ?? await _indexFromDisk();
+  }
+
+  /// Deletes what removed accounts left behind when the app stopped
+  /// between writing the index and deleting their folder: folders and
+  /// keychain entries of slots below [AccountIndex.nextSlot] that the
+  /// index no longer lists.
+  Future<void> cleanUp(SecretStore secrets) async {
+    final index = await readIndex();
+    if (index == null) return;
+    final listed = {for (final account in index.accounts) account.slot};
+    for (var slot = 0; slot < index.nextSlot; slot++) {
+      if (listed.contains(slot)) continue;
+      final folder = Directory(_slotPath(slot));
+      final hadFolder = await folder.exists();
+      if (hadFolder) await folder.delete(recursive: true);
+      // Keys go with the folder, or alone for the last few slots, which
+      // may have lost only their keys' removal.
+      if (hadFolder || slot >= index.nextSlot - maxAccounts) {
+        for (final name in secretNamesFor(slot)) {
+          await secrets.delete(name);
+        }
+      }
+    }
   }
 
   /// Adds a slot for another account and makes it the active one. Slot
@@ -144,6 +189,7 @@ final class AccountStorage {
   /// by a new one.
   Future<AccountIndex> addAccount() async {
     final index = await this.index();
+    if (index.legacy) throw StateError('The old account folder is in use');
     if (index.accounts.length >= maxAccounts) {
       throw StateError('At most $maxAccounts accounts');
     }
@@ -196,6 +242,7 @@ final class AccountStorage {
   /// place. The TDLib client of the slot must be closed first.
   Future<AccountIndex> remove(int slot, SecretStore secrets) async {
     final index = await this.index();
+    if (index.legacy) throw StateError('The old account folder is in use');
     final rest = [
       for (final account in index.accounts)
         if (account.slot != slot) account,
@@ -249,10 +296,14 @@ final class AccountStorage {
 
 /// The accounts index file.
 final class AccountIndex {
-  AccountIndex({required this.active, required this.accounts, int? nextSlot})
-    : nextSlot =
-          nextSlot ??
-          accounts.fold<int>(0, (n, a) => a.slot >= n ? a.slot + 1 : n) {
+  AccountIndex({
+    required this.active,
+    required this.accounts,
+    int? nextSlot,
+    this.legacy = false,
+  }) : nextSlot =
+           nextSlot ??
+           accounts.fold<int>(0, (n, a) => a.slot >= n ? a.slot + 1 : n) {
     if (!accounts.any((account) => account.slot == active)) {
       throw ArgumentError.value(active, 'active', 'is not in the index');
     }
@@ -268,6 +319,10 @@ final class AccountIndex {
 
   /// The slot the next added account gets.
   final int nextSlot;
+
+  /// The old single-account folder is still in use: accounts can't be
+  /// added or removed. Never written to disk.
+  final bool legacy;
 
   AccountEntry get activeAccount =>
       accounts.firstWhere((account) => account.slot == active);
@@ -306,9 +361,18 @@ final class AccountEntry {
     this.userId,
     this.name = '',
     this.phoneNumber = '',
+    this.recovered = false,
   });
 
   final int slot;
+
+  /// Rebuilt from its folder after the index was lost: whether it is
+  /// signed in is unknown until it is opened.
+  final bool recovered;
+
+  /// Whether the account may be signed in on Telegram's side, so leaving
+  /// it needs a real log out.
+  bool get maybeSignedIn => isSignedIn || recovered;
 
   /// The Telegram user id, known once the account has signed in.
   final int? userId;
@@ -331,6 +395,7 @@ final class AccountEntry {
         userId: userId is int ? userId : null,
         name: name is String ? name : '',
         phoneNumber: phone is String ? phone : '',
+        recovered: json['recovered'] == true,
       );
     }
     throw const FormatException('Not an account entry');
@@ -341,6 +406,7 @@ final class AccountEntry {
     if (userId != null) 'user_id': userId,
     if (name.isNotEmpty) 'name': name,
     if (phoneNumber.isNotEmpty) 'phone_number': phoneNumber,
+    if (recovered) 'recovered': true,
   };
 
   @override
@@ -349,10 +415,11 @@ final class AccountEntry {
       other.slot == slot &&
       other.userId == userId &&
       other.name == name &&
-      other.phoneNumber == phoneNumber;
+      other.phoneNumber == phoneNumber &&
+      other.recovered == recovered;
 
   @override
-  int get hashCode => Object.hash(slot, userId, name, phoneNumber);
+  int get hashCode => Object.hash(slot, userId, name, phoneNumber, recovered);
 }
 
 /// The few keychain operations the database key needs.

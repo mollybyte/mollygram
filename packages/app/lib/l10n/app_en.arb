@@ -925,5 +925,21 @@
   "logOutAccountTitle": "Log out of {name}?",
   "@logOutAccountTitle": {
     "placeholders": { "name": { "type": "String" } }
-  }
+  },
+  "backToAccount": "Back to {name}",
+  "@backToAccount": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "loggingOut": "Logging out…",
+  "accountsFull": "That's the limit of {count} accounts. Log out of one to add another.",
+  "@accountsFull": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "accountsLegacy": "The data folder from an earlier version couldn't be moved, so only this account can be used. Restart Mollygram to try again.",
+  "duplicateAccountTitle": "{name} is already signed in here",
+  "@duplicateAccountTitle": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "duplicateAccountMessage": "Switch to it and log out of this copy?",
+  "switchAccount": "Switch"
 }

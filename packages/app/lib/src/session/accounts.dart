@@ -8,6 +8,8 @@ import 'package:path_provider/path_provider.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../home/workspace_storage.dart';
+import '../profile/peer_info_state.dart';
+import '../shared_media/message_jump.dart';
 import 'providers.dart';
 
 /// The accounts folders under the application support folder.
@@ -44,16 +46,54 @@ class ActiveSlot extends Notifier<int?> {
   void set(int slot) => state = slot;
 }
 
+/// What the accounts are busy with, for the UI to wait: rows are disabled
+/// while anything runs, and logging out covers the window.
+enum AccountsActivity { switching, loggingOut }
+
+final accountsActivityProvider =
+    NotifierProvider<AccountsActivityNotifier, AccountsActivity?>(
+      AccountsActivityNotifier.new,
+    );
+
+class AccountsActivityNotifier extends Notifier<AccountsActivity?> {
+  @override
+  AccountsActivity? build() => null;
+
+  void set(AccountsActivity? activity) => state = activity;
+}
+
+/// An account signed in to a second slot: [added] is the new slot,
+/// [existing] the one that already had it.
+typedef DuplicateAccount = ({int added, int existing});
+
+final duplicateAccountProvider =
+    NotifierProvider<DuplicateAccountNotifier, DuplicateAccount?>(
+      DuplicateAccountNotifier.new,
+    );
+
+class DuplicateAccountNotifier extends Notifier<DuplicateAccount?> {
+  @override
+  DuplicateAccount? build() => null;
+
+  void set(DuplicateAccount? duplicate) => state = duplicate;
+}
+
 /// Switching, adding and logging out of accounts.
 ///
 /// One account runs at a time: switching closes the open account's TDLib
 /// client and starts the chosen one, which takes a moment but keeps one
-/// database open and one set of updates to follow.
+/// database open and one set of updates to follow. The other accounts get
+/// no updates or notifications until opened.
+///
+/// One change runs at a time, until the next account's session has
+/// started; asking for another meanwhile (a double click, the palette) is
+/// ignored.
 class AccountsNotifier extends AsyncNotifier<AccountIndex> {
   StreamSubscription<AuthorizationStage>? _stages;
 
-  /// The account that was open before [add], to go back to on cancel.
+  /// The account that was open before [add], to go back to.
   int? _beforeAdd;
+  Future<void>? _running;
 
   @override
   Future<AccountIndex> build() async {
@@ -65,93 +105,169 @@ class AccountsNotifier extends AsyncNotifier<AccountIndex> {
       fireImmediately: true,
     );
     final storage = await ref.watch(accountStorageProvider.future);
-    return storage.index();
+    final index = await storage.index();
+    if (!index.legacy) {
+      // What a removal interrupted by a crash left behind.
+      await storage
+          .cleanUp(ref.read(accountSecretsProvider))
+          .catchError((Object _) {});
+    }
+    return index;
   }
 
   Future<AccountStorage> get _storage =>
       ref.read(accountStorageProvider.future);
 
+  SecretStore get _secrets => ref.read(accountSecretsProvider);
+
+  /// Whether a switch, an add or a log out is running.
+  bool get isBusy => _running != null;
+
   /// Whether another account can be added.
-  bool get canAdd =>
-      (state.value?.accounts.length ?? 0) < AccountStorage.maxAccounts;
+  bool get canAdd => canAddIn(state.value);
 
-  /// Whether sign-in is for an added account that can be dropped to go
-  /// back to the one open before.
-  bool get canCancelAdd => canCancelAddIn(state.value);
+  static bool canAddIn(AccountIndex? index) =>
+      index != null &&
+      !index.legacy &&
+      index.accounts.length < AccountStorage.maxAccounts;
 
-  /// [canCancelAdd] for [index], for widgets that watch the index.
-  static bool canCancelAddIn(AccountIndex? index) {
-    if (index == null || index.activeAccount.isSignedIn) return false;
-    return index.accounts.any((a) => a.slot != index.active && a.isSignedIn);
+  /// The account [back] goes to from sign-in or a failed start: the one
+  /// open before an add, else the first other signed-in one.
+  int? get backTarget => backTargetIn(state.value, _beforeAdd);
+
+  static int? backTargetIn(AccountIndex? index, [int? preferred]) {
+    if (index == null || index.legacy) return null;
+    final others = [
+      for (final a in index.accounts)
+        if (a.slot != index.active && a.isSignedIn) a.slot,
+    ];
+    if (others.contains(preferred)) return preferred;
+    return others.firstOrNull;
+  }
+
+  Future<void> _exclusive(
+    AccountsActivity activity,
+    Future<void> Function() action,
+  ) async {
+    if (_running != null) return;
+    final busy = ref.read(accountsActivityProvider.notifier)..set(activity);
+    final run = action();
+    _running = run;
+    try {
+      await run;
+    } finally {
+      _running = null;
+      busy.set(null);
+    }
   }
 
   /// Opens the account in [slot].
-  Future<void> switchTo(int slot) async {
+  Future<void> switchTo(int slot) =>
+      _exclusive(AccountsActivity.switching, () => _switchTo(slot));
+
+  Future<void> _switchTo(int slot) async {
     final index = await future;
-    if (slot == index.active) return;
-    await _closeSession();
-    _open(await (await _storage).activate(slot));
+    if (slot == index.active || !index.accounts.any((a) => a.slot == slot)) {
+      return;
+    }
     _beforeAdd = null;
-    ref.invalidate(telegramSessionProvider);
+    await _reopen(() async => (await _storage).activate(slot));
   }
 
   /// Adds an account and opens sign-in for it.
-  Future<void> add() async {
+  Future<void> add() => _exclusive(AccountsActivity.switching, () async {
     final index = await future;
-    if (index.accounts.length >= AccountStorage.maxAccounts) return;
-    await _closeSession();
+    if (!canAddIn(index)) return;
     _beforeAdd = index.active;
-    _open(await (await _storage).addAccount());
-    ref.invalidate(telegramSessionProvider);
-  }
+    await _reopen(() async => (await _storage).addAccount());
+  });
 
-  /// Drops the account being added and opens the one before.
-  Future<void> cancelAdd() async {
-    if (!canCancelAdd) return;
-    final index = state.requireValue;
-    final back =
-        _beforeAdd ??
-        index.accounts
-            .firstWhere((a) => a.isSignedIn && a.slot != index.active)
-            .slot;
-    await _closeSession();
-    final storage = await _storage;
-    await storage.remove(index.active, ref.read(accountSecretsProvider));
-    _open(await storage.activate(back));
+  /// Leaves sign-in, or a session that failed to start, for [backTarget].
+  /// An added account that never signed in is dropped.
+  Future<void> back() => _exclusive(AccountsActivity.switching, () async {
+    final index = await future;
+    final target = backTargetIn(index, _beforeAdd);
+    if (target == null) return;
+    final drop = !index.activeAccount.maybeSignedIn;
     _beforeAdd = null;
-    ref.invalidate(telegramSessionProvider);
-  }
+    await _reopen(() async {
+      final storage = await _storage;
+      if (drop) await storage.remove(index.active, _secrets);
+      return storage.activate(target);
+    });
+  });
 
   /// Logs out of the account in [slot] and forgets everything it kept on
   /// this computer: TDLib's data, the message store, the window layout and
   /// the keychain keys. TDLib can only log out of the account it runs, so
-  /// another account is opened for it first and comes back after.
-  Future<void> logOut(int slot) async {
+  /// the account is opened for it first, and the one that was open comes
+  /// back after, also when logging out fails.
+  Future<void> logOut(int slot) =>
+      _exclusive(AccountsActivity.loggingOut, () => _logOut(slot));
+
+  Future<void> _logOut(int slot) async {
     final index = await future;
     final entry = index.accounts.where((a) => a.slot == slot).firstOrNull;
     if (entry == null) return;
     final storage = await _storage;
-    final secrets = ref.read(accountSecretsProvider);
-    if (!entry.isSignedIn && index.active != slot) {
+    if (!entry.maybeSignedIn && index.active != slot) {
       // Never signed in: nothing to log out of on Telegram's side.
-      _open(await storage.remove(slot, secrets));
+      _open(await storage.remove(slot, _secrets));
       return;
     }
     final back = index.active == slot ? null : index.active;
-    if (back != null) await switchTo(slot);
-    final session = await ref.read(telegramSessionProvider.future);
-    await session.authorization.logOut();
+    if (back != null) await _switchTo(slot);
+    final TelegramSession session;
+    try {
+      session = await ref.read(telegramSessionProvider.future);
+      await session.authorization.logOut();
+    } catch (_) {
+      if (back != null) await _switchTo(back);
+      rethrow;
+    }
     // The closed client still holds the database; it goes before the
     // folder does.
     await session.dispose();
     await ref.read(workspaceSaverProvider).clear();
-    var next = await storage.remove(slot, secrets);
-    if (back != null && next.accounts.any((a) => a.slot == back)) {
-      next = await storage.activate(back);
+    try {
+      if (index.legacy) return;
+      var next = await storage.remove(slot, _secrets);
+      if (back != null && next.accounts.any((a) => a.slot == back)) {
+        next = await storage.activate(back);
+      }
+      _open(next);
+    } catch (_) {
+      _open(await storage.index());
+      rethrow;
+    } finally {
+      _beforeAdd = null;
+      _restart();
+      await _started();
     }
-    _open(next);
-    _beforeAdd = null;
-    ref.invalidate(telegramSessionProvider);
+  }
+
+  /// Logs out of the added copy of an account that was already here and
+  /// opens the existing one.
+  Future<void> resolveDuplicate() =>
+      _exclusive(AccountsActivity.loggingOut, () async {
+        final duplicate = ref.read(duplicateAccountProvider);
+        if (duplicate == null) return;
+        ref.read(duplicateAccountProvider.notifier).set(null);
+        await _logOut(duplicate.added);
+        await _switchTo(duplicate.existing);
+      });
+
+  /// Closes the open session, applies [change] to the index and starts
+  /// the session of the slot it makes active. When [change] fails, the
+  /// open account starts again.
+  Future<void> _reopen(Future<AccountIndex> Function() change) async {
+    await _closeSession();
+    try {
+      _open(await change());
+    } finally {
+      _restart();
+      await _started();
+    }
   }
 
   /// Takes [index] as the state, and its active slot for what is kept
@@ -161,19 +277,52 @@ class AccountsNotifier extends AsyncNotifier<AccountIndex> {
     ref.read(activeSlotProvider.notifier).set(index.active);
   }
 
-  /// Saves the open account's window layout and closes its session.
+  /// Starts the active account's session, without the open account's
+  /// folder, info panels or message jumps.
+  void _restart() {
+    ref
+      ..invalidate(selectedChatListProvider)
+      ..invalidate(peerInfoPanelsProvider)
+      ..invalidate(messageJumpProvider)
+      ..invalidate(telegramSessionProvider);
+  }
+
+  /// Waits for the session to start, or to fail to.
+  Future<void> _started() async {
+    try {
+      await ref.read(telegramSessionProvider.future);
+    } on Object {
+      // Shown by the app; the accounts are free again either way.
+    }
+  }
+
+  /// Saves the open account's window layout and closes its session, once
+  /// it has started.
   Future<void> _closeSession() async {
     await ref.read(workspaceSaverProvider).flush();
-    await ref.read(telegramSessionProvider).value?.dispose();
+    TelegramSession? session;
+    try {
+      session = await ref.read(telegramSessionProvider.future);
+    } on Object {
+      session = null;
+    }
+    await session?.dispose();
   }
 
   void _follow(TelegramSession? session) {
     unawaited(_stages?.cancel());
     _stages = null;
     if (session == null) return;
+    // The slot this session belongs to, before anything can switch.
+    final slot = switch (state.value) {
+      final index? => Future.value(index.active),
+      null => _storage.then((s) => s.index()).then((i) => i.active),
+    };
     void onStage(AuthorizationStage? stage) {
       if (stage?.kind == AuthorizationStageKind.ready) {
-        unawaited(_describe(session).catchError((Object _) {}));
+        unawaited(
+          slot.then((s) => _describe(session, s)).catchError((Object _) {}),
+        );
       }
     }
 
@@ -181,18 +330,28 @@ class AccountsNotifier extends AsyncNotifier<AccountIndex> {
     onStage(session.authorization.currentStage);
   }
 
-  Future<void> _describe(TelegramSession session) async {
+  Future<void> _describe(TelegramSession session, int slot) async {
     final profile = await session.account.profile();
     final storage = await _storage;
     final index = await future;
+    final known = index.accounts.where((a) => a.slot == slot).firstOrNull;
+    if (known == null || index.legacy) return;
     final entry = AccountEntry(
-      slot: index.active,
+      slot: slot,
       userId: profile.userId,
       name: profile.name,
       phoneNumber: profile.phoneNumber,
     );
-    if (entry == index.activeAccount) return;
-    state = AsyncData(await storage.describe(entry));
+    if (entry != known) state = AsyncData(await storage.describe(entry));
+    final existing = index.accounts
+        .where((a) => a.slot != slot && a.userId == profile.userId)
+        .firstOrNull;
+    if (existing != null) {
+      ref.read(duplicateAccountProvider.notifier).set((
+        added: slot,
+        existing: existing.slot,
+      ));
+    }
   }
 }
 
@@ -203,8 +362,10 @@ String accountTitle(AccountEntry account, AppLocalizations l10n, int number) {
   return l10n.accountNumber(number);
 }
 
-/// `app.account.<n>` for each signed-in account, for the palette and for
-/// shortcuts the shell may bind to them.
+/// `app.account.<n>` for each signed-in account but the open one, for the
+/// palette and for shortcuts the shell may bind to them (⌘1..⌘3): `n` is
+/// the account's place in the list, which only changes when an account
+/// before it is removed.
 List<PaletteCommand> accountCommands(
   AccountIndex? index,
   AppLocalizations l10n,
@@ -213,7 +374,7 @@ List<PaletteCommand> accountCommands(
   if (index == null || index.accounts.length < 2) return const [];
   return [
     for (final (i, account) in index.accounts.indexed)
-      if (account.isSignedIn)
+      if (account.isSignedIn && account.slot != index.active)
         PaletteCommand(
           id: 'app.account.${i + 1}',
           title: l10n.switchToAccount(accountTitle(account, l10n, i + 1)),

@@ -2374,4 +2374,33 @@ class AppLocalizationsRu extends AppLocalizations {
   String logOutAccountTitle(String name) {
     return 'Выйти из аккаунта $name?';
   }
+
+  @override
+  String backToAccount(String name) {
+    return 'Вернуться к $name';
+  }
+
+  @override
+  String get loggingOut => 'Выход…';
+
+  @override
+  String accountsFull(int count) {
+    return 'Это предел: $count аккаунта. Выйдите из одного, чтобы добавить другой.';
+  }
+
+  @override
+  String get accountsLegacy =>
+      'Не удалось перенести папку данных прежней версии, поэтому доступен только этот аккаунт. Перезапустите Mollygram, чтобы попробовать снова.';
+
+  @override
+  String duplicateAccountTitle(String name) {
+    return 'В $name уже выполнен вход';
+  }
+
+  @override
+  String get duplicateAccountMessage =>
+      'Переключиться на него и выйти из этой копии?';
+
+  @override
+  String get switchAccount => 'Переключиться';
 }

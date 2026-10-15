@@ -503,86 +503,137 @@ class _AccountFormState extends ConsumerState<_AccountForm> {
 
 /// The accounts on this computer: click one to switch to it, log out of
 /// the others here (the open one has the button below), or add one.
-class AccountsGroup extends ConsumerWidget {
+class AccountsGroup extends ConsumerStatefulWidget {
   const AccountsGroup({super.key});
 
-  Future<void> _logOut(
-    BuildContext context,
-    WidgetRef ref,
-    AccountEntry account,
-    String title,
-  ) async {
+  @override
+  ConsumerState<AccountsGroup> createState() => _AccountsGroupState();
+}
+
+class _AccountsGroupState extends ConsumerState<AccountsGroup> {
+  String? _error;
+
+  Future<void> _logOut(AccountEntry account, String title) async {
     final l10n = AppLocalizations.of(context);
-    final notifier = ref.read(accountsProvider.notifier);
-    if (account.isSignedIn) {
-      final confirmed = await showMgConfirm(
-        context,
-        title: l10n.logOutAccountTitle(title),
-        message: l10n.logOutMessage,
-        confirmLabel: l10n.logOut,
-        cancelLabel: l10n.cancel,
-        destructive: true,
-      );
-      if (confirmed == null) return;
+    // Always asked: an entry rebuilt after the index was lost may still
+    // be signed in.
+    final confirmed = await showMgConfirm(
+      context,
+      title: l10n.logOutAccountTitle(title),
+      message: l10n.logOutMessage,
+      confirmLabel: l10n.logOut,
+      cancelLabel: l10n.cancel,
+      destructive: true,
+    );
+    if (confirmed == null || !mounted) return;
+    setState(() => _error = null);
+    try {
+      await ref.read(accountsProvider.notifier).logOut(account.slot);
+    } catch (_) {
+      if (mounted) setState(() => _error = l10n.logOutFailed);
     }
-    await notifier.logOut(account.slot);
   }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final index = ref.watch(accountsProvider).value;
+    if (index == null) return const SizedBox.shrink();
+    final busy = ref.watch(accountsActivityProvider) != null;
+    final notifier = ref.read(accountsProvider.notifier);
+    final canAdd = AccountsNotifier.canAddIn(index);
+    final footer = _error != null
+        ? SettingsFooter(_error!, error: true)
+        : SettingsFooter(
+            index.legacy
+                ? l10n.accountsLegacy
+                : canAdd
+                ? l10n.accountsAbout(AccountStorage.maxAccounts)
+                : l10n.accountsFull(AccountStorage.maxAccounts),
+          );
+    return SettingsGroup(
+      key: const ValueKey('accounts'),
+      title: l10n.accounts,
+      footer: footer,
+      children: [
+        for (final (i, account) in index.accounts.indexed)
+          _AccountRow(
+            account: account,
+            number: i + 1,
+            isActive: account.slot == index.active,
+            enabled: !busy && !index.legacy,
+            onSwitch: () => unawaited(notifier.switchTo(account.slot)),
+            onLogOut: (title) => unawaited(_logOut(account, title)),
+          ),
+        SettingsRow(
+          key: const ValueKey('addAccount'),
+          leading: MgIcon(
+            MgIcons.plus,
+            size: 16,
+            color: MgColors.of(context).accent,
+          ),
+          title: l10n.addAccount,
+          onTap: canAdd && !busy ? () => unawaited(notifier.add()) : null,
+        ),
+      ],
+    );
+  }
+}
+
+/// One account: avatar (the profile photo for the open one), name and
+/// phone, a check on the open one and Log out on the others.
+class _AccountRow extends ConsumerWidget {
+  const _AccountRow({
+    required this.account,
+    required this.number,
+    required this.isActive,
+    required this.enabled,
+    required this.onSwitch,
+    required this.onLogOut,
+  });
+
+  final AccountEntry account;
+  final int number;
+  final bool isActive;
+  final bool enabled;
+  final VoidCallback onSwitch;
+  final void Function(String title) onLogOut;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final c = MgColors.of(context);
     final l10n = AppLocalizations.of(context);
-    final index = ref.watch(accountsProvider).value;
-    if (index == null) return const SizedBox.shrink();
-    final notifier = ref.read(accountsProvider.notifier);
-    final canAdd = index.accounts.length < AccountStorage.maxAccounts;
-    return SettingsGroup(
-      key: const ValueKey('accounts'),
-      title: l10n.accounts,
-      footer: SettingsFooter(l10n.accountsAbout(AccountStorage.maxAccounts)),
-      children: [
-        for (final (i, account) in index.accounts.indexed)
-          _accountRow(context, ref, c, l10n, account, i + 1, index.active),
-        SettingsRow(
-          key: const ValueKey('addAccount'),
-          title: l10n.addAccount,
-          onTap: canAdd ? () => unawaited(notifier.add()) : null,
-        ),
-      ],
-    );
-  }
-
-  Widget _accountRow(
-    BuildContext context,
-    WidgetRef ref,
-    MgColors c,
-    AppLocalizations l10n,
-    AccountEntry account,
-    int number,
-    int active,
-  ) {
     final title = accountTitle(account, l10n, number);
-    final isActive = account.slot == active;
+    final photo = isActive ? ref.watch(accountProfileProvider).value : null;
+    final String? subtitle;
+    if (account.isSignedIn) {
+      subtitle = formatPhone(account.phoneNumber);
+    } else if (account.recovered) {
+      subtitle = null;
+    } else {
+      subtitle = l10n.notSignedIn;
+    }
     return SettingsRow(
       key: ValueKey('account-${account.slot}'),
-      leading: MonogramAvatar(name: title, size: 28),
+      leading: SenderAvatar(name: title, size: 28, photo: photo?.photo),
       title: title,
-      subtitle: account.isSignedIn
-          ? formatPhone(account.phoneNumber)
-          : l10n.notSignedIn,
-      trailing: isActive
-          ? MgIcon(MgIcons.sent, size: 16, color: c.accent)
-          : SettingsButton(
-              key: ValueKey('logOut-${account.slot}'),
-              label: l10n.logOut,
-              destructive: true,
-              onPressed: () => unawaited(_logOut(context, ref, account, title)),
-            ),
-      onTap: isActive
-          ? null
-          : () => unawaited(
-              ref.read(accountsProvider.notifier).switchTo(account.slot),
-            ),
+      subtitle: subtitle,
+      trailing: AnimatedSwitcher(
+        duration: settingsMotionOf(context),
+        child: isActive
+            ? MgIcon(
+                MgIcons.check,
+                key: const ValueKey('active'),
+                size: 16,
+                color: c.accent,
+              )
+            : SettingsButton(
+                key: ValueKey('logOut-${account.slot}'),
+                label: l10n.logOut,
+                onPressed: enabled ? () => onLogOut(title) : null,
+              ),
+      ),
+      onTap: isActive || !enabled ? null : onSwitch,
     );
   }
 }

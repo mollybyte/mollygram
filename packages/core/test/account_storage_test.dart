@@ -109,6 +109,9 @@ void main() {
       expect(folders.slot, 2);
       final index = await storage.readIndex();
       expect(index!.accounts.map((a) => a.slot), [2, 5]);
+      // Kept aside, and nobody is taken for signed out.
+      expect(File(path('accounts/accounts.json.broken')).existsSync(), isTrue);
+      expect(index.accounts.every((a) => a.recovered && a.maybeSignedIn), true);
     });
 
     test('opens the active slot named by the index', () async {
@@ -213,6 +216,47 @@ void main() {
       expect(index.active, 1);
       expect((await storage.prepareActive()).slot, 1);
       expect(Directory(path('accounts/0')).existsSync(), isFalse);
+    });
+
+    test('the old folder in use allows no adding or removing', () async {
+      File(path('tdlib/database/td.binlog'))
+        ..createSync(recursive: true)
+        ..writeAsStringSync('signed in');
+      Directory(path('accounts/0/database')).createSync(recursive: true);
+
+      final index = await storage.index();
+
+      expect(index.legacy, isTrue);
+      expect(index.activeAccount.maybeSignedIn, isTrue);
+      await expectLater(storage.addAccount(), throwsStateError);
+      await expectLater(storage.remove(0, _MemoryStore({})), throwsStateError);
+      expect(File(path('tdlib/database/td.binlog')).existsSync(), isTrue);
+      expect(await storage.readIndex(), isNull);
+    });
+
+    test('cleans up what a removal left behind', () async {
+      await storage.prepareActive();
+      await storage.addAccount();
+      await storage.addAccount();
+      // The index lost slots 1 and 2, but their folder and keys stayed.
+      await storage.writeIndex(
+        AccountIndex(
+          active: 0,
+          accounts: const [AccountEntry(slot: 0)],
+          nextSlot: 3,
+        ),
+      );
+      Directory(path('accounts/1/database')).createSync(recursive: true);
+      final secrets = _MemoryStore({
+        for (final slot in [0, 1, 2])
+          for (final name in AccountStorage.secretNamesFor(slot)) name: 'key',
+      });
+
+      await storage.cleanUp(secrets);
+
+      expect(Directory(path('accounts/1')).existsSync(), isFalse);
+      expect(Directory(path('accounts/0')).existsSync(), isTrue);
+      expect(secrets.values.keys, AccountStorage.secretNamesFor(0));
     });
 
     test('an index without next_slot reads as one past the last', () {

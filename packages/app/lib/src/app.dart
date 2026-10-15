@@ -9,12 +9,11 @@ import '../l10n/app_localizations.dart';
 import 'auth/sign_in_screen.dart';
 import 'home/home_screen.dart';
 import 'home/workspace_storage.dart';
-import 'session/accounts.dart';
+import 'session/account_overlays.dart';
 import 'session/close_before_exit.dart';
 import 'session/providers.dart';
 import 'settings/appearance.dart';
 import 'settings/preferences.dart';
-import 'settings/settings_style.dart';
 
 class MollygramApp extends ConsumerWidget {
   const MollygramApp({super.key});
@@ -41,7 +40,10 @@ class MollygramApp extends ConsumerWidget {
       ],
       supportedLocales: AppLocalizations.supportedLocales,
       home: const _CloseSessionBeforeExit(
-        child: Material(type: MaterialType.transparency, child: _Root()),
+        child: Material(
+          type: MaterialType.transparency,
+          child: AccountsLayer(child: _Root()),
+        ),
       ),
     );
   }
@@ -79,9 +81,11 @@ class _Root extends ConsumerWidget {
         title: l10n.missingKeysTitle,
         description: l10n.missingKeysHint,
       ),
-      AsyncError(:final error) => SignInScreen.message(
-        title: l10n.startFailedTitle,
-        description: '$error',
+      AsyncError(:final error) => AccountBackButton(
+        child: SignInScreen.message(
+          title: l10n.startFailedTitle,
+          description: '$error',
+        ),
       ),
       AsyncData() => const _Authorized(),
       _ => const SignInScreen.starting(),
@@ -106,24 +110,8 @@ class _Authorized extends ConsumerWidget {
     final stage = ref.watch(authorizationStageProvider).value;
     if (stage == null) return const SignInScreen.starting();
     if (stage.kind == AuthorizationStageKind.ready) return const HomeScreen();
-    final signIn = SignInScreen(stage: stage);
-    // Signing in to an added account: Cancel goes back to the one before.
-    final index = ref.watch(accountsProvider).value;
-    if (!AccountsNotifier.canCancelAddIn(index)) return signIn;
-    return Stack(
-      children: [
-        signIn,
-        Positioned(
-          top: 40,
-          right: 20,
-          child: SettingsButton(
-            key: const ValueKey('cancelAddAccount'),
-            label: AppLocalizations.of(context).cancel,
-            onPressed: () =>
-                unawaited(ref.read(accountsProvider.notifier).cancelAdd()),
-          ),
-        ),
-      ],
-    );
+    // Signing in to an added account, or to one closed elsewhere: back
+    // to another account.
+    return AccountBackButton(child: SignInScreen(stage: stage));
   }
 }

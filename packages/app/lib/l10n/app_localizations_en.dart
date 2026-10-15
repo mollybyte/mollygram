@@ -2351,4 +2351,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String logOutAccountTitle(String name) {
     return 'Log out of $name?';
   }
+
+  @override
+  String backToAccount(String name) {
+    return 'Back to $name';
+  }
+
+  @override
+  String get loggingOut => 'Logging out…';
+
+  @override
+  String accountsFull(int count) {
+    return 'That\'s the limit of $count accounts. Log out of one to add another.';
+  }
+
+  @override
+  String get accountsLegacy =>
+      'The data folder from an earlier version couldn\'t be moved, so only this account can be used. Restart Mollygram to try again.';
+
+  @override
+  String duplicateAccountTitle(String name) {
+    return '$name is already signed in here';
+  }
+
+  @override
+  String get duplicateAccountMessage =>
+      'Switch to it and log out of this copy?';
+
+  @override
+  String get switchAccount => 'Switch';
 }
