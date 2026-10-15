@@ -819,6 +819,14 @@ void main() {
     expect(await controller.quickReactions(7, 1), isEmpty);
   });
 
+  test('translates a message with Telegram', () async {
+    expect(await controller.translate(7, 1, 'en'), 'Hello (en)');
+    final request = json.sent.last;
+    expect(request['@type'], 'translateMessageText');
+    expect(request['chat_id'], 7);
+    expect(request['message_id'], 1);
+  });
+
   test('announces a new avatar or colour of a sender', () async {
     await controller.start();
     var changes = 0;
@@ -1119,6 +1127,11 @@ final class _FakeTdJson implements td.TdJson {
         'next_from_message_id': 18,
       },
       'joinChat' => {'@type': 'chatJoinResultSuccess'},
+      'translateMessageText' => {
+        '@type': 'formattedText',
+        'text': 'Hello (${decoded['to_language_code']})',
+        'entities': <Object?>[],
+      },
       'forwardMessages' => {
         '@type': 'messages',
         'total_count': 0,

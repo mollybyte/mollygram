@@ -822,6 +822,20 @@ final class ConversationController {
     return link.link;
   }
 
+  /// The message's text translated into [to] by Telegram, free of Premium
+  /// when asked for one message at a time.
+  Future<String> translate(int chatId, int messageId, String to) async {
+    final text = await _client.send(
+      td.TranslateMessageText(
+        chatId: chatId,
+        messageId: messageId,
+        toLanguageCode: to,
+        tone: '',
+      ),
+    );
+    return text.text;
+  }
+
   /// Announces a change, unless the controller is already closed: a reply
   /// can land after the session started shutting down.
   void _notify() {
