@@ -893,6 +893,42 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get pollAnonymous => 'Anonymous poll';
+
+  @override
+  String get pollAnonymousQuiz => 'Anonymous quiz';
+
+  @override
+  String get pollFinalResults => 'Final results';
+
+  @override
+  String get pollVote => 'Vote';
+
+  @override
+  String get pollRetractVote => 'Retract vote';
+
+  @override
+  String quizAnswers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count answered',
+      one: '1 answered',
+      zero: 'Nobody answered yet',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get menuStopPoll => 'Stop poll';
+
+  @override
+  String get stopPollTitle => 'Stop this poll?';
+
+  @override
+  String get stopPollMessage => 'Nobody will be able to vote in it any more.';
+
+  @override
   String get contentGame => 'Game';
 
   @override

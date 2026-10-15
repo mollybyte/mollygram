@@ -796,6 +796,65 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
   });
 
+  testWidgets('votes in a poll, follows its results and stops it', (
+    tester,
+  ) async {
+    json.history = [_pollMessage(chosen: null), ..._history];
+    await pump(tester);
+    expect(find.text('Tea or coffee?'), findsOneWidget);
+    expect(find.text('Anonymous poll'), findsOneWidget);
+    expect(find.text('3 votes'), findsOneWidget);
+    expect(find.text('75%'), findsNothing);
+
+    await tester.tap(find.text('Coffee'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    var sent = json.sent.lastWhere((r) => r['@type'] == 'setPollAnswer');
+    expect(sent['message_id'], 16);
+    expect(sent['option_ids'], [1]);
+
+    json.push({'@type': 'updatePoll', 'poll': _poll(chosen: 1).toJson()});
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+    expect(find.text('75%'), findsOneWidget);
+    expect(find.text('25%'), findsOneWidget);
+    expect(find.text('Retract vote'), findsOneWidget);
+
+    await tester.tap(find.text('Retract vote'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    sent = json.sent.lastWhere((r) => r['@type'] == 'setPollAnswer');
+    expect(sent['option_ids'], isEmpty);
+
+    await rightClick(tester, 'Tea or coffee?');
+    await tester.tap(find.text('Stop poll'));
+    await tester.pump();
+    expect(find.text('Stop this poll?'), findsOneWidget);
+    await tester.tap(find.text('Stop poll').last);
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    sent = json.sent.lastWhere((r) => r['@type'] == 'stopPoll');
+    expect(sent['message_id'], 16);
+  });
+
+  testWidgets('collects several answers and votes on the button', (
+    tester,
+  ) async {
+    json.history = [_pollMessage(chosen: null, multiple: true), ..._history];
+    await pump(tester);
+
+    await tester.tap(find.text('Tea'));
+    await tester.pump();
+    expect(json.sent.where((r) => r['@type'] == 'setPollAnswer'), isEmpty);
+    await tester.tap(find.text('Coffee'));
+    await tester.pump();
+    await tester.tap(find.text('Vote'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    final sent = json.sent.lastWhere((r) => r['@type'] == 'setPollAnswer');
+    expect(sent['option_ids'], [0, 1]);
+  });
+
   testWidgets('lists the scheduled messages and acts on one', (tester) async {
     json.chat = [for (var id = 1; id <= 10; id++) id];
     json.push(_chat(lastRead: 10, unread: 0, last: 10, scheduled: true));
@@ -1589,7 +1648,8 @@ final class _FakeTdJson implements td.TdJson {
       'getMessageProperties' => {
         '@type': 'messageProperties',
         'can_be_replied': true,
-        'can_be_edited': decoded['message_id'] == 13,
+        'can_be_edited':
+            decoded['message_id'] == 13 || decoded['message_id'] == 16,
         'can_be_forwarded': true,
         'can_be_pinned': true,
         'can_be_deleted_only_for_self': true,
@@ -1716,6 +1776,48 @@ final class _FakeTdJson implements td.TdJson {
 }
 
 /// A downloaded PDF from Boris, kept at [path].
+td.Message _pollMessage({required int? chosen, bool multiple = false}) =>
+    td.Message.fromJson({
+      ..._message(id: 16, senderId: 1, text: '', outgoing: true).toJson(),
+      'content': td.MessagePoll(
+        poll: _poll(chosen: chosen, multiple: multiple),
+        description: const td.FormattedText(text: '', entities: []),
+        canAddOption: false,
+      ).toJson(),
+    });
+
+td.Poll _poll({required int? chosen, bool multiple = false}) => td.Poll(
+  id: 555,
+  question: const td.FormattedText(text: 'Tea or coffee?', entities: []),
+  options: [
+    for (final (i, text) in ['Tea', 'Coffee'].indexed)
+      td.PollOption(
+        id: '$i',
+        text: td.FormattedText(text: text, entities: const []),
+        voterCount: i == chosen ? 3 : 1,
+        votePercentage: i == chosen ? 75 : 25,
+        recentVoterIds: const [],
+        isChosen: i == chosen,
+        isBeingChosen: false,
+        additionDate: 0,
+      ),
+  ],
+  totalVoterCount: chosen == null ? 3 : 4,
+  recentVoterIds: const [],
+  canGetVoters: false,
+  canSeeResults: chosen != null,
+  isAnonymous: true,
+  allowsMultipleAnswers: multiple,
+  allowsRevoting: true,
+  membersOnly: false,
+  countryCodes: const [],
+  optionOrder: const [0, 1],
+  type: const td.PollTypeRegular(),
+  openPeriod: 0,
+  closeDate: 0,
+  isClosed: false,
+);
+
 Map<String, Object?> _document(int id, String path) => {
   ..._message(id: id, senderId: 2, text: '').toJson(),
   'content': {

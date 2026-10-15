@@ -1574,6 +1574,60 @@ abstract class AppLocalizations {
   /// **'{count, plural, =0{No votes} =1{1 vote} other{{count} votes}}'**
   String pollVotes(int count);
 
+  /// No description provided for @pollAnonymous.
+  ///
+  /// In en, this message translates to:
+  /// **'Anonymous poll'**
+  String get pollAnonymous;
+
+  /// No description provided for @pollAnonymousQuiz.
+  ///
+  /// In en, this message translates to:
+  /// **'Anonymous quiz'**
+  String get pollAnonymousQuiz;
+
+  /// No description provided for @pollFinalResults.
+  ///
+  /// In en, this message translates to:
+  /// **'Final results'**
+  String get pollFinalResults;
+
+  /// No description provided for @pollVote.
+  ///
+  /// In en, this message translates to:
+  /// **'Vote'**
+  String get pollVote;
+
+  /// No description provided for @pollRetractVote.
+  ///
+  /// In en, this message translates to:
+  /// **'Retract vote'**
+  String get pollRetractVote;
+
+  /// No description provided for @quizAnswers.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{Nobody answered yet} =1{1 answered} other{{count} answered}}'**
+  String quizAnswers(int count);
+
+  /// No description provided for @menuStopPoll.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop poll'**
+  String get menuStopPoll;
+
+  /// No description provided for @stopPollTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop this poll?'**
+  String get stopPollTitle;
+
+  /// No description provided for @stopPollMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody will be able to vote in it any more.'**
+  String get stopPollMessage;
+
   /// No description provided for @contentGame.
   ///
   /// In en, this message translates to:

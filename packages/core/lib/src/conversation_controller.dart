@@ -384,6 +384,21 @@ final class ConversationController {
   }
 
   /// Adds the reaction, or takes it back when [chosen] is true.
+  /// Votes in the poll of message [messageId] for [optionIds]; an empty
+  /// list takes the vote back.
+  Future<void> votePoll(int chatId, int messageId, List<int> optionIds) =>
+      _client.send(
+        td.SetPollAnswer(
+          chatId: chatId,
+          messageId: messageId,
+          optionIds: optionIds,
+        ),
+      );
+
+  /// Closes the poll of message [messageId] for good.
+  Future<void> stopPoll(int chatId, int messageId) =>
+      _client.send(td.StopPoll(chatId: chatId, messageId: messageId));
+
   Future<void> toggleReaction(
     int chatId,
     int messageId,
@@ -1222,6 +1237,8 @@ final class ConversationController {
           return;
         }
         if (store.markPinned(chatId, messageId, pinned: isPinned)) _notify();
+      case td.UpdatePoll(:final poll):
+        if (store.patchPoll(poll)) _notify();
       case td.UpdateMessageContentOpened(:final chatId, :final messageId):
         final content = store.message(chatId, messageId)?.content;
         final opened = switch (content) {

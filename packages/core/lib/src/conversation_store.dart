@@ -324,6 +324,37 @@ final class ConversationStore {
     return found;
   }
 
+  /// Puts the new state of [poll] into every loaded message that carries
+  /// it. Returns whether any did.
+  bool patchPoll(td.Poll poll) {
+    var found = false;
+    // The rest of the content (description, media) stays as it was.
+    ConversationMessage? withPoll(ConversationMessage message) =>
+        switch (message.content) {
+          td.MessagePoll(poll: final own) && final content
+              when own.id == poll.id =>
+            message.patched({
+              'content': {...content.toJson(), 'poll': poll.toJson()},
+            }),
+          _ => null,
+        };
+    for (final messages in _byChat.values) {
+      for (final id in messages.keys.toList()) {
+        final patched = withPoll(messages[id]!);
+        if (patched == null) continue;
+        messages[id] = patched;
+        found = true;
+      }
+    }
+    for (final key in _referenced.keys.toList()) {
+      final patched = withPoll(_referenced[key]!);
+      if (patched == null) continue;
+      _referenced[key] = patched;
+      found = true;
+    }
+    return found;
+  }
+
   void remove(int chatId, Iterable<int> messageIds) {
     final messages = _byChat[chatId];
     for (final id in messageIds) {
