@@ -475,7 +475,8 @@ void main() {
     expect(tester.getSize(find.byType(Glass)).width, Composer.maxWidth);
   });
 
-  testWidgets('header keeps the actions at the right edge', (tester) async {
+  testWidgets('header keeps the title left and the actions at the right '
+      'edge', (tester) async {
     tester.view.physicalSize = const Size(1000, 200);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -484,7 +485,7 @@ void main() {
         const Align(
           alignment: Alignment.topCenter,
           child: ChatHeaderBar(
-            title: SizedBox(width: 120),
+            title: SizedBox(width: 120, key: Key('title')),
             actions: SizedBox(width: 80),
             fill: SizedBox.expand(key: Key('fill')),
           ),
@@ -492,10 +493,60 @@ void main() {
       ),
     );
     final bar = tester.getRect(find.byType(ChatHeaderBar));
+    final title = tester.getRect(find.byKey(const Key('title')));
     final fill = tester.getRect(find.byKey(const Key('fill')));
     expect(bar.width, 1000);
-    expect(fill.left, 120);
+    expect(title.left, 0);
+    expect(fill.left, 0);
     expect(fill.right, 1000 - 80);
+  });
+
+  testWidgets('a wide header title stays clear of the actions', (tester) async {
+    tester.view.physicalSize = const Size(400, 200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      themed(
+        const Align(
+          alignment: Alignment.topCenter,
+          child: ChatHeaderBar(
+            title: SizedBox(width: 300, key: Key('title')),
+            actions: SizedBox(width: 80, key: Key('actions')),
+          ),
+        ),
+      ),
+    );
+    final title = tester.getRect(find.byKey(const Key('title')));
+    final actions = tester.getRect(find.byKey(const Key('actions')));
+    expect(title.left, 0);
+    expect(title.right, lessThanOrEqualTo(actions.left - 8));
+  });
+
+  testWidgets('folder rail item marks the selected folder', (tester) async {
+    var taps = 0;
+    await tester.pumpWidget(
+      themed(
+        FolderRail(
+          children: [
+            const FolderRailItem(
+              icon: MgIcons.chat,
+              label: 'All',
+              selected: true,
+            ),
+            FolderRailItem(
+              icon: MgIcons.file,
+              label: 'Work',
+              count: 4,
+              onTap: () => taps++,
+            ),
+          ],
+        ),
+      ),
+    );
+    expect(find.text('All'), findsOneWidget);
+    expect(find.text('Work'), findsOneWidget);
+    await tester.tap(find.text('Work'));
+    expect(taps, 1);
   });
 
   testWidgets('form buttons expose a semantic tap', (tester) async {

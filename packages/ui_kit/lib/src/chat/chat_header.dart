@@ -5,9 +5,10 @@ import '../glass/glass.dart';
 import '../theme/colors.dart';
 import '../theme/theme.dart';
 
-/// The chat header: two glass capsules over the message list, the title on
-/// the left and the actions on the right. [fill] takes the space between
-/// them (the app puts its window drag area there).
+/// The chat header: one glass bar across the top of the message list, the
+/// title at the left edge and the actions at the right. [fill] lies under
+/// both and takes the whole bar but the actions (the app puts its window
+/// drag area there).
 class ChatHeaderBar extends StatelessWidget {
   const ChatHeaderBar({
     super.key,
@@ -23,19 +24,23 @@ class ChatHeaderBar extends StatelessWidget {
   final Widget actions;
   final Widget? fill;
 
-  static const double height = 44;
+  static const double height = 48;
+  static const double radius = 14;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: height,
-      child: CustomMultiChildLayout(
-        delegate: _HeaderLayout(),
-        children: [
-          LayoutId(id: _Slot.actions, child: actions),
-          LayoutId(id: _Slot.title, child: title),
-          if (fill != null) LayoutId(id: _Slot.fill, child: fill!),
-        ],
+    return Glass(
+      radius: radius,
+      child: SizedBox(
+        height: height,
+        child: CustomMultiChildLayout(
+          delegate: _HeaderLayout(),
+          children: [
+            if (fill != null) LayoutId(id: _Slot.fill, child: fill!),
+            LayoutId(id: _Slot.actions, child: actions),
+            LayoutId(id: _Slot.title, child: title),
+          ],
+        ),
       ),
     );
   }
@@ -44,8 +49,8 @@ class ChatHeaderBar extends StatelessWidget {
 enum _Slot { title, fill, actions }
 
 /// Actions keep their natural width at the right edge, the title takes its
-/// natural width and shrinks only when there is no room, and the fill gets
-/// whatever is left between them.
+/// natural width at the left and shrinks only when there is no room, and
+/// the fill lies under the title and spans everything but the actions.
 class _HeaderLayout extends MultiChildLayoutDelegate {
   static const double _gap = 8;
 
@@ -59,19 +64,16 @@ class _HeaderLayout extends MultiChildLayoutDelegate {
     positionChild(_Slot.actions, Offset(size.width - actions.width, 0));
 
     final titleMax = (size.width - actions.width - _gap).clamp(0.0, size.width);
-    final title = layoutChild(
+    layoutChild(
       _Slot.title,
       BoxConstraints(maxWidth: titleMax, minHeight: h, maxHeight: h),
     );
     positionChild(_Slot.title, Offset.zero);
 
     if (hasChild(_Slot.fill)) {
-      final w = (size.width - actions.width - title.width).clamp(
-        0.0,
-        size.width,
-      );
+      final w = (size.width - actions.width).clamp(0.0, size.width);
       layoutChild(_Slot.fill, BoxConstraints.tightFor(width: w, height: h));
-      positionChild(_Slot.fill, Offset(title.width, 0));
+      positionChild(_Slot.fill, Offset.zero);
     }
   }
 
@@ -79,7 +81,8 @@ class _HeaderLayout extends MultiChildLayoutDelegate {
   bool shouldRelayout(_HeaderLayout oldDelegate) => false;
 }
 
-/// The left capsule: avatar, chat name and status line.
+/// The title at the bar's left: avatar, chat name and the status line under
+/// it. It draws no glass of its own; the bar does.
 class ChatTitleCapsule extends StatelessWidget {
   const ChatTitleCapsule({
     super.key,
@@ -98,7 +101,7 @@ class ChatTitleCapsule extends StatelessWidget {
   /// Online status, members count, "typing…" and so on.
   final String subtitle;
 
-  /// Defaults to a 32 px [MonogramAvatar] of [title].
+  /// Defaults to a 30 px [MonogramAvatar] of [title].
   final Widget? avatar;
   final VoidCallback? onTap;
 
@@ -107,14 +110,20 @@ class ChatTitleCapsule extends StatelessWidget {
     final c = MgColors.of(context);
     return GestureDetector(
       onTap: onTap,
-      child: Glass(
-        radius: 22,
-        padding: const EdgeInsets.fromLTRB(5, 5, 14, 5),
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(9, 0, 14, 0),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            avatar ?? MonogramAvatar(name: title, size: 32),
-            const SizedBox(width: 9),
+            SizedBox(
+              width: 32,
+              height: 32,
+              child: Center(
+                child: avatar ?? MonogramAvatar(name: title, size: 30),
+              ),
+            ),
+            const SizedBox(width: 10),
             Flexible(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,7 +173,8 @@ class ChatTitleCapsule extends StatelessWidget {
   }
 }
 
-/// The right capsule: a row of [MgIconButton]s, 2 px apart.
+/// The actions at the bar's right edge: a row of [MgIconButton]s, 2 px
+/// apart.
 class ChatActionsCapsule extends StatelessWidget {
   const ChatActionsCapsule({super.key, required this.children});
 
@@ -172,9 +182,8 @@ class ChatActionsCapsule extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Glass(
-      radius: 22,
-      padding: const EdgeInsets.all(4),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

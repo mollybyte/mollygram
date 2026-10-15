@@ -22,6 +22,11 @@ const _labels = ComposerLabels(
   send: 'Send',
 );
 
+const _folderAll = MgIconData(
+  'folderAll',
+  '<path d="M4 6h16M4 12h16M4 18h16"/>',
+);
+
 /// The main window from design/Main.dc.html, built from the kit.
 class _Window extends StatelessWidget {
   const _Window({this.blur = true});
@@ -140,6 +145,29 @@ class _Window extends StatelessWidget {
             bottom: 8,
             width: SidebarIsland.width,
             child: SidebarIsland(
+              rail: FolderRail(
+                trailing: [
+                  MgIconButton(
+                    icon: MgIcons.settings,
+                    tooltip: 'Settings',
+                    onPressed: () {},
+                  ),
+                ],
+                children: const [
+                  FolderRailItem(
+                    icon: _folderAll,
+                    label: 'All',
+                    selected: true,
+                  ),
+                  FolderRailItem(
+                    icon: MgIcons.chat,
+                    label: 'Personal',
+                    count: 2,
+                  ),
+                  FolderRailItem(icon: MgIcons.file, label: 'Work', count: 3),
+                  FolderRailItem(icon: MgIcons.volume, label: 'Channels'),
+                ],
+              ),
               actions: [
                 MgIconButton(
                   icon: MgIcons.compose,
@@ -148,14 +176,6 @@ class _Window extends StatelessWidget {
                 ),
               ],
               search: const MgSearchField(hintText: 'Search'),
-              folders: const FolderTabBar(
-                children: [
-                  FolderTab(label: 'All', selected: true),
-                  FolderTab(label: 'Personal', count: 2),
-                  FolderTab(label: 'Work', count: 3),
-                  FolderTab(label: 'Channels'),
-                ],
-              ),
               body: ListView(
                 padding: const EdgeInsets.fromLTRB(6, 0, 6, 8),
                 children: const [
