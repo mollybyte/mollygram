@@ -76,6 +76,7 @@ class PhotoContent extends StatelessWidget {
           thumbnail: small != null && small != full ? small.photo : null,
           minithumbnail: photo.minithumbnail,
           cacheWidth: (size.width * dpr).round(),
+          kind: MediaDownloadKind.photos,
         ),
       ),
     );
@@ -164,9 +165,16 @@ class AnimationContent extends StatelessWidget {
       child: TdFileBuilder(
         file: animation.animation,
         download: true,
+        kind: MediaDownloadKind.videos,
         builder: (context, file) {
           final path = downloadedPath(file);
-          if (path == null) return cover;
+          if (path == null) {
+            return TapToDownload(
+              file: file,
+              kind: MediaDownloadKind.videos,
+              child: cover,
+            );
+          }
           return LoopingVideo(path: path, placeholder: cover);
         },
       ),
@@ -441,6 +449,7 @@ class _VideoNoteContentState extends ConsumerState<VideoNoteContent> {
             TdFileBuilder(
               file: note.video,
               download: true,
+              kind: MediaDownloadKind.videos,
               builder: (context, file) {
                 final path = downloadedPath(file);
                 if (path != null) _attach(path);

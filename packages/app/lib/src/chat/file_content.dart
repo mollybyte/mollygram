@@ -51,11 +51,22 @@ double? _progressOf(td.File file) {
 FileController _filesOf(WidgetRef ref) =>
     ref.read(telegramSessionProvider).requireValue.files;
 
+DownloadsController _downloadsOf(WidgetRef ref) =>
+    ref.read(telegramSessionProvider).requireValue.downloads;
+
 /// A file in a bubble: the round button (download, cancel, open), the name
 /// and the size or the download progress.
 class DocumentContent extends ConsumerWidget {
-  const DocumentContent({super.key, required this.document, this.meta});
+  const DocumentContent({
+    super.key,
+    required this.chatId,
+    required this.messageId,
+    required this.document,
+    this.meta,
+  });
 
+  final int chatId;
+  final int messageId;
   final td.Document document;
 
   /// The time and ticks, drawn at the end of the size line.
@@ -81,9 +92,11 @@ class DocumentContent extends ConsumerWidget {
           final files = _filesOf(ref);
           switch (state) {
             case _FileState.remote:
+              // A click is a download the user asked for: it goes on the
+              // downloads list, where it can be paused and found again.
               unawaited(
-                files
-                    .download(file.id, priority: DownloadPriority.requested)
+                _downloadsOf(ref)
+                    .add(file.id, chatId: chatId, messageId: messageId)
                     .then<void>((_) {}, onError: (Object _) {}),
               );
             case _FileState.downloading:
@@ -370,6 +383,7 @@ class _AudioTrack extends ConsumerWidget {
                 if (playing) return player.pause();
                 // Read before any await: the row may scroll away meanwhile.
                 final files = _filesOf(ref);
+                final downloads = _downloadsOf(ref);
                 final conversations = ref
                     .read(telegramSessionProvider)
                     .requireValue
@@ -380,6 +394,11 @@ class _AudioTrack extends ConsumerWidget {
                     return files.cancel(file.id).catchError((Object _) {});
                   }
                   try {
+                    await downloads.add(
+                      file.id,
+                      chatId: chatId,
+                      messageId: messageId,
+                    );
                     path = downloadedPath(await files.downloadNow(file.id));
                   } on Object {
                     return;

@@ -2287,6 +2287,48 @@ void main() {
     expect(find.byType(PhotoContent), findsOneWidget);
   });
 
+  testWidgets('a clicked file download goes on the downloads list', (
+    tester,
+  ) async {
+    json.history = [
+      td.Message.fromJson(_document(16, '', downloaded: false)),
+      ..._history,
+    ];
+    await pump(tester);
+
+    await tester.tap(find.text('route_saturday.pdf'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    final added = json.sent.lastWhere(
+      (r) => r['@type'] == 'addFileToDownloads',
+    );
+    expect(added['file_id'], 70);
+    expect(added['chat_id'], 7);
+    expect(added['message_id'], 16);
+  });
+
+  testWidgets('a photo waits for a click when photos do not auto-download', (
+    tester,
+  ) async {
+    json.history = [td.Message.fromJson(_photo(15, idle: true)), ..._history];
+    // What the Data and storage switches set on a real session.
+    session.files.autoDownloadKinds = {MediaDownloadKind.videos};
+    await pump(tester);
+
+    // Nothing was fetched on its own; the preview carries a download button.
+    expect(
+      json.sent.where(
+        (r) => r['@type'] == 'downloadFile' && r['file_id'] == 415,
+      ),
+      isEmpty,
+    );
+    await tester.tap(find.bySemanticsLabel('Download'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    final download = json.sent.lastWhere((r) => r['@type'] == 'downloadFile');
+    expect(download['file_id'], 415);
+  });
+
   testWidgets('saves a file to the download folder and shows it', (
     tester,
   ) async {
@@ -3113,6 +3155,7 @@ final class _FakeTdJson implements td.TdJson {
         'next_from_message_id': 0,
       },
       'downloadFile' => _stickerFile(decoded['file_id']! as int),
+      'addFileToDownloads' => _stickerFile(decoded['file_id']! as int),
       'joinChat' => {'@type': 'chatJoinResultSuccess'},
       'getChatMessageByDate' => _message(
         id: 11,
@@ -3760,7 +3803,11 @@ td.Poll _poll({
   isClosed: false,
 );
 
-Map<String, Object?> _document(int id, String path) => {
+Map<String, Object?> _document(
+  int id,
+  String path, {
+  bool downloaded = true,
+}) => {
   ..._message(id: id, senderId: 2, text: '').toJson(),
   'content': {
     '@type': 'messageDocument',
@@ -3775,7 +3822,7 @@ Map<String, Object?> _document(int id, String path) => {
           'path': path,
           'can_be_downloaded': true,
           'is_downloading_active': false,
-          'is_downloading_completed': true,
+          'is_downloading_completed': downloaded,
         },
       },
     },
@@ -3783,8 +3830,9 @@ Map<String, Object?> _document(int id, String path) => {
   },
 };
 
-/// A photo from Boris as TDLib sends it.
-Map<String, Object?> _photo(int id) => {
+/// A photo from Boris as TDLib sends it; [idle] when its file is neither
+/// downloaded nor downloading.
+Map<String, Object?> _photo(int id, {bool idle = false}) => {
   ..._message(id: id, senderId: 2, text: '').toJson(),
   'content': {
     '@type': 'messagePhoto',
@@ -3794,7 +3842,7 @@ Map<String, Object?> _photo(int id) => {
         {
           '@type': 'photoSize',
           'type': 'x',
-          'photo': _stickerFile(400 + id),
+          'photo': idle ? _idleFile(400 + id) : _stickerFile(400 + id),
           'width': 800,
           'height': 600,
           'progressive_sizes': <Object?>[],
@@ -3889,6 +3937,18 @@ Map<String, Object?> _sticker(int id, String emoji) => {
   'format': {'@type': 'stickerFormatWebp'},
   'full_type': {'@type': 'stickerFullTypeRegular'},
   'sticker': _stickerFile(300 + id),
+};
+
+/// [_stickerFile] before any download was asked for.
+Map<String, Object?> _idleFile(int id) => {
+  ..._stickerFile(id),
+  'local': {
+    '@type': 'localFile',
+    'path': '',
+    'can_be_downloaded': true,
+    'is_downloading_active': false,
+    'is_downloading_completed': false,
+  },
 };
 
 Map<String, Object?> _stickerFile(int id) => {

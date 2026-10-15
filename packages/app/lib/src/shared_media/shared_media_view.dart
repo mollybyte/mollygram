@@ -475,6 +475,8 @@ class _SharedListState extends ConsumerState<_SharedList> {
     );
     final Widget body = switch (message.content) {
       td.MessageDocument(:final document) => DocumentContent(
+        chatId: message.chatId,
+        messageId: message.id,
         document: document,
         meta: date,
       ),
