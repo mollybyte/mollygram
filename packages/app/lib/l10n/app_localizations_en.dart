@@ -518,6 +518,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get menuShowInFolder => 'Show in folder';
 
   @override
+  String get sendWithoutSound => 'Send without sound';
+
+  @override
+  String get scheduleMessage => 'Schedule message…';
+
+  @override
+  String get scheduleTitle => 'Schedule message';
+
+  @override
+  String get scheduleHint => 'Pick the day and the time it goes out.';
+
+  @override
+  String get scheduleTimeHint => 'HH:MM';
+
+  @override
+  String get scheduleAction => 'Schedule';
+
+  @override
+  String scheduledFor(String date) {
+    return 'Scheduled for $date';
+  }
+
+  @override
   String get menuDelete => 'Delete';
 
   @override
@@ -2997,4 +3020,74 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get accountTtlFooter =>
       'Your account is deleted if you don\'t come online in this period.';
+
+  @override
+  String get keyboardShortcuts => 'Keyboard shortcuts';
+
+  @override
+  String get shortcutsSearch => 'Search shortcuts';
+
+  @override
+  String get shortcutsHint =>
+      'Click a shortcut, then press the new keys. Esc cancels, Delete removes the shortcut.';
+
+  @override
+  String get shortcutsGroupApp => 'App';
+
+  @override
+  String get shortcutsGroupChat => 'Chat';
+
+  @override
+  String get shortcutsGroupNavigation => 'Navigation';
+
+  @override
+  String get shortcutsGroupAccounts => 'Accounts';
+
+  @override
+  String get shortcutsGroupPlugins => 'Plugins';
+
+  @override
+  String get shortcutNone => 'None';
+
+  @override
+  String get shortcutRecording => 'Type a shortcut';
+
+  @override
+  String get shortcutChange => 'Change shortcut';
+
+  @override
+  String get shortcutNeedsModifier => 'Add Ctrl or Alt to the key';
+
+  @override
+  String get shortcutNeedsModifierMac => 'Add ⌘, ⌃ or ⌥ to the key';
+
+  @override
+  String get shortcutReserved => 'Used by the system';
+
+  @override
+  String get shortcutReservedMac => 'Used by macOS';
+
+  @override
+  String shortcutUsedBy(String title) {
+    return 'Already used by “$title”';
+  }
+
+  @override
+  String get shortcutReplace => 'Replace';
+
+  @override
+  String get shortcutRestore => 'Restore default';
+
+  @override
+  String get shortcutsRestoreAll => 'Restore defaults';
+
+  @override
+  String get shortcutsRestoreAllTitle => 'Restore all shortcuts?';
+
+  @override
+  String get shortcutsRestoreAllMessage =>
+      'Every shortcut you changed goes back to its default.';
+
+  @override
+  String get shortcutsRestoreConfirm => 'Restore';
 }

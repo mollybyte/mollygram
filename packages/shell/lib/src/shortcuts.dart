@@ -56,7 +56,7 @@ abstract final class ShellShortcuts {
 /// A shortcut as it is written in menus: `⌘⇧T` on macOS, `Ctrl+Shift+T`
 /// elsewhere.
 String shortcutLabel(SingleActivator a) {
-  final key = _keyLabel(a.trigger);
+  final key = shortcutKeyLabel(a.trigger);
   if (usesCommandKey) {
     return [
       if (a.control) '⌃',
@@ -81,7 +81,8 @@ String get primaryModifierLabel => usesCommandKey ? '⌘' : 'Ctrl+';
 /// The modifier label for ⌥⏎-style hints.
 String get altModifierLabel => usesCommandKey ? '⌥' : 'Alt+';
 
-String _keyLabel(LogicalKeyboardKey key) {
+/// How [key] is written on a key cap or in a menu.
+String shortcutKeyLabel(LogicalKeyboardKey key) {
   final mac = usesCommandKey;
   if (key == LogicalKeyboardKey.enter) return mac ? '⏎' : 'Enter';
   if (key == LogicalKeyboardKey.tab) return mac ? '⇥' : 'Tab';
@@ -90,5 +91,17 @@ String _keyLabel(LogicalKeyboardKey key) {
   if (key == LogicalKeyboardKey.arrowUp) return '↑';
   if (key == LogicalKeyboardKey.arrowDown) return '↓';
   if (key == LogicalKeyboardKey.backslash) return r'\';
-  return key.keyLabel.toUpperCase();
+  if (key == LogicalKeyboardKey.escape) return mac ? '⎋' : 'Esc';
+  if (key == LogicalKeyboardKey.backspace) return mac ? '⌫' : 'Backspace';
+  if (key == LogicalKeyboardKey.delete) return mac ? '⌦' : 'Delete';
+  if (key == LogicalKeyboardKey.space) return mac ? '␣' : 'Space';
+  if (key == LogicalKeyboardKey.pageUp) return mac ? '⇞' : 'PgUp';
+  if (key == LogicalKeyboardKey.pageDown) return mac ? '⇟' : 'PgDn';
+  if (key == LogicalKeyboardKey.home) return mac ? '↖' : 'Home';
+  if (key == LogicalKeyboardKey.end) return mac ? '↘' : 'End';
+  // A key unknown to this Flutter version, say from a newer one's saved
+  // settings, has no label.
+  final label = key.keyLabel;
+  if (label.isEmpty) return key.debugName ?? '?';
+  return label.toUpperCase();
 }

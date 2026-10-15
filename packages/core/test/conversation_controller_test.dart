@@ -541,6 +541,40 @@ void main() {
     );
   });
 
+  test(
+    'sends without sound or at a time, keeping the scheduled one out',
+    () async {
+      await controller.start();
+
+      await controller.sendText(7, 'Quiet', silent: true);
+      var sent = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+      expect((sent['options']! as Map)['disable_notification'], isTrue);
+      expect(
+        (sent['options']! as Map).containsKey('scheduling_state'),
+        isFalse,
+      );
+      expect(controller.store.messagesFor(7).map((m) => m.text), ['Sent text']);
+
+      await controller.sendText(
+        7,
+        'Later',
+        schedule: const td.MessageSchedulingStateSendAtDate(
+          sendDate: 1800000000,
+          repeatPeriod: 0,
+        ),
+      );
+      sent = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+      final state = (sent['options']! as Map)['scheduling_state']! as Map;
+      expect(state['send_date'], 1800000000);
+      // It waits in the scheduled list, so the timeline gained nothing.
+      expect(controller.store.messagesFor(7).length, 1);
+
+      await controller.sendText(7, 'Plain');
+      sent = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+      expect(sent.containsKey('options'), isFalse);
+    },
+  );
+
   test('reports messages step by step as the server asks', () async {
     await controller.start();
 
@@ -1434,12 +1468,16 @@ final class _FakeTdJson implements td.TdJson {
         chatId: 7,
         text: 'Quoted',
       ).toJson(),
-      'sendMessage' => _message(
-        id: 12,
-        chatId: 7,
-        text: 'Sent text',
-        sendingState: const td.MessageSendingStatePending(sendingId: 1),
-      ).toJson(),
+      'sendMessage' => {
+        ..._message(
+          id: 12,
+          chatId: 7,
+          text: 'Sent text',
+          sendingState: const td.MessageSendingStatePending(sendingId: 1),
+        ).toJson(),
+        // A scheduled message comes back marked so.
+        'scheduling_state': ?(decoded['options'] as Map?)?['scheduling_state'],
+      },
       'getOption' when decoded['name'] == 'message_caption_length_max' => {
         '@type': 'optionValueInteger',
         'value': '10',
