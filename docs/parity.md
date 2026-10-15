@@ -129,7 +129,7 @@ M8 calls and macOS release, M9 after release.
 | Media editor: text, stickers and emoji placed on the image | partial | Text and emoji done; stickers need the app’s sticker picker | M | M4 |
 | Media editor: arrows and shapes, blur and pixelate brush | done | `packages/media_editor` | | |
 | Media editor: filters and adjustments (brightness, contrast, saturation, warmth, vignette) | done | `packages/media_editor`: seven looks, six sliders | | |
-| Video editor: trim, mute, cover frame, quality | missing | `VideoEditorModalController` | M | M4 |
+| Video editor: trim, mute, cover frame, quality | partial | `packages/media_editor`: trim, mute and cover done (macOS, AVFoundation); quality presets pending | S | M4 |
 | Slowmode and restriction notices | missing | | S | M2 |
 | Link preview control (remove, above/below) | missing | | S | M2 |
 

@@ -50,6 +50,11 @@ final class MediaEditorStrings {
     required this.adjust,
     required this.presetNames,
     required this.adjustmentNames,
+    required this.mute,
+    required this.unmute,
+    required this.setCover,
+    required this.coverFrame,
+    required this.secondsShort,
   });
 
   /// Opens the editor, on the attachment preview.
@@ -106,6 +111,17 @@ final class MediaEditorStrings {
   final String adjust;
   final List<String> presetNames;
   final List<String> adjustmentNames;
+
+  /// The video editor.
+  final String mute;
+  final String unmute;
+  final String setCover;
+
+  /// The cover button when the shown frame is the cover.
+  final String coverFrame;
+
+  /// The unit after a length in seconds, as in "8.4 s".
+  final String secondsShort;
 
   String preset(FilterPreset p) => presetNames[p.index];
   String adjustment(Adjustment a) => adjustmentNames[a.index];
@@ -167,6 +183,11 @@ final class MediaEditorStrings {
       'Fade',
       'Vignette',
     ],
+    mute: 'Mute',
+    unmute: 'Unmute',
+    setCover: 'Use as cover',
+    coverFrame: 'Cover frame',
+    secondsShort: 's',
   );
 
   static const ru = MediaEditorStrings._(
@@ -226,6 +247,11 @@ final class MediaEditorStrings {
       'Выцветание',
       'Виньетка',
     ],
+    mute: 'Без звука',
+    unmute: 'Включить звук',
+    setCover: 'Сделать обложкой',
+    coverFrame: 'Кадр обложки',
+    secondsShort: 'с',
   );
 
   /// The strings for the ambient locale: Russian for `ru`, English

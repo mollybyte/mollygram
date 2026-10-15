@@ -1022,11 +1022,11 @@ class _ChatViewState extends ConsumerState<ChatView> {
           height: size.$2,
         );
       case OutgoingKind.video || OutgoingKind.animation || OutgoingKind.audio:
+        // An edited video arrives measured by the editor.
+        if (file.duration > 0) return file;
         final info = await probeMedia(file.path);
         if (info == null) return file;
-        return OutgoingFile(
-          path: file.path,
-          kind: file.kind,
+        return file.copyWith(
           width: info.width,
           height: info.height,
           duration: info.duration.inSeconds,
