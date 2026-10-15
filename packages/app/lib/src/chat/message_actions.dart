@@ -118,6 +118,15 @@ Future<void> showMessageMenu(
         label: l10n.menuForward,
         onSelected: () => handlers.onForward(row.messages),
       ),
+    if (properties?.canBePinned ?? false)
+      MgMenuItem(
+        label: target.message.isPinned ? l10n.menuUnpin : l10n.menuPin,
+        onSelected: () => unawaited(
+          conversations
+              .setPinned(chatId, target.id, pinned: !target.message.isPinned)
+              .catchError((Object _) {}),
+        ),
+      ),
     if (canDelete)
       MgMenuItem(
         label: l10n.menuDelete,

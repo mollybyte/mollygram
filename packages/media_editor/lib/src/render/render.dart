@@ -1,0 +1,171 @@
+import 'dart:io';
+import 'dart:isolate';
+import 'dart:math' as math;
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+
+import 'package:flutter/painting.dart';
+import 'package:image/image.dart' as img;
+
+import '../model/media_edit.dart';
+import '../model/stroke.dart';
+import 'strokes.dart';
+
+/// Paints the edited picture so that [viewport], a rectangle of the
+/// oriented picture in its pixels, lands on [dest].
+///
+/// [image] may be a downscaled copy of the [source]-sized original: it is
+/// stretched over the full source rectangle, so the same call draws the
+/// on-screen preview and the exported file.
+void paintEdited(
+  Canvas canvas, {
+  required ui.Image image,
+  required Size source,
+  required MediaEdit edit,
+  required Rect viewport,
+  required Rect dest,
+  double opacity = 1,
+  Stroke? liveStroke,
+}) {
+  if (viewport.isEmpty || dest.isEmpty) return;
+  final oriented = edit.orientedSize(source);
+  canvas
+    ..save()
+    ..translate(dest.left, dest.top)
+    ..scale(dest.width / viewport.width, dest.height / viewport.height)
+    ..translate(-viewport.left, -viewport.top);
+  if (opacity < 1) {
+    canvas.saveLayer(
+      Offset.zero & oriented,
+      Paint()..color = Color.fromRGBO(0, 0, 0, opacity),
+    );
+  }
+  canvas
+    ..save()
+    ..translate(oriented.width / 2, oriented.height / 2);
+  if (edit.flipped) canvas.scale(-1, 1);
+  canvas
+    ..rotate(edit.quarterTurns * math.pi / 2)
+    ..translate(-source.width / 2, -source.height / 2)
+    ..drawImageRect(
+      image,
+      Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
+      Offset.zero & source,
+      Paint()
+        ..filterQuality = FilterQuality.high
+        ..isAntiAlias = true,
+    )
+    ..restore();
+  paintStrokes(canvas, edit.strokes, oriented, live: liveStroke);
+  if (opacity < 1) canvas.restore();
+  canvas.restore();
+}
+
+/// The largest side of an exported picture. Larger crops are scaled down
+/// to stay inside GPU texture limits.
+const maxExportSide = 8192;
+
+/// Decodes [bytes] into an image no larger than [maxSide] on its long side,
+/// along with the full-resolution size. EXIF orientation is applied by the
+/// decoder.
+Future<(ui.Image, Size)> decodePicture(Uint8List bytes, {int? maxSide}) async {
+  final codec = await ui.instantiateImageCodec(bytes);
+  final frame = await codec.getNextFrame();
+  codec.dispose();
+  final full = frame.image;
+  final source = Size(full.width.toDouble(), full.height.toDouble());
+  final long = math.max(full.width, full.height);
+  if (maxSide == null || long <= maxSide) return (full, source);
+  final scale = maxSide / long;
+  final width = math.max(1, (full.width * scale).round());
+  final height = math.max(1, (full.height * scale).round());
+  final recorder = ui.PictureRecorder();
+  Canvas(recorder).drawImageRect(
+    full,
+    Offset.zero & source,
+    Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble()),
+    Paint()..filterQuality = FilterQuality.high,
+  );
+  final picture = recorder.endRecording();
+  final small = await picture.toImage(width, height);
+  picture.dispose();
+  full.dispose();
+  return (small, source);
+}
+
+/// An edited file written by [exportEdit].
+typedef ExportedPicture = ({String path, int width, int height});
+
+/// Applies [edit] to the picture at [path] at full resolution and writes
+/// the result into a new folder under [outputDirectory] (the system temp
+/// folder by default). PNG sources stay PNG to keep transparency; the rest
+/// become JPEG.
+Future<ExportedPicture> exportEdit(
+  String path,
+  MediaEdit edit, {
+  String? outputDirectory,
+}) async {
+  final bytes = await File(path).readAsBytes();
+  final (image, source) = await decodePicture(bytes);
+  final oriented = edit.orientedSize(source);
+  final crop = edit.cropIn(oriented);
+  final scale = math.min(
+    1.0,
+    maxExportSide / math.max(crop.width, crop.height),
+  );
+  final width = math.max(1, (crop.width * scale).round());
+  final height = math.max(1, (crop.height * scale).round());
+
+  final recorder = ui.PictureRecorder();
+  paintEdited(
+    Canvas(recorder),
+    image: image,
+    source: source,
+    edit: edit,
+    viewport: crop,
+    dest: Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble()),
+  );
+  final picture = recorder.endRecording();
+  final out = await picture.toImage(width, height);
+  picture.dispose();
+  image.dispose();
+
+  final name = _baseName(path);
+  final png = name.ext == 'png';
+  final Uint8List encoded;
+  if (png) {
+    final data = await out.toByteData(format: ui.ImageByteFormat.png);
+    encoded = data!.buffer.asUint8List();
+  } else {
+    final data = await out.toByteData();
+    final rgba = data!.buffer.asUint8List();
+    encoded = await Isolate.run(() => _encodeJpeg(rgba, width, height));
+  }
+  out.dispose();
+
+  final parent = Directory(outputDirectory ?? Directory.systemTemp.path);
+  final dir = await parent.createTemp('mollygram-edit-');
+  final file = File('${dir.path}/${name.stem}.${png ? 'png' : 'jpg'}');
+  await file.writeAsBytes(encoded, flush: true);
+  return (path: file.path, width: width, height: height);
+}
+
+Uint8List _encodeJpeg(Uint8List rgba, int width, int height) {
+  final image = img.Image.fromBytes(
+    width: width,
+    height: height,
+    bytes: rgba.buffer,
+    numChannels: 4,
+  );
+  return img.encodeJpg(image, quality: 93);
+}
+
+({String stem, String ext}) _baseName(String path) {
+  final name = path.split(RegExp(r'[/\\]')).last;
+  final dot = name.lastIndexOf('.');
+  if (dot <= 0) return (stem: name, ext: '');
+  return (
+    stem: name.substring(0, dot),
+    ext: name.substring(dot + 1).toLowerCase(),
+  );
+}

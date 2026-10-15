@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 
@@ -170,6 +171,51 @@ final class ConversationController {
       return added > 0;
     } finally {
       _loadingNewer.remove(chatId);
+    }
+  }
+
+  /// Loads the pinned messages of [chatId] for the bar under the header.
+  Future<void> loadPinned(int chatId) async {
+    final found = await _client.send(
+      td.SearchChatMessages(
+        chatId: chatId,
+        query: '',
+        fromMessageId: 0,
+        offset: 0,
+        limit: 100,
+        filter: const td.SearchMessagesFilterPinned(),
+      ),
+    );
+    for (final message in found.messages) {
+      if (!store.contains(chatId, message.id)) {
+        store.addReferenced(ConversationMessage(message));
+      }
+    }
+    store.setPinned(chatId, [for (final m in found.messages) m.id]);
+    _notify();
+  }
+
+  /// Pins [messageId] for everyone in the chat, or [onlyForSelf] in a
+  /// private chat, and unpins it when [pinned] is false.
+  Future<void> setPinned(
+    int chatId,
+    int messageId, {
+    required bool pinned,
+    bool onlyForSelf = false,
+  }) async {
+    if (pinned) {
+      await _client.send(
+        td.PinChatMessage(
+          chatId: chatId,
+          messageId: messageId,
+          disableNotification: false,
+          onlyForSelf: onlyForSelf,
+        ),
+      );
+    } else {
+      await _client.send(
+        td.UnpinChatMessage(chatId: chatId, messageId: messageId),
+      );
     }
   }
 
@@ -356,6 +402,39 @@ final class ConversationController {
               height: sticker.height,
             ),
             emoji: sticker.emoji,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Sends a recorded voice message: an Ogg Opus file at [path] with its
+  /// length and Telegram's packed 5-bit [waveform].
+  Future<void> sendVoiceNote(
+    int chatId, {
+    required String path,
+    required Duration duration,
+    required Uint8List waveform,
+    int? replyTo,
+  }) async {
+    _add(
+      await _client.send(
+        td.SendMessage(
+          chatId: chatId,
+          replyTo: replyTo == null
+              ? null
+              : td.InputMessageReplyToMessage(
+                  messageId: replyTo,
+                  checklistTaskId: 0,
+                  pollOptionId: '',
+                ),
+          inputMessageContent: td.InputMessageVoiceNote(
+            voiceNote: td.InputVoiceNote(
+              voiceNote: td.InputFileLocal(path: path),
+              // Rounded up, as the official apps do: 0.4 s shows as 0:01.
+              duration: (duration.inMilliseconds / 1000).ceil(),
+              waveform: waveform,
+            ),
           ),
         ),
       ),
@@ -708,6 +787,14 @@ final class ConversationController {
         :final isPinned,
       ):
         _patch(chatId, messageId, {'is_pinned': isPinned});
+        if (!store.hasPinned(chatId)) return;
+        if (isPinned && store.message(chatId, messageId) == null) {
+          // Pinned from another device, outside the loaded timeline: the
+          // bar needs its text, so the list is fetched again.
+          unawaited(loadPinned(chatId).catchError((Object _) {}));
+          return;
+        }
+        if (store.markPinned(chatId, messageId, pinned: isPinned)) _notify();
       case td.UpdateMessageContentOpened(:final chatId, :final messageId):
         final content = store.message(chatId, messageId)?.content;
         final opened = switch (content) {

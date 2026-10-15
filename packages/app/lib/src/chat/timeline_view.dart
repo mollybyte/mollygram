@@ -1,5 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart' show ScrollCacheExtent;
+import 'package:flutter/rendering.dart';
 import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
@@ -15,7 +17,7 @@ import 'timeline_scroll.dart';
 /// newer rows below. Rows that load above or below never move what is on
 /// screen, and a jump lands without a visible scroll. Without an anchor
 /// every row is above the bottom edge, as in a plain reversed list.
-class TimelineView extends StatelessWidget {
+class TimelineView extends StatefulWidget {
   const TimelineView({
     super.key,
     required this.messages,
@@ -31,6 +33,7 @@ class TimelineView extends StatelessWidget {
     this.unreadFrom,
     this.flashId,
     this.flash = 0,
+    this.topInset = TimelineView.headerInset,
   });
 
   /// Newest first.
@@ -63,7 +66,11 @@ class TimelineView extends StatelessWidget {
   final int? flashId;
   final int flash;
 
-  static const double topInset = 72;
+  /// The space above the oldest message: the header, and the pinned bar
+  /// when it shows.
+  final double topInset;
+
+  static const double headerInset = 72;
   static const double bottomInset = 88;
 
   static bool _holds(TimelineItem item, int? id) =>
@@ -71,8 +78,175 @@ class TimelineView extends StatelessWidget {
       item is TimelineRow &&
       item.row.messages.any((message) => message.id == id);
 
+  /// The row under the point [dy] from the top of the timeline at [key],
+  /// if a row is there. The rows are found in the render tree rather than
+  /// hit-tested, since a scroll in progress ignores pointers.
+  static TimelineRowHit? rowAt(GlobalKey key, double dy) {
+    final box = key.currentContext?.findRenderObject();
+    if (box is! RenderBox || !box.hasSize) return null;
+    final markers = <_RenderRowMarker>[];
+    _collect(box, markers);
+    for (final marker in markers) {
+      if (!marker.hasSize) continue;
+      final top = marker.localToGlobal(Offset.zero, ancestor: box).dy;
+      if (dy >= top && dy < top + marker.size.height) return marker.hit;
+    }
+    return null;
+  }
+
+  // Markers sit near the top of the tree, one per row, with the whole
+  // message under each; the walk stops at them.
+  static void _collect(RenderObject node, List<_RenderRowMarker> into) {
+    if (node is _RenderRowMarker) {
+      into.add(node);
+      return;
+    }
+    node.visitChildren((child) => _collect(child, into));
+  }
+
+  @override
+  State<TimelineView> createState() => _TimelineViewState();
+}
+
+/// A message row found under a point of the timeline.
+@immutable
+final class TimelineRowHit {
+  const TimelineRowHit({required this.messageId, required this.day});
+
+  /// The row's first message.
+  final int messageId;
+  final DateTime day;
+}
+
+class _TimelineViewState extends State<TimelineView> {
+  final _key = GlobalKey();
+  DateTime? _floatingDay;
+  var _scrolling = false;
+  Timer? _settle;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_onScroll);
+  }
+
+  @override
+  void didUpdateWidget(TimelineView old) {
+    super.didUpdateWidget(old);
+    if (old.controller != widget.controller) {
+      old.controller.removeListener(_onScroll);
+      widget.controller.addListener(_onScroll);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onScroll);
+    _settle?.cancel();
+    super.dispose();
+  }
+
+  /// The date of the topmost row floats while the user scrolls, as in
+  /// the official app, and goes once the list has stood still a moment.
+  void _onScroll() {
+    final controller = widget.controller;
+    if (!controller.hasClients ||
+        !controller.position.isScrollingNotifier.value) {
+      return;
+    }
+    final hit = TimelineView.rowAt(_key, widget.topInset + 4);
+    if (hit == null) return;
+    if (hit.day != _floatingDay || !_scrolling) {
+      setState(() {
+        _floatingDay = hit.day;
+        _scrolling = true;
+      });
+    }
+    _settle?.cancel();
+    _settle = Timer(const Duration(milliseconds: 900), () {
+      if (mounted) setState(() => _scrolling = false);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final day = _floatingDay;
+    return Stack(
+      key: _key,
+      children: [
+        Positioned.fill(child: _TimelineList(widget)),
+        if (day != null)
+          Positioned(
+            top: widget.topInset - 34,
+            left: 0,
+            right: 0,
+            child: IgnorePointer(
+              child: AnimatedOpacity(
+                opacity: _scrolling ? 1 : 0,
+                duration: Duration(milliseconds: _scrolling ? 120 : 300),
+                curve: Curves.easeOut,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: DatePill(
+                    formatDay(l10n, day, locale),
+                    key: const ValueKey('floatingDate'),
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// Marks a row in the render tree with its first message and day, so a
+/// hit test can tell which row is under a point.
+class _RowMarker extends SingleChildRenderObjectWidget {
+  const _RowMarker({required this.hit, required super.child});
+
+  final TimelineRowHit hit;
+
+  @override
+  _RenderRowMarker createRenderObject(BuildContext context) =>
+      _RenderRowMarker(hit);
+
+  @override
+  void updateRenderObject(BuildContext context, _RenderRowMarker render) {
+    render.hit = hit;
+  }
+}
+
+class _RenderRowMarker extends RenderProxyBox {
+  _RenderRowMarker(this.hit);
+
+  TimelineRowHit hit;
+}
+
+class _TimelineList extends StatelessWidget {
+  const _TimelineList(this.view);
+
+  final TimelineView view;
+
+  @override
+  Widget build(BuildContext context) {
+    final messages = view.messages;
+    final store = view.store;
+    final chatId = view.chatId;
+    final isGroup = view.isGroup;
+    final controller = view.controller;
+    final onShown = view.onShown;
+    final onNearTop = view.onNearTop;
+    final onNearBottom = view.onNearBottom;
+    final actions = view.actions;
+    final anchor = view.anchor;
+    final unreadFrom = view.unreadFrom;
+    final flashId = view.flashId;
+    final flash = view.flash;
+    final topInset = view.topInset;
+    const bottomInset = TimelineView.bottomInset;
     final l10n = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).toLanguageTag();
     final isChannel = store.isChannel(chatId);
@@ -88,7 +262,7 @@ class TimelineView extends StatelessWidget {
     // below the center, nearest first, so the anchor's row touches it.
     final split = anchor == null
         ? -1
-        : items.indexWhere((item) => _holds(item, anchor));
+        : items.indexWhere((item) => TimelineView._holds(item, anchor));
     final below = split < 0 ? <TimelineItem>[] : items.sublist(0, split + 1);
     final newer = below.reversed.toList();
     final older = split < 0 ? items : items.sublist(split + 1);
@@ -104,22 +278,28 @@ class TimelineView extends StatelessWidget {
         ) =>
           () {
             row.messages.forEach(onShown);
-            return Padding(
-              padding: EdgeInsets.only(top: startsRun ? 6 : 2),
-              child: MessageFlash(
-                flash: _holds(item, flashId) ? flash : 0,
-                child: MessageTile(
-                  row: row,
-                  store: store,
-                  context: MessageRowContext(
-                    isGroup: isGroup,
-                    isChannel: isChannel,
-                    startsRun: startsRun,
-                    endsRun: endsRun,
-                    startsForwards: startsForwards,
-                    lastReadOutbox: lastReadOutbox,
+            return _RowMarker(
+              hit: TimelineRowHit(
+                messageId: row.messages.first.id,
+                day: dayOf(row.messages.first),
+              ),
+              child: Padding(
+                padding: EdgeInsets.only(top: startsRun ? 6 : 2),
+                child: MessageFlash(
+                  flash: TimelineView._holds(item, flashId) ? flash : 0,
+                  child: MessageTile(
+                    row: row,
+                    store: store,
+                    context: MessageRowContext(
+                      isGroup: isGroup,
+                      isChannel: isChannel,
+                      startsRun: startsRun,
+                      endsRun: endsRun,
+                      startsForwards: startsForwards,
+                      lastReadOutbox: lastReadOutbox,
+                    ),
+                    actions: actions,
                   ),
-                  actions: actions,
                 ),
               ),
             );
@@ -131,7 +311,7 @@ class TimelineView extends StatelessWidget {
       );
       return KeyedSubtree(
         key: ValueKey<Object>(item.key),
-        child: _holds(item, unreadFrom)
+        child: TimelineView._holds(item, unreadFrom)
             ? Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [UnreadDivider(l10n.unreadMessages), padded],
@@ -185,7 +365,7 @@ class TimelineView extends StatelessWidget {
             ),
           ),
         ),
-        const SliverToBoxAdapter(child: SizedBox(height: topInset)),
+        SliverToBoxAdapter(child: SizedBox(height: topInset)),
       ],
     );
   }

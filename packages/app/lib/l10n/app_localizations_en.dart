@@ -270,6 +270,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get send => 'Send';
 
   @override
+  String get voiceHoldToRecord => 'Hold to record a voice message';
+
+  @override
+  String get voiceReleaseToCancel => 'Release to cancel';
+
+  @override
+  String get voiceDelete => 'Delete recording';
+
+  @override
+  String get voiceMicrophoneDenied =>
+      'Mollygram has no access to the microphone.';
+
+  @override
+  String get voiceOpenSettings => 'Open System Settings';
+
+  @override
+  String get voiceRecordFailed => 'Couldn\'t start recording';
+
+  @override
+  String get voiceSendFailed => 'Couldn\'t send the voice message';
+
+  @override
   String previewYou(String text) {
     return 'You: $text';
   }
@@ -850,6 +872,156 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings => 'Settings';
 
   @override
+  String get settingsSearch => 'Search';
+
+  @override
+  String get myProfile => 'My profile';
+
+  @override
+  String get firstName => 'First name';
+
+  @override
+  String get lastName => 'Last name';
+
+  @override
+  String get username => 'Username';
+
+  @override
+  String get bio => 'Bio';
+
+  @override
+  String get phoneNumber => 'Phone number';
+
+  @override
+  String get bioHint => 'Any details such as age, occupation or city.';
+
+  @override
+  String get usernameHint =>
+      'People can find you by this username and contact you without knowing your phone number. You can use a–z, 0–9 and underscores, at least 5 characters.';
+
+  @override
+  String get usernameTooShort => 'A username must have at least 5 characters.';
+
+  @override
+  String get usernameTooLong =>
+      'A username can\'t be longer than 32 characters.';
+
+  @override
+  String get usernameInvalidCharacter =>
+      'Only a–z, 0–9 and underscores are allowed.';
+
+  @override
+  String get usernameStartsWithLetter => 'A username must start with a letter.';
+
+  @override
+  String get usernameEndsWithUnderscore =>
+      'A username can\'t end with an underscore.';
+
+  @override
+  String get usernameChecking => 'Checking…';
+
+  @override
+  String usernameAvailable(String name) {
+    return '@$name is available.';
+  }
+
+  @override
+  String get usernameOccupied => 'This username is already taken.';
+
+  @override
+  String get usernamePurchasable => 'This username is for sale on Fragment.';
+
+  @override
+  String get usernameUnavailable => 'This username can\'t be used.';
+
+  @override
+  String get firstNameRequired => 'A first name is required.';
+
+  @override
+  String get saveFailed => 'Couldn\'t save the change.';
+
+  @override
+  String get profileFailed => 'Couldn\'t load your profile.';
+
+  @override
+  String get tryAgain => 'Try again';
+
+  @override
+  String get logOut => 'Log out';
+
+  @override
+  String get logOutButton => 'Log out…';
+
+  @override
+  String get logOutTitle => 'Log out of Telegram?';
+
+  @override
+  String get logOutMessage =>
+      'Your chats and media will be removed from this computer. They stay in the Telegram cloud.';
+
+  @override
+  String get privacyAndSecurity => 'Privacy and security';
+
+  @override
+  String get activeSessions => 'Active sessions';
+
+  @override
+  String get activeSessionsHint =>
+      'Devices and apps signed in to your account.';
+
+  @override
+  String get thisDevice => 'This device';
+
+  @override
+  String get otherSessions => 'Other sessions';
+
+  @override
+  String get noOtherSessions => 'You\'re signed in on this device only.';
+
+  @override
+  String get sessionsFailed => 'Couldn\'t load the sessions.';
+
+  @override
+  String get sessionOnline => 'online';
+
+  @override
+  String get sessionUnconfirmed => 'New sign-in';
+
+  @override
+  String get terminate => 'Terminate';
+
+  @override
+  String get terminateSessionTitle => 'Terminate this session?';
+
+  @override
+  String get terminateOthers => 'Terminate all other sessions';
+
+  @override
+  String get terminateOthersHint => 'Logs out every device except this one.';
+
+  @override
+  String get terminateOthersTitle => 'Terminate all other sessions?';
+
+  @override
+  String get logOutFailed =>
+      'Couldn\'t log out. Check the connection and try again.';
+
+  @override
+  String get connectedBot => 'Connected business bot';
+
+  @override
+  String get connectedBotHint =>
+      'This bot can read and answer your business chats.';
+
+  @override
+  String get disconnect => 'Disconnect';
+
+  @override
+  String disconnectBotTitle(String name) {
+    return 'Disconnect $name?';
+  }
+
+  @override
   String get emojiTab => 'Emoji';
 
   @override
@@ -972,4 +1144,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nextReaction => 'Next reaction';
+
+  @override
+  String get menuPin => 'Pin';
+
+  @override
+  String get menuUnpin => 'Unpin';
+
+  @override
+  String get pinnedMessage => 'Pinned message';
+
+  @override
+  String pinnedMessageNumber(int number) {
+    return 'Pinned message #$number';
+  }
+
+  @override
+  String get hidePinned => 'Hide pinned messages';
+
+  @override
+  String get backToPrevious => 'Back to where you were';
 }
