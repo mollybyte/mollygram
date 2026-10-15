@@ -3642,7 +3642,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
           ),
           if (translateBar != null)
             Positioned(
-              top: 10 + ChatHeaderBar.height + 8,
+              top: ChatHeaderBar.height + 8,
               left: 14,
               right: 14,
               child: translateBar,
@@ -3658,7 +3658,6 @@ class _ChatViewState extends ConsumerState<ChatView> {
             if (_pinnedBar(l10n, store) case final bar?)
               Positioned(
                 top:
-                    10 +
                     ChatHeaderBar.height +
                     8 +
                     _translateInset +
@@ -3668,9 +3667,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
                 child: bar,
               ),
           Positioned(
-            top: 10,
-            left: 14,
-            right: 14,
+            top: 0,
+            left: 0,
+            right: 0,
             child: ChatHeaderBar(
               title: _searching
                   ? SizedBox(

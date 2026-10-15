@@ -34,6 +34,8 @@ class MgColors extends ThemeExtension<MgColors> {
     required this.shadow,
     required this.wallpaperBase,
     required this.wallpaper,
+    required this.frame,
+    required this.card,
   });
 
   final Brightness brightness;
@@ -113,6 +115,13 @@ class MgColors extends ThemeExtension<MgColors> {
   /// top left, top right, bottom right, bottom left.
   final List<Color> wallpaper;
 
+  /// The window frame: the tinted surface the sidebar sits on and the chat
+  /// cards float over.
+  final Color frame;
+
+  /// The chat card: the solid surface of a conversation pane.
+  final Color card;
+
   bool get isDark => brightness == Brightness.dark;
 
   /// The "Draft:" lead in the chat list, the system red of both themes.
@@ -151,6 +160,8 @@ class MgColors extends ThemeExtension<MgColors> {
       Color(0xFFD5D88D),
       Color(0xFF88B884),
     ],
+    frame: Color(0xFFE6E8EC),
+    card: Color(0xFFFFFFFF),
   );
 
   static const dark = MgColors(
@@ -186,6 +197,8 @@ class MgColors extends ThemeExtension<MgColors> {
       Color(0xFF3B5465),
       Color(0xFF203845),
     ],
+    frame: Color(0xFF1C1D20),
+    card: Color(0xFF26272B),
   );
 
   /// The tokens of the nearest theme. Falls back to [light] when the theme
@@ -226,6 +239,8 @@ class MgColors extends ThemeExtension<MgColors> {
     Color? shadow,
     Color? wallpaperBase,
     List<Color>? wallpaper,
+    Color? frame,
+    Color? card,
   }) {
     return MgColors(
       brightness: brightness ?? this.brightness,
@@ -257,6 +272,8 @@ class MgColors extends ThemeExtension<MgColors> {
       shadow: shadow ?? this.shadow,
       wallpaperBase: wallpaperBase ?? this.wallpaperBase,
       wallpaper: wallpaper ?? this.wallpaper,
+      frame: frame ?? this.frame,
+      card: card ?? this.card,
     );
   }
 
@@ -295,6 +312,8 @@ class MgColors extends ThemeExtension<MgColors> {
         for (var i = 0; i < wallpaper.length; i++)
           c(wallpaper[i], other.wallpaper[i]),
       ],
+      frame: c(frame, other.frame),
+      card: c(card, other.card),
     );
   }
 }

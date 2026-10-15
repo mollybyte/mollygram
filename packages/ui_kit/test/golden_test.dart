@@ -22,11 +22,6 @@ const _labels = ComposerLabels(
   send: 'Send',
 );
 
-const _folderAll = MgIconData(
-  'folderAll',
-  '<path d="M4 6h16M4 12h16M4 18h16"/>',
-);
-
 /// The main window from design/Main.dc.html, built from the kit.
 class _Window extends StatelessWidget {
   const _Window({this.blur = true});
@@ -39,134 +34,122 @@ class _Window extends StatelessWidget {
       blur: blur,
       child: Stack(
         children: [
-          const Positioned.fill(child: Wallpaper()),
+          Positioned.fill(child: ColoredBox(color: MgColors.of(context).frame)),
           Positioned(
-            left: SidebarIsland.width + 16,
-            right: 0,
-            top: 0,
-            bottom: 0,
-            child: Stack(
-              children: [
-                Positioned.fill(
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(24, 72, 24, 88),
-                    children: const [
-                      DatePill('Today'),
-                      _Row(
-                        out: false,
-                        child: TextMessageBubble(
-                          text: 'Did the new build land on your Mac?',
-                          time: '21:04',
-                          outgoing: false,
+            left: SidebarIsland.width,
+            right: SidebarIsland.topInset,
+            top: SidebarIsland.topInset,
+            bottom: SidebarIsland.topInset,
+            child: ChatCard(
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: ListView(
+                      padding: const EdgeInsets.fromLTRB(24, 72, 24, 88),
+                      children: const [
+                        DatePill('Today'),
+                        _Row(
+                          out: false,
+                          child: TextMessageBubble(
+                            text: 'Did the new build land on your Mac?',
+                            time: '21:04',
+                            outgoing: false,
+                          ),
                         ),
-                      ),
-                      _Row(
-                        out: true,
-                        child: TextMessageBubble(
-                          text: 'Yes, it opens instantly now',
-                          time: '21:10',
-                          outgoing: true,
-                          status: MessageStatus.read,
+                        _Row(
+                          out: true,
+                          child: TextMessageBubble(
+                            text: 'Yes, it opens instantly now',
+                            time: '21:10',
+                            outgoing: true,
+                            status: MessageStatus.read,
+                          ),
                         ),
-                      ),
-                      _Row(
-                        out: true,
-                        child: TextMessageBubble(
-                          text: 'wrong chat',
-                          time: '21:11',
-                          outgoing: true,
-                          status: MessageStatus.sent,
-                          label: 'deleted',
-                          dimmed: true,
+                        _Row(
+                          out: true,
+                          child: TextMessageBubble(
+                            text: 'wrong chat',
+                            time: '21:11',
+                            outgoing: true,
+                            status: MessageStatus.sent,
+                            label: 'deleted',
+                            dimmed: true,
+                          ),
                         ),
-                      ),
-                      _Row(
-                        out: false,
-                        child: TextMessageBubble(
-                          text:
-                              'A longer message that wraps onto a second line '
-                              'so the time has to sit next to its last word.',
-                          time: '21:12',
-                          outgoing: false,
-                          label: 'edited',
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Positioned(
-                  top: 10,
-                  left: 14,
-                  right: 14,
-                  child: ChatHeaderBar(
-                    title: const ChatTitleCapsule(
-                      title: 'Anna Petrova',
-                      subtitle: 'online',
-                      subtitleAccent: true,
-                    ),
-                    actions: ChatActionsCapsule(
-                      children: [
-                        MgIconButton(
-                          icon: MgIcons.search,
-                          tooltip: 'Search in chat',
-                          onPressed: () {},
-                        ),
-                        MgIconButton(
-                          icon: MgIcons.call,
-                          tooltip: 'Call',
-                          onPressed: () {},
-                        ),
-                        MgIconButton(
-                          icon: MgIcons.ghost,
-                          tooltip: 'Ghost mode',
-                          selected: true,
-                          onPressed: () {},
-                        ),
-                        MgIconButton(
-                          icon: MgIcons.panel,
-                          tooltip: 'Chat info',
-                          onPressed: () {},
+                        _Row(
+                          out: false,
+                          child: TextMessageBubble(
+                            text:
+                                'A longer message that wraps onto a second line '
+                                'so the time has to sit next to its last word.',
+                            time: '21:12',
+                            outgoing: false,
+                            label: 'edited',
+                          ),
                         ),
                       ],
                     ),
                   ),
-                ),
-                const Positioned(
-                  left: 24,
-                  right: 24,
-                  bottom: 12,
-                  child: Composer(labels: _labels),
-                ),
-              ],
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: ChatHeaderBar(
+                      title: const ChatTitleCapsule(
+                        title: 'Anna Petrova',
+                        subtitle: 'online',
+                        subtitleAccent: true,
+                      ),
+                      actions: ChatActionsCapsule(
+                        children: [
+                          MgIconButton(
+                            icon: MgIcons.search,
+                            tooltip: 'Search in chat',
+                            onPressed: () {},
+                          ),
+                          MgIconButton(
+                            icon: MgIcons.call,
+                            tooltip: 'Call',
+                            onPressed: () {},
+                          ),
+                          MgIconButton(
+                            icon: MgIcons.ghost,
+                            tooltip: 'Ghost mode',
+                            selected: true,
+                            onPressed: () {},
+                          ),
+                          MgIconButton(
+                            icon: MgIcons.panel,
+                            tooltip: 'Chat info',
+                            onPressed: () {},
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const Positioned(
+                    left: 24,
+                    right: 24,
+                    bottom: 12,
+                    child: Composer(labels: _labels),
+                  ),
+                ],
+              ),
             ),
           ),
           Positioned(
-            left: 8,
-            top: 8,
-            bottom: 8,
+            left: 0,
+            top: 0,
+            bottom: 0,
             width: SidebarIsland.width,
             child: SidebarIsland(
-              rail: FolderRail(
-                trailing: [
-                  MgIconButton(
-                    icon: MgIcons.settings,
-                    tooltip: 'Settings',
-                    onPressed: () {},
-                  ),
-                ],
-                children: const [
-                  FolderRailItem(
-                    icon: _folderAll,
-                    label: 'All',
-                    selected: true,
-                  ),
-                  FolderRailItem(
-                    icon: MgIcons.chat,
-                    label: 'Personal',
-                    count: 2,
-                  ),
-                  FolderRailItem(icon: MgIcons.file, label: 'Work', count: 3),
-                  FolderRailItem(icon: MgIcons.volume, label: 'Channels'),
+              folders: const FolderSegments(
+                selected: 0,
+                segments: [
+                  FolderSegment(label: 'All'),
+                  FolderSegment(label: 'Personal', count: 2),
+                  FolderSegment(label: 'Work', count: 3),
+                  FolderSegment(label: 'Channels'),
                 ],
               ),
               actions: [

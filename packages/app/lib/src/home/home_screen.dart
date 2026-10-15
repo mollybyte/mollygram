@@ -29,9 +29,10 @@ import 'chat_view.dart';
 import 'sidebar.dart';
 import 'workspace.dart';
 
-/// The signed-in window: wallpaper, the floating sidebar and the workspace
-/// (tabs, one or two chat panes, the ⌘K palette). [GlassScope] gives all
-/// glass panels one shared backdrop read.
+/// The signed-in window: the tinted frame with the sidebar lying on it and
+/// the workspace (tabs, one or two chat panes, each on its own [ChatCard],
+/// the ⌘K palette). [GlassScope] gives all glass panels one shared
+/// backdrop read.
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -176,7 +177,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       child: GlassScope(
         child: Stack(
           children: [
-            const Positioned.fill(child: ChatBackground()),
+            Positioned.fill(
+              child: ColoredBox(color: MgColors.of(context).frame),
+            ),
             Positioned.fill(
               child: WorkspaceShell(
                 key: workspaceShellKey,
@@ -195,39 +198,46 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ?.photo,
                 ),
                 shortcuts: (id) => keys[id]?.activator,
-                sidebar: Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: Stack(
-                    children: [
-                      Positioned.fill(
-                        child: Sidebar(
-                          onSettings: _openSettings,
-                          onPrivacy: () =>
-                              _openSettings(privacyExtrasSectionId),
-                          onNewMessage: _newMessage,
-                        ),
+                sidebar: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: Sidebar(
+                        onSettings: _openSettings,
+                        onPrivacy: () => _openSettings(privacyExtrasSectionId),
+                        onNewMessage: _newMessage,
                       ),
-                      // Over the search field in the list column's title
-                      // bar while the app is not connected; it takes no
-                      // clicks.
-                      const Positioned(
-                        top: 0,
-                        left: FolderRail.width + 12,
-                        right: 84,
-                        height: SidebarIsland.titleBarHeight,
-                        child: ConnectionStatusCapsule(),
-                      ),
-                    ],
+                    ),
+                    // Over the title bar row, between the window buttons and
+                    // the actions, while the app is not connected; it takes
+                    // no clicks.
+                    const Positioned(
+                      top: SidebarIsland.topInset,
+                      left: 76,
+                      right: 112,
+                      height: SidebarIsland.titleBarHeight,
+                      child: ConnectionStatusCapsule(),
+                    ),
+                  ],
+                ),
+                sidebarWidth: SidebarIsland.width,
+                paneBuilder: (context, chat, focused) => Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    0,
+                    SidebarIsland.topInset,
+                    SidebarIsland.topInset,
+                    SidebarIsland.topInset,
+                  ),
+                  child: ChatCard(
+                    background: const ChatCardBackground(),
+                    child: chat == null
+                        ? const _NoChat()
+                        : PeerInfoHost(
+                            key: ValueKey(chat),
+                            chatId: chat,
+                            child: ChatView(chatId: chat),
+                          ),
                   ),
                 ),
-                sidebarWidth: SidebarIsland.width + 16,
-                paneBuilder: (context, chat, focused) => chat == null
-                    ? const _NoChat()
-                    : PeerInfoHost(
-                        key: ValueKey(chat),
-                        chatId: chat,
-                        child: ChatView(chatId: chat),
-                      ),
                 // The chat's view scrolls to the message once it is open.
                 onOpenMessage: (message, target) {
                   ref
@@ -244,7 +254,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final settings = _settings;
     return SecretScreenProtection(
       child: LinkHost(
-        contentLeft: SidebarIsland.width + 16,
+        contentLeft: SidebarIsland.width,
         covered: settings != null,
         child: NotificationsHost(
           child: Stack(

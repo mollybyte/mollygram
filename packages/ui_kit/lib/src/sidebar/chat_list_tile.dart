@@ -346,7 +346,7 @@ class _AvatarWithDot extends StatelessWidget {
                   shape: BoxShape.circle,
                   color: selected ? c.onAccent : c.accent,
                   border: Border.all(
-                    color: selected ? c.accent : c.glassSolid,
+                    color: selected ? c.accent : c.frame,
                     width: 2.5,
                   ),
                 ),

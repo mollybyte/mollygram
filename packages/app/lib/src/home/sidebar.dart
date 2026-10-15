@@ -11,7 +11,6 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 import '../../l10n/app_localizations.dart';
 import '../avatar/peer_avatar.dart';
 import '../downloads/downloads_bar.dart';
-import '../folders/folder_icons.dart';
 import '../privacy/ghost_mode_capsule.dart';
 import '../session/providers.dart';
 import '../window_drag_area.dart';
@@ -127,58 +126,81 @@ class _SidebarState extends ConsumerState<Sidebar> {
     final select = ref.read(selectedChatListProvider.notifier).select;
     final showArchive = list.isMain && query.isEmpty && archived.isNotEmpty;
 
-    // The way back from the archive sits where the folder tabs used to be;
-    // the folders themselves live on the rail.
-    final Widget? header = list.isArchive
-        ? FolderTabBar(
+    // In the archive the way back takes the folders' place.
+    final Widget header = list.isArchive
+        ? Align(
             key: const ValueKey('archive'),
-            children: [
-              _BackPill(
-                label: l10n.archivedChats,
-                tooltip: l10n.back,
+            alignment: Alignment.centerLeft,
+            child: _BackPill(
+              label: l10n.archivedChats,
+              tooltip: l10n.back,
+              onTap: () => select(const ChatListLocation.main()),
+            ),
+          )
+        : FolderSegments(
+            key: const ValueKey('folders'),
+            selected: list.isMain
+                ? 0
+                : 1 +
+                      folders.indexWhere(
+                        (folder) => list == ChatListLocation.folder(folder.id),
+                      ),
+            segments: [
+              FolderSegment(
+                label: l10n.folderAll,
                 onTap: () => select(const ChatListLocation.main()),
               ),
+              for (final folder in folders)
+                FolderSegment(
+                  label: folder.title,
+                  onTap: () => select(ChatListLocation.folder(folder.id)),
+                ),
             ],
-          )
-        : null;
+          );
+
+    // The open list's pinned chats sit over it as a grid of avatars; the
+    // list holds the rest. A search shows plain rows.
+    final pinned = query.isEmpty && !list.isArchive
+        ? [
+            for (final chat in shown)
+              if (chat.isPinnedIn(list)) chat,
+          ].take(PinnedChatGrid.capacity).toList()
+        : const <ChatListEntry>[];
+    final pinnedIds = {for (final chat in pinned) chat.id};
+    final rest = pinnedIds.isEmpty
+        ? shown
+        : [
+            for (final chat in shown)
+              if (!pinnedIds.contains(chat.id)) chat,
+          ];
 
     return SidebarIsland(
-      rail: FolderRail(
-        topFill: const WindowDragArea(),
-        trailing: [
-          MgIconButton(
-            icon: MgIcons.settings,
-            tooltip: l10n.settings,
-            onPressed: widget.onSettings,
-          ),
-        ],
-        children: [
-          FolderRailItem(
-            icon: folderIcon('All'),
-            label: l10n.folderAll,
-            selected: list.isMain || list.isArchive,
-            onTap: () => select(const ChatListLocation.main()),
-          ),
-          for (final folder in folders)
-            FolderRailItem(
-              icon: folderIcon(folder.iconName),
-              label: folder.title,
-              selected: list == ChatListLocation.folder(folder.id),
-              onTap: () => select(ChatListLocation.folder(folder.id)),
-            ),
-        ],
-      ),
+      titleBarFill: const WindowDragArea(),
       search: MgSearchField(hintText: l10n.searchHint, controller: _search),
       actions: [
         GhostModeCapsule(onTap: widget.onPrivacy),
+        MgIconButton(
+          icon: MgIcons.settings,
+          tooltip: l10n.settings,
+          onPressed: widget.onSettings,
+        ),
         MgIconButton(
           icon: MgIcons.compose,
           tooltip: l10n.newMessage,
           onPressed: widget.onNewMessage,
         ),
       ],
+      folders: AnimatedSwitcher(
+        duration: _listSwitch,
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeInCubic,
+        layoutBuilder: (current, previous) => Stack(
+          alignment: Alignment.centerLeft,
+          children: [...previous, ?current],
+        ),
+        child: header,
+      ),
       banner: const DownloadsBar(),
-      folders: header,
       body: AnimatedSwitcher(
         duration: _listSwitch,
         switchInCurve: Curves.easeOutCubic,
@@ -214,7 +236,8 @@ class _SidebarState extends ConsumerState<Sidebar> {
                 )
               : _ChatList(
                   list: list,
-                  chats: shown,
+                  chats: rest,
+                  pinned: pinned,
                   archived: showArchive ? archived : null,
                   animate: query.isEmpty,
                   // TDLib sends the list a page at a time; the next page is
@@ -321,6 +344,7 @@ class _ChatList extends ConsumerStatefulWidget {
   const _ChatList({
     required this.list,
     required this.chats,
+    this.pinned = const [],
     this.archived,
     this.animate = true,
     this.onNearEnd,
@@ -328,6 +352,9 @@ class _ChatList extends ConsumerStatefulWidget {
 
   final ChatListLocation list;
   final List<ChatListEntry> chats;
+
+  /// Pinned chats for the grid over the list; they are not in [chats].
+  final List<ChatListEntry> pinned;
 
   /// Archived chats, for the archive row at the top; null hides it.
   final List<ChatListEntry>? archived;
@@ -500,9 +527,41 @@ class _ChatListState extends ConsumerState<_ChatList> {
             );
           },
         );
+        final pinned = widget.pinned;
         return Stack(
           children: [
-            Positioned.fill(child: list),
+            Positioned.fill(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  AnimatedSize(
+                    duration: const Duration(milliseconds: 240),
+                    curve: Curves.easeOutCubic,
+                    alignment: Alignment.topCenter,
+                    child: pinned.isEmpty
+                        ? const SizedBox(width: double.infinity)
+                        : PinnedChatGrid(
+                            children: [
+                              for (final chat in pinned)
+                                _PinnedTile(
+                                  key: ValueKey(chat.id),
+                                  chat: chat,
+                                  selected: chat.id == selected,
+                                  menuOpen: _menuFor == chat.id,
+                                  onTap: () => workspace.open(
+                                    chat.id,
+                                    target: _clickTarget(),
+                                  ),
+                                  onContextMenu: (position) =>
+                                      _openMenu(chat, position),
+                                ),
+                            ],
+                          ),
+                  ),
+                  Expanded(child: list),
+                ],
+              ),
+            ),
             Positioned(
               left: 12,
               right: 12,
@@ -660,6 +719,49 @@ class _ChatRowState extends ConsumerState<_ChatRow>
         );
       },
       child: tile,
+    );
+  }
+}
+
+/// A pinned chat in the grid over the list.
+class _PinnedTile extends ConsumerWidget {
+  const _PinnedTile({
+    super.key,
+    required this.chat,
+    required this.selected,
+    required this.menuOpen,
+    required this.onTap,
+    required this.onContextMenu,
+  });
+
+  final ChatListEntry chat;
+  final bool selected;
+  final bool menuOpen;
+  final VoidCallback onTap;
+  final ValueChanged<Offset> onContextMenu;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final online = ref.watch(chatOnlineProvider(chat.id)).value ?? false;
+    return PinnedChatTile(
+      title: chat.title,
+      avatar: PeerAvatar.chat(
+        name: chat.title,
+        size: PinnedChatTile.avatarSize,
+        photo: chat.photo,
+      ),
+      unread: chat.unreadCount,
+      unreadLabel: NumberFormat.compact(locale: locale)
+          .format(chat.unreadCount),
+      markedUnread: chat.isMarkedAsUnread,
+      mentions: chat.unreadMentionCount > 0,
+      muted: chat.isMuted,
+      online: online,
+      selected: selected,
+      menuOpen: menuOpen,
+      onTap: onTap,
+      onContextMenu: onContextMenu,
     );
   }
 }

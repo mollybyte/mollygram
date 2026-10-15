@@ -302,10 +302,11 @@ void main() {
   testWidgets('folder tab hides a zero counter', (tester) async {
     await tester.pumpWidget(
       themed(
-        const FolderTabBar(
-          children: [
-            FolderTab(label: 'All', selected: true),
-            FolderTab(label: 'Work', count: 4),
+        const FolderSegments(
+          selected: 0,
+          segments: [
+            FolderSegment(label: 'All'),
+            FolderSegment(label: 'Work', count: 4),
           ],
         ),
       ),
@@ -553,9 +554,10 @@ void main() {
     final title = tester.getRect(find.byKey(const Key('title')));
     final fill = tester.getRect(find.byKey(const Key('fill')));
     expect(bar.width, 1000);
-    expect(title.left, 0);
-    expect(fill.left, 0);
-    expect(fill.right, 1000 - 80);
+    // The bar keeps 8 px of air at the left and 6 at the right.
+    expect(title.left, 8);
+    expect(fill.left, 8);
+    expect(fill.right, 1000 - 6 - 80);
   });
 
   testWidgets('a wide header title stays clear of the actions', (tester) async {
@@ -575,34 +577,27 @@ void main() {
     );
     final title = tester.getRect(find.byKey(const Key('title')));
     final actions = tester.getRect(find.byKey(const Key('actions')));
-    expect(title.left, 0);
+    expect(title.left, 8);
     expect(title.right, lessThanOrEqualTo(actions.left - 8));
   });
 
-  testWidgets('folder rail item marks the selected folder', (tester) async {
+  testWidgets('pinned chat tile shows the name and opens the chat', (
+    tester,
+  ) async {
     var taps = 0;
     await tester.pumpWidget(
       themed(
-        FolderRail(
+        PinnedChatGrid(
           children: [
-            const FolderRailItem(
-              icon: MgIcons.chat,
-              label: 'All',
-              selected: true,
-            ),
-            FolderRailItem(
-              icon: MgIcons.file,
-              label: 'Work',
-              count: 4,
-              onTap: () => taps++,
-            ),
+            const PinnedChatTile(title: 'Anna Petrova', selected: true),
+            PinnedChatTile(title: 'Design', unread: 4, onTap: () => taps++),
           ],
         ),
       ),
     );
-    expect(find.text('All'), findsOneWidget);
-    expect(find.text('Work'), findsOneWidget);
-    await tester.tap(find.text('Work'));
+    expect(find.text('Anna Petrova'), findsOneWidget);
+    expect(find.text('4'), findsOneWidget);
+    await tester.tap(find.text('Design'));
     expect(taps, 1);
   });
 
