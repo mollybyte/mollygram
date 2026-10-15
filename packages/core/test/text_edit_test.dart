@@ -64,4 +64,47 @@ void main() {
   test('changes nothing when the text is the same', () {
     expect(_spans(carryEntities('ok', 'ok', [_bold(0, 2)])), [(0, 2)]);
   });
+
+  test('keeps what the composer cannot show through an edit', () {
+    const emoji = td.TextEntity(
+      offset: 6,
+      length: 2,
+      type: td.TextEntityTypeCustomEmoji(customEmojiId: 5),
+    );
+    const code = td.TextEntity(
+      offset: 9,
+      length: 6,
+      type: td.TextEntityTypePreCode(language: 'dart'),
+    );
+    const quote = td.TextEntity(
+      offset: 0,
+      length: 5,
+      type: td.TextEntityTypeExpandableBlockQuote(),
+    );
+    // "Hello" became "Hi": everything after moves 3 to the left.
+    final kept = keepHiddenEntities(
+      'Hello \u{1F600} x\nfoo()',
+      'Hi \u{1F600} x\nfoo()',
+      [quote, emoji, code],
+      const [
+        td.TextEntity(
+          offset: 0,
+          length: 2,
+          type: td.TextEntityTypeBlockQuote(),
+        ),
+        td.TextEntity(offset: 6, length: 6, type: td.TextEntityTypePre()),
+        td.TextEntity(offset: 0, length: 1, type: td.TextEntityTypeBold()),
+      ],
+    );
+    expect(
+      [for (final e in kept) (e.offset, e.length, e.type.tdType)],
+      [
+        (0, 2, 'textEntityTypeExpandableBlockQuote'),
+        (0, 1, 'textEntityTypeBold'),
+        (3, 2, 'textEntityTypeCustomEmoji'),
+        (6, 6, 'textEntityTypePreCode'),
+      ],
+    );
+    expect((kept.last.type as td.TextEntityTypePreCode).language, 'dart');
+  });
 }

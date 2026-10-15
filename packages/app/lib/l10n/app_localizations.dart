@@ -920,6 +920,78 @@ abstract class AppLocalizations {
   /// **'Cancel'**
   String get cancel;
 
+  /// No description provided for @formatBold.
+  ///
+  /// In en, this message translates to:
+  /// **'Bold'**
+  String get formatBold;
+
+  /// No description provided for @formatItalic.
+  ///
+  /// In en, this message translates to:
+  /// **'Italic'**
+  String get formatItalic;
+
+  /// No description provided for @formatUnderline.
+  ///
+  /// In en, this message translates to:
+  /// **'Underline'**
+  String get formatUnderline;
+
+  /// No description provided for @formatStrikethrough.
+  ///
+  /// In en, this message translates to:
+  /// **'Strikethrough'**
+  String get formatStrikethrough;
+
+  /// No description provided for @formatMonospace.
+  ///
+  /// In en, this message translates to:
+  /// **'Monospace'**
+  String get formatMonospace;
+
+  /// No description provided for @formatSpoiler.
+  ///
+  /// In en, this message translates to:
+  /// **'Spoiler'**
+  String get formatSpoiler;
+
+  /// No description provided for @formatQuote.
+  ///
+  /// In en, this message translates to:
+  /// **'Quote'**
+  String get formatQuote;
+
+  /// No description provided for @formatLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Link…'**
+  String get formatLink;
+
+  /// No description provided for @formatPlain.
+  ///
+  /// In en, this message translates to:
+  /// **'Plain text'**
+  String get formatPlain;
+
+  /// No description provided for @linkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add link'**
+  String get linkTitle;
+
+  /// No description provided for @linkHint.
+  ///
+  /// In en, this message translates to:
+  /// **'URL'**
+  String get linkHint;
+
+  /// No description provided for @linkApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get linkApply;
+
   /// No description provided for @deleteMessageTitle.
   ///
   /// In en, this message translates to:
@@ -2756,6 +2828,96 @@ abstract class AppLocalizations {
   /// **'Couldn\'t do that, try again'**
   String get chatActionFailed;
 
+  /// No description provided for @privacyExtras.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy extras'**
+  String get privacyExtras;
+
+  /// No description provided for @privacyExtrasAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'These switches decide what others see while you use Mollygram on this Mac. Everything you read and send works as usual.'**
+  String get privacyExtrasAbout;
+
+  /// No description provided for @privacyExtrasOnlineNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Some things still show: sending a message puts you online for a moment and marks the chat read, files you send show as uploading, and a reaction shows you saw the message.'**
+  String get privacyExtrasOnlineNote;
+
+  /// No description provided for @ghostMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Ghost mode'**
+  String get ghostMode;
+
+  /// No description provided for @ghostModeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Turns on everything below at once'**
+  String get ghostModeHint;
+
+  /// No description provided for @ghostModeIsOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Ghost mode is on'**
+  String get ghostModeIsOn;
+
+  /// No description provided for @privacyExtrasAreOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Some privacy extras are on'**
+  String get privacyExtrasAreOn;
+
+  /// No description provided for @hideReadReceipts.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t send read receipts'**
+  String get hideReadReceipts;
+
+  /// No description provided for @hideReadReceiptsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Senders won\'t see that you\'ve read their messages'**
+  String get hideReadReceiptsHint;
+
+  /// No description provided for @hideTyping.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t show typing'**
+  String get hideTyping;
+
+  /// No description provided for @hideTypingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Also hides recording voice and video messages'**
+  String get hideTypingHint;
+
+  /// No description provided for @stayOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Stay offline'**
+  String get stayOffline;
+
+  /// No description provided for @stayOfflineHint.
+  ///
+  /// In en, this message translates to:
+  /// **'You won\'t appear online while the app is open'**
+  String get stayOfflineHint;
+
+  /// No description provided for @hideContentOpened.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t mark voice and video messages as played'**
+  String get hideContentOpened;
+
+  /// No description provided for @hideContentOpenedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Senders won\'t see that you\'ve played them'**
+  String get hideContentOpenedHint;
+
   /// No description provided for @menuSelect.
   ///
   /// In en, this message translates to:
@@ -2779,6 +2941,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Copy'**
   String get copy;
+
+  /// No description provided for @previousMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous month'**
+  String get previousMonth;
+
+  /// No description provided for @nextMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Next month'**
+  String get nextMonth;
+
+  /// No description provided for @pinnedList.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinned messages'**
+  String get pinnedList;
+
+  /// No description provided for @pinnedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} pinned message} other{{count} pinned messages}}'**
+  String pinnedCount(int count);
+
+  /// No description provided for @backToChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to the chat'**
+  String get backToChat;
+
+  /// No description provided for @unpinAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpin all messages'**
+  String get unpinAll;
+
+  /// No description provided for @unpinAllTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{Unpin {count} message?} other{Unpin all {count} messages?}}'**
+  String unpinAllTitle(int count);
 
   /// No description provided for @edit.
   ///

@@ -24,9 +24,12 @@ import '../chat/forward_picker.dart';
 import '../chat/media_viewer.dart';
 import '../chat/message_actions.dart';
 import '../chat/message_tile.dart';
+import '../chat/timeline.dart';
 import '../chat/timeline_scroll.dart';
 import '../chat/timeline_view.dart';
 import '../chat_search/chat_search_bar.dart';
+import '../compose/mention_suggester.dart';
+import '../compose/rich_text_bridge.dart';
 import '../profile/peer_info_state.dart';
 import '../session/providers.dart';
 import '../shared_media/message_jump.dart';
@@ -45,7 +48,8 @@ class ChatView extends ConsumerStatefulWidget {
 }
 
 class _ChatViewState extends ConsumerState<ChatView> {
-  final _draft = TextEditingController();
+  final _draft = RichTextEditingController();
+  late final _mentions = MentionSuggester(controller: _draft);
   final _focus = FocusNode();
   late final ConversationController _conversations;
 
@@ -56,6 +60,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
   /// it pushed aside, which comes back when editing ends.
   ConversationMessage? _editing;
   String _setAside = '';
+  List<FormatRange> _setAsideRanges = const [];
   ConversationMessage? _replyAside;
 
   /// Incoming messages already reported to TDLib as viewed.
@@ -73,6 +78,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
   var _searching = false;
 
   final _scroll = TimelineScrollController();
+  final _pinnedScroll = TimelineScrollController();
   final _timelineKey = GlobalKey();
 
   /// Where the user was before a jump, so the down button takes them
@@ -105,6 +111,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
   static final _pinnedHidden = <int>{};
   var _pinnedShown = false;
 
+  /// The timeline shows only the pinned messages, from the bar's button.
+  var _pinnedListOpen = false;
+
   /// A join or mute request on its way.
   var _actionPending = false;
 
@@ -124,6 +133,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
         .requireValue
         .conversations;
     _draft.addListener(_clearSendError);
+    _mentions
+      ..search = _mentionSearch()
+      ..addListener(_mentionsChanged);
     _scroll.addListener(_followScroll);
     _open(widget.chatId);
     WidgetsBinding.instance.addPostFrameCallback((_) => _takeJump());
@@ -144,11 +156,15 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _viewed.clear();
     _toView.clear();
     // An edit belongs to the old chat: give back the draft it set aside.
-    if (_editing != null) _draft.text = _setAside;
+    if (_editing != null) _draft.setFormatted(_setAside, _setAsideRanges);
+    _mentions
+      ..search = _mentionSearch()
+      ..reset();
     _failure = null;
     _replyTo = null;
     _editing = null;
     _setAside = '';
+    _setAsideRanges = const [];
     _replyAside = null;
     _panelOpen = false;
     _searching = false;
@@ -157,6 +173,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _flashId = null;
     _returnTo = null;
     _pinnedIndex = 0;
+    _pinnedListOpen = false;
     _selected = null;
     _selectedProperties = null;
     _flashTimer?.cancel();
@@ -168,9 +185,11 @@ class _ChatViewState extends ConsumerState<ChatView> {
   @override
   void dispose() {
     _close(widget.chatId);
+    _mentions.dispose();
     _draft.dispose();
     _focus.dispose();
     _scroll.dispose();
+    _pinnedScroll.dispose();
     _away.dispose();
     _flashTimer?.cancel();
     super.dispose();
@@ -218,7 +237,63 @@ class _ChatViewState extends ConsumerState<ChatView> {
       closeTooltip: l10n.hidePinned,
       onTap: () => unawaited(_openPinned(ids)),
       onClose: () => setState(() => _pinnedHidden.add(chatId)),
+      listTooltip: l10n.pinnedList,
+      onList: () => setState(() {
+        _pinnedListOpen = true;
+        _selected = null;
+      }),
     );
+  }
+
+  void _closePinnedList() {
+    if (!_pinnedListOpen) return;
+    setState(() => _pinnedListOpen = false);
+    _focus.requestFocus();
+  }
+
+  /// The pinned messages, newest first, as the timeline wants them.
+  List<ConversationMessage> _pinnedMessages(ConversationStore store) {
+    final chatId = widget.chatId;
+    return [
+      for (final id in store.pinnedIds(chatId)) ?store.message(chatId, id),
+    ];
+  }
+
+  /// The bar under the pinned list: unpins every message after asking.
+  /// Esc goes back to the chat.
+  Widget _unpinAllBar(AppLocalizations l10n, ConversationStore store) {
+    final count = store.pinnedIds(widget.chatId).length;
+    return Focus(
+      autofocus: true,
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.escape) {
+          _closePinnedList();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: ComposerActionBar(
+        label: l10n.unpinAll,
+        loading: _actionPending,
+        onPressed: () => unawaited(_unpinAll(count)),
+      ),
+    );
+  }
+
+  Future<void> _unpinAll(int count) async {
+    final l10n = AppLocalizations.of(context);
+    final chatId = widget.chatId;
+    final confirmed = await showMgConfirm(
+      context,
+      title: l10n.unpinAllTitle(count),
+      confirmLabel: l10n.unpinAll,
+      cancelLabel: l10n.cancel,
+      destructive: true,
+    );
+    if (confirmed == null || !mounted || widget.chatId != chatId) return;
+    await _chatAction(() => _conversations.unpinAll(chatId));
+    if (mounted && widget.chatId == chatId) _closePinnedList();
   }
 
   void _close(int chatId) =>
@@ -287,7 +362,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
 
   /// Where the timeline starts under the header and the pinned bar.
   double get _topInset =>
-      TimelineView.headerInset + (_pinnedShown ? PinnedBar.height + 8 : 0);
+      TimelineView.headerInset +
+      (_pinnedShown && !_pinnedListOpen ? PinnedBar.height + 8 : 0);
 
   /// Keeps [_scroll.pinned] and the down button in step with where the
   /// user leaves the view.
@@ -619,33 +695,33 @@ class _ChatViewState extends ConsumerState<ChatView> {
     if (message.chatId != widget.chatId) return;
     if (_editing == null) {
       _setAside = _draft.text;
+      _setAsideRanges = _draft.ranges;
       _replyAside = _replyTo;
     }
-    final text = message.text;
     setState(() {
       _editing = message;
       _replyTo = null;
     });
-    _draft.value = TextEditingValue(
-      text: text,
-      selection: TextSelection.collapsed(offset: text.length),
+    final text = captionOf(message.content);
+    _draft.setFormatted(
+      message.text,
+      text == null ? const [] : draftRanges(text),
     );
     _focus.requestFocus();
   }
 
   void _stopEditing() {
     final draft = _setAside;
+    final ranges = _setAsideRanges;
     _setAside = '';
+    _setAsideRanges = const [];
     setState(() {
       _editing = null;
       if (_failure == _Failure.edit) _failure = null;
       _replyTo = _replyAside;
       _replyAside = null;
     });
-    _draft.value = TextEditingValue(
-      text: draft,
-      selection: TextSelection.collapsed(offset: draft.length),
-    );
+    _draft.setFormatted(draft, ranges);
   }
 
   /// Esc: stop editing first, then stop replying.
@@ -836,6 +912,18 @@ class _ChatViewState extends ConsumerState<ChatView> {
     });
   }
 
+  void _mentionsChanged() => setState(() {});
+
+  /// Members to offer for an @ in this chat, while it is a group.
+  Future<List<MentionCandidate>> Function(String) _mentionSearch() {
+    final chatId = widget.chatId;
+    return mentionSearchFor(
+      ref.read(telegramSessionProvider).requireValue.mentions,
+      () => ref.read(chatEntryProvider(chatId)).value?.isGroup ?? false,
+      chatId,
+    );
+  }
+
   Future<void> _send(String text) async {
     final editing = _editing;
     // A caption may be removed; a text message can't be emptied.
@@ -845,6 +933,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
     if (text.trim().isEmpty) return;
     final chatId = widget.chatId;
     final replyTo = _replyTo;
+    final ranges = _draft.ranges;
+    final formatted = formattedDraft(text, ranges);
+    if (formatted.text.isEmpty) return;
     _draft.clear();
     setState(() {
       _failure = null;
@@ -852,17 +943,17 @@ class _ChatViewState extends ConsumerState<ChatView> {
     });
     unawaited(_toLatestForSend());
     try {
-      await _conversations.sendText(chatId, text, replyTo: replyTo?.id);
+      await _conversations.sendText(
+        chatId,
+        formatted.text,
+        replyTo: replyTo?.id,
+        entities: formatted.entities,
+      );
     } catch (_) {
       // Give the text back rather than lose it, unless the user has
       // started typing something else or moved to another chat.
       if (!mounted || widget.chatId != chatId) return;
-      if (_draft.text.isEmpty) {
-        _draft.value = TextEditingValue(
-          text: text,
-          selection: TextSelection.collapsed(offset: text.length),
-        );
-      }
+      if (_draft.text.isEmpty) _draft.setFormatted(text, ranges);
       setState(() {
         _failure = _Failure.send;
         _replyTo ??= replyTo;
@@ -874,10 +965,19 @@ class _ChatViewState extends ConsumerState<ChatView> {
       message.content is! td.MessageText;
 
   Future<void> _saveEdit(ConversationMessage message, String text) async {
-    if (text == message.text) return _stopEditing();
+    final ranges = _draft.ranges;
+    final formatted = formattedDraft(text, ranges);
+    final old = captionOf(message.content);
+    if (old != null && sameDraft(formatted, old)) return _stopEditing();
+    if (formatted.text.isEmpty && !_isCaption(message)) return;
     _stopEditing();
     try {
-      await _conversations.editText(message.chatId, message.id, text);
+      await _conversations.editText(
+        message.chatId,
+        message.id,
+        formatted.text,
+        entities: formatted.entities,
+      );
     } catch (_) {
       if (!mounted || widget.chatId != message.chatId) return;
       // Another edit has started meanwhile; keep it and only say so.
@@ -887,10 +987,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
       }
       // Put the edit back so the change is not lost.
       _edit(message);
-      _draft.value = TextEditingValue(
-        text: text,
-        selection: TextSelection.collapsed(offset: text.length),
-      );
+      _draft.setFormatted(text, ranges);
       setState(() => _failure = _Failure.edit);
     }
   }
@@ -988,10 +1085,12 @@ class _ChatViewState extends ConsumerState<ChatView> {
     // The draft becomes the caption, as in the official apps; not while
     // editing, where the composer holds another message's text.
     final useDraft = _editing == null;
+    final draft = useDraft ? _draft.text : '';
+    final draftFormats = useDraft ? _draft.ranges : const <FormatRange>[];
     final choice = await showAttachmentPreview(
       context,
       paths: paths,
-      caption: useDraft ? _draft.text : '',
+      caption: draft,
     );
     if (choice == null && temporary) {
       for (final path in paths) {
@@ -1005,6 +1104,12 @@ class _ChatViewState extends ConsumerState<ChatView> {
       _replyTo = null;
     });
     if (useDraft) _draft.clear();
+    // The draft's formatting goes with it, unless the caption was
+    // rewritten in the preview; Markdown applies either way.
+    final captionRanges = choice.caption == draft
+        ? draftFormats
+        : const <FormatRange>[];
+    final caption = formattedDraft(choice.caption, captionRanges);
     unawaited(_toLatestForSend());
     try {
       // One at a time: each video or song opens a player to be measured.
@@ -1015,13 +1120,16 @@ class _ChatViewState extends ConsumerState<ChatView> {
       await _conversations.sendFiles(
         chatId,
         files,
-        caption: choice.caption,
+        caption: caption.text,
+        captionEntities: caption.entities,
         replyTo: replyTo?.id,
       );
     } catch (_) {
       if (!mounted || widget.chatId != chatId) return;
       // Give the caption and the reply back, as a failed text send does.
-      if (useDraft && _draft.text.isEmpty) _draft.text = choice.caption;
+      if (useDraft && _draft.text.isEmpty) {
+        _draft.setFormatted(choice.caption, captionRanges);
+      }
       setState(() {
         _failure = _Failure.attach;
         _replyTo ??= replyTo;
@@ -1101,6 +1209,54 @@ class _ChatViewState extends ConsumerState<ChatView> {
       closeTooltip: l10n.close,
       onClose: () => setState(() => _replyTo = null),
     );
+  }
+
+  /// The calendar under a date pill: picking a day goes to its last
+  /// message, as in the official app.
+  Future<void> _openCalendar(DateTime day, Offset position) async {
+    final l10n = AppLocalizations.of(context);
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final weekdayFormat = DateFormat.E(locale);
+    final store = _conversations.store;
+    final chatId = widget.chatId;
+    // The oldest loaded message bounds the calendar once the start of the
+    // chat is in.
+    final oldest =
+        store.reachedStart(chatId) && store.messagesFor(chatId).isNotEmpty
+        ? dayOf(store.messagesFor(chatId).last)
+        : null;
+    DateTime? picked;
+    await showMgPopover(
+      context,
+      position: position,
+      child: MgCalendar(
+        month: day,
+        today: DateTime.now(),
+        first: oldest,
+        monthTitle: (month) => DateFormat.yMMMM(locale).format(month),
+        weekdays: [
+          for (var i = 0; i < 7; i++)
+            // 2024-01-01 is a Monday.
+            weekdayFormat.format(DateTime(2024, 1, 1 + i)).characters.first,
+        ],
+        previousTooltip: l10n.previousMonth,
+        nextTooltip: l10n.nextMonth,
+        onPick: (day) {
+          picked = day;
+          Navigator.of(context).pop();
+        },
+      ),
+    );
+    final target = picked;
+    if (target == null || !mounted || widget.chatId != chatId) return;
+    final ConversationMessage? message;
+    try {
+      message = await _conversations.messageByDate(chatId, target);
+    } on Object {
+      return;
+    }
+    if (message == null || !mounted || widget.chatId != chatId) return;
+    await _jumpTo(message.id);
   }
 
   /// Down to the newest message, the next mention and the next reaction,
@@ -1250,6 +1406,19 @@ class _ChatViewState extends ConsumerState<ChatView> {
               AsyncData(value: final list)
                   when list.isEmpty && store.reachedStart(widget.chatId) =>
                 Center(child: DatePill(l10n.noMessages)),
+              AsyncData() when _pinnedListOpen => TimelineView(
+                key: const ValueKey('pinnedList'),
+                messages: _pinnedMessages(store),
+                store: store,
+                chatId: widget.chatId,
+                isGroup: chat?.isGroup ?? false,
+                controller: _pinnedScroll,
+                topInset: _topInset,
+                onShown: _shown,
+                onNearTop: () {},
+                onNearBottom: () {},
+                actions: _actions,
+              ),
               AsyncData(value: final list) => () {
                 _placeUnread(list);
                 return TimelineView(
@@ -1265,6 +1434,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
                   flash: _flash,
                   topInset: _topInset,
                   selection: _selected,
+                  onDateTap: (day, position) =>
+                      unawaited(_openCalendar(day, position)),
                   onShown: _shown,
                   onNearTop: _loadOlder,
                   onNearBottom: _loadNewer,
@@ -1274,13 +1445,14 @@ class _ChatViewState extends ConsumerState<ChatView> {
               _ => const SizedBox.shrink(),
             },
           ),
-          if (_pinnedBar(l10n, store) case final bar?)
-            Positioned(
-              top: 10 + ChatHeaderBar.height + 8,
-              left: 14,
-              right: 14,
-              child: bar,
-            ),
+          if (!_pinnedListOpen)
+            if (_pinnedBar(l10n, store) case final bar?)
+              Positioned(
+                top: 10 + ChatHeaderBar.height + 8,
+                left: 14,
+                right: 14,
+                child: bar,
+              ),
           Positioned(
             top: 10,
             left: 14,
@@ -1297,6 +1469,18 @@ class _ChatViewState extends ConsumerState<ChatView> {
                         onClose: _closeSearch,
                       ),
                     )
+                  : _pinnedListOpen
+                  ? ChatTitleCapsule(
+                      title: l10n.pinnedCount(
+                        store.pinnedIds(widget.chatId).length,
+                      ),
+                      avatar: MgIconButton(
+                        icon: MgIcons.back,
+                        tooltip: l10n.backToChat,
+                        onPressed: _closePinnedList,
+                      ),
+                      onTap: _closePinnedList,
+                    )
                   : ChatTitleCapsule(
                       title: chat?.title ?? '',
                       onTap: () => togglePeerInfo(ref, widget.chatId),
@@ -1312,7 +1496,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (!_panelOpen) _jumpButtons(l10n, store),
+                if (!_panelOpen && !_pinnedListOpen) _jumpButtons(l10n, store),
                 if (_failure case final failure?)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 6),
@@ -1351,7 +1535,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
                       ),
                     ),
                   ),
-                if (_selected != null)
+                if (_pinnedListOpen)
+                  _unpinAllBar(l10n, store)
+                else if (_selected != null)
                   _selectionBar(l10n)
                 else if (_actionBar(l10n, store) case final bar?)
                   bar
@@ -1363,6 +1549,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
                       onRecordedVideo: _sendVideoNote,
                       builder: (context, recordButton, recordingBar) =>
                           Composer(
+                            suggestions: _mentions.suggestions,
+                            onSuggestion: _mentions.pick,
+                            onDismissSuggestions: _mentions.dismiss,
                             controller: _draft,
                             focusNode: _focus,
                             header: _composerHeader(l10n),
@@ -1384,6 +1573,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
                               emoji: l10n.emoji,
                               record: l10n.record,
                               send: l10n.send,
+                              format: formatLabelsOf(l10n),
                             ),
                             onSend: (text) => unawaited(_send(text)),
                             recordButton: recordButton,

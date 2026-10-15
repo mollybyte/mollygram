@@ -11,6 +11,7 @@ import '../commands/command_registry.dart';
 import '../contacts/people_sheet.dart';
 import '../links/link_host.dart';
 import '../notifications/notification_service.dart';
+import '../privacy/ghost_mode_capsule.dart';
 import '../profile/new_chat_sheet.dart';
 import '../profile/peer_info_host.dart';
 import '../session/connection_status_capsule.dart';
@@ -140,19 +141,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 controller: workspace,
                 directory: directory,
                 commandSource: () => _registry.commands,
-                sidebar: const Padding(
-                  padding: EdgeInsets.all(8),
+                sidebar: Padding(
+                  padding: const EdgeInsets.all(8),
                   child: Stack(
                     children: [
-                      Positioned.fill(child: Sidebar()),
-                      // In the island's title bar, right of the window
-                      // buttons.
-                      Positioned(
+                      const Positioned.fill(child: Sidebar()),
+                      // In the island's title bar, between the window
+                      // buttons and the ghost.
+                      const Positioned(
                         top: 0,
                         left: 76,
-                        right: 8,
+                        right: 48,
                         height: SidebarIsland.titleBarHeight,
                         child: ConnectionStatusCapsule(),
+                      ),
+                      // At the title bar's right end, clear of the
+                      // centered connection status.
+                      Positioned(
+                        top: 0,
+                        right: 12,
+                        height: SidebarIsland.titleBarHeight,
+                        child: GhostModeCapsule(
+                          onTap: () => _openSettings(privacyExtrasSectionId),
+                        ),
                       ),
                     ],
                   ),

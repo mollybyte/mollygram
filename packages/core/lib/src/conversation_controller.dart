@@ -229,6 +229,13 @@ final class ConversationController {
     _notify();
   }
 
+  /// Unpins every message of [chatId].
+  Future<void> unpinAll(int chatId) async {
+    await _client.send(td.UnpinAllChatMessages(chatId: chatId));
+    store.setPinned(chatId, const []);
+    _notify();
+  }
+
   /// Pins [messageId] for everyone in the chat, or [onlyForSelf] in a
   /// private chat, and unpins it when [pinned] is false.
   Future<void> setPinned(
@@ -276,6 +283,24 @@ final class ConversationController {
     return found.messages.isEmpty
         ? null
         : ConversationMessage(found.messages.last);
+  }
+
+  /// The last message of [chatId] sent on [day] or before it, for a jump
+  /// to a date; null when the chat has nothing that old.
+  Future<ConversationMessage?> messageByDate(int chatId, DateTime day) async {
+    final end = DateTime(day.year, day.month, day.day + 1);
+    try {
+      final message = await _client.send(
+        td.GetChatMessageByDate(
+          chatId: chatId,
+          date: end.millisecondsSinceEpoch ~/ 1000 - 1,
+        ),
+      );
+      return ConversationMessage(message);
+    } on td.TdException catch (error) {
+      if (error.code == 404) return null;
+      rethrow;
+    }
   }
 
   /// Makes sure the message that [messageId] of [chatId] replies to is in
@@ -358,8 +383,14 @@ final class ConversationController {
     );
   }
 
-  /// Sends [text], as a reply to [replyTo] when it is set.
-  Future<void> sendText(int chatId, String text, {int? replyTo}) async {
+  /// Sends [text] with its formatting [entities], as a reply to [replyTo]
+  /// when it is set.
+  Future<void> sendText(
+    int chatId,
+    String text, {
+    int? replyTo,
+    List<td.TextEntity> entities = const [],
+  }) async {
     if (text.trim().isEmpty) {
       throw ArgumentError.value(
         text,
@@ -378,7 +409,7 @@ final class ConversationController {
                 pollOptionId: '',
               ),
         inputMessageContent: td.InputMessageText(
-          text: td.FormattedText(text: text, entities: const []),
+          text: td.FormattedText(text: text, entities: entities),
           clearDraft: true,
         ),
       ),
@@ -526,18 +557,24 @@ final class ConversationController {
   }
 
   /// Sends local files, grouped into albums as [groupForSending] does.
-  /// [caption] goes under the first file, and the first message answers
-  /// [replyTo] when it is set.
+  /// [caption], formatted by [captionEntities], goes under the first
+  /// file, and the first message answers [replyTo] when it is set.
   Future<void> sendFiles(
     int chatId,
     List<OutgoingFile> files, {
     String caption = '',
+    List<td.TextEntity> captionEntities = const [],
     int? replyTo,
   }) async {
     // A caption longer than the server takes goes first as its own
     // message, as the official apps do.
     if (caption.trim().isNotEmpty && caption.length > await _captionLimit()) {
-      await sendText(chatId, caption, replyTo: replyTo);
+      await sendText(
+        chatId,
+        caption,
+        replyTo: replyTo,
+        entities: captionEntities,
+      );
       caption = '';
       replyTo = null;
     }
@@ -555,7 +592,7 @@ final class ConversationController {
           inputContentOf(
             file,
             caption: first && i == 0 && caption.trim().isNotEmpty
-                ? td.FormattedText(text: caption, entities: const [])
+                ? td.FormattedText(text: caption, entities: captionEntities)
                 : null,
           ),
       ];
@@ -586,14 +623,24 @@ final class ConversationController {
   /// Replaces the text of a text message, or the caption of a media one,
   /// keeping the formatting of the parts that did not change. The new
   /// version arrives through updateMessageContent.
-  Future<void> editText(int chatId, int messageId, String text) async {
+  ///
+  /// With [entities] the new text gets exactly that formatting, as the
+  /// composer shows it; without, the old formatting is carried over.
+  Future<void> editText(
+    int chatId,
+    int messageId,
+    String text, {
+    List<td.TextEntity>? entities,
+  }) async {
     final content = store.message(chatId, messageId)?.content;
     final current = content == null ? null : captionOf(content);
     final formatted = td.FormattedText(
       text: text,
       entities: current == null
-          ? const []
-          : carryEntities(current.text, text, current.entities),
+          ? entities ?? const []
+          : entities == null
+          ? carryEntities(current.text, text, current.entities)
+          : keepHiddenEntities(current.text, text, current.entities, entities),
     );
     if (content == null || content is td.MessageText) {
       await _client.send(

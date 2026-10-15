@@ -38,6 +38,7 @@ class AudioTrackPlayer {
   final _position = ValueNotifier(Duration.zero);
   final _duration = ValueNotifier(Duration.zero);
   final _playing = ValueNotifier(false);
+  final _rate = ValueNotifier(1.0);
 
   /// The key of the track that is loaded, as given to [play]; null when
   /// nothing is.
@@ -45,6 +46,18 @@ class AudioTrackPlayer {
   ValueListenable<Duration> get position => _position;
   ValueListenable<Duration> get duration => _duration;
   ValueListenable<bool> get playing => _playing;
+
+  /// The playback speed; it carries over to the next track, as in
+  /// Telegram.
+  ValueListenable<double> get rate => _rate;
+
+  /// The speeds a click on the speed button steps through.
+  static const rates = [1.0, 1.5, 2.0];
+
+  Future<void> setRate(double rate) async {
+    _rate.value = rate;
+    await _instance?.setRate(rate);
+  }
 
   /// Plays the file at [path], identified by [key]. Playing the loaded
   /// track again resumes it.
@@ -54,6 +67,7 @@ class AudioTrackPlayer {
     _position.value = Duration.zero;
     _duration.value = Duration.zero;
     await _player.open(Media(Uri.file(path).toString()));
+    if (_rate.value != 1) await _player.setRate(_rate.value);
   }
 
   Future<void> pause() async => _instance?.pause();
@@ -82,5 +96,6 @@ class AudioTrackPlayer {
     _position.dispose();
     _duration.dispose();
     _playing.dispose();
+    _rate.dispose();
   }
 }

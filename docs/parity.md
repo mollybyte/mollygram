@@ -59,10 +59,10 @@ M8 calls and macOS release, M9 after release.
 | "New messages" separator and opening at the first unread | done | Unread PR: `TimelineView` grows both ways from the first unread | | |
 | Scroll-to-bottom button with unread counter | done | Unread PR | | |
 | Jump to next mention and reaction | done | Unread PR: `SearchChatMessages` with the unread filters | | |
-| Pinned message bar with cycling and the pinned list | partial | Pinned PR: bar with cycling, pin and unpin from the menu; no pinned list view | S | M2 |
+| Pinned message bar with cycling and the pinned list | done | Bar with cycling, pin and unpin from the menu, the list behind the bar's button with Unpin all | S | M2 |
 | Jump to a replied message and back | done | Jump with a highlight; the down button returns to where the user was | | |
 | Date headers and sticky date | done | Date pills, and the top row's date floats while scrolling | | |
-| Jump to date (calendar) | missing | `ChatCalendarModalController` | M | M2 |
+| Jump to date (calendar) | done | Click a date pill: calendar, `getChatMessageByDate`; no media calendar | M | M2 |
 | Header status: online, last seen, members, typing | done (#40) | | S | M1 |
 | Join and mute buttons for channels and groups you are not in | done | Join in place of the composer; Mute and Unmute in channels you only read | | |
 | Open `t.me` and `tg://` links, usernames, hashtags, bot commands | partial | Links, mentions, invites and `tg://` work (`links/`); hashtags, bot commands, mention names and the jump to a linked message are missing | S | M1 |
@@ -111,8 +111,8 @@ M8 calls and macOS release, M9 after release.
 | Sticker panel, recent and favourite stickers, sticker search | partial | #34: recent, favourites, installed sets; no search, no set management | S | M1 |
 | GIF panel and GIF search | missing | `GifKeyboardController` | M | M2 |
 | Emoji and sticker suggestions while typing | missing | `InputSwapSuggestionsPanel` | M | M2 |
-| Rich text formatting: bold, italic, code, link, spoiler, quote; Markdown shortcuts | missing | `text_edit.dart` sends plain text | M | M1 |
-| Mentions autocomplete (@) | missing | `SearchChatMembers` | S | M1 |
+| Rich text formatting: bold, italic, code, link, spoiler, quote; Markdown shortcuts | done | `RichTextEditingController` in ui_kit: ⌘B, ⌘I, ⌘U, ⌘⇧X, ⌘⇧M, ⌘⇧P, ⌘⇧., ⌘K, context menu; Markdown converted on send. Captions of files are still plain | | |
+| Mentions autocomplete (@) | done | `MentionSearch` with `ChatMembersFilterMention`; no `:` emoji shortcodes yet | | |
 | Bot command autocomplete (/) and bot keyboards | missing | `ReplyMarkupNode` | M | M2 |
 | Inline bots (@gif, @vid) | missing | `GetInlineQueryResults` | M | M9 |
 | Voice message recording | done | Hold, lock, cancel; Opus in Ogg via AudioToolbox on macOS | M | M1 |
@@ -149,7 +149,7 @@ M8 calls and macOS release, M9 after release.
 | Viewer: save, copy, forward, delete, show in chat, keyboard shortcuts | partial | Viewer PR: save, copy, forward, Esc, arrows, Space, ⌘S, ⌘C; no delete or show in chat | S | M2 |
 | Global audio player with playlist and header bar | missing | `InlineAudioPlayerView` | M | M2 |
 | Picture-in-picture for video and circles | missing | `PIPVideoWindow` | M | M4 |
-| Voice playback speed and continuous play | missing | | S | M1 |
+| Voice playback speed and continuous play | partial | Speed 1×, 1.5×, 2× and waveform scrubbing done; continuous play missing | S | M1 |
 | Downloads manager (list, pause, show in Finder) | missing | `DownloadsController` | M | M7 |
 | Autodownload rules | missing | Data and storage | M | M7 |
 | Quick Look for documents | missing | | S | M2 |
@@ -275,5 +275,6 @@ These are not parity items; they are tracked in their own docs.
 |---|---|---|
 | Tabs, split view, ⌘K palette, layout restore | done | [packages/shell](../packages/shell) |
 | JS plugin sandbox with manifest permissions (M5) | partial | [plugins.md](plugins.md) |
-| Ghost mode, saved deleted messages, edit history (M3) | missing | [forks-research.md](forks-research.md) |
+| Ghost mode: no read receipts, typing, online or played marks; per-chat silent read API (M3) | done | [privacy_guard.dart](../packages/core/lib/src/privacy_guard.dart) |
+| Saved deleted messages, edit history (M3) | missing | [forks-research.md](forks-research.md) |
 | 640×640 circles, uncompressed media by default (M4) | partial | [packages/media](../packages/media) |
