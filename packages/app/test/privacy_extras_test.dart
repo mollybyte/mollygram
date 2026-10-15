@@ -377,6 +377,31 @@ void main() {
       expect(reset, 1);
     });
 
+    testWidgets('secret chat screenshots stay blocked until allowed', (
+      tester,
+    ) async {
+      final container = await pump(tester, const PrivacyExtrasPage());
+      const title = 'Allow screenshots in secret chats';
+      await tester.ensureVisible(find.text(title));
+      expect(switchOn(tester, title), isFalse);
+
+      await tester.tap(find.text('Ghost mode'));
+      await tester.pumpAndSettle();
+      expect(switchOn(tester, title), isFalse, reason: 'not ghost mode');
+
+      await tester.ensureVisible(find.text(title));
+      await tester.tap(find.text(title));
+      await tester.pumpAndSettle();
+      expect(
+        container.read(privacySettingsProvider).allowSecretScreenshots,
+        true,
+      );
+      expect(
+        PrivacySettings.fromJson(storage.saved).allowSecretScreenshots,
+        isTrue,
+      );
+    });
+
     testWidgets('each switch turns on only itself', (tester) async {
       final container = await pump(tester, const PrivacyExtrasPage());
 

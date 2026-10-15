@@ -24,6 +24,7 @@ export 'src/peer_info.dart';
 export 'src/phone_country.dart';
 export 'src/privacy_guard.dart';
 export 'src/privacy_settings_controller.dart';
+export 'src/secret_chats.dart';
 export 'src/sticker_library.dart';
 export 'src/storage_usage.dart';
 export 'src/store/deleted_messages.dart';

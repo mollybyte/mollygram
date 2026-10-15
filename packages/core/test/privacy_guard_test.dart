@@ -279,6 +279,18 @@ void main() {
       expect(ghost.withGhost(false), keep);
     });
 
+    test('secret chat screenshots are off by default, saved, and not '
+        'ghost mode', () {
+      expect(const PrivacySettings().allowSecretScreenshots, isFalse);
+      const allow = PrivacySettings(allowSecretScreenshots: true);
+      expect(allow.anyOn, isFalse);
+      expect(
+        PrivacySettings.fromJson(jsonDecode(jsonEncode(allow.toJson()))),
+        allow,
+      );
+      expect(allow.withGhost(true).withGhost(false), allow);
+    });
+
     test('ghost mode off brings back the switches from before', () {
       const mix = PrivacySettings(hideTyping: true, stayOffline: true);
       final ghost = mix.withGhost(true);

@@ -94,6 +94,7 @@ final settingsSections = <SettingsSection>[
       l10n.hideContentOpened,
       l10n.keepDeletedMessages,
       l10n.keepEditHistory,
+      l10n.allowSecretScreenshots,
     ],
     builder: (context) => const PrivacyExtrasPage(),
   ),
