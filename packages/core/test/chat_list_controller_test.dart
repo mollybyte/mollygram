@@ -142,7 +142,11 @@ void main() {
         'effect_id': '0',
         'content': {
           '@type': 'draftMessageContentText',
-          'text': {'@type': 'formattedText', 'text': 'hello', 'entities': []},
+          'text': {
+            '@type': 'formattedText',
+            'text': 'hello',
+            'entities': <Object?>[],
+          },
         },
       },
       'positions': positions,
