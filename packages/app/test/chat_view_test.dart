@@ -610,6 +610,40 @@ void main() {
     expect(find.byType(Composer), findsOneWidget);
   });
 
+  testWidgets('opens a calendar from a date pill and jumps to the day', (
+    tester,
+  ) async {
+    await pump(tester);
+
+    // The date pill above the first message comes once the start of the
+    // chat is known, a page later.
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    // The history is from October 2025.
+    await tester.tap(find.byType(DatePill).first);
+    await tester.pump();
+    expect(find.text('October 2025'), findsOneWidget);
+    // Days after today can't be picked; the month can't go past it.
+    expect(find.byType(MgCalendar), findsOneWidget);
+
+    await tester.tap(find.text('9'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(MgCalendar), findsNothing);
+    final request = json.sent.lastWhere(
+      (r) => r['@type'] == 'getChatMessageByDate',
+    );
+    expect(request['chat_id'], 7);
+    expect(
+      request['date'],
+      DateTime(2025, 10, 10).millisecondsSinceEpoch ~/ 1000 - 1,
+    );
+    expect(tester.widget<TimelineView>(find.byType(TimelineView)).anchor, 11);
+  });
+
   testWidgets('opens a photo full screen and pages through the chat media', (
     tester,
   ) async {
@@ -1026,6 +1060,11 @@ final class _FakeTdJson implements td.TdJson {
       },
       'downloadFile' => _stickerFile(decoded['file_id']! as int),
       'joinChat' => {'@type': 'chatJoinResultSuccess'},
+      'getChatMessageByDate' => _message(
+        id: 11,
+        senderId: 2,
+        text: 'Boris again',
+      ).toJson(),
       'forwardMessages' => {
         '@type': 'messages',
         'total_count': 0,

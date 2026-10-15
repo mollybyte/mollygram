@@ -62,7 +62,7 @@ M8 calls and macOS release, M9 after release.
 | Pinned message bar with cycling and the pinned list | partial | Pinned PR: bar with cycling, pin and unpin from the menu; no pinned list view | S | M2 |
 | Jump to a replied message and back | done | Jump with a highlight; the down button returns to where the user was | | |
 | Date headers and sticky date | done | Date pills, and the top row's date floats while scrolling | | |
-| Jump to date (calendar) | missing | `ChatCalendarModalController` | M | M2 |
+| Jump to date (calendar) | done | Click a date pill: calendar, `getChatMessageByDate`; no media calendar | M | M2 |
 | Header status: online, last seen, members, typing | done (#40) | | S | M1 |
 | Join and mute buttons for channels and groups you are not in | done | Join in place of the composer; Mute and Unmute in channels you only read | | |
 | Open `t.me` and `tg://` links, usernames, hashtags, bot commands | partial | Links, mentions, invites and `tg://` work (`links/`); hashtags, bot commands, mention names and the jump to a linked message are missing | S | M1 |
@@ -111,12 +111,12 @@ M8 calls and macOS release, M9 after release.
 | Sticker panel, recent and favourite stickers, sticker search | partial | #34: recent, favourites, installed sets; no search, no set management | S | M1 |
 | GIF panel and GIF search | missing | `GifKeyboardController` | M | M2 |
 | Emoji and sticker suggestions while typing | missing | `InputSwapSuggestionsPanel` | M | M2 |
-| Rich text formatting: bold, italic, code, link, spoiler, quote; Markdown shortcuts | missing | `text_edit.dart` sends plain text | M | M1 |
-| Mentions autocomplete (@) | missing | `SearchChatMembers` | S | M1 |
+| Rich text formatting: bold, italic, code, link, spoiler, quote; Markdown shortcuts | done | `RichTextEditingController` in ui_kit: ⌘B, ⌘I, ⌘U, ⌘⇧X, ⌘⇧M, ⌘⇧P, ⌘⇧., ⌘K, context menu; Markdown converted on send. Captions of files are still plain | | |
+| Mentions autocomplete (@) | done | `MentionSearch` with `ChatMembersFilterMention`; no `:` emoji shortcodes yet | | |
 | Bot command autocomplete (/) and bot keyboards | missing | `ReplyMarkupNode` | M | M2 |
 | Inline bots (@gif, @vid) | missing | `GetInlineQueryResults` | M | M9 |
 | Voice message recording | done | Hold, lock, cancel; Opus in Ogg via AudioToolbox on macOS | M | M1 |
-| Video message (circle) recording | missing | Playback done in `packages/media` | L | M4 |
+| Video message (circle) recording | partial | Hold, lock, cancel, 60 s limit; 640×640 H.264 via AVFoundation on macOS. Front camera only, no flip or preview before sending | L | M4 |
 | Silent send and scheduled messages, scheduled list | missing | `MessageSchedulingStateSendAtDate` | M | M2 |
 | Send as (channel identity) | missing | `ChatInputSendAsView` | S | M6 |
 | Polls and quizzes creation | missing | `NewPollController` | M | M2 |
@@ -199,8 +199,8 @@ M8 calls and macOS release, M9 after release.
 |---|---|---|---|---|
 | Sign in: QR, phone, code, 2FA password | done | #16, #24 | | |
 | Sign up (new account), email code, account reset | partial | Unsupported steps show a notice | M | M6 |
-| Contacts list, add and edit contact | missing | `ContactsController` | M | M6 |
-| New message / compose (pick a user) | missing | `ComposeViewController` | S | M1 |
+| Contacts list, add and edit contact | partial | Contacts sheet: list with status, add by phone, delete; editing a contact's name is not there yet | S | M6 |
+| New message / compose (pick a user) | done | ⌘N sheet: recent chats, contacts, username search | | |
 | Edit own profile: name, bio, username, photo, birthday | partial | Name, username and bio in Settings; photo and birthday missing | M | M6 |
 | Multiple accounts and switching | missing | Several TDLib clients | L | M6 |
 | Log out | done | Settings, My profile, Log out | | |

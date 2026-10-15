@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +8,7 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../commands/command_registry.dart';
+import '../contacts/people_sheet.dart';
 import '../links/link_host.dart';
 import '../notifications/notification_service.dart';
 import '../profile/peer_info_host.dart';
@@ -22,6 +25,10 @@ import 'workspace.dart';
 /// glass panels one shared backdrop read.
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
+
+  /// ⌘N (Ctrl+N off macOS): write to someone.
+  static SingleActivator get newMessageShortcut =>
+      primaryShortcut(LogicalKeyboardKey.keyN);
 
   /// ⌘, (Ctrl+, off macOS), the usual settings shortcut.
   static SingleActivator get settingsShortcut =>
@@ -42,6 +49,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       setState(() => _settings = section);
 
   void _closeSettings() => setState(() => _settings = null);
+
+  void _newMessage() => unawaited(showPeopleSheet(context));
 
   @override
   void initState() {
@@ -80,6 +89,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         keywords: [other.settings],
         shortcut: HomeScreen.settingsShortcut,
         run: _openSettings,
+      ),
+      PaletteCommand(
+        id: 'app.newMessage',
+        title: l10n.newMessage,
+        keywords: [other.newMessage],
+        shortcut: HomeScreen.newMessageShortcut,
+        run: _newMessage,
+      ),
+      PaletteCommand(
+        id: 'app.contacts',
+        title: l10n.contacts,
+        keywords: [other.contacts],
+        run: () =>
+            unawaited(showPeopleSheet(context, mode: PeopleSheetMode.contacts)),
       ),
       PaletteCommand(
         id: 'app.plugins',
