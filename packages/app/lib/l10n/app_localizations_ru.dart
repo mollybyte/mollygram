@@ -303,11 +303,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get videoCameraDenied => 'У Mollygram нет доступа к камере.';
 
   @override
-<<<<<<< HEAD
   String get videoSwitchCamera => 'Сменить камеру';
-=======
+
+  @override
   String get senderYou => 'Вы';
->>>>>>> origin/main
 
   @override
   String previewYou(String text) {

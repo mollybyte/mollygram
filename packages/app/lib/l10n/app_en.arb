@@ -94,11 +94,8 @@
   "voiceSendFailed": "Couldn't send the voice message",
   "videoHoldToRecord": "Hold to record a video message",
   "videoCameraDenied": "Mollygram has no access to the camera.",
-<<<<<<< HEAD
   "videoSwitchCamera": "Switch camera",
-=======
   "senderYou": "You",
->>>>>>> origin/main
   "previewYou": "You: {text}",
   "@previewYou": {
     "placeholders": { "text": { "type": "String" } }

@@ -301,11 +301,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get videoCameraDenied => 'Mollygram has no access to the camera.';
 
   @override
-<<<<<<< HEAD
   String get videoSwitchCamera => 'Switch camera';
-=======
+
+  @override
   String get senderYou => 'You';
->>>>>>> origin/main
 
   @override
   String previewYou(String text) {
