@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -816,6 +817,42 @@ void main() {
     expect(opened, 1);
     expect(find.textContaining('Dodo Pizza'), findsOneWidget);
     expect(find.text('New secret'), findsOneWidget);
+  });
+
+  testWidgets('a forward\'s source name is a link with a hover underline', (
+    tester,
+  ) async {
+    var opened = 0;
+    await tester.pumpWidget(
+      themed(
+        ForwardedBlock(
+          source: 'Dodo Pizza',
+          date: '12.10.26',
+          onSourceTap: () => opened++,
+          child: const Text('New secret'),
+        ),
+      ),
+    );
+    TextDecoration? decoration() =>
+        tester.widget<Text>(find.text('Dodo Pizza')).style?.decoration;
+    expect(decoration(), TextDecoration.none);
+    expect(find.text('12.10.26'), findsOneWidget);
+
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    addTearDown(mouse.removePointer);
+    await mouse.addPointer(location: Offset.zero);
+    await mouse.moveTo(tester.getCenter(find.text('Dodo Pizza')));
+    await tester.pump();
+    expect(decoration(), TextDecoration.underline);
+    await mouse.moveTo(tester.getCenter(find.text('New secret')));
+    await tester.pump();
+    expect(decoration(), TextDecoration.none);
+
+    await tester.tap(find.text('Dodo Pizza'));
+    expect(opened, 1);
+    // The date beside it is not part of the link.
+    await tester.tap(find.text('12.10.26'));
+    expect(opened, 1);
   });
 }
 

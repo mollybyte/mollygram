@@ -67,6 +67,7 @@ import '../voice/voice_record_composer.dart';
 import '../window_drag_area.dart';
 import 'chat_status.dart';
 import 'format.dart';
+import 'workspace.dart';
 
 /// One conversation: messages scroll under the floating header and
 /// composer.
@@ -1019,6 +1020,32 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _topicsOpening = false;
   }
 
+  /// The source of a forward: a channel opens at the original post when
+  /// Telegram says which it was, a group or channel posting for itself
+  /// opens as it is, and a person opens as their profile.
+  Future<void> _openForwardSource(td.MessageOrigin origin) async {
+    final workspace = ref.read(workspaceControllerProvider);
+    switch (origin) {
+      case td.MessageOriginChannel(:final chatId, :final messageId):
+        if (messageId != 0) {
+          ref.read(messageJumpProvider.notifier).request(chatId, messageId);
+        }
+        workspace.open(chatId);
+      case td.MessageOriginChat(:final senderChatId):
+        workspace.open(senderChatId);
+      case td.MessageOriginUser(:final senderUserId):
+        final peers = ref.read(telegramSessionProvider).requireValue.peers;
+        final int chatId;
+        try {
+          chatId = await peers.privateChatOf(senderUserId);
+        } on Object {
+          return;
+        }
+        if (mounted) openPeerInfo(ref, chatId);
+      case td.MessageOriginHiddenUser():
+    }
+  }
+
   /// Opens the comments under [message], a channel post: its thread in
   /// the discussion group takes the timeline's place.
   Future<void> _openComments(ConversationMessage message) async {
@@ -1462,6 +1489,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     onInlineButton: (message, button) =>
         unawaited(_pressInlineButton(message, button)),
     onComments: (message) => unawaited(_openComments(message)),
+    onOpenForwardSource: (origin) => unawaited(_openForwardSource(origin)),
     onMenu: (row, position) => unawaited(_showMenu(row, position)),
     onViewMedia: (message) => unawaited(
       showChatMediaViewer(
