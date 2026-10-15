@@ -55,17 +55,22 @@ Widget? otherContent(
     ),
     td.MessageCall(:final isVideo, :final discardReason, :final duration) =>
       _Labeled(
-        icon: isVideo ? '📹' : '📞',
+        icon: isVideo ? MgIcons.video : MgIcons.call,
+        tint: switch (discardReason) {
+          td.CallDiscardReasonMissed() ||
+          td.CallDiscardReasonDeclined() => _missedCall,
+          _ => _answeredCall,
+        },
         title: _callTitle(l10n, isOutgoing, isVideo, discardReason),
         subtitle: duration > 0 ? _callLength(l10n, duration) : null,
       ),
     td.MessageGame(:final game) => _Labeled(
-      icon: '🎮',
+      icon: _gameIcon,
       title: game.title,
       subtitle: game.description,
     ),
     td.MessageInvoice(:final productInfo) => _Labeled(
-      icon: '🧾',
+      icon: _receiptIcon,
       title: productInfo.title.isEmpty
           ? l10n.contentInvoice
           : productInfo.title,
@@ -76,12 +81,15 @@ Widget? otherContent(
       onToggle: onChecklistToggle,
       completerAvatar: completerAvatar,
     ),
-    td.MessageStory() => _Labeled(icon: '◎', title: l10n.contentStory),
+    td.MessageStory() => _Labeled(icon: _storyIcon, title: l10n.contentStory),
     td.MessageGiveaway() || td.MessageGiveawayWinners() => _Labeled(
-      icon: '🎁',
+      icon: _giftIcon,
       title: l10n.contentGiveaway,
     ),
-    td.MessagePaidMedia() => _Labeled(icon: '⭐', title: l10n.contentPaidMedia),
+    td.MessagePaidMedia() => _Labeled(
+      icon: _starIcon,
+      title: l10n.contentPaidMedia,
+    ),
     td.MessageExpiredPhoto() => _Muted(l10n.contentExpiredPhoto),
     td.MessageExpiredVideo() => _Muted(l10n.contentExpiredVideo),
     td.MessageExpiredVideoNote() => _Muted(l10n.contentExpiredVideoNote),
@@ -110,21 +118,72 @@ String _callLength(AppLocalizations l10n, int seconds) => seconds < 60
     ? l10n.durationSeconds(seconds)
     : l10n.durationMinutes(seconds ~/ 60);
 
-class _Labeled extends StatelessWidget {
-  const _Labeled({required this.icon, required this.title, this.subtitle});
+/// Call rows: green for a call that took place, red for one that didn't.
+const _answeredCall = Color(0xFF34C759);
+const _missedCall = Color(0xFFFF3B30);
 
-  final String icon;
+// Line icons for the rows, in the style of the design's set.
+const _gameIcon = MgIconData(
+  'game',
+  '<rect x="3" y="7" width="18" height="11" rx="5.5"/>'
+      '<path d="M7.5 11v3M6 12.5h3M15.5 12h.01M18 13.5h.01"/>',
+);
+const _receiptIcon = MgIconData(
+  'receipt',
+  '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6M9 16h4"/>',
+);
+const _storyIcon = MgIconData(
+  'story',
+  '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.5"/>',
+);
+const _giftIcon = MgIconData(
+  'gift',
+  '<rect x="3" y="8" width="18" height="4"/>'
+      '<path d="M5 12v8h14v-8M12 8v12M12 8c-1.5-3-5-3-5-1s3 1 5 1'
+      'c2 0 5 1 5-1s-3.5-2-5 1"/>',
+);
+const _starIcon = MgIconData(
+  'star',
+  '<path d="M12 3.5l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6'
+      'L3.3 9.8l6.1-.7z"/>',
+);
+
+/// A row with a round tinted tile holding a line icon, a title and a
+/// line under it, for contents that have no media of their own.
+class _Labeled extends StatelessWidget {
+  const _Labeled({
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    this.tint,
+  });
+
+  final MgIconData icon;
   final String title;
   final String? subtitle;
+
+  /// The tile's colour; the accent unless given.
+  final Color? tint;
 
   @override
   Widget build(BuildContext context) {
     final c = MgColors.of(context);
     final subtitle = this.subtitle;
+    final tint = this.tint ?? c.accent;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(icon, style: const TextStyle(fontSize: 22)),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: tint.withValues(alpha: 0.14),
+            shape: BoxShape.circle,
+          ),
+          child: SizedBox(
+            width: 36,
+            height: 36,
+            child: Center(child: MgIcon(icon, size: 18, color: tint)),
+          ),
+        ),
         const SizedBox(width: 10),
         Flexible(
           child: Column(
