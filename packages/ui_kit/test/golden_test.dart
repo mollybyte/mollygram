@@ -382,7 +382,7 @@ void main() {
         ),
         colors,
         'icons_$theme',
-        size: const Size(380, 200),
+        size: const Size(380, 236),
       );
     });
 

@@ -134,6 +134,18 @@ class AppLocalizationsRu extends AppLocalizations {
   String get noChats => 'Чатов пока нет';
 
   @override
+  String get connectionWaitingForNetwork => 'Ожидание сети…';
+
+  @override
+  String get connectionConnectingToProxy => 'Подключение к прокси…';
+
+  @override
+  String get connectionConnecting => 'Соединение…';
+
+  @override
+  String get connectionUpdating => 'Обновление…';
+
+  @override
   String get nothingFound => 'Ничего не найдено';
 
   @override
@@ -185,6 +197,63 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get previewOther => 'Сообщение';
+
+  @override
+  String get notifications => 'Уведомления';
+
+  @override
+  String get notificationsSectionAlerts => 'Оповещения';
+
+  @override
+  String get notificationsSectionBadge => 'Значок в Dock';
+
+  @override
+  String get notificationsShow => 'Показывать уведомления';
+
+  @override
+  String get notificationsShowHint =>
+      'Баннеры появляются, пока Mollygram в фоне. Чаты без звука не беспокоят.';
+
+  @override
+  String get notificationsPreview => 'Показывать текст сообщения';
+
+  @override
+  String get notificationsPreviewHint =>
+      'Если выключено, в уведомлении видно только, кто написал.';
+
+  @override
+  String get notificationsSound => 'Звук';
+
+  @override
+  String get notificationsBadge => 'Показывать число непрочитанных';
+
+  @override
+  String get notificationsBadgeMuted => 'Учитывать чаты без звука';
+
+  @override
+  String get notificationsBadgeMessages => 'Считать сообщения, а не чаты';
+
+  @override
+  String get notificationsDenied =>
+      'Уведомления для Mollygram выключены в Системных настройках.';
+
+  @override
+  String get notificationsOpenSystemSettings => 'Открыть Системные настройки';
+
+  @override
+  String get notificationHiddenText => 'Новое сообщение';
+
+  @override
+  String get notificationReply => 'Ответить';
+
+  @override
+  String get notificationSend => 'Отправить';
+
+  @override
+  String get notificationReplyPlaceholder => 'Сообщение';
+
+  @override
+  String get notificationMarkRead => 'Отметить прочитанным';
 
   @override
   String get sendFailed => 'Сообщение не отправлено. Попробуйте ещё раз';
@@ -747,4 +816,60 @@ class AppLocalizationsRu extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get mediaSaved => 'Сохранено';
+
+  @override
+  String get mediaSaveFailed => 'Не удалось сохранить файл';
+
+  @override
+  String get mediaCopied => 'Скопировано';
+
+  @override
+  String mediaCounter(int index, int count) {
+    return '$index из $count';
+  }
+
+  @override
+  String get mediaCopy => 'Копировать';
+
+  @override
+  String get mediaSave => 'Сохранить';
+
+  @override
+  String get mediaPrevious => 'Назад';
+
+  @override
+  String get mediaNext => 'Вперёд';
+
+  @override
+  String get mediaPause => 'Пауза';
+
+  @override
+  String get mediaPlay => 'Воспроизвести';
+
+  @override
+  String get mediaSpeed => 'Скорость';
+
+  @override
+  String get mediaLoop => 'Повтор';
+
+  @override
+  String get mediaUnmute => 'Включить звук';
+
+  @override
+  String get mediaMute => 'Выключить звук';
+
+  @override
+  String get unreadMessages => 'Непрочитанные сообщения';
+
+  @override
+  String get scrollToBottom => 'К последнему сообщению';
+
+  @override
+  String get nextMention => 'Следующее упоминание';
+
+  @override
+  String get nextReaction => 'Следующая реакция';
 }

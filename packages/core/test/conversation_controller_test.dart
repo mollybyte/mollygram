@@ -430,6 +430,83 @@ void main() {
     });
   });
 
+  test('opens a chat with unread messages at the last read one', () async {
+    json.chat = [for (var id = 1; id <= 200; id++) id];
+    await controller.start();
+    json.push(_chat(lastRead: 100, unread: 100, last: 200));
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+
+    await controller.loadHistory(7);
+
+    final request = json.sent.firstWhere((r) => r['@type'] == 'getChatHistory');
+    expect(request['from_message_id'], 100);
+    expect(request['offset'], -40);
+    final ids = controller.store.messagesFor(7).map((m) => m.id);
+    expect(ids.first, 140);
+    expect(ids.last, 91);
+    expect(controller.store.reachedEnd(7), isFalse);
+    expect(controller.store.unreadCount(7), 100);
+  });
+
+  test('pages newer history up to the last message', () async {
+    json.chat = [for (var id = 1; id <= 120; id++) id];
+    await controller.start();
+    json.push(_chat(lastRead: 0, unread: 0, last: 120));
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    await controller.loadAround(7, 50);
+    expect(controller.store.newestId(7), 75);
+
+    // A message beyond the gap waits for its page.
+    json.push({
+      '@type': 'updateNewMessage',
+      'message': _message(id: 121, chatId: 7, text: 'Live').toJson(),
+    });
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    expect(controller.store.contains(7, 121), isFalse);
+
+    expect(await controller.loadNewer(7), isTrue);
+    expect(controller.store.newestId(7), 120);
+    expect(controller.store.reachedEnd(7), isTrue);
+    expect(await controller.loadNewer(7), isFalse);
+  });
+
+  test('keeps unread mention and reaction counts', () async {
+    await controller.start();
+    json
+      ..push(_chat(lastRead: 5, unread: 3, last: 8, mentions: 2, reactions: 1))
+      ..push({
+        '@type': 'updateMessageMentionRead',
+        'chat_id': 7,
+        'message_id': 6,
+        'unread_mention_count': 1,
+      });
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    expect(controller.store.unreadMentionCount(7), 1);
+    expect(controller.store.unreadReactionCount(7), 1);
+
+    final mention = await controller.firstUnread(7);
+    expect(mention?.id, 30);
+  });
+
+  test('finds photos and videos around a message, oldest first', () async {
+    await controller.start();
+
+    final found = await controller.mediaAround(7, 20, newer: 5, limit: 11);
+
+    final search = json.sent.lastWhere(
+      (r) => r['@type'] == 'searchChatMessages',
+    );
+    expect(search['chat_id'], 7);
+    expect(search['from_message_id'], 20);
+    expect(search['offset'], -5);
+    expect(search['limit'], 11);
+    expect(
+      (search['filter']! as Map)['@type'],
+      'searchMessagesFilterPhotoAndVideo',
+    );
+    expect(found.map((m) => m.id), [18, 20, 22]);
+  });
+
   test('sends a caption too long for media as its own message', () async {
     await controller.start();
 
@@ -545,6 +622,37 @@ void main() {
   });
 }
 
+Map<String, Object?> _chat({
+  required int lastRead,
+  required int unread,
+  required int last,
+  int mentions = 0,
+  int reactions = 0,
+}) => {
+  '@type': 'updateNewChat',
+  'chat': {
+    '@type': 'chat',
+    'id': 7,
+    'type': {'@type': 'chatTypePrivate', 'user_id': 2},
+    'title': 'Boris',
+    'last_message': _message(id: last, chatId: 7, text: 'Last').toJson(),
+    'unread_count': unread,
+    'last_read_inbox_message_id': lastRead,
+    'last_read_outbox_message_id': 0,
+    'unread_mention_count': mentions,
+    'unread_reaction_count': reactions,
+    'permissions': {'@type': 'chatPermissions'},
+    'positions': <Object?>[],
+    'chat_lists': <Object?>[],
+    'notification_settings': {'@type': 'chatNotificationSettings'},
+    'available_reactions': {
+      '@type': 'chatAvailableReactionsAll',
+      'max_reaction_count': 11,
+    },
+    'video_chat': {'@type': 'videoChat'},
+  },
+};
+
 td.Message _message({
   required int id,
   required int chatId,
@@ -586,6 +694,15 @@ td.Message _message({
   chatInstance: 0,
 );
 
+/// The ids TDLib returns for a history request over [ids], newest first.
+List<int> _page(List<int> ids, int from, int offset, int limit) {
+  final newestFirst = [...ids]..sort((a, b) => b.compareTo(a));
+  var start = from == 0 ? 0 : newestFirst.indexWhere((id) => id <= from);
+  if (start < 0) return const [];
+  start = (start + offset).clamp(0, newestFirst.length);
+  return newestFirst.skip(start).take(limit).toList();
+}
+
 final class _FakeTdJson implements td.TdJson {
   final _queue = Queue<String>();
   final sent = <Map<String, Object?>>[];
@@ -595,6 +712,10 @@ final class _FakeTdJson implements td.TdJson {
 
   /// The history page that starts at a message id (0 is the newest).
   List<td.Message> Function(int fromMessageId)? history;
+
+  /// A whole chat of text messages with these ids, paged as TDLib does
+  /// with from_message_id, offset and limit; takes the place of [history].
+  List<int>? chat;
 
   /// When set, getRepliedMessage fails with this TDLib error code.
   int? repliedError;
@@ -624,6 +745,31 @@ final class _FakeTdJson implements td.TdJson {
       });
     }
     final response = switch (decoded['@type']) {
+      'getChatHistory' when chat != null => {
+        '@type': 'messages',
+        'total_count': chat!.length,
+        'messages': [
+          for (final id in _page(
+            chat!,
+            decoded['from_message_id']! as int,
+            decoded['offset']! as int,
+            decoded['limit']! as int,
+          ))
+            _message(id: id, chatId: 7, text: 'm$id').toJson(),
+        ],
+      },
+      'searchChatMessages'
+          when (decoded['filter']! as Map)['@type'] ==
+              'searchMessagesFilterUnreadMention' =>
+        {
+          '@type': 'foundChatMessages',
+          'total_count': 2,
+          'messages': [
+            for (final id in [40, 30])
+              _message(id: id, chatId: 7, text: '@me').toJson(),
+          ],
+          'next_from_message_id': 0,
+        },
       'getChatHistory' => {
         '@type': 'messages',
         'total_count': 1,
@@ -646,6 +792,15 @@ final class _FakeTdJson implements td.TdJson {
           _message(id: 30, chatId: 7, text: '').toJson(),
           _message(id: 31, chatId: 7, text: '').toJson(),
         ],
+      },
+      'searchChatMessages' => {
+        '@type': 'foundChatMessages',
+        'total_count': 3,
+        'messages': [
+          for (final id in [22, 20, 18])
+            _message(id: id, chatId: 7, text: '').toJson(),
+        ],
+        'next_from_message_id': 18,
       },
       'forwardMessages' => {
         '@type': 'messages',

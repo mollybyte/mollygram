@@ -5,9 +5,9 @@ import 'dart:ui' as ui;
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_media/mollygram_media.dart';
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
@@ -20,9 +20,11 @@ import '../chat/attachment_preview.dart';
 import '../chat/describe.dart';
 import '../chat/emoji_sticker_panel.dart';
 import '../chat/forward_picker.dart';
+import '../chat/media_viewer.dart';
 import '../chat/message_actions.dart';
 import '../chat/message_tile.dart';
-import '../chat/timeline.dart';
+import '../chat/timeline_scroll.dart';
+import '../chat/timeline_view.dart';
 import '../session/providers.dart';
 import '../window_drag_area.dart';
 
@@ -62,6 +64,28 @@ class _ChatViewState extends ConsumerState<ChatView> {
   /// Whether the emoji and sticker panel is open over the composer.
   var _panelOpen = false;
 
+  final _scroll = TimelineScrollController();
+
+  /// The message the timeline grows from: the first unread one when the
+  /// chat opened, or where a jump went. Null keeps the newest at the
+  /// bottom.
+  int? _anchor;
+
+  /// The first message that was unread when the chat opened, with the
+  /// unread band above it, and what was read then.
+  int? _unreadFrom;
+  var _readAtOpen = 0;
+  var _awaitingUnread = false;
+
+  /// The message a jump landed on, and a count that lights it up again.
+  int? _flashId;
+  var _flash = 0;
+  Timer? _flashTimer;
+
+  /// Whether the view is away from the newest message, which shows the
+  /// button that goes back down.
+  final _away = ValueNotifier(false);
+
   @override
   void initState() {
     super.initState();
@@ -70,6 +94,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
         .requireValue
         .conversations;
     _draft.addListener(_clearSendError);
+    _scroll.addListener(_followScroll);
     _open(widget.chatId);
   }
 
@@ -88,6 +113,12 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _setAside = '';
     _replyAside = null;
     _panelOpen = false;
+    _anchor = null;
+    _unreadFrom = null;
+    _flashId = null;
+    _flashTimer?.cancel();
+    _scroll.pinToBottom();
+    _away.value = false;
     _open(widget.chatId);
   }
 
@@ -96,11 +127,20 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _close(widget.chatId);
     _draft.dispose();
     _focus.dispose();
+    _scroll.dispose();
+    _away.dispose();
+    _flashTimer?.cancel();
     super.dispose();
   }
 
   // Supergroups and channels get all their updates only while open.
-  void _open(int chatId) => unawaited(_quiet(_conversations.openChat(chatId)));
+  void _open(int chatId) {
+    final store = _conversations.store;
+    // What was unread is kept from now on: reading moves the band no more.
+    _readAtOpen = store.lastReadInbox(chatId);
+    _awaitingUnread = store.unreadCount(chatId) > 0;
+    unawaited(_quiet(_conversations.openChat(chatId)));
+  }
 
   void _close(int chatId) =>
       unawaited(_quiet(_conversations.closeChat(chatId)));
@@ -122,7 +162,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
     // A chat in a background tab stays built but is not on screen; its
     // messages count as read once the tab comes forward.
     if (!_onScreen) return;
-    if (message.isOutgoing || !_viewed.add(message.id)) return;
+    // The user's own messages count only for reactions they haven't seen.
+    final own = message.isOutgoing && message.message.unreadReactions.isEmpty;
+    if (own || !_viewed.add(message.id)) return;
     _toView.add(message.id);
     if (_viewScheduled) return;
     _viewScheduled = true;
@@ -149,7 +191,141 @@ class _ChatViewState extends ConsumerState<ChatView> {
     onNeedReplied: (reply) =>
         unawaited(_quiet(_conversations.loadReplied(reply.chatId, reply.id))),
     onMenu: (row, position) => unawaited(_showMenu(row, position)),
+    onViewMedia: (message) => unawaited(
+      showChatMediaViewer(
+        context,
+        message: message,
+        conversations: _conversations,
+        onForward: (message) => unawaited(_forward([message])),
+      ),
+    ),
+    onJump: (messageId) => unawaited(_jumpTo(messageId)),
   );
+
+  /// The scroll offset that puts the anchor's row just under the header.
+  static double _underHeader(double viewport) =>
+      -(viewport - TimelineView.topInset - 8);
+
+  /// Keeps [_scroll.pinned] and the down button in step with where the
+  /// user leaves the view.
+  void _followScroll() {
+    if (!_scroll.hasClients) return;
+    final position = _scroll.position;
+    if (!position.hasContentDimensions) return;
+    final atEnd = _conversations.store.reachedEnd(widget.chatId);
+    final fromBottom = position.pixels - position.minScrollExtent;
+    if (position.isScrollingNotifier.value || fromBottom < 2) {
+      _scroll.pinned = atEnd && fromBottom < 2;
+    }
+    _away.value = !atEnd || fromBottom > 360;
+  }
+
+  /// Scrolls to [messageId], loading the history around it when it is
+  /// outside what is loaded, and lights it up.
+  Future<void> _jumpTo(int messageId) async {
+    final chatId = widget.chatId;
+    final store = _conversations.store;
+    if (!store.contains(chatId, messageId)) {
+      try {
+        await _conversations.loadAround(chatId, messageId);
+      } on Object {
+        return;
+      }
+      if (!mounted || widget.chatId != chatId) return;
+      if (!store.contains(chatId, messageId)) return;
+    }
+    _scroll
+      ..pinned = false
+      ..request((viewport) => -viewport * 0.6);
+    _flashTimer?.cancel();
+    setState(() {
+      _anchor = messageId;
+      _flashId = messageId;
+      _flash++;
+    });
+    _flashTimer = Timer(const Duration(milliseconds: 1600), () {
+      if (mounted) setState(() => _flashId = null);
+    });
+  }
+
+  /// The down button: to the newest message, loading it first when the
+  /// timeline stops short of it. A long way is skipped, then the last
+  /// screen scrolls, as in the official app.
+  Future<void> _toBottom() async {
+    final chatId = widget.chatId;
+    if (!_conversations.store.reachedEnd(chatId)) {
+      try {
+        await _conversations.loadHistory(chatId, atUnread: false);
+      } on Object {
+        return;
+      }
+      if (!mounted || widget.chatId != chatId) return;
+      setState(() => _anchor = null);
+      _scroll.pinToBottom();
+      return;
+    }
+    if (!_scroll.hasClients) return;
+    final position = _scroll.position;
+    final viewport = position.viewportDimension;
+    if (position.pixels - position.minScrollExtent > viewport * 2) {
+      position.jumpTo(position.minScrollExtent + viewport);
+    }
+    await position.animateTo(
+      position.minScrollExtent,
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeOutCubic,
+    );
+    if (mounted && widget.chatId == chatId) _scroll.pinToBottom();
+  }
+
+  /// The mention and reaction buttons: to the oldest one not seen yet.
+  Future<void> _nextUnread({required bool reactions}) async {
+    final chatId = widget.chatId;
+    final ConversationMessage? next;
+    try {
+      next = await _conversations.firstUnread(chatId, reactions: reactions);
+    } on Object {
+      return;
+    }
+    if (next == null || !mounted || widget.chatId != chatId) return;
+    await _jumpTo(next.id);
+  }
+
+  /// Sending goes back to the newest message, as in the official apps.
+  Future<void> _toLatestForSend() async {
+    final chatId = widget.chatId;
+    if (!_conversations.store.reachedEnd(chatId)) {
+      await _quiet(_conversations.loadHistory(chatId, atUnread: false));
+      if (!mounted || widget.chatId != chatId) return;
+      setState(() => _anchor = null);
+    }
+    _scroll.pinToBottom();
+  }
+
+  /// Picks the first unread message once the history around it is in.
+  void _placeUnread(List<ConversationMessage> messages) {
+    if (!_awaitingUnread || messages.isEmpty) return;
+    // Newest first; the band goes above the oldest unread incoming one.
+    ConversationMessage? first;
+    for (final message in messages) {
+      if (message.id <= _readAtOpen) break;
+      if (!message.isOutgoing) first = message;
+    }
+    if (first == null) {
+      // Nothing unread is loaded: wait, unless the timeline already holds
+      // everything up to the newest message.
+      if (_conversations.store.reachedEnd(widget.chatId)) {
+        _awaitingUnread = false;
+      }
+      return;
+    }
+    _awaitingUnread = false;
+    _anchor = first.id;
+    _unreadFrom = first.id;
+    _scroll
+      ..pinned = false
+      ..request(_underHeader);
+  }
 
   Future<void> _showMenu(MessageRow row, Offset position) {
     final store = _conversations.store;
@@ -261,6 +437,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
       _replyTo = null;
     });
     _focus.requestFocus();
+    unawaited(_toLatestForSend());
     try {
       await _conversations.sendSticker(chatId, sticker, replyTo: replyTo?.id);
     } catch (_) {
@@ -329,6 +506,19 @@ class _ChatViewState extends ConsumerState<ChatView> {
     });
   }
 
+  var _newerScheduled = false;
+
+  /// Asks for the page after the newest loaded message, once per frame.
+  void _loadNewer() {
+    if (_newerScheduled) return;
+    _newerScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _newerScheduled = false;
+      if (!mounted) return;
+      unawaited(_quiet(_conversations.loadNewer(widget.chatId).then((_) {})));
+    });
+  }
+
   Future<void> _send(String text) async {
     final editing = _editing;
     // A caption may be removed; a text message can't be emptied.
@@ -343,6 +533,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
       _failure = null;
       _replyTo = null;
     });
+    unawaited(_toLatestForSend());
     try {
       await _conversations.sendText(chatId, text, replyTo: replyTo?.id);
     } catch (_) {
@@ -497,6 +688,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
       _replyTo = null;
     });
     if (useDraft) _draft.clear();
+    unawaited(_toLatestForSend());
     try {
       // One at a time: each video or song opens a player to be measured.
       final files = <OutgoingFile>[];
@@ -594,6 +786,57 @@ class _ChatViewState extends ConsumerState<ChatView> {
     );
   }
 
+  /// Down to the newest message, the next mention and the next reaction,
+  /// stacked over the composer's right end like in the official app.
+  Widget _jumpButtons(AppLocalizations l10n, ConversationStore store) {
+    final chatId = widget.chatId;
+    final mentions = store.unreadMentionCount(chatId);
+    final reactions = store.unreadReactionCount(chatId);
+    final unread = store.unreadCount(chatId);
+    final compact = NumberFormat.compact(
+      locale: Localizations.localeOf(context).toLanguageTag(),
+    );
+    return Align(
+      alignment: Alignment.centerRight,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 10, right: 2),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          spacing: 8,
+          children: [
+            if (mentions > 0)
+              JumpButton(
+                icon: MgIcons.mention,
+                tooltip: l10n.nextMention,
+                count: mentions,
+                countLabel: compact.format(mentions),
+                onPressed: () => unawaited(_nextUnread(reactions: false)),
+              ),
+            if (reactions > 0)
+              JumpButton(
+                icon: MgIcons.heart,
+                tooltip: l10n.nextReaction,
+                count: reactions,
+                countLabel: compact.format(reactions),
+                onPressed: () => unawaited(_nextUnread(reactions: true)),
+              ),
+            ValueListenableBuilder(
+              valueListenable: _away,
+              builder: (context, away, _) => JumpButton(
+                icon: MgIcons.arrowDown,
+                tooltip: l10n.scrollToBottom,
+                visible: away,
+                count: unread,
+                countLabel: compact.format(unread),
+                onPressed: () => unawaited(_toBottom()),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   /// Files are being dragged over the chat.
   var _dragging = false;
 
@@ -603,6 +846,10 @@ class _ChatViewState extends ConsumerState<ChatView> {
   @override
   Widget build(BuildContext context) {
     _onScreen = TickerMode.valuesOf(context).enabled;
+    // A jump or a page of history moves the view without a scroll event.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _followScroll();
+    });
     final c = MgColors.of(context);
     final l10n = AppLocalizations.of(context);
     final session = ref.watch(telegramSessionProvider).requireValue;
@@ -629,15 +876,24 @@ class _ChatViewState extends ConsumerState<ChatView> {
               AsyncData(value: final list)
                   when list.isEmpty && store.reachedStart(widget.chatId) =>
                 Center(child: DatePill(l10n.noMessages)),
-              AsyncData(value: final list) => _Messages(
-                messages: list,
-                store: store,
-                chatId: widget.chatId,
-                isGroup: chat?.isGroup ?? false,
-                onShown: _shown,
-                onNearTop: _loadOlder,
-                actions: _actions,
-              ),
+              AsyncData(value: final list) => () {
+                _placeUnread(list);
+                return TimelineView(
+                  messages: list,
+                  store: store,
+                  chatId: widget.chatId,
+                  isGroup: chat?.isGroup ?? false,
+                  controller: _scroll,
+                  anchor: _anchor,
+                  unreadFrom: _unreadFrom,
+                  flashId: _flashId,
+                  flash: _flash,
+                  onShown: _shown,
+                  onNearTop: _loadOlder,
+                  onNearBottom: _loadNewer,
+                  actions: _actions,
+                );
+              }(),
               _ => const SizedBox.shrink(),
             },
           ),
@@ -658,6 +914,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                if (!_panelOpen) _jumpButtons(l10n, store),
                 if (_failure case final failure?)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 6),
@@ -747,94 +1004,3 @@ enum _Failure { send, edit, attach, forward }
 
 /// Clicks in the panel and the composer keep the emoji panel open.
 abstract final class _EmojiPanelRegion {}
-
-/// The timeline, newest at the bottom: rows of messages and albums with a
-/// date pill above the first message of each day.
-class _Messages extends StatelessWidget {
-  const _Messages({
-    required this.messages,
-    required this.store,
-    required this.chatId,
-    required this.isGroup,
-    required this.onShown,
-    required this.onNearTop,
-    required this.actions,
-  });
-
-  /// Newest first, so the list starts at the bottom.
-  final List<ConversationMessage> messages;
-  final ConversationStore store;
-  final int chatId;
-  final bool isGroup;
-
-  /// Called as a message is built, which is when it is on screen or about
-  /// to be.
-  final void Function(ConversationMessage message) onShown;
-
-  /// Called when the oldest loaded messages come into view.
-  final VoidCallback onNearTop;
-  final MessageRowActions actions;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final locale = Localizations.localeOf(context).toLanguageTag();
-    final isChannel = store.isChannel(chatId);
-    final items = timelineItems(
-      messages,
-      reachedStart: store.reachedStart(chatId),
-      isChannel: isChannel,
-    );
-    final lastReadOutbox = store.lastReadOutbox(chatId);
-    return ListView.builder(
-      reverse: true,
-      // No off-screen cache: a message is built when it enters the
-      // viewport, which is when onShown reports it to TDLib as viewed.
-      scrollCacheExtent: const ScrollCacheExtent.pixels(0),
-      padding: const EdgeInsets.only(top: 72, bottom: 88),
-      itemCount: items.length,
-      findChildIndexCallback: (key) {
-        final value = (key as ValueKey<Object>).value;
-        final index = items.indexWhere((item) => item.key == value);
-        return index < 0 ? null : index;
-      },
-      itemBuilder: (context, i) {
-        if (i >= items.length - 8) onNearTop();
-        final item = items[i];
-        final Widget child = switch (item) {
-          TimelineDate(:final day) => DatePill(formatDay(l10n, day, locale)),
-          TimelineRow(
-            :final row,
-            :final startsRun,
-            :final endsRun,
-            :final startsForwards,
-          ) =>
-            () {
-              row.messages.forEach(onShown);
-              return Padding(
-                padding: EdgeInsets.only(top: startsRun ? 6 : 2),
-                child: MessageTile(
-                  row: row,
-                  store: store,
-                  context: MessageRowContext(
-                    isGroup: isGroup,
-                    isChannel: isChannel,
-                    startsRun: startsRun,
-                    endsRun: endsRun,
-                    startsForwards: startsForwards,
-                    lastReadOutbox: lastReadOutbox,
-                  ),
-                  actions: actions,
-                ),
-              );
-            }(),
-        };
-        return Padding(
-          key: ValueKey<Object>(item.key),
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: child,
-        );
-      },
-    );
-  }
-}

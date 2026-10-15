@@ -16,6 +16,7 @@ export 'src/circle/circle_video.dart';
 export 'src/circle/media_kit_circle_player.dart';
 export 'src/probe/media_probe.dart';
 export 'src/video/looping_video.dart';
+export 'src/video/video_playback.dart';
 export 'src/video/video_player_view.dart';
 
 abstract final class MollygramMedia {

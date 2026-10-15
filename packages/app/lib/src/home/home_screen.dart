@@ -5,6 +5,9 @@ import 'package:mollygram_shell/mollygram_shell.dart';
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../notifications/notification_service.dart';
+import '../notifications/notifications_page.dart';
+import '../session/connection_status_capsule.dart';
 import '../settings/plugins_page.dart';
 import '../window_drag_area.dart';
 import 'chat_view.dart';
@@ -25,12 +28,17 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
+/// A settings screen shown over the chats.
+enum _Page { plugins, notifications }
+
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  bool _pluginsOpen = false;
+  _Page? _page;
 
-  void _openPlugins() => setState(() => _pluginsOpen = true);
+  void _openPlugins() => setState(() => _page = _Page.plugins);
 
-  void _closePlugins() => setState(() => _pluginsOpen = false);
+  void _openNotifications() => setState(() => _page = _Page.notifications);
+
+  void _closePage() => setState(() => _page = null);
 
   List<PaletteCommand> _commands(AppLocalizations l10n) {
     final other = lookupAppLocalizations(
@@ -43,6 +51,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         keywords: [other.plugins, l10n.settings, other.settings],
         shortcut: HomeScreen.pluginsShortcut,
         run: _openPlugins,
+      ),
+      PaletteCommand(
+        id: 'app.notifications',
+        title: l10n.notifications,
+        keywords: [other.notifications, l10n.settings, other.settings],
+        run: _openNotifications,
       ),
     ];
   }
@@ -65,7 +79,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 commands: _commands(l10n),
                 sidebar: const Padding(
                   padding: EdgeInsets.all(8),
-                  child: Sidebar(),
+                  child: Stack(
+                    children: [
+                      Positioned.fill(child: Sidebar()),
+                      // In the island's title bar, right of the window
+                      // buttons.
+                      Positioned(
+                        top: 0,
+                        left: 76,
+                        right: 8,
+                        height: SidebarIsland.titleBarHeight,
+                        child: ConnectionStatusCapsule(),
+                      ),
+                    ],
+                  ),
                 ),
                 sidebarWidth: SidebarIsland.width + 16,
                 paneBuilder: (context, chat, focused) => chat == null
@@ -81,19 +108,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
       ),
     );
-    return Stack(
-      children: [
-        // The chats stay mounted under the plugins screen, so drafts and
-        // scroll positions survive opening it.
-        Positioned.fill(
-          child: ExcludeFocus(
-            excluding: _pluginsOpen,
-            child: TickerMode(enabled: !_pluginsOpen, child: home),
+    final covered = _page != null;
+    return NotificationsHost(
+      child: Stack(
+        children: [
+          // The chats stay mounted under a settings screen, so drafts and
+          // scroll positions survive opening it.
+          Positioned.fill(
+            child: ExcludeFocus(
+              excluding: covered,
+              child: TickerMode(enabled: !covered, child: home),
+            ),
           ),
-        ),
-        if (_pluginsOpen)
-          Positioned.fill(child: PluginsPage(onClose: _closePlugins)),
-      ],
+          if (_page case final page?)
+            Positioned.fill(
+              child: switch (page) {
+                _Page.plugins => PluginsPage(onClose: _closePage),
+                _Page.notifications => NotificationsPage(onClose: _closePage),
+              },
+            ),
+        ],
+      ),
     );
   }
 }

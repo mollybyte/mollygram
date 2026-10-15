@@ -133,6 +133,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noChats => 'No chats yet';
 
   @override
+  String get connectionWaitingForNetwork => 'Waiting for network…';
+
+  @override
+  String get connectionConnectingToProxy => 'Connecting to proxy…';
+
+  @override
+  String get connectionConnecting => 'Connecting…';
+
+  @override
+  String get connectionUpdating => 'Updating…';
+
+  @override
   String get nothingFound => 'Nothing found';
 
   @override
@@ -184,6 +196,63 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get previewOther => 'Message';
+
+  @override
+  String get notifications => 'Notifications';
+
+  @override
+  String get notificationsSectionAlerts => 'Alerts';
+
+  @override
+  String get notificationsSectionBadge => 'Dock icon';
+
+  @override
+  String get notificationsShow => 'Show notifications';
+
+  @override
+  String get notificationsShowHint =>
+      'Banners appear while Mollygram is in the background. Muted chats stay silent.';
+
+  @override
+  String get notificationsPreview => 'Show message text';
+
+  @override
+  String get notificationsPreviewHint =>
+      'When off, a notification only says who wrote.';
+
+  @override
+  String get notificationsSound => 'Play sound';
+
+  @override
+  String get notificationsBadge => 'Show unread count';
+
+  @override
+  String get notificationsBadgeMuted => 'Include muted chats';
+
+  @override
+  String get notificationsBadgeMessages => 'Count messages instead of chats';
+
+  @override
+  String get notificationsDenied =>
+      'Notifications for Mollygram are turned off in System Settings.';
+
+  @override
+  String get notificationsOpenSystemSettings => 'Open System Settings';
+
+  @override
+  String get notificationHiddenText => 'New message';
+
+  @override
+  String get notificationReply => 'Reply';
+
+  @override
+  String get notificationSend => 'Send';
+
+  @override
+  String get notificationReplyPlaceholder => 'Message';
+
+  @override
+  String get notificationMarkRead => 'Mark as read';
 
   @override
   String get sendFailed => 'The message wasn\'t sent. Try again';
@@ -743,4 +812,60 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get mediaSaved => 'Saved';
+
+  @override
+  String get mediaSaveFailed => 'Couldn\'t save the file';
+
+  @override
+  String get mediaCopied => 'Copied';
+
+  @override
+  String mediaCounter(int index, int count) {
+    return '$index of $count';
+  }
+
+  @override
+  String get mediaCopy => 'Copy';
+
+  @override
+  String get mediaSave => 'Save';
+
+  @override
+  String get mediaPrevious => 'Previous';
+
+  @override
+  String get mediaNext => 'Next';
+
+  @override
+  String get mediaPause => 'Pause';
+
+  @override
+  String get mediaPlay => 'Play';
+
+  @override
+  String get mediaSpeed => 'Playback speed';
+
+  @override
+  String get mediaLoop => 'Loop';
+
+  @override
+  String get mediaUnmute => 'Unmute';
+
+  @override
+  String get mediaMute => 'Mute';
+
+  @override
+  String get unreadMessages => 'Unread messages';
+
+  @override
+  String get scrollToBottom => 'Scroll to the newest message';
+
+  @override
+  String get nextMention => 'Next mention';
+
+  @override
+  String get nextReaction => 'Next reaction';
 }
