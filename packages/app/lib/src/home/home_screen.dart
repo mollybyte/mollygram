@@ -21,6 +21,7 @@ import '../session/accounts.dart';
 import '../session/connection_status_capsule.dart';
 import '../settings/appearance.dart';
 import '../settings/settings_window.dart';
+import '../shared_media/message_jump.dart';
 import '../window_drag_area.dart';
 import 'chat_view.dart';
 import 'sidebar.dart';
@@ -209,10 +210,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         chatId: chat,
                         child: ChatView(chatId: chat),
                       ),
-                // Jumping to the message itself comes with the chat view's
-                // history navigation; for now the chat opens.
-                onOpenMessage: (message, target) =>
-                    workspace.open(message.chatId, target: target),
+                // The chat's view scrolls to the message once it is open.
+                onOpenMessage: (message, target) {
+                  ref
+                      .read(messageJumpProvider.notifier)
+                      .request(message.chatId, message.messageId);
+                  workspace.open(message.chatId, target: target);
+                },
               ),
             ),
           ],
