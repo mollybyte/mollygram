@@ -49,6 +49,11 @@ void main() {
 
   testWidgets('a photo decoded now fades in over the preview', (tester) async {
     final opacity = find.byType(AnimatedOpacity);
+    // A photo the image cache already holds draws at once, so the one
+    // under test must be new to it: fresh bytes, and nothing left over
+    // from an earlier test.
+    imageCache.clear();
+    final photo = MemoryImage(Uint8List.fromList(_pixel));
     // Decoding runs on a real event loop; the first frame has no image
     // yet, so the photo starts transparent rather than popping in.
     await tester.runAsync(() async {
@@ -59,7 +64,7 @@ void main() {
               name: 'Ada',
               size: 42,
               placeholder: MemoryImage(_pixel),
-              image: MemoryImage(_pixel),
+              image: photo,
             ),
           ),
         ),
