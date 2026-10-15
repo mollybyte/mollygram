@@ -768,6 +768,29 @@ final class ConversationController {
     );
   }
 
+  /// Sends a poll or quiz the user composed.
+  Future<void> sendPoll(
+    int chatId,
+    td.InputMessagePoll poll, {
+    int? replyTo,
+  }) async {
+    _add(
+      await _client.send(
+        td.SendMessage(
+          chatId: chatId,
+          replyTo: replyTo == null
+              ? null
+              : td.InputMessageReplyToMessage(
+                  messageId: replyTo,
+                  checklistTaskId: 0,
+                  pollOptionId: '',
+                ),
+          inputMessageContent: poll,
+        ),
+      ),
+    );
+  }
+
   /// Sends a recorded voice message: an Ogg Opus file at [path] with its
   /// length and Telegram's packed 5-bit [waveform].
   Future<void> sendVoiceNote(

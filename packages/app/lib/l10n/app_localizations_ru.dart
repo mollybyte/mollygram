@@ -947,6 +947,52 @@ class AppLocalizationsRu extends AppLocalizations {
   String get botNoAnswer => 'Бот не ответил';
 
   @override
+  String get attachFile => 'Файл…';
+
+  @override
+  String get attachPoll => 'Опрос…';
+
+  @override
+  String get newPollTitle => 'Новый опрос';
+
+  @override
+  String get newQuizTitle => 'Новая викторина';
+
+  @override
+  String get pollQuestionHint => 'Задайте вопрос';
+
+  @override
+  String get pollOptionsTitle => 'Варианты ответа';
+
+  @override
+  String get pollOptionHint => 'Добавить вариант';
+
+  @override
+  String get pollRemoveOption => 'Убрать вариант';
+
+  @override
+  String get pollCorrectAnswer => 'Правильный ответ';
+
+  @override
+  String get pollAnonymousVoting => 'Анонимное голосование';
+
+  @override
+  String get pollMultipleAnswers => 'Несколько ответов';
+
+  @override
+  String get pollQuizMode => 'Режим викторины';
+
+  @override
+  String get pollExplanationHint => 'Пояснение (необязательно)';
+
+  @override
+  String get pollQuizHint =>
+      'Отметьте правильный ответ; участники увидят пояснение после ответа.';
+
+  @override
+  String get pollCreate => 'Создать';
+
+  @override
   String get contentGame => 'Игра';
 
   @override

@@ -939,6 +939,72 @@ void main() {
     expect(find.byType(StickerSuggestionStrip), findsNothing);
   });
 
+  testWidgets('composes a quiz from the attach menu and sends it', (
+    tester,
+  ) async {
+    json
+      ..push(
+        _chat(
+          lastRead: 13,
+          unread: 0,
+          last: 13,
+          type: {
+            '@type': 'chatTypeSupergroup',
+            'supergroup_id': 99,
+            'is_channel': false,
+          },
+        ),
+      )
+      ..push(
+        _supergroup(99, {
+          '@type': 'chatMemberStatusMember',
+          'member_since_date': 0,
+        }),
+      );
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await pump(tester, group: true);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Attach'));
+    await tester.pump();
+    await tester.tap(find.text('Poll…'));
+    await tester.pump();
+    expect(find.text('New poll'), findsOneWidget);
+
+    final fields = find.byType(TextField);
+    await tester.enterText(fields.at(1), 'Tea or coffee?');
+    await tester.enterText(fields.at(2), 'Tea');
+    await tester.pump();
+    await tester.enterText(find.byType(TextField).at(3), 'Coffee');
+    await tester.pump();
+    // A third, empty option appeared; the two filled ones can be removed.
+    expect(find.byTooltip('Remove option'), findsNWidgets(2));
+
+    await tester.tap(find.text('Quiz mode'));
+    await tester.pump();
+    expect(find.text('New quiz'), findsOneWidget);
+    await tester.tap(find.byTooltip('Correct answer').at(1));
+    await tester.pump();
+    await tester.tap(find.text('Create'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+
+    final send = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    final content = send['input_message_content']! as Map;
+    expect(content['@type'], 'inputMessagePoll');
+    expect((content['question']! as Map)['text'], 'Tea or coffee?');
+    expect(
+      [for (final o in content['options']! as List) (o as Map)['text']],
+      [
+        {'@type': 'formattedText', 'text': 'Tea', 'entities': <Object?>[]},
+        {'@type': 'formattedText', 'text': 'Coffee', 'entities': <Object?>[]},
+      ],
+    );
+    expect((content['type']! as Map)['correct_option_ids'], [1]);
+    expect(content['is_anonymous'], isTrue);
+    expect(find.text('New quiz'), findsNothing);
+  });
+
   testWidgets('lists the scheduled messages and acts on one', (tester) async {
     json.chat = [for (var id = 1; id <= 10; id++) id];
     json.push(_chat(lastRead: 10, unread: 0, last: 10, scheduled: true));
