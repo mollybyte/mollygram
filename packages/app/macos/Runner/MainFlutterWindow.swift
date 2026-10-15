@@ -62,6 +62,12 @@ class MainFlutterWindow: NSWindow {
             alpha: 1)
         }
         result(nil)
+      case "setAppearance":
+        // The app's own theme, not the system's: AppKit draws the window's
+        // outline and shadow for the window's appearance.
+        let dark = call.arguments as? Bool ?? false
+        self.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+        result(nil)
       case "zoom":
         self.zoom(nil)
         result(nil)
