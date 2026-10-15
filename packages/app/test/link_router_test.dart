@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mollygram/src/links/link_router.dart';
 import 'package:mollygram_core/mollygram_core.dart';
+import 'package:mollygram_shell/mollygram_shell.dart'
+    show PaletteMode, PaletteQuery;
 
 void main() {
   late Map<String, LinkTarget?> targets;
@@ -8,6 +10,7 @@ void main() {
   late _Presenter presenter;
   late LinkRouter router;
   late Set<String> commands;
+  late _CommandChats chats;
   Object? resolveError;
 
   setUp(() {
@@ -15,6 +18,7 @@ void main() {
     log = [];
     commands = {'app.settings'};
     resolveError = null;
+    chats = _CommandChats(log);
     presenter = _Presenter(log);
     router = LinkRouter(
       resolve: (raw) async {
@@ -35,7 +39,52 @@ void main() {
         log.add('launch $uri');
         return true;
       },
+      search: (query) => log.add('search $query'),
+      commandChats: chats,
     )..presenter = presenter;
+  });
+
+  test('searches hashtags with their own sign', () {
+    router
+      ..searchHashtag('#news')
+      ..searchHashtag(r'$TON');
+    expect(log, ['search ##news', r'search #$TON']);
+    // The first "#" switches the search to messages; the hashtag stays.
+    expect(
+      PaletteQuery.parse('##news'),
+      const PaletteQuery(PaletteMode.messages, '#news'),
+    );
+  });
+
+  test('sends a bot command to the chat it was tapped in', () async {
+    await router.sendBotCommand('/start', chatId: 7, senderUserId: 5);
+    expect(log, ['send 7 /start']);
+  });
+
+  test('names the bot of a bare command in a group', () async {
+    chats
+      ..groups.add(7)
+      ..bots[5] = 'somebot';
+    await router.sendBotCommand('/start', chatId: 7, senderUserId: 5);
+    await router.sendBotCommand('/help@other', chatId: 7, senderUserId: 5);
+    await router.sendBotCommand('/stop', chatId: 7, senderUserId: 6);
+    expect(log, [
+      'send 7 /start@somebot',
+      'send 7 /help@other',
+      'send 7 /stop',
+    ]);
+  });
+
+  test('does not send a command where the user cannot write', () async {
+    chats.readOnly.add(7);
+    await router.sendBotCommand('/start', chatId: 7);
+    expect(log, ['notice cannotSend']);
+  });
+
+  test('tells the user when a command fails to send', () async {
+    chats.failing = true;
+    await router.sendBotCommand('/start', chatId: 7);
+    expect(log, ['notice cannotSend']);
   });
 
   test('opens other sites in the browser', () async {
@@ -170,4 +219,29 @@ class _Presenter implements LinkPresenter {
 
   @override
   void showNotice(LinkNotice notice) => log.add('notice ${notice.name}');
+}
+
+class _CommandChats implements CommandChats {
+  _CommandChats(this.log);
+
+  final List<String> log;
+  final groups = <int>{};
+  final readOnly = <int>{};
+  final bots = <int, String>{};
+  var failing = false;
+
+  @override
+  bool canSendCommand(int chatId) => !readOnly.contains(chatId);
+
+  @override
+  bool isGroup(int chatId) => groups.contains(chatId);
+
+  @override
+  Future<String?> botUsername(int userId) async => bots[userId];
+
+  @override
+  Future<void> send(int chatId, String text) async {
+    if (failing) throw StateError('offline');
+    log.add('send $chatId $text');
+  }
 }

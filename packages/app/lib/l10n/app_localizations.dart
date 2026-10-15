@@ -2732,6 +2732,12 @@ abstract class AppLocalizations {
   /// **'You can\'t view this chat.'**
   String get linkForbidden;
 
+  /// No description provided for @linkCannotSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t send the command.'**
+  String get linkCannotSend;
+
   /// No description provided for @menuPin.
   ///
   /// In en, this message translates to:

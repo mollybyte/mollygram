@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mollygram_core/mollygram_core.dart' show TelegramLinks;
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -30,12 +31,22 @@ class FormattedTextView extends ConsumerStatefulWidget {
     required this.text,
     this.trailing,
     this.style,
+    this.chatId,
+    this.senderUserId,
     this.onSelection,
   });
 
   final td.FormattedText text;
   final InlineSpan? trailing;
   final TextStyle? style;
+
+  /// The chat the text is a message of; its bot commands are sent there.
+  /// Null outside a chat, where they are plain text.
+  final int? chatId;
+
+  /// The user who sent the message, for the bot a command in a group is
+  /// meant for.
+  final int? senderUserId;
 
   /// Called as the selection within this text changes, with null once
   /// nothing of it is selected. Needs a `SelectionArea` above.
@@ -103,6 +114,26 @@ class _FormattedTextViewState extends ConsumerState<FormattedTextView> {
         _recognizers.add(r);
         return r;
       },
+      onHashtag: (hashtag) {
+        final r = TapGestureRecognizer()
+          ..onTap = () => searchHashtagFrom(context, hashtag);
+        _recognizers.add(r);
+        return r;
+      },
+      onBotCommand: switch (widget.chatId) {
+        null => null,
+        final chatId => (command) {
+          final r = TapGestureRecognizer()
+            ..onTap = () => sendBotCommandFrom(
+              context,
+              command,
+              chatId: chatId,
+              senderUserId: widget.senderUserId,
+            );
+          _recognizers.add(r);
+          return r;
+        },
+      },
       onSpoiler: (offset) {
         final r = TapGestureRecognizer()
           ..onTap = () => setState(() => _revealed.add(offset));
@@ -159,6 +190,8 @@ List<InlineSpan> buildEntitySpans(
   Set<int> revealed = const {},
   Map<int, List<CodeSpan>> highlights = const {},
   GestureRecognizer Function(String url)? onLink,
+  GestureRecognizer Function(String hashtag)? onHashtag,
+  GestureRecognizer Function(String command)? onBotCommand,
   GestureRecognizer Function(int offset)? onSpoiler,
 }) {
   final s = text.text;
@@ -262,11 +295,22 @@ List<InlineSpan> buildEntitySpans(
           style = style.copyWith(color: colors.accent);
           recognizer = onLink?.call('https://t.me/${whole.substring(1)}');
           cursor = SystemMouseCursors.click;
-        case td.TextEntityTypeMentionName() ||
-            td.TextEntityTypeHashtag() ||
-            td.TextEntityTypeCashtag() ||
-            td.TextEntityTypeBotCommand():
+        case td.TextEntityTypeMentionName(:final userId):
           style = style.copyWith(color: colors.accent);
+          recognizer = onLink?.call(TelegramLinks.userLink(userId).toString());
+          cursor = SystemMouseCursors.click;
+        // Known by their entity, not their text, so a link whose target
+        // reads "/x" still opens as a link.
+        case td.TextEntityTypeHashtag() || td.TextEntityTypeCashtag():
+          style = style.copyWith(color: colors.accent);
+          recognizer = onHashtag?.call(whole);
+          cursor = SystemMouseCursors.click;
+        case td.TextEntityTypeBotCommand():
+          style = style.copyWith(color: colors.accent);
+          if (onBotCommand != null) {
+            recognizer = onBotCommand(whole);
+            cursor = SystemMouseCursors.click;
+          }
         case td.TextEntityTypeSpoiler():
           if (!revealed.contains(e.offset)) {
             style = style.copyWith(
