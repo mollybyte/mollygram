@@ -4244,6 +4244,180 @@ abstract class AppLocalizations {
   /// **'Deleted chat'**
   String get folderDeletedChat;
 
+  /// No description provided for @proxy.
+  ///
+  /// In en, this message translates to:
+  /// **'Proxy'**
+  String get proxy;
+
+  /// No description provided for @useProxy.
+  ///
+  /// In en, this message translates to:
+  /// **'Use proxy'**
+  String get useProxy;
+
+  /// No description provided for @proxyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Telegram connects through the selected proxy. Ping shows the round trip in milliseconds.'**
+  String get proxyHint;
+
+  /// No description provided for @savedProxies.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved proxies'**
+  String get savedProxies;
+
+  /// No description provided for @addProxy.
+  ///
+  /// In en, this message translates to:
+  /// **'Add proxy'**
+  String get addProxy;
+
+  /// No description provided for @editProxy.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit proxy'**
+  String get editProxy;
+
+  /// No description provided for @proxyServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Server'**
+  String get proxyServer;
+
+  /// No description provided for @proxyPort.
+  ///
+  /// In en, this message translates to:
+  /// **'Port'**
+  String get proxyPort;
+
+  /// No description provided for @proxyUsername.
+  ///
+  /// In en, this message translates to:
+  /// **'Username'**
+  String get proxyUsername;
+
+  /// No description provided for @proxyPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get proxyPassword;
+
+  /// No description provided for @proxySecret.
+  ///
+  /// In en, this message translates to:
+  /// **'Secret'**
+  String get proxySecret;
+
+  /// No description provided for @proxyCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Check'**
+  String get proxyCheck;
+
+  /// No description provided for @proxyChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking…'**
+  String get proxyChecking;
+
+  /// No description provided for @proxyPing.
+  ///
+  /// In en, this message translates to:
+  /// **'{ms} ms'**
+  String proxyPing(int ms);
+
+  /// No description provided for @proxyUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable'**
+  String get proxyUnavailable;
+
+  /// No description provided for @proxyRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove proxy'**
+  String get proxyRemove;
+
+  /// No description provided for @proxyRemoveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {address}?'**
+  String proxyRemoveTitle(String address);
+
+  /// No description provided for @proxyConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect'**
+  String get proxyConnect;
+
+  /// No description provided for @proxyFromLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Add this proxy and connect through it?'**
+  String get proxyFromLink;
+
+  /// No description provided for @proxyNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No proxies yet'**
+  String get proxyNone;
+
+  /// No description provided for @language.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get language;
+
+  /// No description provided for @languageSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get languageSystem;
+
+  /// No description provided for @languageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes the language of the app. Chats and messages stay as they are.'**
+  String get languageHint;
+
+  /// No description provided for @proxyEditButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get proxyEditButton;
+
+  /// No description provided for @proxyInvalidSecret.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid secret'**
+  String get proxyInvalidSecret;
+
+  /// No description provided for @proxyRemoveAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get proxyRemoveAction;
+
+  /// No description provided for @proxyLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the proxies.'**
+  String get proxyLoadFailed;
+
+  /// No description provided for @proxyShowSecret.
+  ///
+  /// In en, this message translates to:
+  /// **'Show secret'**
+  String get proxyShowSecret;
+
+  /// No description provided for @proxyHideSecret.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide secret'**
+  String get proxyHideSecret;
+
   /// No description provided for @pluginShowMessage.
   ///
   /// In en, this message translates to:

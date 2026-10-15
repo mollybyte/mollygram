@@ -20,6 +20,7 @@ import 'notification_controller.dart';
 import 'peer_info.dart';
 import 'privacy_guard.dart';
 import 'privacy_settings_controller.dart';
+import 'proxy_controller.dart';
 import 'secret_chats.dart';
 import 'sticker_library.dart';
 import 'storage_usage.dart';
@@ -65,6 +66,7 @@ final class TelegramSession {
     required this.management,
     required this.links,
     required this.secretChats,
+    required this.proxies,
     required this._initializer,
   });
 
@@ -120,6 +122,9 @@ final class TelegramSession {
 
   /// Secret chats: starting, closing, state and self-destruct timer.
   final SecretChatsController secretChats;
+
+  /// The proxies TDLib can connect through.
+  final ProxyController proxies;
   final _errors = StreamController<Object>.broadcast(sync: true);
   final _closedElsewhere = Completer<void>();
   StreamSubscription<AuthorizationStage>? _stageSubscription;
@@ -184,6 +189,7 @@ final class TelegramSession {
       management: management,
       links: LinkResolver(client),
       secretChats: secretChats,
+      proxies: ProxyController(client),
       initializer: TdlibInitializer(client, parameters: parameters),
     );
     session._stageSubscription = authorization.stages.listen(session._onStage);

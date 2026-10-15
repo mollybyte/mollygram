@@ -38,6 +38,8 @@ class MollygramApp extends ConsumerWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
+      // Null follows the system; a choice in Language applies at once.
+      locale: preferences.language.locale,
       home: const _CloseSessionBeforeExit(
         child: Material(type: MaterialType.transparency, child: _Root()),
       ),
