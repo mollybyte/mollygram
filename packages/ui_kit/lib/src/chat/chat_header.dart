@@ -113,7 +113,7 @@ class ChatTitleCapsule extends StatelessWidget {
   final bool subtitleAccent;
 
   /// [subtitle] is what someone is doing, such as "typing": it is drawn in
-  /// the accent color with animated dots.
+  /// the secondary text colour with animated dots.
   final bool subtitleActivity;
 
   /// Defaults to a 30 px [MonogramAvatar] of [title].
@@ -176,7 +176,7 @@ class ChatTitleCapsule extends StatelessWidget {
                         ? const SizedBox.shrink()
                         : MgStatusText(
                             subtitle,
-                            accent: subtitleAccent || subtitleActivity,
+                            accent: subtitleAccent && !subtitleActivity,
                             activity: subtitleActivity,
                           ),
                   ),

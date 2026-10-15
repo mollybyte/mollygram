@@ -237,7 +237,6 @@ class _ChatListTileState extends State<ChatListTile> {
               ),
             ),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _AvatarWithDot(
                   avatar:
@@ -385,10 +384,9 @@ class _ChatListTileState extends State<ChatListTile> {
     if (activity != null) {
       return MgStatusText(
         activity,
-        accent: true,
         activity: true,
         size: size,
-        accentColor: on ? c.onAccent : null,
+        color: on ? c.onAccentSecondary : c.fg2,
       );
     }
     final sender = widget.draftLabel == null ? widget.sender : null;
