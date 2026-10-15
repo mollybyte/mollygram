@@ -36,6 +36,7 @@ import '../chat/poll_content.dart';
 import '../chat/schedule_picker.dart';
 import '../chat/send_as.dart';
 import '../chat/slow_mode.dart';
+import '../chat/sponsored_message.dart';
 import '../chat/sticker_suggestions.dart';
 import '../chat/timeline.dart';
 import '../chat/timeline_scroll.dart';
@@ -171,6 +172,11 @@ class _ChatViewState extends ConsumerState<ChatView> {
   /// The comments of a post, shown in place of the timeline while open.
   MessageThread? _thread;
 
+  /// A channel's sponsored message, asked for once per chat and shown
+  /// under the timeline.
+  td.SponsoredMessage? _sponsored;
+  var _sponsoredAsked = false;
+
   /// The topics of a forum, shown in the timeline's place until one opens.
   ForumTopicList? _topics;
   StreamSubscription<void>? _topicsSub;
@@ -237,6 +243,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _saveDraft(old.chatId);
     _close(old.chatId);
     _dropTopics();
+    _sponsored = null;
+    _sponsoredAsked = false;
     _viewed.clear();
     _toView.clear();
     _draft.clear();
@@ -568,6 +576,38 @@ class _ChatViewState extends ConsumerState<ChatView> {
       if (mounted) setState(() {});
     });
     _threadFocus.requestFocus();
+  }
+
+  /// The sponsored message under a channel's timeline, asked for the
+  /// first time the chat shows as a channel.
+  Widget? _sponsoredCard(ConversationStore store) {
+    final chatId = widget.chatId;
+    if (_listOpen || _selected != null || !store.isChannel(chatId)) {
+      return null;
+    }
+    if (!_sponsoredAsked) {
+      _sponsoredAsked = true;
+      unawaited(_loadSponsored(chatId));
+      return null;
+    }
+    final message = _sponsored;
+    if (message == null) return null;
+    return SponsoredMessageCard(
+      key: ValueKey(('sponsored', chatId, message.messageId)),
+      message: message,
+      onViewed: () => unawaited(
+        _quiet(_conversations.viewSponsored(chatId, message.messageId)),
+      ),
+      onOpen: () => unawaited(
+        _quiet(_conversations.clickSponsored(chatId, message.messageId)),
+      ),
+    );
+  }
+
+  Future<void> _loadSponsored(int chatId) async {
+    final messages = await _conversations.sponsoredMessages(chatId);
+    if (!mounted || widget.chatId != chatId || messages.isEmpty) return;
+    setState(() => _sponsored = messages.first);
   }
 
   void _dropTopics() {
@@ -3010,6 +3050,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
                       ),
                     ),
                   ),
+                ?_sponsoredCard(store),
                 if (_thread case final thread?)
                   _threadComposer(l10n, thread)
                 else if (_forum)

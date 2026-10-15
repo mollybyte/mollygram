@@ -3908,6 +3908,30 @@ abstract class AppLocalizations {
   /// **'Couldn\'t change the topic'**
   String get topicActionFailed;
 
+  /// No description provided for @sponsored.
+  ///
+  /// In en, this message translates to:
+  /// **'Sponsored'**
+  String get sponsored;
+
+  /// No description provided for @recommended.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended'**
+  String get recommended;
+
+  /// No description provided for @sponsoredOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get sponsoredOpen;
+
+  /// No description provided for @sponsoredAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'Telegram shows this message on behalf of the sponsor. It is picked by the channel\'s topic, not by your data.'**
+  String get sponsoredAbout;
+
   /// No description provided for @unpinAll.
   ///
   /// In en, this message translates to:

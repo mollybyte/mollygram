@@ -82,7 +82,7 @@ M8 calls and macOS release, M9 after release.
 | Auto-translate and "Translate" in the menu | missing | Built-in Translate plugin planned | M | M5 |
 | Voice message transcription | done | A button next to a voice message's time asks TDLib (`RecognizeSpeech`, Premium with free trials) and shows the transcript under the waveform, partial text while it runs, a quiet note on failure; a second click folds it | S | M9 |
 | Message effects and reaction animations | missing | | M | M9 |
-| Sponsored messages in channels | missing | Required by Telegram API terms | S | M2 |
+| Sponsored messages in channels | done | A channel's sponsored message (`getChatSponsoredMessages`) sits under the timeline as a flat card: sponsor photo and title, a "Sponsored" tag that explains itself, the text and the sponsor's button; shown once per visit, counted with `viewMessages` and `clickChatSponsoredMessage`. Required by Telegram's API terms | S | M2 |
 
 ### Message actions
 

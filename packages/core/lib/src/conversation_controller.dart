@@ -1027,6 +1027,40 @@ final class ConversationController {
     return thread;
   }
 
+  /// The sponsored messages Telegram asks to show in channel [chatId];
+  /// empty for other chats and when there are none.
+  Future<List<td.SponsoredMessage>> sponsoredMessages(int chatId) async {
+    try {
+      final answer = await _client.send(
+        td.GetChatSponsoredMessages(chatId: chatId),
+      );
+      return answer.messages;
+    } on td.TdException {
+      return const [];
+    }
+  }
+
+  /// Tells TDLib that sponsored message [messageId] of [chatId] was fully
+  /// shown, so the sponsor's view counts.
+  Future<void> viewSponsored(int chatId, int messageId) => _client.send(
+    td.ViewMessages(
+      chatId: chatId,
+      messageIds: [messageId],
+      source: const td.MessageSourceChatHistory(),
+      forceRead: false,
+    ),
+  );
+
+  /// Tells TDLib that the user clicked sponsored message [messageId].
+  Future<void> clickSponsored(int chatId, int messageId) => _client.send(
+    td.ClickChatSponsoredMessage(
+      chatId: chatId,
+      messageId: messageId,
+      isMediaClick: false,
+      fromFullscreen: false,
+    ),
+  );
+
   /// The topics of forum [chatId], kept current until disposed; the
   /// first page still has to be loaded.
   ForumTopicList openTopics(int chatId) {
