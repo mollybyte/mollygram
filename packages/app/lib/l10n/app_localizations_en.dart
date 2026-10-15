@@ -323,6 +323,42 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cancel => 'Cancel';
 
   @override
+  String get formatBold => 'Bold';
+
+  @override
+  String get formatItalic => 'Italic';
+
+  @override
+  String get formatUnderline => 'Underline';
+
+  @override
+  String get formatStrikethrough => 'Strikethrough';
+
+  @override
+  String get formatMonospace => 'Monospace';
+
+  @override
+  String get formatSpoiler => 'Spoiler';
+
+  @override
+  String get formatQuote => 'Quote';
+
+  @override
+  String get formatLink => 'Link…';
+
+  @override
+  String get formatPlain => 'Plain text';
+
+  @override
+  String get linkTitle => 'Add link';
+
+  @override
+  String get linkHint => 'URL';
+
+  @override
+  String get linkApply => 'Apply';
+
+  @override
   String get deleteMessageTitle => 'Delete message?';
 
   @override

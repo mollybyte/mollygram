@@ -310,6 +310,28 @@ void main() {
     );
   });
 
+  test('sends and edits with the formatting the composer gives', () async {
+    await controller.start();
+    controller.store.replaceHistory(7, [
+      ConversationMessage(tdMessage(id: 1, chatId: 7, text: 'Hi')),
+    ]);
+    const bold = td.TextEntity(
+      offset: 0,
+      length: 2,
+      type: td.TextEntityTypeBold(),
+    );
+
+    await controller.sendText(7, 'Hi there', entities: const [bold]);
+    await controller.editText(7, 1, 'Hi', entities: const [bold]);
+
+    final send = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    final sent = (send['input_message_content']! as Map)['text']! as Map;
+    expect((sent['entities']! as List).single, bold.toJson());
+    final edit = json.sent.lastWhere((r) => r['@type'] == 'editMessageText');
+    final edited = (edit['input_message_content']! as Map)['text']! as Map;
+    expect((edited['entities']! as List).single, bold.toJson());
+  });
+
   test('edits text messages and captions with the right request', () async {
     await controller.start();
     controller.store.replaceHistory(7, [

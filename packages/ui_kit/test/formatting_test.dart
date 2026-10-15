@@ -1,0 +1,366 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
+
+import 'harness.dart';
+
+const _b = TextFormat.bold;
+const _i = TextFormat.italic;
+const _m = TextFormat.monospace;
+
+void main() {
+  group('ranges', () {
+    test('join when they overlap or touch, apart from mentions', () {
+      expect(
+        normalizeRanges([
+          const FormatRange(4, 8, _b),
+          const FormatRange(0, 4, _b),
+          const FormatRange(6, 6, _i),
+          const FormatRange(0, 2, TextFormat.mention, userId: 1),
+          const FormatRange(2, 4, TextFormat.mention, userId: 1),
+        ]),
+        [
+          const FormatRange(0, 2, TextFormat.mention, userId: 1),
+          const FormatRange(0, 8, _b),
+          const FormatRange(2, 4, TextFormat.mention, userId: 1),
+        ],
+      );
+    });
+
+    test('toggle on, then off for part of a range', () {
+      var ranges = toggleFormat(const [], _b, 0, 10);
+      expect(ranges, [const FormatRange(0, 10, _b)]);
+      ranges = toggleFormat(ranges, _b, 3, 5);
+      expect(ranges, [
+        const FormatRange(0, 3, _b),
+        const FormatRange(5, 10, _b),
+      ]);
+      // Partly bold: the whole selection becomes bold.
+      ranges = toggleFormat(ranges, _b, 2, 6);
+      expect(ranges, [const FormatRange(0, 10, _b)]);
+    });
+
+    test('a new link replaces the old one', () {
+      var ranges = toggleFormat(
+        const [],
+        TextFormat.link,
+        0,
+        5,
+        url: 'https://a.example',
+      );
+      ranges = toggleFormat(
+        ranges,
+        TextFormat.link,
+        2,
+        5,
+        url: 'https://b.example',
+      );
+      expect(ranges, [
+        const FormatRange(0, 2, TextFormat.link, url: 'https://a.example'),
+        const FormatRange(2, 5, TextFormat.link, url: 'https://b.example'),
+      ]);
+      expect(toggleFormat(ranges, TextFormat.link, 0, 5), isEmpty);
+    });
+  });
+
+  group('edits', () {
+    const bold = [FormatRange(4, 9, _b)]; // "say *hello* now"
+
+    test('typing inside a range joins it, at its edges does not', () {
+      expect(shiftForEdit(bold, 'say hello now', 'say helXlo now'), [
+        const FormatRange(4, 10, _b),
+      ]);
+      expect(shiftForEdit(bold, 'say hello now', 'say helloX now'), bold);
+      expect(shiftForEdit(bold, 'say hello now', 'say Xhello now'), [
+        const FormatRange(5, 10, _b),
+      ]);
+    });
+
+    test('deleting text shortens or removes a range', () {
+      expect(shiftForEdit(bold, 'say hello now', 'say hlo now'), [
+        const FormatRange(4, 7, _b),
+      ]);
+      expect(shiftForEdit(bold, 'say hello now', 'say  now'), isEmpty);
+      expect(shiftForEdit(bold, 'say hello now', 'hello now'), [
+        const FormatRange(0, 5, _b),
+      ]);
+    });
+
+    test('typing over a whole range keeps its format', () {
+      expect(shiftForEdit(bold, 'say hello now', 'say bye now'), [
+        const FormatRange(4, 7, _b),
+      ]);
+    });
+
+    test('an edited mention is dropped', () {
+      const mention = [FormatRange(0, 4, TextFormat.mention, userId: 7)];
+      expect(shiftForEdit(mention, 'Vera hi', 'Veda hi'), isEmpty);
+      expect(shiftForEdit(mention, 'Vera hi', 'Vera hi!'), mention);
+    });
+
+    test('typing formats go on the inserted text', () {
+      expect(shiftForEdit(const [], 'ab', 'aXYb', typing: {_i}), [
+        const FormatRange(1, 3, _i),
+      ]);
+    });
+  });
+
+  group('markdown', () {
+    /// The text and the formats, comparable with `expect`.
+    List<Object> md(String text, [List<FormatRange>? r]) {
+      final (converted, formats) = applyMarkdown(text, r ?? const []);
+      return [converted, formats];
+    }
+
+    test('turns markers into formats', () {
+      expect(md('a **b** c'), [
+        'a b c',
+        [const FormatRange(2, 3, _b)],
+      ]);
+      expect(md('__it__ ~~s~~ ||x||'), [
+        'it s x',
+        [
+          const FormatRange(0, 2, _i),
+          const FormatRange(3, 4, TextFormat.strikethrough),
+          const FormatRange(5, 6, TextFormat.spoiler),
+        ],
+      ]);
+      expect(md('run `ls -la` now'), [
+        'run ls -la now',
+        [const FormatRange(4, 10, _m)],
+      ]);
+    });
+
+    test('code blocks drop their own lines and keep markers inside', () {
+      expect(md('see:\n```\nx **y**\n```'), [
+        'see:\nx **y**',
+        [const FormatRange(5, 12, _m)],
+      ]);
+    });
+
+    test('leaves lone and empty markers alone', () {
+      expect(md('2 ** 3 and ****'), ['2 ** 3 and ****', isEmpty]);
+      expect(md('a*b*c'), ['a*b*c', isEmpty]);
+    });
+
+    test('moves existing formats with the text', () {
+      expect(
+        md('**a** link', [const FormatRange(6, 10, TextFormat.link, url: 'u')]),
+        [
+          'a link',
+          [
+            const FormatRange(0, 1, _b),
+            const FormatRange(2, 6, TextFormat.link, url: 'u'),
+          ],
+        ],
+      );
+    });
+  });
+
+  test('recognizes web addresses on the clipboard', () {
+    expect(looksLikeUrl('https://telegram.org/faq'), isTrue);
+    expect(looksLikeUrl('telegram.org'), isTrue);
+    expect(looksLikeUrl('hello'), isFalse);
+    expect(looksLikeUrl('two words.com'), isFalse);
+  });
+
+  group('controller', () {
+    test('keeps ranges through typing and clears them with the text', () {
+      final c = RichTextEditingController(text: 'hello world')
+        ..selection = const TextSelection(baseOffset: 0, extentOffset: 5);
+      c.toggle(_b);
+      expect(c.ranges, [const FormatRange(0, 5, _b)]);
+      expect(c.isActive(_b), isTrue);
+
+      c.value = const TextEditingValue(
+        text: 'hello, world',
+        selection: TextSelection.collapsed(offset: 6),
+      );
+      expect(c.ranges, [const FormatRange(0, 5, _b)]);
+      c.clear();
+      expect(c.ranges, isEmpty);
+    });
+
+    test('a format toggled at the caret applies to what is typed next', () {
+      final c = RichTextEditingController(text: 'ab')
+        ..selection = const TextSelection.collapsed(offset: 2);
+      c.toggle(_i);
+      expect(c.isActive(_i), isTrue);
+      c.value = const TextEditingValue(
+        text: 'abc',
+        selection: TextSelection.collapsed(offset: 3),
+      );
+      c.value = const TextEditingValue(
+        text: 'abcd',
+        selection: TextSelection.collapsed(offset: 4),
+      );
+      expect(c.ranges, [const FormatRange(2, 4, _i)]);
+      // Moving the caret forgets it.
+      c.selection = const TextSelection.collapsed(offset: 0);
+      expect(c.typingFormats, isEmpty);
+    });
+
+    test('finds the @word at the caret and inserts a mention', () {
+      final c = RichTextEditingController(text: 'hi @ve')
+        ..selection = const TextSelection.collapsed(offset: 6);
+      expect(c.mentionQuery, 've');
+      c.insertMention(name: 'Vera', userId: 9);
+      expect(c.text, 'hi Vera ');
+      expect(c.ranges, [
+        const FormatRange(3, 7, TextFormat.mention, userId: 9),
+      ]);
+
+      c.value = const TextEditingValue(
+        text: 'mail a@b',
+        selection: TextSelection.collapsed(offset: 8),
+      );
+      expect(c.mentionQuery, isNull);
+      c.value = const TextEditingValue(
+        text: '@bo',
+        selection: TextSelection.collapsed(offset: 3),
+      );
+      c.insertMention(name: 'Boris', username: 'boris', userId: 2);
+      expect(c.text, '@boris ');
+      expect(c.ranges, isEmpty);
+    });
+
+    test('loads formatted text for editing', () {
+      final c = RichTextEditingController()
+        ..text = 'old'
+        ..setFormatted('new text', const [FormatRange(0, 3, _b)]);
+      expect(c.text, 'new text');
+      expect(c.ranges, [const FormatRange(0, 3, _b)]);
+      expect(c.selection, const TextSelection.collapsed(offset: 8));
+    });
+  });
+
+  group('composer shortcuts', () {
+    const labels = ComposerLabels(
+      hint: 'Message',
+      attach: 'Attach',
+      emoji: 'Emoji',
+      record: 'Record',
+      send: 'Send',
+      format: FormatLabels(
+        bold: 'Bold',
+        italic: 'Italic',
+        underline: 'Underline',
+        strikethrough: 'Strikethrough',
+        monospace: 'Monospace',
+        spoiler: 'Spoiler',
+        quote: 'Quote',
+        link: 'Link',
+        plain: 'Plain text',
+        linkTitle: 'Add link',
+        linkHint: 'URL',
+        apply: 'Apply',
+        cancel: 'Cancel',
+      ),
+    );
+
+    Future<RichTextEditingController> pump(WidgetTester tester) async {
+      final c = RichTextEditingController(text: 'hello world');
+      addTearDown(c.dispose);
+      await tester.pumpWidget(
+        themed(
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Composer(labels: labels, controller: c, onSend: (_) {}),
+          ),
+        ),
+      );
+      await tester.tap(find.byType(EditableText));
+      await tester.pump();
+      c.selection = const TextSelection(baseOffset: 0, extentOffset: 5);
+      await tester.pump();
+      return c;
+    }
+
+    Future<void> press(
+      WidgetTester tester,
+      LogicalKeyboardKey key, {
+      bool shift = false,
+    }) async {
+      final command = defaultTargetPlatform == TargetPlatform.macOS
+          ? LogicalKeyboardKey.metaLeft
+          : LogicalKeyboardKey.controlLeft;
+      await tester.sendKeyDownEvent(command);
+      if (shift) await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.sendKeyEvent(key);
+      if (shift) await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.sendKeyUpEvent(command);
+      await tester.pump();
+    }
+
+    testWidgets('format the selection', (tester) async {
+      final c = await pump(tester);
+      await press(tester, LogicalKeyboardKey.keyB);
+      await press(tester, LogicalKeyboardKey.keyI);
+      await press(tester, LogicalKeyboardKey.keyX, shift: true);
+      expect(c.ranges.map((r) => r.format).toSet(), {
+        _b,
+        _i,
+        TextFormat.strikethrough,
+      });
+      await press(tester, LogicalKeyboardKey.keyB);
+      expect(c.isActive(_b), isFalse);
+      expect(c.text, 'hello world');
+    });
+
+    testWidgets('⌘K asks for a link, prefilled from the clipboard', (
+      tester,
+    ) async {
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async => call.method == 'Clipboard.getData'
+            ? {'text': 'https://telegram.org'}
+            : null,
+      );
+      final c = await pump(tester);
+      await press(tester, LogicalKeyboardKey.keyK);
+      await tester.pumpAndSettle();
+      expect(find.text('Add link'), findsOneWidget);
+      expect(find.text('https://telegram.org'), findsOneWidget);
+
+      await tester.tap(find.text('Apply'));
+      await tester.pumpAndSettle();
+      expect(c.ranges, [
+        const FormatRange(0, 5, TextFormat.link, url: 'https://telegram.org'),
+      ]);
+    });
+
+    testWidgets('picks a suggestion with the keyboard', (tester) async {
+      final picked = <int>[];
+      final c = RichTextEditingController(text: '@');
+      addTearDown(c.dispose);
+      await tester.pumpWidget(
+        themed(
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Composer(
+              labels: labels,
+              controller: c,
+              onSend: (_) => fail('Enter picks the suggestion'),
+              suggestions: const [
+                ComposerSuggestion(title: 'Boris', subtitle: '@boris'),
+                ComposerSuggestion(title: 'Vera'),
+              ],
+              onSuggestion: picked.add,
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.byType(EditableText));
+      await tester.pump();
+      expect(find.text('Vera'), findsOneWidget);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      expect(picked, [1]);
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      expect(picked, [1, 1]);
+    });
+  });
+}

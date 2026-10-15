@@ -10,6 +10,7 @@ import 'chat_search.dart';
 import 'connection_status.dart';
 import 'conversation_controller.dart';
 import 'file_controller.dart';
+import 'mention_search.dart';
 import 'notification_controller.dart';
 import 'sticker_library.dart';
 import 'tdlib_initializer.dart';
@@ -30,6 +31,7 @@ final class TelegramSession {
     required this.notifications,
     required this.stickers,
     required this.account,
+    required this.mentions,
     required this.connection,
     required this._initializer,
   });
@@ -44,6 +46,9 @@ final class TelegramSession {
   final NotificationController notifications;
   final StickerLibrary stickers;
   final AccountSettings account;
+
+  /// Group members for @mentions in the composer.
+  final MentionSearch mentions;
 
   /// The connection state, for the "Connecting…" status in the window.
   final ConnectionMonitor connection;
@@ -64,6 +69,7 @@ final class TelegramSession {
     final authorization = AuthorizationController(client);
     final conversations = ConversationController(client);
     final files = FileController(client);
+    final mentions = MentionSearch(client);
     final connection = ConnectionMonitor(client);
     final notifications = NotificationController(client);
     final session = TelegramSession._(
@@ -76,6 +82,7 @@ final class TelegramSession {
       notifications: notifications,
       stickers: StickerLibrary(client),
       account: AccountSettings(client),
+      mentions: mentions,
       connection: connection,
       initializer: TdlibInitializer(client, parameters: parameters),
     );
@@ -83,6 +90,7 @@ final class TelegramSession {
     try {
       await conversations.start();
       await files.start();
+      await mentions.start();
       await connection.start();
       await notifications.start();
       await authorization.start();
@@ -137,6 +145,7 @@ final class TelegramSession {
     await chatLists.dispose();
     await conversations.dispose();
     await files.dispose();
+    await mentions.dispose();
     await connection.dispose();
     await notifications.dispose();
     await authorization.dispose();
