@@ -36,6 +36,7 @@ class TimelineView extends StatefulWidget {
     this.flashId,
     this.flash = 0,
     this.topInset = TimelineView.headerInset,
+    this.bottomInset = TimelineView.composerInset,
     this.selection,
     this.onDateTap,
   });
@@ -57,6 +58,10 @@ class TimelineView extends StatefulWidget {
   /// Called when the newest loaded messages come into view.
   final VoidCallback onNearBottom;
   final MessageRowActions actions;
+
+  /// The space under the newest message, for the composer and whatever
+  /// floats above it, such as a bot's keyboard.
+  final double bottomInset;
 
   /// The message the timeline grows from.
   final int? anchor;
@@ -83,7 +88,7 @@ class TimelineView extends StatefulWidget {
   final void Function(DateTime day, Offset position)? onDateTap;
 
   static const double headerInset = 72;
-  static const double bottomInset = 88;
+  static const double composerInset = 88;
 
   static bool _holds(TimelineItem item, int? id) =>
       id != null &&
@@ -260,7 +265,7 @@ class _TimelineList extends StatelessWidget {
     final topInset = view.topInset;
     final selection = view.selection;
     final onDateTap = view.onDateTap;
-    const bottomInset = TimelineView.bottomInset;
+    final bottomInset = view.bottomInset;
     final l10n = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).toLanguageTag();
     final isChannel = store.isChannel(chatId);
@@ -378,7 +383,7 @@ class _TimelineList extends StatelessWidget {
           // right under the center when there are none, so offset 0 is the
           // bottom from the first frame.
           if (newer.isNotEmpty)
-            const SliverToBoxAdapter(child: SizedBox(height: bottomInset)),
+            SliverToBoxAdapter(child: SizedBox(height: bottomInset)),
           SliverList(
             delegate: SliverChildBuilderDelegate(
               (context, i) {

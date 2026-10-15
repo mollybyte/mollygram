@@ -14,9 +14,13 @@ class PluginUiView extends StatelessWidget {
     required this.nodes,
     required this.onAction,
     this.enabled = true,
+    this.compact = false,
   });
 
   final List<Map<String, Object?>> nodes;
+
+  /// Buttons at the meta size, for a quiet offer under a message.
+  final bool compact;
 
   /// A click on a button or toggle: its action and payload.
   final void Function(String action, Object? payload) onAction;
@@ -43,6 +47,7 @@ class PluginUiView extends StatelessWidget {
       case 'button':
         return PluginLink(
           label: n['label']! as String,
+          size: compact ? MgType.meta : MgType.body,
           onTap: enabled
               ? () => onAction(n['action']! as String, n['payload'])
               : null,

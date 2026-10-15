@@ -31,7 +31,9 @@ import '../chat/forum_topics.dart';
 import '../chat/forward_picker.dart';
 import '../chat/inline_results.dart';
 import '../chat/link_preview_bar.dart';
+import '../chat/load_spinner.dart';
 import '../chat/location_picker.dart';
+import '../chat/measured.dart';
 import '../chat/media_viewer.dart';
 import '../chat/message_actions.dart';
 import '../chat/message_tile.dart';
@@ -63,6 +65,7 @@ import '../session/providers.dart';
 import '../shared_media/message_jump.dart';
 import '../voice/voice_record_composer.dart';
 import '../window_drag_area.dart';
+import 'chat_status.dart';
 import 'format.dart';
 
 /// One conversation: messages scroll under the floating header and
@@ -192,6 +195,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
   ForumTopicList? _topics;
   StreamSubscription<void>? _topicsSub;
   var _topicsOpening = false;
+
+  /// Set after a failed load of the topics, to try again shortly.
+  Timer? _topicsRetry;
 
   /// Saved Messages shown as the chats they came from, while the list
   /// button in the capsule is on.
@@ -379,10 +385,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
       return;
     }
     final viewport = _scroll.position.viewportDimension;
-    final hit = TimelineView.rowAt(
-      _timelineKey,
-      viewport - TimelineView.bottomInset - 4,
-    );
+    final hit = TimelineView.rowAt(_timelineKey, viewport - _bottomInset - 4);
     if (hit == null) return;
     _positions[chatId] = hit.messageId;
   }
@@ -402,7 +405,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     }
     _scroll
       ..pinned = false
-      ..request((_) => -(TimelineView.bottomInset + 4));
+      ..request((_) => -(_bottomInset + 4));
     setState(() => _anchor = id);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && widget.chatId == chatId) _followScroll();
@@ -893,7 +896,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
         _topicsOpening = true;
         scheduleMicrotask(() => unawaited(_openTopics()));
       }
-      return const SizedBox.shrink();
+      return const Center(child: LoadSpinner());
     }
     return ForumTopicListView(
       key: const ValueKey('forumTopics'),
@@ -922,9 +925,17 @@ class _ChatViewState extends ConsumerState<ChatView> {
     final list = _conversations.openTopics(chatId);
     try {
       await list.load();
-    } on td.TdException {
+    } on Object {
       list.dispose();
-      if (mounted && widget.chatId == chatId) _topicsOpening = false;
+      // A chat restored at launch can ask before the session is ready;
+      // the list is asked for again after a moment rather than left blank.
+      if (mounted && widget.chatId == chatId) {
+        _topicsRetry?.cancel();
+        _topicsRetry = Timer(const Duration(seconds: 2), () {
+          if (!mounted || widget.chatId != chatId) return;
+          setState(() => _topicsOpening = false);
+        });
+      }
       return;
     }
     if (!mounted || widget.chatId != chatId) {
@@ -999,6 +1010,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
   }
 
   void _dropTopics() {
+    _topicsRetry?.cancel();
+    _topicsRetry = null;
     _topicsSub?.cancel();
     _topicsSub = null;
     _topics?.dispose();
@@ -1507,7 +1520,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
       final viewport = _scroll.position.viewportDimension;
       _returnTo = TimelineView.rowAt(
         _timelineKey,
-        viewport - TimelineView.bottomInset - 4,
+        viewport - _bottomInset - 4,
       )?.messageId;
     }
     if (!store.contains(chatId, messageId)) {
@@ -2116,6 +2129,14 @@ class _ChatViewState extends ConsumerState<ChatView> {
   /// The id of the message whose keyboard the user hid; 0 for none.
   var _keyboardHiddenFor = 0;
 
+  /// The height of the bot keyboard on screen, which the timeline makes
+  /// room for; 0 without one.
+  var _keyboardHeight = 0.0;
+
+  /// The space the timeline leaves under its newest message: the composer
+  /// and the bot keyboard above it.
+  double get _bottomInset => TimelineView.composerInset + _keyboardHeight;
+
   /// The bot keyboard the chat shows in place of its own, loaded when the
   /// message carrying it isn't at hand yet.
   (int, td.ReplyMarkupShowKeyboard)? _replyKeyboard(ConversationStore store) {
@@ -2230,12 +2251,19 @@ class _ChatViewState extends ConsumerState<ChatView> {
       return null;
     }
     final (id, markup) = keyboard;
-    return ReplyKeyboard(
-      rows: markup.rows,
-      onPressed: (button) {
-        unawaited(_pressKeyboardButton(id, button));
-        if (markup.oneTime) setState(() => _keyboardHiddenFor = id);
+    return Measured(
+      onSize: (size) {
+        if (mounted && size.height != _keyboardHeight) {
+          setState(() => _keyboardHeight = size.height);
+        }
       },
+      child: ReplyKeyboard(
+        rows: markup.rows,
+        onPressed: (button) {
+          unawaited(_pressKeyboardButton(id, button));
+          if (markup.oneTime) setState(() => _keyboardHiddenFor = id);
+        },
+      ),
     );
   }
 
@@ -3348,6 +3376,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
       });
     }
 
+    final keyboardPanel = _selected == null && !_listOpen
+        ? _replyKeyboardPanel(store)
+        : null;
     final view = DropTarget(
       onDragEntered: (_) => setState(() => _dragging = true),
       onDragExited: (_) => setState(() => _dragging = false),
@@ -3424,6 +3455,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
                   flashId: _flashId,
                   flash: _flash,
                   topInset: _topInset,
+                  bottomInset: keyboardPanel == null
+                      ? TimelineView.composerInset
+                      : _bottomInset,
                   selection: _selected,
                   onDateTap: (day, position) =>
                       unawaited(_openCalendar(day, position)),
@@ -3532,8 +3566,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
                       ),
                       onTap: _closePinnedList,
                     )
-                  : ChatTitleCapsule(
-                      title: chat?.title ?? '',
+                  : ChatHeaderTitle(
+                      chatId: widget.chatId,
                       titleIcon: secret == null ? null : const SecretChatLock(),
                       avatar: _saved
                           ? MgIconButton(
@@ -3618,8 +3652,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
                         ? () => unawaited(_inline.loadMore())
                         : null,
                   ),
-                if (_selected == null && !_listOpen)
-                  ?_replyKeyboardPanel(store),
+                ?keyboardPanel,
                 if (_panelOpen)
                   Align(
                     alignment: Alignment.centerRight,

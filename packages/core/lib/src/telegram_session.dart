@@ -19,6 +19,7 @@ import 'link_resolver.dart';
 import 'mention_search.dart';
 import 'notification_controller.dart';
 import 'peer_info.dart';
+import 'presence.dart';
 import 'privacy_guard.dart';
 import 'privacy_settings_controller.dart';
 import 'proxy_controller.dart';
@@ -54,6 +55,7 @@ final class TelegramSession {
     required this.search,
     required this.chatSearch,
     required this.files,
+    required this.presence,
     required this.downloads,
     required this.notifications,
     required this.stickers,
@@ -87,6 +89,7 @@ final class TelegramSession {
   /// Search inside one chat and its shared media.
   final ChatSearchController chatSearch;
   final FileController files;
+  final PresenceController presence;
 
   /// The downloads the user asked for: the list, pausing and clearing.
   final DownloadsController downloads;
@@ -164,6 +167,11 @@ final class TelegramSession {
     final authorization = AuthorizationController(client);
     final conversations = ConversationController(client);
     final files = FileController(client);
+    final chatLists = ChatListController(client);
+    final presence = PresenceController(
+      client,
+      chatTitle: (chatId) => chatLists.store.chat(chatId)?.title ?? '',
+    );
     final downloads = DownloadsController(client, files);
     final mentions = MentionSearch(client);
     final peers = PeerInfoController(client);
@@ -181,7 +189,8 @@ final class TelegramSession {
     final session = TelegramSession._(
       tdlib: tdlib,
       authorization: authorization,
-      chatLists: ChatListController(client),
+      chatLists: chatLists,
+      presence: presence,
       folders: folders,
       security: security,
       conversations: conversations,
@@ -216,6 +225,8 @@ final class TelegramSession {
     try {
       await conversations.start();
       await files.start();
+      await presence.start();
+      chatLists.listen();
       await downloads.start();
       await mentions.start();
       await peers.start();
@@ -293,6 +304,7 @@ final class TelegramSession {
     await conversations.dispose();
     await downloads.dispose();
     await files.dispose();
+    await presence.dispose();
     await mentions.dispose();
     await peers.dispose();
     await connection.dispose();

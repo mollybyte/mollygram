@@ -25,6 +25,7 @@ export 'src/notification_controller.dart';
 export 'src/outgoing_file.dart';
 export 'src/peer_info.dart';
 export 'src/phone_country.dart';
+export 'src/presence.dart';
 export 'src/privacy_guard.dart';
 export 'src/privacy_settings_controller.dart';
 export 'src/proxy_controller.dart';

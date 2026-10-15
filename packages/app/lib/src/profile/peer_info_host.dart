@@ -14,8 +14,10 @@ import '../shared_media/shared_media_view.dart';
 import 'peer_info_panel.dart';
 import 'peer_info_state.dart';
 
-/// Puts the info panel of [chatId] over the right edge of [child], one
-/// chat pane, when [peerInfoPanelsProvider] says it is open.
+/// Puts the info panel of [chatId] at the right edge of [child], one chat
+/// pane, when [peerInfoPanelsProvider] says it is open. A pane with room
+/// for both is squeezed to make way, so the composer and the messages stay
+/// in view, like TelegramSwift; a narrow one is covered.
 ///
 /// The panel slides in and fades, and slides back out when closed by its
 /// button or Escape; either move can be reversed halfway. Inside the panel
@@ -29,6 +31,10 @@ class PeerInfoHost extends ConsumerStatefulWidget {
 
   /// The panel's width when the pane has room for it.
   static const double width = 340;
+
+  /// The least a pane keeps for its chat when the panel squeezes it; a
+  /// narrower pane is covered instead.
+  static const double minChatWidth = 520;
 
   @override
   ConsumerState<PeerInfoHost> createState() => _PeerInfoHostState();
@@ -156,10 +162,22 @@ class _PeerInfoHostState extends ConsumerState<PeerInfoHost>
           final width = constraints.maxWidth < PeerInfoHost.width
               ? constraints.maxWidth
               : PeerInfoHost.width;
+          final squeeze =
+              constraints.maxWidth - width >= PeerInfoHost.minChatWidth;
           return ClipRect(
             child: Stack(
               children: [
-                Positioned.fill(child: widget.child),
+                AnimatedBuilder(
+                  animation: _curve,
+                  builder: (context, child) => Positioned(
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    right: squeeze ? _curve.value * width : 0,
+                    child: child!,
+                  ),
+                  child: widget.child,
+                ),
                 AnimatedBuilder(
                   animation: _curve,
                   builder: (context, panel) {
