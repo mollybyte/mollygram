@@ -97,6 +97,7 @@ class _Window extends StatelessWidget {
                     title: const ChatTitleCapsule(
                       title: 'Anna Petrova',
                       subtitle: 'online',
+                      subtitleAccent: true,
                     ),
                     actions: ChatActionsCapsule(
                       children: [
@@ -164,13 +165,24 @@ class _Window extends StatelessWidget {
                     subtitle: 'Yes, it opens instantly now',
                     time: '21:10',
                     selected: true,
-                    unread: 1,
+                    online: true,
+                    pinned: true,
                   ),
                   ChatListTile(
                     title: 'Design',
                     subtitle: 'Mark: pushed the new icons',
                     time: '20:41',
                     unread: 12,
+                    mentions: true,
+                    pinned: true,
+                  ),
+                  ChatListTile(
+                    title: 'Mark',
+                    subtitle: '',
+                    activity: 'typing',
+                    time: '20:30',
+                    online: true,
+                    reactions: true,
                   ),
                   ChatListTile(
                     title: 'Flutter Desktop',
@@ -179,6 +191,13 @@ class _Window extends StatelessWidget {
                     unread: 1234,
                     unreadLabel: '1.2K',
                     muted: true,
+                  ),
+                  ChatListTile(
+                    title: 'Vera',
+                    subtitle: 'Photo',
+                    time: 'Tue',
+                    secret: true,
+                    markedUnread: true,
                   ),
                   ChatListTile(title: 'Ilya', subtitle: 'ok', time: 'Mon'),
                 ],

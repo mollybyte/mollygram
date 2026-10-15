@@ -165,6 +165,28 @@ abstract final class MgIcons {
     'lock',
     '<path d="M7 11V8a5 5 0 0 1 10 0v3M5 11h14v9H5z"/>',
   );
+  // Chat list (TelegramSwift's dialog row and context menu).
+  static const pin = MgIconData(
+    'pin',
+    '<path d="M9 4h6l-1 6 3 3H7l3-3zM12 13v7"/>',
+    stroke: 1.7,
+  );
+  static const muted = MgIconData(
+    'muted',
+    '<path d="M4 9h3l5-4v14l-5-4H4zM16 9l5 6M21 9l-5 6"/>',
+    stroke: 1.8,
+  );
+  static const archive = MgIconData(
+    'archive',
+    '<rect x="3" y="4" width="18" height="5" rx="1.5"/>'
+        '<path d="M5 9v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9M10 13h4"/>',
+    stroke: 1.7,
+  );
+  static const heart = MgIconData(
+    'heart',
+    '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',
+    stroke: 2,
+  );
   static const file = MgIconData(
     'file',
     '<path d="M7 3h7l5 5v13H7zM14 3v5h5"/>',
@@ -205,6 +227,10 @@ abstract final class MgIcons {
     notifications,
     lock,
     file,
+    pin,
+    muted,
+    archive,
+    heart,
   ];
 }
 

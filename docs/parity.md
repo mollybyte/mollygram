@@ -44,10 +44,10 @@ The order makes the app usable every day first, then fills in the rest.
 | Chat list with last message, time, unread count, muted state | done | `ChatListTile`, `ChatListStore` | | |
 | Folder tabs | done | Read-only tabs from `UpdateChatFolders` | | |
 | Paging the chat list | done | `loadMore` | | |
-| Chat list context menu: pin, mute, archive, mark read/unread, clear, delete, leave | missing | `ToggleChatIsPinned`, `SetChatNotificationSettings`, `AddChatToList`, `ToggleChatIsMarkedAsUnread` | M | M1 |
-| Archive folder entry and archive view | partial | `ChatListLocation.archive` exists, no UI entry | S | M1 |
-| Unread mention and reaction badges in the list | missing | `unreadMentionCount`, `unreadReactionCount` | S | M1 |
-| Typing and online dot in the list | missing | `UpdateChatAction`, `UpdateUserStatus` | S | M1 |
+| Chat list context menu: pin, mute, archive, mark read/unread, clear, delete, leave | done | `chat_menu.dart`; mute for 1 h, 8 h, 3 days or forever. Missing: mute until a date, sound picker, add to folder, preview | | |
+| Archive folder entry and archive view | done | Archive row on top of All, "Mark all as read". Missing: collapsing or hiding the row | | |
+| Unread mention and reaction badges in the list | done | Plus marked-as-unread, muted gray badge, pin icon, secret chat lock | | |
+| Typing and online dot in the list | done | `PresenceController` | | |
 | Draft preview in the list ("Draft: …") | partial | `UpdateChatDraftMessage` is stored, not shown | S | M1 |
 | Pinned chats order with drag | missing | `SetPinnedChats` | S | M3 |
 | Folder editor: create, edit, delete, reorder, include/exclude, recommended | missing | TelegramSwift `ChatListFilterController` | M | M3 |
@@ -70,7 +70,7 @@ The order makes the app usable every day first, then fills in the rest.
 | Jump to a replied message and back | missing | Needs history at an arbitrary message | M | M1 |
 | Date headers and sticky date | partial | Date pills exist, not sticky while scrolling | S | M1 |
 | Jump to date (calendar) | missing | `ChatCalendarModalController` | M | M2 |
-| Header status: online, last seen, members, typing | missing | Header has the slot | S | M1 |
+| Header status: online, last seen, members, typing | done | `chat_status.dart`; online count shows for open groups | | |
 | Join and mute buttons for channels and groups you are not in | missing | `JoinChat` | S | M1 |
 | Open `t.me` and `tg://` links, usernames, hashtags, bot commands | missing | `GetInternalLinkType` | M | M1 |
 | Link previews in messages | partial | Check `MessageText.linkPreview` rendering | M | M1 |

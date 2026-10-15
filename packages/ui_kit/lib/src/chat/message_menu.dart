@@ -11,15 +11,33 @@ import '../theme/theme.dart';
 final class MgMenuItem {
   const MgMenuItem({
     required this.label,
-    required this.onSelected,
+    this.onSelected,
     this.destructive = false,
-  });
+    this.submenu = const [],
+  }) : _divider = false;
+
+  /// A thin line between groups of items.
+  const MgMenuItem.divider()
+    : label = '',
+      onSelected = null,
+      destructive = false,
+      submenu = const [],
+      _divider = true;
 
   final String label;
-  final VoidCallback onSelected;
+
+  /// Runs after the menu closes; an item with a [submenu] may leave it out.
+  final VoidCallback? onSelected;
 
   /// Drawn in red, like Delete.
   final bool destructive;
+
+  /// Items shown beside this one while it is hovered, like a macOS
+  /// submenu; the row gets a chevron.
+  final List<MgMenuItem> submenu;
+  final bool _divider;
+
+  bool get isDivider => _divider;
 }
 
 /// Shows a context menu at [position] (global coordinates), kept inside
@@ -27,7 +45,8 @@ final class MgMenuItem {
 /// it closes the menu itself through [Navigator.pop].
 ///
 /// Like a macOS menu it appears at once, with no animation and no dimming;
-/// a click outside or Esc closes it.
+/// a click outside or Esc closes it. Items with a submenu open it beside
+/// themselves on hover.
 Future<void> showMgMenu(
   BuildContext context, {
   required Offset position,
@@ -40,11 +59,64 @@ Future<void> showMgMenu(
     barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
     barrierColor: const Color(0x00000000),
     transitionDuration: Duration.zero,
-    pageBuilder: (context, _, _) => CustomSingleChildLayout(
-      delegate: _MenuLayout(position),
-      child: _Menu(items: items, header: header),
-    ),
+    pageBuilder: (context, _, _) =>
+        _MenuRoot(position: position, items: items, header: header),
   );
+}
+
+/// The menu and, while an item with a submenu is hovered, that submenu.
+class _MenuRoot extends StatefulWidget {
+  const _MenuRoot({required this.position, required this.items, this.header});
+
+  final Offset position;
+  final List<MgMenuItem> items;
+  final Widget? header;
+
+  @override
+  State<_MenuRoot> createState() => _MenuRootState();
+}
+
+class _MenuRootState extends State<_MenuRoot> {
+  MgMenuItem? _open;
+  Rect? _anchor;
+
+  void _hover(MgMenuItem item, Rect row) {
+    if (item.submenu.isEmpty) {
+      if (_open != null) setState(() => _open = null);
+      return;
+    }
+    if (identical(_open, item)) return;
+    setState(() {
+      _open = item;
+      _anchor = row;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: CustomSingleChildLayout(
+            delegate: _MenuLayout(widget.position),
+            child: _Menu(
+              items: widget.items,
+              header: widget.header,
+              openItem: _open,
+              onHover: _hover,
+            ),
+          ),
+        ),
+        if ((_open, _anchor) case (final open?, final anchor?))
+          Positioned.fill(
+            child: CustomSingleChildLayout(
+              delegate: _SubmenuLayout(anchor),
+              child: _Menu(items: open.submenu, onHover: (_, _) {}),
+            ),
+          ),
+      ],
+    );
+  }
 }
 
 class _MenuLayout extends SingleChildLayoutDelegate {
@@ -75,11 +147,55 @@ class _MenuLayout extends SingleChildLayoutDelegate {
   bool shouldRelayout(_MenuLayout old) => old.position != position;
 }
 
+/// Puts a submenu beside its row: to the right, its first item level with
+/// the row, or to the left when the window has no room on the right.
+class _SubmenuLayout extends SingleChildLayoutDelegate {
+  _SubmenuLayout(this.row);
+
+  final Rect row;
+  static const double _margin = 8;
+
+  /// The menu's padding, so the submenu's first row lines up with [row].
+  static const double _inset = 5;
+
+  @override
+  BoxConstraints getConstraintsForChild(BoxConstraints constraints) =>
+      BoxConstraints.loose(constraints.biggest)
+          .deflate(const EdgeInsets.all(_margin));
+
+  @override
+  Offset getPositionForChild(Size size, Size child) {
+    var x = row.right + _inset;
+    if (x + child.width > size.width - _margin) {
+      x = row.left - _inset - child.width;
+    }
+    final y = row.top - _inset;
+    return Offset(
+      x.clamp(_margin, size.width - child.width - _margin).toDouble(),
+      y.clamp(_margin, size.height - child.height - _margin).toDouble(),
+    );
+  }
+
+  @override
+  bool shouldRelayout(_SubmenuLayout old) => old.row != row;
+}
+
 class _Menu extends StatelessWidget {
-  const _Menu({required this.items, this.header});
+  const _Menu({
+    required this.items,
+    required this.onHover,
+    this.header,
+    this.openItem,
+  });
 
   final List<MgMenuItem> items;
   final Widget? header;
+
+  /// The item whose submenu is showing; it stays highlighted.
+  final MgMenuItem? openItem;
+
+  /// A row was hovered; its rect is in global coordinates.
+  final void Function(MgMenuItem item, Rect row) onHover;
 
   @override
   Widget build(BuildContext context) {
@@ -99,7 +215,14 @@ class _Menu extends StatelessWidget {
                   header!,
                   if (items.isNotEmpty) const _Separator(),
                 ],
-                for (final item in items) _MenuRow(item: item),
+                for (final item in items)
+                  item.isDivider
+                      ? const _Separator()
+                      : _MenuRow(
+                          item: item,
+                          open: identical(item, openItem),
+                          onHover: onHover,
+                        ),
               ],
             ),
           ),
@@ -123,9 +246,17 @@ class _Separator extends StatelessWidget {
 }
 
 class _MenuRow extends StatefulWidget {
-  const _MenuRow({required this.item});
+  const _MenuRow({
+    required this.item,
+    required this.open,
+    required this.onHover,
+  });
 
   final MgMenuItem item;
+
+  /// This row's submenu is showing.
+  final bool open;
+  final void Function(MgMenuItem item, Rect row) onHover;
 
   @override
   State<_MenuRow> createState() => _MenuRowState();
@@ -134,16 +265,27 @@ class _MenuRow extends StatefulWidget {
 class _MenuRowState extends State<_MenuRow> {
   var _hover = false;
 
+  Rect _rect() {
+    final box = context.findRenderObject()! as RenderBox;
+    return box.localToGlobal(Offset.zero) & box.size;
+  }
+
   void _select() {
+    final item = widget.item;
+    if (item.submenu.isNotEmpty) {
+      widget.onHover(item, _rect());
+      return;
+    }
     Navigator.of(context).pop();
-    widget.item.onSelected();
+    item.onSelected?.call();
   }
 
   @override
   Widget build(BuildContext context) {
     final c = MgColors.of(context);
     final item = widget.item;
-    final color = _hover
+    final lit = _hover || widget.open;
+    final color = lit
         ? c.onAccent
         : item.destructive
         ? MgDestructive.color
@@ -155,7 +297,10 @@ class _MenuRowState extends State<_MenuRow> {
       excludeSemantics: true,
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
-        onEnter: (_) => setState(() => _hover = true),
+        onEnter: (_) {
+          setState(() => _hover = true);
+          widget.onHover(item, _rect());
+        },
         onExit: (_) => setState(() => _hover = false),
         child: GestureDetector(
           onTap: _select,
@@ -164,16 +309,26 @@ class _MenuRowState extends State<_MenuRow> {
             padding: const EdgeInsets.symmetric(horizontal: 10),
             alignment: Alignment.centerLeft,
             decoration: BoxDecoration(
-              color: _hover
+              color: lit
                   ? (item.destructive ? MgDestructive.color : c.accent)
                   : const Color(0x00000000),
               borderRadius: BorderRadius.circular(6),
             ),
-            child: Text(
-              item.label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: mgTextStyle(c, color: color, height: 1.2),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    item.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: mgTextStyle(c, color: color, height: 1.2),
+                  ),
+                ),
+                if (item.submenu.isNotEmpty) ...[
+                  const SizedBox(width: 16),
+                  MgIcon(MgIcons.chevron, size: 11, stroke: 2.4, color: color),
+                ],
+              ],
             ),
           ),
         ),

@@ -12,6 +12,7 @@ export 'src/chat/chat_header.dart';
 export 'src/chat/composer.dart';
 export 'src/chat/message_menu.dart';
 export 'src/chat/message_parts.dart';
+export 'src/chat/status_text.dart';
 export 'src/forms/buttons.dart';
 export 'src/forms/underline_field.dart';
 export 'src/glass/glass.dart';

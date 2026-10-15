@@ -24,6 +24,7 @@ import '../chat/message_tile.dart';
 import '../chat/timeline.dart';
 import '../session/providers.dart';
 import '../window_drag_area.dart';
+import 'chat_status.dart';
 
 /// One conversation: messages scroll under the floating header and
 /// composer.
@@ -590,7 +591,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
             left: 14,
             right: 14,
             child: ChatHeaderBar(
-              title: ChatTitleCapsule(title: chat?.title ?? ''),
+              title: ChatHeaderTitle(chatId: widget.chatId),
               actions: const SizedBox.shrink(),
               fill: const WindowDragArea(),
             ),
