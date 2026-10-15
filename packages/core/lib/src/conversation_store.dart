@@ -150,21 +150,115 @@ final class ConversationStore {
   final _readInbox = <int, int>{};
   final _readOutbox = <int, int>{};
   final _channels = <int>{};
+  final _atLatest = <int>{};
+  final _lastMessage = <int, int>{};
+  final _unread = <int, int>{};
+  final _unreadMentions = <int, int>{};
+  final _unreadReactions = <int, int>{};
+  final _pinned = <int, List<int>>{};
 
   /// Replaces the timeline of [chatId] with [messages], keeping the ones in
   /// [keep] that are still present (messages that arrived while the history
-  /// was loading).
+  /// was loading). [latest] says the page is the newest one; otherwise the
+  /// timeline is a window around an older message, with a gap after it
+  /// until newer pages load ([reachedEnd]).
   void replaceHistory(
     int chatId,
     List<ConversationMessage> messages, {
     Set<int> keep = const {},
+    bool latest = true,
   }) {
     final previous = _byChat[chatId] ?? const {};
     _reachedStart.remove(chatId);
+    latest ? _atLatest.add(chatId) : _atLatest.remove(chatId);
     _byChat[chatId] = {
       for (final id in keep) id: ?previous[id],
       for (final message in messages) message.id: message,
     };
+  }
+
+  /// Adds a page of newer history. Returns how many of [messages] were not
+  /// in the timeline yet.
+  int addNewer(int chatId, List<ConversationMessage> messages) =>
+      addOlder(chatId, messages);
+
+  /// Whether the timeline of [chatId] goes up to the newest message, so
+  /// new messages join it as they arrive.
+  bool reachedEnd(int chatId) {
+    if (_atLatest.contains(chatId)) return true;
+    final last = _lastMessage[chatId] ?? 0;
+    final newest = newestId(chatId);
+    return last != 0 && newest != null && newest >= last;
+  }
+
+  void markReachedEnd(int chatId) => _atLatest.add(chatId);
+
+  /// The newest loaded message of [chatId], or null when none is.
+  int? newestId(int chatId) {
+    final ids = _byChat[chatId]?.keys;
+    if (ids == null || ids.isEmpty) return null;
+    return ids.reduce((a, b) => a > b ? a : b);
+  }
+
+  /// Whether the timeline of [chatId] holds [messageId].
+  bool contains(int chatId, int messageId) =>
+      _byChat[chatId]?.containsKey(messageId) ?? false;
+
+  /// The id of the newest message of [chatId], 0 while unknown or when the
+  /// chat is empty.
+  int lastMessageId(int chatId) => _lastMessage[chatId] ?? 0;
+
+  void setLastMessageId(int chatId, int messageId) =>
+      _lastMessage[chatId] = messageId;
+
+  /// How many messages of [chatId] the user hasn't read.
+  int unreadCount(int chatId) => _unread[chatId] ?? 0;
+
+  /// How many unread messages of [chatId] mention the user or answer them.
+  int unreadMentionCount(int chatId) => _unreadMentions[chatId] ?? 0;
+
+  /// How many of the user's messages in [chatId] got reactions they haven't
+  /// seen.
+  int unreadReactionCount(int chatId) => _unreadReactions[chatId] ?? 0;
+
+  /// Each returns whether the count changed.
+  bool setUnreadCount(int chatId, int count) =>
+      _setCount(_unread, chatId, count);
+
+  bool setUnreadMentionCount(int chatId, int count) =>
+      _setCount(_unreadMentions, chatId, count);
+
+  bool setUnreadReactionCount(int chatId, int count) =>
+      _setCount(_unreadReactions, chatId, count);
+
+  /// The pinned messages of [chatId], newest first, once [setPinned] ran;
+  /// the messages themselves are kept as referenced ones.
+  List<int> pinnedIds(int chatId) => _pinned[chatId] ?? const [];
+
+  /// Whether the pinned messages of [chatId] have been loaded.
+  bool hasPinned(int chatId) => _pinned.containsKey(chatId);
+
+  void setPinned(int chatId, List<int> ids) =>
+      _pinned[chatId] = [...ids]..sort((a, b) => b.compareTo(a));
+
+  /// Adds or removes one pinned message. Returns whether the list changed.
+  bool markPinned(int chatId, int messageId, {required bool pinned}) {
+    final ids = _pinned[chatId];
+    if (ids == null) return false;
+    if (pinned) {
+      if (ids.contains(messageId)) return false;
+      ids
+        ..add(messageId)
+        ..sort((a, b) => b.compareTo(a));
+      return true;
+    }
+    return ids.remove(messageId);
+  }
+
+  static bool _setCount(Map<int, int> counts, int chatId, int count) {
+    if ((counts[chatId] ?? 0) == count) return false;
+    counts[chatId] = count;
+    return true;
   }
 
   /// Adds a page of older history. Returns how many of [messages] were not

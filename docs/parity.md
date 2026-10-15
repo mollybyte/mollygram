@@ -56,11 +56,11 @@ M8 calls and macOS release, M9 after release.
 | History with paging, flat no-bubble layout | done | #24, #29 | | |
 | Read receipts sent on view | done | `ViewMessages` | | |
 | Read ticks on outgoing messages | done | `UpdateChatReadOutbox` | | |
-| "New messages" separator and opening at the first unread | missing | | M | M1 |
-| Scroll-to-bottom button with unread counter | missing | | S | M1 |
-| Jump to next mention and reaction | missing | `GetChatMessageByDate`, `ReadAllChatMentions` | S | M1 |
-| Pinned message bar with cycling and the pinned list | missing | `UpdateMessageIsPinned` is handled, no bar | M | M1 |
-| Jump to a replied message and back | missing | Needs history at an arbitrary message | M | M1 |
+| "New messages" separator and opening at the first unread | done | Unread PR: `TimelineView` grows both ways from the first unread | | |
+| Scroll-to-bottom button with unread counter | done | Unread PR | | |
+| Jump to next mention and reaction | done | Unread PR: `SearchChatMessages` with the unread filters | | |
+| Pinned message bar with cycling and the pinned list | partial | Pinned PR: bar with cycling, pin and unpin from the menu; no pinned list view | S | M2 |
+| Jump to a replied message and back | partial | Unread PR: jump with a highlight; no "back" button yet | S | M1 |
 | Date headers and sticky date | partial | Date pills exist, not sticky while scrolling | S | M1 |
 | Jump to date (calendar) | missing | `ChatCalendarModalController` | M | M2 |
 | Header status: online, last seen, members, typing | missing | Header has the slot | S | M1 |
@@ -124,7 +124,7 @@ M8 calls and macOS release, M9 after release.
 | Contact sending | missing | | S | M2 |
 | Send preview: caption, send as files, albums | done | #31 | | |
 | Send preview: spoiler, self-destruct timer, compression choice | missing | `hasSpoiler`, `selfDestructType`; uncompressed default planned | S | M2 |
-| Media editor: crop, rotate, flip, aspect presets | missing | `EditImageModalController` | M | M4 |
+| Media editor: crop, rotate, flip, aspect presets | done | `packages/media_editor` | | |
 | Media editor: drawing (pen, marker, neon, eraser, colours, sizes) | missing | | M | M4 |
 | Media editor: text, stickers and emoji placed on the image | missing | | M | M4 |
 | Media editor: arrows and shapes, blur and pixelate brush | missing | | M | M4 |
@@ -201,17 +201,17 @@ M8 calls and macOS release, M9 after release.
 | Sign up (new account), email code, account reset | partial | Unsupported steps show a notice | M | M6 |
 | Contacts list, add and edit contact | missing | `ContactsController` | M | M6 |
 | New message / compose (pick a user) | missing | `ComposeViewController` | S | M1 |
-| Edit own profile: name, bio, username, photo, birthday | missing | `EditAccountInfoController` | M | M6 |
+| Edit own profile: name, bio, username, photo, birthday | partial | Name, username and bio in Settings; photo and birthday missing | M | M6 |
 | Multiple accounts and switching | missing | Several TDLib clients | L | M6 |
-| Log out | missing | Core has `LogOut`, no button in the app | S | M1 |
+| Log out | done | Settings, My profile, Log out | | |
 
 ### Settings
 
 | Feature | Status | Notes | Size | M |
 |---|---|---|---|---|
-| Settings window shell in macOS System Settings style | partial | Only the Plugins page exists | M | M1 |
+| Settings window shell in macOS System Settings style | done | Pages are descriptors in `settingsSections` | | |
 | Notifications and sounds: per-type, badge, preview, sound | partial | Global switches, preview, sound and badge done (`NotificationsPage`); per-type scopes (private, groups, channels) and tones missing | S | M1 |
-| Active sessions and terminate | missing | `RecentSessionsController` | S | M1 |
+| Active sessions and terminate | partial | List, terminate one or all others; no auto-terminate period | S | M1 |
 | Privacy and security: last seen, phone, photo, calls, forwards, groups, blocked list | missing | `SelectivePrivacySettingsController` | L | M6 |
 | Two-step verification setup | missing | `TwoStepVerification` | M | M6 |
 | Passcode lock and Touch ID | missing | `PasscodeSettingsViewController`, `LocalAuth` | M | M7 |
@@ -224,7 +224,7 @@ M8 calls and macOS release, M9 after release.
 | Connection status in the window ("Connecting…") | done | `ConnectionMonitor`, capsule in the sidebar title bar | | |
 | Keyboard shortcuts list | partial | Shell shortcuts exist; no list | S | M7 |
 | Auto-delete messages default | missing | | S | M7 |
-| Settings search | missing | | S | M7 |
+| Settings search | partial | Filters the source list in both languages; no search inside pages | S | M7 |
 | Ask a question, FAQ, about | missing | | S | M7 |
 
 ### Notifications and system integration

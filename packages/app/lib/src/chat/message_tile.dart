@@ -79,6 +79,7 @@ class MessageRowActions {
     this.onMenu,
     this.onOpen,
     this.onViewMedia,
+    this.onJump,
   });
 
   /// Adds the reaction, or takes it back when the user had chosen it.
@@ -100,6 +101,9 @@ class MessageRowActions {
 
   /// A click on a photo, video or GIF, which opens the media viewer.
   final void Function(ConversationMessage message)? onViewMedia;
+
+  /// A click on a reply's quote, which scrolls to the message it answers.
+  final void Function(int messageId)? onJump;
 }
 
 /// A message, or an album, in Telegram's flat layout: no bubbles, the
@@ -530,28 +534,20 @@ class _MessageBody extends StatelessWidget {
       text = '';
     }
     if (quote != null && quote.isNotEmpty) text = quote;
+    final jump = actions.onJump;
+    // Only an original of this chat that still exists can be scrolled to.
+    final canJump =
+        jump != null &&
+        reply.chatId == message.chatId &&
+        reply.messageId != 0 &&
+        !store.isMissing(message.chatId, message.id);
     return ReplyHeader(
       author: author,
       text: text,
-      thumbnail: content == null ? null : _replyThumbnail(content),
+      thumbnail: content == null ? null : mediaThumbnail(content),
+      onTap: canJump ? () => jump(reply.messageId) : null,
     );
   }
-
-  Widget? _replyThumbnail(td.MessageContent content) => switch (content) {
-    td.MessagePhoto(:final photo) => TdImage(
-      thumbnail: photo.sizes.isEmpty ? null : photo.sizes.first.photo,
-      minithumbnail: photo.minithumbnail,
-    ),
-    td.MessageVideo(:final video) => TdImage(
-      thumbnail: video.thumbnail?.file,
-      minithumbnail: video.minithumbnail,
-    ),
-    td.MessageAnimation(:final animation) => TdImage(
-      thumbnail: animation.thumbnail?.file,
-      minithumbnail: animation.minithumbnail,
-    ),
-    _ => null,
-  };
 
   /// The caption of a row's media and whether it goes above the media.
   static ({td.FormattedText text, bool above})? _caption(MessageRow row) {
@@ -802,3 +798,21 @@ class _LinkPreview extends StatelessWidget {
     );
   }
 }
+
+/// The small picture of a photo, video or GIF, for a reply's quote and
+/// the pinned bar; null for other content.
+Widget? mediaThumbnail(td.MessageContent content) => switch (content) {
+  td.MessagePhoto(:final photo) => TdImage(
+    thumbnail: photo.sizes.isEmpty ? null : photo.sizes.first.photo,
+    minithumbnail: photo.minithumbnail,
+  ),
+  td.MessageVideo(:final video) => TdImage(
+    thumbnail: video.thumbnail?.file,
+    minithumbnail: video.minithumbnail,
+  ),
+  td.MessageAnimation(:final animation) => TdImage(
+    thumbnail: animation.thumbnail?.file,
+    minithumbnail: animation.minithumbnail,
+  ),
+  _ => null,
+};

@@ -256,6 +256,22 @@ abstract final class MgIcons {
     '<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4zM16 9.5l5 5M21 9.5l-5 5"/>',
   );
 
+  static const arrowDown = MgIconData(
+    'arrowDown',
+    '<path d="M6 9.5l6 6 6-6"/>',
+    stroke: 2,
+  );
+  static const mention = MgIconData(
+    'mention',
+    '<circle cx="12" cy="12" r="3.6"/>'
+        '<path d="M15.6 12v1.4a2.4 2.4 0 0 0 4.8 0V12a8.4 8.4 0 1 0-3.3 6.7"/>',
+  );
+  static const heart = MgIconData(
+    'heart',
+    '<path d="M12 19.5s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 6.9a4.3 4.3 0 0 1 7.5 2.6'
+        'c0 5.4-7.5 10-7.5 10z"/>',
+  );
+
   static const List<MgIconData> all = [
     compose,
     search,
@@ -308,6 +324,9 @@ abstract final class MgIcons {
     loop,
     volume,
     muted,
+    arrowDown,
+    mention,
+    heart,
   ];
 }
 

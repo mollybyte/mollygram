@@ -13,6 +13,7 @@ workspace:
   - packages/ui_kit
   - packages/media
   - packages/media/example
+  - packages/media_editor
   - packages/app
   - packages/plugin_host
   - packages/shell

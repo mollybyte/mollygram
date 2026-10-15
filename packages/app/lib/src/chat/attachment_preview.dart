@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mollygram_core/mollygram_core.dart';
+import 'package:mollygram_media_editor/mollygram_media_editor.dart';
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
@@ -53,6 +54,9 @@ class _PreviewState extends State<_Preview> {
   final _focus = FocusNode();
   var _asFiles = false;
 
+  /// Photos the user edited, by their original path.
+  final _edited = <String, MediaEditResult>{};
+
   @override
   void initState() {
     super.initState();
@@ -68,8 +72,31 @@ class _PreviewState extends State<_Preview> {
 
   List<OutgoingFile> get _files => [
     for (final file in widget.files)
-      _asFiles && file.isMedia ? file.asDocument() : file,
+      _asFiles && file.isMedia ? file.asDocument() : _withEdit(file),
   ];
+
+  OutgoingFile _withEdit(OutgoingFile file) {
+    final edit = _edited[file.path];
+    if (edit == null || !edit.isEdited) return file;
+    return OutgoingFile(
+      path: edit.path,
+      kind: file.kind,
+      width: edit.width,
+      height: edit.height,
+    );
+  }
+
+  Future<void> _edit(OutgoingFile file) async {
+    final previous = _edited[file.path];
+    final result = await showMediaEditor(
+      context,
+      path: file.path,
+      initial: previous?.edit ?? const MediaEdit(),
+    );
+    if (result == null || !mounted) return;
+    setState(() => _edited[file.path] = result);
+    _focus.requestFocus();
+  }
 
   void _send() =>
       Navigator.of(context).pop((files: _files, caption: _caption.text));
@@ -115,9 +142,12 @@ class _PreviewState extends State<_Preview> {
                   spacing: 6,
                   runSpacing: 6,
                   children: [
-                    for (final file in files)
+                    for (final (i, file) in files.indexed)
                       file.kind == OutgoingKind.photo
-                          ? _Thumbnail(path: file.path)
+                          ? _Thumbnail(
+                              path: file.path,
+                              onEdit: () => _edit(widget.files[i]),
+                            )
                           : _FileLine(file: file),
                   ],
                 ),
@@ -191,25 +221,65 @@ class _PreviewState extends State<_Preview> {
   }
 }
 
-class _Thumbnail extends StatelessWidget {
-  const _Thumbnail({required this.path});
+/// A photo with an edit button that appears on hover.
+class _Thumbnail extends StatefulWidget {
+  const _Thumbnail({required this.path, required this.onEdit});
 
   final String path;
+  final VoidCallback onEdit;
 
   @override
-  Widget build(BuildContext context) => ClipRRect(
-    borderRadius: BorderRadius.circular(8),
-    child: SizedBox.square(
-      dimension: 125,
-      child: Image.file(
-        File(path),
-        fit: BoxFit.cover,
-        cacheWidth: 250,
-        errorBuilder: (context, _, _) =>
-            ColoredBox(color: MgColors.of(context).field),
+  State<_Thumbnail> createState() => _ThumbnailState();
+}
+
+class _ThumbnailState extends State<_Thumbnail> {
+  var _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: SizedBox.square(
+          dimension: 125,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.file(
+                File(widget.path),
+                key: ValueKey(widget.path),
+                fit: BoxFit.cover,
+                cacheWidth: 250,
+                errorBuilder: (context, _, _) => ColoredBox(color: c.field),
+              ),
+              Positioned(
+                right: 6,
+                top: 6,
+                child: AnimatedOpacity(
+                  opacity: _hover ? 1 : 0,
+                  duration: const Duration(milliseconds: 120),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: c.mediaPill,
+                      shape: BoxShape.circle,
+                    ),
+                    child: MgIconButton(
+                      icon: EditorIcons.edit,
+                      tooltip: MediaEditorStrings.of(context).edit,
+                      onPressed: widget.onEdit,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _FileLine extends StatelessWidget {

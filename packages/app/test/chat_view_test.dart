@@ -94,6 +94,12 @@ void main() {
 
   List<Object?> requests() => [for (final r in json.sent) r['@type']];
 
+  Future<void> rightClick(WidgetTester tester, String text) async {
+    await tester.tap(find.text(text), buttons: kSecondaryButton);
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+  }
+
   testWidgets('opens the chat, marks shown messages read and closes it', (
     tester,
   ) async {
@@ -138,6 +144,152 @@ void main() {
     }
   });
 
+  testWidgets('opens at the first unread message and goes back down', (
+    tester,
+  ) async {
+    json.chat = [for (var id = 1; id <= 120; id++) id];
+    json.push(_chat(lastRead: 80, unread: 40, last: 120));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await pump(tester);
+    await tester.pumpAndSettle();
+
+    // The band sits above message 81, which is on screen; the newest
+    // message is not loaded yet.
+    expect(find.text('Unread messages'), findsOneWidget);
+    final band = tester.getRect(find.text('Unread messages'));
+    final first = tester.getRect(
+      find.textContaining('Message 81', findRichText: true),
+    );
+    expect(band.bottom, lessThanOrEqualTo(first.top));
+    expect(band.top, greaterThan(72));
+    expect(
+      find.textContaining('Message 120', findRichText: true),
+      findsNothing,
+    );
+    final viewed = {
+      for (final r in json.sent)
+        if (r['@type'] == 'viewMessages') ...(r['message_ids']! as List),
+    };
+    expect(viewed, contains(81));
+    expect(viewed, isNot(contains(120)));
+
+    // The down button shows, since the newest message is further down.
+    final down = find.byTooltip('Scroll to the newest message');
+    expect(down, findsOneWidget);
+    await tester.tap(down);
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining('Message 120', findRichText: true),
+      findsOneWidget,
+    );
+    expect(find.text('Unread messages'), findsNothing);
+  });
+
+  testWidgets('scrolls to the message a reply answers', (tester) async {
+    json.chat = [for (var id = 1; id <= 60; id++) id];
+    // The newest message answers the oldest, far above the screen.
+    json.repliesTo = {60: 1};
+    json.push(_chat(lastRead: 60, unread: 0, last: 60));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await pump(tester);
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining(RegExp(r'Message 1(?!\d)'), findRichText: true),
+      findsNothing,
+    );
+
+    await tester.tap(find.byType(ReplyHeader));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+
+    final target = tester.getRect(
+      find.textContaining(RegExp(r'Message 1(?!\d)'), findRichText: true),
+    );
+    expect(target.top, inInclusiveRange(0, 800));
+  });
+
+  testWidgets('shows the pinned messages and cycles through them', (
+    tester,
+  ) async {
+    json.chat = [for (var id = 1; id <= 60; id++) id];
+    json.pinned = [50, 20];
+    json.push(_chat(lastRead: 60, unread: 0, last: 60));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await pump(tester);
+    await tester.pumpAndSettle();
+
+    // The newest pinned message shows first, numbered from the oldest.
+    final bar = find.byType(PinnedBar);
+    expect(find.text('Pinned message #2'), findsOneWidget);
+    expect(
+      find.descendant(of: bar, matching: find.text('Message 50')),
+      findsOneWidget,
+    );
+
+    // A click goes to it and the bar moves on to the older one.
+    await tester.tap(find.byType(PinnedBar));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+    expect(find.text('Pinned message #1'), findsOneWidget);
+    expect(
+      find.descendant(of: bar, matching: find.text('Message 20')),
+      findsOneWidget,
+    );
+    final target = tester.getRect(
+      find.textContaining(RegExp(r'Message 50(?!\d)'), findRichText: true),
+    );
+    expect(target.top, inInclusiveRange(0, 800));
+
+    // Unpinning the last one takes the bar away.
+    json
+      ..push({
+        '@type': 'updateMessageIsPinned',
+        'chat_id': 7,
+        'message_id': 50,
+        'is_pinned': false,
+      })
+      ..push({
+        '@type': 'updateMessageIsPinned',
+        'chat_id': 7,
+        'message_id': 20,
+        'is_pinned': false,
+      });
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+    expect(find.byType(PinnedBar), findsNothing);
+  });
+
+  testWidgets('pins and unpins a message from its menu', (tester) async {
+    await pump(tester);
+
+    await rightClick(tester, 'From Vera');
+    await tester.tap(find.text('Pin'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    final pin = json.sent.lastWhere((r) => r['@type'] == 'pinChatMessage');
+    expect(pin['message_id'], 12);
+    expect(pin['only_for_self'], isFalse);
+
+    json.push({
+      '@type': 'updateMessageIsPinned',
+      'chat_id': 7,
+      'message_id': 12,
+      'is_pinned': true,
+    });
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+    expect(find.text('Pinned message'), findsOneWidget);
+
+    // The bar now says "From Vera" too; the message comes first.
+    await tester.tap(find.text('From Vera').first, buttons: kSecondaryButton);
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Unpin'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    final unpin = json.sent.lastWhere((r) => r['@type'] == 'unpinChatMessage');
+    expect(unpin['message_id'], 12);
+  });
+
   testWidgets('names the sender once per run in a group', (tester) async {
     await pump(tester);
 
@@ -154,12 +306,6 @@ void main() {
     expect(find.text('Boris'), findsOneWidget);
     expect(find.text('Vera'), findsOneWidget);
   });
-
-  Future<void> rightClick(WidgetTester tester, String text) async {
-    await tester.tap(find.text(text), buttons: kSecondaryButton);
-    await tester.runAsync(() => Future<void>.delayed(_tick));
-    await tester.pump();
-  }
 
   testWidgets('replies to a message from its menu', (tester) async {
     await pump(tester);
@@ -460,12 +606,67 @@ td.Message _message({
   chatInstance: 0,
 );
 
+/// The ids TDLib returns for a history request over [ids], newest first.
+List<int> _page(List<int> ids, int from, int offset, int limit) {
+  final newestFirst = [...ids]..sort((a, b) => b.compareTo(a));
+  var start = from == 0 ? 0 : newestFirst.indexWhere((id) => id <= from);
+  if (start < 0) return const [];
+  start = (start + offset).clamp(0, newestFirst.length);
+  return newestFirst.skip(start).take(limit).toList();
+}
+
+/// TDLib's description of chat 7, with what the user has read of it.
+Map<String, Object?> _chat({
+  required int lastRead,
+  required int unread,
+  required int last,
+}) => {
+  '@type': 'updateNewChat',
+  'chat': {
+    '@type': 'chat',
+    'id': 7,
+    'type': {'@type': 'chatTypePrivate', 'user_id': 2},
+    'title': 'Boris',
+    'last_message': _message(
+      id: last,
+      senderId: 2,
+      text: 'Message $last',
+    ).toJson(),
+    'unread_count': unread,
+    'last_read_inbox_message_id': lastRead,
+    'last_read_outbox_message_id': 0,
+    'permissions': {'@type': 'chatPermissions'},
+    'positions': <Object?>[],
+    'chat_lists': <Object?>[],
+    'notification_settings': {'@type': 'chatNotificationSettings'},
+    'available_reactions': {
+      '@type': 'chatAvailableReactionsAll',
+      'max_reaction_count': 11,
+    },
+    'video_chat': {'@type': 'videoChat'},
+  },
+};
+
 final class _FakeTdJson implements td.TdJson {
   final _queue = Queue<String>();
   final sent = <Map<String, Object?>>[];
   var failSend = false;
   var history = _history;
+
+  /// A whole chat from Boris with these ids, paged as TDLib does with
+  /// from_message_id, offset and limit; takes the place of [history].
+  List<int>? chat;
+
+  /// Which message of [chat] each of these answers.
+  var repliesTo = <int, int>{};
+
+  /// The pinned messages, newest first.
+  var pinned = <int>[];
   var _nextClientId = 0;
+
+  /// Delivers [update] as TDLib would.
+  void push(Map<String, Object?> update) =>
+      _queue.add(jsonEncode({...update, '@client_id': 1}));
 
   @override
   int createClientId() => ++_nextClientId;
@@ -486,6 +687,27 @@ final class _FakeTdJson implements td.TdJson {
     }
     final response = switch (type) {
       'getAuthorizationState' => {'@type': 'authorizationStateReady'},
+      'getChatHistory' when chat != null => {
+        '@type': 'messages',
+        'total_count': chat!.length,
+        'messages': [
+          for (final id in _page(
+            chat!,
+            decoded['from_message_id']! as int,
+            decoded['offset']! as int,
+            decoded['limit']! as int,
+          ))
+            {
+              ..._message(id: id, senderId: 2, text: 'Message $id').toJson(),
+              if (repliesTo[id] case final original?)
+                'reply_to': {
+                  '@type': 'messageReplyToMessage',
+                  'chat_id': 7,
+                  'message_id': original,
+                },
+            },
+        ],
+      },
       'getChatHistory' => {
         '@type': 'messages',
         'total_count': history.length,
@@ -543,6 +765,21 @@ final class _FakeTdJson implements td.TdJson {
         'stickers': [_sticker(2, '😸'), _sticker(3, '😺')],
         'emojis': <Object?>[],
       },
+      'searchChatMessages'
+          when (decoded['filter']! as Map)['@type'] ==
+              'searchMessagesFilterPinned' =>
+        {
+          '@type': 'foundChatMessages',
+          'total_count': pinned.length,
+          'messages': [
+            for (final id in pinned)
+              {
+                ..._message(id: id, senderId: 2, text: 'Message $id').toJson(),
+                'is_pinned': true,
+              },
+          ],
+          'next_from_message_id': 0,
+        },
       'searchChatMessages' => {
         '@type': 'foundChatMessages',
         'total_count': 2,
@@ -560,6 +797,7 @@ final class _FakeTdJson implements td.TdJson {
         'can_be_replied': true,
         'can_be_edited': decoded['message_id'] == 13,
         'can_be_forwarded': true,
+        'can_be_pinned': true,
         'can_be_deleted_only_for_self': true,
         'can_be_deleted_for_all_users': true,
       },
