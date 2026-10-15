@@ -162,15 +162,19 @@ class MessageMeta extends StatelessWidget {
           Text(forwards!, style: style),
           const SizedBox(width: _labelGap),
         ],
-        Text(time, style: style),
         if (tick != null) ...[
-          const SizedBox(width: _tickGap),
           MgIcon(
             tick,
             size: _tickSize,
-            color: status == MessageStatus.failed ? failedColor : style.color,
+            color: switch (status) {
+              MessageStatus.failed => failedColor,
+              MessageStatus.sending => style.color,
+              _ => color ?? c.accent,
+            },
           ),
+          const SizedBox(width: _tickGap),
         ],
+        Text(time, style: style),
       ],
     );
     final tooltip = this.tooltip;

@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 import 'theme/colors.dart';
+import 'theme/theme.dart';
 
 /// Up to two letters for a monogram: the first letters of the first two
 /// words, or the first letter of a single word. Emoji and other symbols
@@ -62,11 +63,13 @@ class MonogramAvatar extends StatelessWidget {
                 monogramOf(name),
                 maxLines: 1,
                 style: TextStyle(
+                  fontFamily: mgFontFamily,
+                  fontFamilyFallback: mgFontFamilyFallback,
                   color: const Color(0xFFFFFFFF),
-                  fontWeight: FontWeight.w600,
-                  fontSize: size * 0.36,
+                  fontWeight: MgWeight.medium,
+                  fontSize: size * 0.38,
                   height: 1,
-                  letterSpacing: 0,
+                  letterSpacing: size * 0.38 >= 16 ? -0.2 : 0,
                 ),
               ),
       ),
