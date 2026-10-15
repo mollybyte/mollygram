@@ -383,11 +383,16 @@ td.ChatNotificationSettings _withMuteFor(
 
 ChatDraft? _draftFrom(td.DraftMessage? draft) {
   if (draft == null) return null;
-  final text = switch (draft.content) {
-    td.DraftMessageContentText(:final text) => text.text,
-    _ => '',
+  final (text, kind) = switch (draft.content) {
+    td.DraftMessageContentText(:final text) => (
+      text.text,
+      ChatPreviewKind.text,
+    ),
+    td.DraftMessageContentVoiceNote() => ('', ChatPreviewKind.voiceNote),
+    td.DraftMessageContentVideoNote() => ('', ChatPreviewKind.videoNote),
+    _ => ('', ChatPreviewKind.other),
   };
-  return ChatDraft(text: text, date: draft.date);
+  return ChatDraft(text: text, date: draft.date, kind: kind);
 }
 
 ChatPreview? _previewFrom(td.Message? message) {

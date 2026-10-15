@@ -114,6 +114,25 @@ void main() {
     expect(controller.store.chat(5)!.positionFor(main)!.order, 99);
   });
 
+  test('ignores a draft older than the one shown', () {
+    const main = ChatListLocation.main();
+    final positions = [
+      ChatListPosition(list: main, order: 10, isPinned: false),
+    ];
+    controller.store
+      ..upsert(
+        ChatListEntry(
+          id: 5,
+          title: 'Draft',
+          unreadCount: 0,
+          positions: positions,
+        ),
+      )
+      ..updateDraft(5, const ChatDraft(text: 'new', date: 200), positions)
+      ..updateDraft(5, const ChatDraft(text: 'old', date: 100), positions);
+    expect(controller.store.chat(5)!.draft?.text, 'new');
+  });
+
   test('keeps the draft text and date, and drops a cleared draft', () async {
     const main = ChatListLocation.main();
     await controller.start();

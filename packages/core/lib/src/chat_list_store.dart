@@ -72,7 +72,14 @@ final class ChatPreview {
 
 /// The unsent draft of a chat, as the chat list shows it.
 final class ChatDraft {
-  const ChatDraft({required this.text, required this.date});
+  const ChatDraft({
+    required this.text,
+    required this.date,
+    this.kind = ChatPreviewKind.text,
+  });
+
+  /// What the draft holds when it is not text, such as a voice note.
+  final ChatPreviewKind kind;
 
   /// The draft's text; empty for a draft that is only a reply.
   final String text;
@@ -310,6 +317,13 @@ final class ChatListStore {
   ) {
     final chat = _chats[chatId];
     if (chat == null) return;
+    // TDLib may send an old draft after the user has changed it; a draft
+    // older than the one shown is stale.
+    final shown = chat.draft;
+    if (draft != null && shown != null && draft.date < shown.date) {
+      _chats[chatId] = chat.copyWith(positions: positions);
+      return;
+    }
     _chats[chatId] = chat.copyWith(positions: positions, draft: () => draft);
   }
 

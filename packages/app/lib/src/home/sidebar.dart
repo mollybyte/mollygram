@@ -47,11 +47,41 @@ class _SidebarState extends ConsumerState<Sidebar> {
   @override
   void initState() {
     super.initState();
-    _search.addListener(() => setState(() {}));
+    _search.addListener(() {
+      setState(() {});
+      _searchOnServer();
+    });
+  }
+
+  /// Chats found by TDLib for the current query, beyond the loaded pages.
+  List<int> _foundIds = const [];
+  Timer? _searchTimer;
+
+  void _searchOnServer() {
+    final text = _search.text.trim();
+    _searchTimer?.cancel();
+    if (text.isEmpty) {
+      _foundIds = const [];
+      return;
+    }
+    _searchTimer = Timer(const Duration(milliseconds: 200), () async {
+      final session = ref.read(telegramSessionProvider).value;
+      if (session == null) return;
+      try {
+        final ids = await session.search.chats(text, limit: 50);
+        if (!mounted || _search.text.trim() != text) return;
+        setState(() {
+          _foundIds = ids;
+        });
+      } on Object {
+        // The loaded chats still match.
+      }
+    });
   }
 
   @override
   void dispose() {
+    _searchTimer?.cancel();
     _search.dispose();
     super.dispose();
   }
@@ -86,9 +116,13 @@ class _SidebarState extends ConsumerState<Sidebar> {
         ? const <ChatListEntry>[]
         : ref.watch(chatListProvider(const ChatListLocation.main())).value ??
               const <ChatListEntry>[];
+    final store = ref.read(telegramSessionProvider).value?.chatLists.store;
+    final found = query.isEmpty || store == null
+        ? const <ChatListEntry>[]
+        : [for (final id in _foundIds) ?store.chat(id)];
     final shown = query.isEmpty
         ? chats
-        : _matching(query, [...chats, ...everything, ...archived]);
+        : _matching(query, [...chats, ...everything, ...archived, ...found]);
     final select = ref.read(selectedChatListProvider.notifier).select;
     final showArchive = list.isMain && query.isEmpty && archived.isNotEmpty;
 
@@ -357,13 +391,22 @@ class _ChatListState extends ConsumerState<_ChatList> {
     await showChatMenu(
       context,
       chat: chat,
-      list: widget.list,
+      // A search result can belong to another list than the open one.
+      list: _ownerList(chat),
       chats: session.chatLists,
       myId: session.presence.myId,
       position: position,
       onFailed: _failed,
     );
     if (mounted) setState(() => _menuFor = null);
+  }
+
+  ChatListLocation _ownerList(ChatListEntry chat) {
+    if (chat.positionFor(widget.list) != null) return widget.list;
+    const main = ChatListLocation.main();
+    return chat.positionFor(main) != null
+        ? main
+        : const ChatListLocation.archive();
   }
 
   Future<void> _openArchiveMenu(Offset position) async {
@@ -576,7 +619,7 @@ class _ChatRowState extends ConsumerState<_ChatRow>
       title: chat.title,
       subtitle: draft == null
           ? formatPreview(l10n, last)
-          : draft.text.replaceAll('\n', ' '),
+          : draftText(l10n, draft),
       draftLabel: draft == null ? null : l10n.draftLabel,
       time: switch ((draft, last)) {
         (final draft?, _) => formatChatTime(draft.date, locale),
