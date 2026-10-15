@@ -112,9 +112,12 @@ class _ManagementSection extends ConsumerWidget {
           onChanged: (on) =>
               change(() => management.setForum(chatId, forum: on)),
         ),
+      // Telegram asks for approval only where anyone can find the group:
+      // a public one, or one linked to a channel.
       if (settings != null &&
           settings.isSupergroup &&
           !channel &&
+          (settings.isPublic || settings.linkedChatId != 0) &&
           rights.canRestrictMembers)
         ToggleRow(
           label: l10n.approveNewMembers,
