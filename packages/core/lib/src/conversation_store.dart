@@ -155,6 +155,7 @@ final class ConversationStore {
   final _unread = <int, int>{};
   final _unreadMentions = <int, int>{};
   final _unreadReactions = <int, int>{};
+  final _pinned = <int, List<int>>{};
 
   /// Replaces the timeline of [chatId] with [messages], keeping the ones in
   /// [keep] that are still present (messages that arrived while the history
@@ -229,6 +230,30 @@ final class ConversationStore {
 
   bool setUnreadReactionCount(int chatId, int count) =>
       _setCount(_unreadReactions, chatId, count);
+
+  /// The pinned messages of [chatId], newest first, once [setPinned] ran;
+  /// the messages themselves are kept as referenced ones.
+  List<int> pinnedIds(int chatId) => _pinned[chatId] ?? const [];
+
+  /// Whether the pinned messages of [chatId] have been loaded.
+  bool hasPinned(int chatId) => _pinned.containsKey(chatId);
+
+  void setPinned(int chatId, List<int> ids) =>
+      _pinned[chatId] = [...ids]..sort((a, b) => b.compareTo(a));
+
+  /// Adds or removes one pinned message. Returns whether the list changed.
+  bool markPinned(int chatId, int messageId, {required bool pinned}) {
+    final ids = _pinned[chatId];
+    if (ids == null) return false;
+    if (pinned) {
+      if (ids.contains(messageId)) return false;
+      ids
+        ..add(messageId)
+        ..sort((a, b) => b.compareTo(a));
+      return true;
+    }
+    return ids.remove(messageId);
+  }
 
   static bool _setCount(Map<int, int> counts, int chatId, int count) {
     if ((counts[chatId] ?? 0) == count) return false;

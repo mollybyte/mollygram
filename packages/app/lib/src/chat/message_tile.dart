@@ -544,26 +544,10 @@ class _MessageBody extends StatelessWidget {
     return ReplyHeader(
       author: author,
       text: text,
-      thumbnail: content == null ? null : _replyThumbnail(content),
+      thumbnail: content == null ? null : mediaThumbnail(content),
       onTap: canJump ? () => jump(reply.messageId) : null,
     );
   }
-
-  Widget? _replyThumbnail(td.MessageContent content) => switch (content) {
-    td.MessagePhoto(:final photo) => TdImage(
-      thumbnail: photo.sizes.isEmpty ? null : photo.sizes.first.photo,
-      minithumbnail: photo.minithumbnail,
-    ),
-    td.MessageVideo(:final video) => TdImage(
-      thumbnail: video.thumbnail?.file,
-      minithumbnail: video.minithumbnail,
-    ),
-    td.MessageAnimation(:final animation) => TdImage(
-      thumbnail: animation.thumbnail?.file,
-      minithumbnail: animation.minithumbnail,
-    ),
-    _ => null,
-  };
 
   /// The caption of a row's media and whether it goes above the media.
   static ({td.FormattedText text, bool above})? _caption(MessageRow row) {
@@ -814,3 +798,21 @@ class _LinkPreview extends StatelessWidget {
     );
   }
 }
+
+/// The small picture of a photo, video or GIF, for a reply's quote and
+/// the pinned bar; null for other content.
+Widget? mediaThumbnail(td.MessageContent content) => switch (content) {
+  td.MessagePhoto(:final photo) => TdImage(
+    thumbnail: photo.sizes.isEmpty ? null : photo.sizes.first.photo,
+    minithumbnail: photo.minithumbnail,
+  ),
+  td.MessageVideo(:final video) => TdImage(
+    thumbnail: video.thumbnail?.file,
+    minithumbnail: video.minithumbnail,
+  ),
+  td.MessageAnimation(:final animation) => TdImage(
+    thumbnail: animation.thumbnail?.file,
+    minithumbnail: animation.minithumbnail,
+  ),
+  _ => null,
+};

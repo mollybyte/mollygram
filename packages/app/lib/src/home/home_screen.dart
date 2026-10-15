@@ -6,9 +6,8 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../notifications/notification_service.dart';
-import '../notifications/notifications_page.dart';
 import '../session/connection_status_capsule.dart';
-import '../settings/plugins_page.dart';
+import '../settings/settings_window.dart';
 import '../window_drag_area.dart';
 import 'chat_view.dart';
 import 'sidebar.dart';
@@ -21,24 +20,21 @@ class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   /// ⌘, (Ctrl+, off macOS), the usual settings shortcut.
-  static SingleActivator get pluginsShortcut =>
+  static SingleActivator get settingsShortcut =>
       primaryShortcut(LogicalKeyboardKey.comma);
 
   @override
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-/// A settings screen shown over the chats.
-enum _Page { plugins, notifications }
-
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  _Page? _page;
+  /// The section the settings opened on; null while they are closed.
+  String? _settings;
 
-  void _openPlugins() => setState(() => _page = _Page.plugins);
+  void _openSettings([String section = accountSectionId]) =>
+      setState(() => _settings = section);
 
-  void _openNotifications() => setState(() => _page = _Page.notifications);
-
-  void _closePage() => setState(() => _page = null);
+  void _closeSettings() => setState(() => _settings = null);
 
   List<PaletteCommand> _commands(AppLocalizations l10n) {
     final other = lookupAppLocalizations(
@@ -46,17 +42,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
     return [
       PaletteCommand(
+        id: 'app.settings',
+        title: l10n.settings,
+        keywords: [other.settings],
+        shortcut: HomeScreen.settingsShortcut,
+        run: _openSettings,
+      ),
+      PaletteCommand(
         id: 'app.plugins',
         title: l10n.plugins,
         keywords: [other.plugins, l10n.settings, other.settings],
-        shortcut: HomeScreen.pluginsShortcut,
-        run: _openPlugins,
+        run: () => _openSettings('plugins'),
       ),
       PaletteCommand(
         id: 'app.notifications',
         title: l10n.notifications,
         keywords: [other.notifications, l10n.settings, other.settings],
-        run: _openNotifications,
+        run: () => _openSettings('notifications'),
       ),
     ];
   }
@@ -67,7 +69,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final workspace = ref.watch(workspaceControllerProvider);
     final directory = ref.watch(chatDirectoryProvider);
     final home = CallbackShortcuts(
-      bindings: {HomeScreen.pluginsShortcut: _openPlugins},
+      bindings: {HomeScreen.settingsShortcut: _openSettings},
       child: GlassScope(
         child: Stack(
           children: [
@@ -108,24 +110,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
       ),
     );
-    final covered = _page != null;
+    final settings = _settings;
     return NotificationsHost(
       child: Stack(
         children: [
-          // The chats stay mounted under a settings screen, so drafts and
-          // scroll positions survive opening it.
+          // The chats stay mounted under the settings, so drafts and scroll
+          // positions survive opening them.
           Positioned.fill(
             child: ExcludeFocus(
-              excluding: covered,
-              child: TickerMode(enabled: !covered, child: home),
+              excluding: settings != null,
+              child: TickerMode(enabled: settings == null, child: home),
             ),
           ),
-          if (_page case final page?)
+          if (settings != null)
             Positioned.fill(
-              child: switch (page) {
-                _Page.plugins => PluginsPage(onClose: _closePage),
-                _Page.notifications => NotificationsPage(onClose: _closePage),
-              },
+              child: SettingsWindow(
+                initialSection: settings,
+                onClose: _closeSettings,
+              ),
             ),
         ],
       ),

@@ -427,6 +427,56 @@ void main() {
       );
     });
 
+    testWidgets('pinned bar $theme', skip: _skip, (tester) async {
+      tester.view.physicalSize = const Size(520, 160);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        themed(
+          Stack(
+            children: [
+              const Positioned.fill(child: Wallpaper()),
+              Positioned(
+                left: 14,
+                right: 14,
+                top: 20,
+                child: PinnedBar(
+                  title: 'Pinned message #2',
+                  text: 'Release notes for 0.1.0 are in the channel',
+                  index: 1,
+                  count: 3,
+                  onTap: () {},
+                  closeTooltip: 'Hide pinned messages',
+                  onClose: () {},
+                ),
+              ),
+              Positioned(
+                left: 14,
+                right: 14,
+                top: 80,
+                child: PinnedBar(
+                  title: 'Pinned message',
+                  text: 'Photo',
+                  index: 0,
+                  count: 1,
+                  thumbnail: const ColoredBox(color: Color(0xFF6BA587)),
+                  onTap: () {},
+                  closeTooltip: 'Hide pinned messages',
+                  onClose: () {},
+                ),
+              ),
+            ],
+          ),
+          colors: colors,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await expectLater(
+        find.byType(Stack).first,
+        matchesGoldenFile('goldens/pinned_bar_$theme.png'),
+      );
+    });
+
     testWidgets('message menu $theme', skip: _skip, (tester) async {
       tester.view.physicalSize = const Size(640, 420);
       tester.view.devicePixelRatio = 1;

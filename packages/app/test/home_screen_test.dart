@@ -12,6 +12,7 @@ import 'package:mollygram/src/home/workspace.dart';
 import 'package:mollygram/src/home/workspace_storage.dart';
 import 'package:mollygram/src/session/providers.dart';
 import 'package:mollygram/src/settings/plugins_page.dart';
+import 'package:mollygram/src/settings/settings_window.dart';
 import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_plugins_ui/mollygram_plugins_ui.dart';
 import 'package:mollygram_shell/mollygram_shell.dart';
@@ -218,7 +219,7 @@ void main() {
     expect(container.read(workspaceControllerProvider).value.focusedChat, 3);
   });
 
-  testWidgets('the shortcut opens the plugins and Esc closes them', (
+  testWidgets('the shortcut opens the settings and Esc closes them', (
     tester,
   ) async {
     await pump(tester);
@@ -229,11 +230,15 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.comma);
     await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
     await settle(tester);
+    expect(find.byType(SettingsWindow), findsOneWidget);
+
+    await tester.tap(find.text('Plugins'));
+    await settle(tester);
     expect(find.byType(PluginsScreen), findsOneWidget);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await settle(tester);
-    expect(find.byType(PluginsScreen), findsNothing);
+    expect(find.byType(SettingsWindow), findsNothing);
     // The chat is still where it was.
     expect(header('Anna'), findsOneWidget);
   });

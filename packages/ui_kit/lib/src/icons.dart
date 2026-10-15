@@ -65,6 +65,19 @@ abstract final class MgIcons {
     '<rect x="9" y="3" width="6" height="11" rx="3"/>'
         '<path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',
   );
+  static const camera = MgIconData(
+    'camera',
+    '<path d="M3 8h4l2-3h6l2 3h4v11H3z"/><circle cx="12" cy="13" r="3.5"/>',
+  );
+  static const lockOpen = MgIconData(
+    'lockOpen',
+    '<path d="M7 11V8a5 5 0 0 1 9.6-2M5 11h14v9H5z"/>',
+  );
+  static const chevronUp = MgIconData('chevronUp', '<path d="M6 15l6-6 6 6"/>');
+  static const trash = MgIconData(
+    'trash',
+    '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v5M14 11v5"/>',
+  );
   static const send = MgIconData(
     'send',
     '<path d="M12 19V5M6 11l6-6 6 6"/>',
@@ -281,6 +294,10 @@ abstract final class MgIcons {
     attach,
     emoji,
     mic,
+    camera,
+    lockOpen,
+    chevronUp,
+    trash,
     send,
     download,
     downloadAll,
