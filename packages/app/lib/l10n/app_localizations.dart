@@ -884,6 +884,12 @@ abstract class AppLocalizations {
   /// **'Reply'**
   String get menuReply;
 
+  /// No description provided for @menuQuote.
+  ///
+  /// In en, this message translates to:
+  /// **'Quote'**
+  String get menuQuote;
+
   /// No description provided for @menuEdit.
   ///
   /// In en, this message translates to:

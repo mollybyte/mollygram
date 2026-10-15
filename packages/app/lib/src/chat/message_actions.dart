@@ -7,6 +7,7 @@ import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
+import 'formatted_text.dart';
 import 'message_tile.dart';
 
 /// What the chat does for the commands of the message menu.
@@ -16,9 +17,14 @@ final class MessageMenuHandlers {
     required this.onEdit,
     required this.onForward,
     required this.onSelect,
+    required this.onQuote,
   });
 
   final void Function(ConversationMessage message) onReply;
+
+  /// Replies to [message] quoting [quote] of its text.
+  final void Function(ConversationMessage message, QuoteSelection quote)
+  onQuote;
   final void Function(ConversationMessage message) onEdit;
   final void Function(List<ConversationMessage> messages) onForward;
 
@@ -47,6 +53,7 @@ Future<void> showMessageMenu(
   required MessageMenuHandlers handlers,
   required bool Function() isShown,
   String? peerName,
+  ({ConversationMessage message, QuoteSelection quote})? quote,
 }) async {
   final l10n = AppLocalizations.of(context);
   final target = targetOf(row);
@@ -95,6 +102,14 @@ Future<void> showMessageMenu(
       MgMenuItem(
         label: l10n.menuReply,
         onSelected: () => handlers.onReply(target),
+      ),
+    // Part of this row's text is selected: it can be quoted.
+    if ((properties?.canBeReplied ?? false) &&
+        quote != null &&
+        row.messages.any((m) => m.id == quote.message.id))
+      MgMenuItem(
+        label: l10n.menuQuote,
+        onSelected: () => handlers.onQuote(quote.message, quote.quote),
       ),
     if ((properties?.canBeEdited ?? false) && _isEditable(target))
       MgMenuItem(
