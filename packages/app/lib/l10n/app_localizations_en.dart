@@ -440,6 +440,140 @@ class AppLocalizationsEn extends AppLocalizations {
   String get close => 'Close';
 
   @override
+  String get peerInfo => 'Info';
+
+  @override
+  String get statusOnline => 'online';
+
+  @override
+  String get lastSeenJustNow => 'last seen just now';
+
+  @override
+  String lastSeenMinutesAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'last seen $count minutes ago',
+      one: 'last seen 1 minute ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String lastSeenToday(String time) {
+    return 'last seen today at $time';
+  }
+
+  @override
+  String lastSeenYesterday(String time) {
+    return 'last seen yesterday at $time';
+  }
+
+  @override
+  String lastSeenDate(String date) {
+    return 'last seen $date';
+  }
+
+  @override
+  String get lastSeenRecently => 'last seen recently';
+
+  @override
+  String get lastSeenWeek => 'last seen within a week';
+
+  @override
+  String get lastSeenMonth => 'last seen within a month';
+
+  @override
+  String get lastSeenLongAgo => 'last seen a long time ago';
+
+  @override
+  String get statusBot => 'bot';
+
+  @override
+  String get deletedAccount => 'Deleted account';
+
+  @override
+  String membersCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count members',
+      one: '1 member',
+      zero: 'no members',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String subscribersCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count subscribers',
+      one: '1 subscriber',
+      zero: 'no subscribers',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get infoBio => 'Bio';
+
+  @override
+  String get infoUsername => 'Username';
+
+  @override
+  String get infoPhone => 'Mobile';
+
+  @override
+  String get infoBirthday => 'Birthday';
+
+  @override
+  String get infoDescription => 'Description';
+
+  @override
+  String get infoLink => 'Link';
+
+  @override
+  String get copied => 'Copied';
+
+  @override
+  String get infoMessage => 'Message';
+
+  @override
+  String get infoMute => 'Mute';
+
+  @override
+  String get infoUnmute => 'Unmute';
+
+  @override
+  String get blockUser => 'Block user';
+
+  @override
+  String get unblockUser => 'Unblock user';
+
+  @override
+  String blockConfirmTitle(String name) {
+    return 'Block $name?';
+  }
+
+  @override
+  String get blockConfirmMessage =>
+      'They won\'t be able to send you messages or call you.';
+
+  @override
+  String get block => 'Block';
+
+  @override
+  String get memberOwner => 'owner';
+
+  @override
+  String get memberAdmin => 'admin';
+
+  @override
+  String get infoFailed => 'Couldn\'t load the info';
+
+  @override
   String fileSizeBytes(String size) {
     return '$size B';
   }
@@ -1063,4 +1197,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get hidePinned => 'Hide pinned messages';
+
+  @override
+  String get backToPrevious => 'Back to where you were';
+
+  @override
+  String get joinChannel => 'Join channel';
+
+  @override
+  String get joinGroup => 'Join group';
+
+  @override
+  String get muteChat => 'Mute';
+
+  @override
+  String get unmuteChat => 'Unmute';
+
+  @override
+  String get chatUnavailable => 'You can\'t take part in this chat';
+
+  @override
+  String get chatActionFailed => 'Couldn\'t do that, try again';
 }

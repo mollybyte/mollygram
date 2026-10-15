@@ -8,12 +8,16 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import 'model/crop_geometry.dart';
 import 'model/media_edit.dart';
+import 'model/overlay.dart';
 import 'model/stroke.dart';
+import 'render/overlays.dart';
 import 'render/render.dart';
 import 'strings.dart';
 import 'ui/controls.dart';
 import 'ui/draw_panel.dart';
 import 'ui/editor_icons.dart';
+import 'ui/overlay_panels.dart';
+import 'ui/selection.dart';
 import 'ui/stage.dart';
 
 /// What [showMediaEditor] hands back.
@@ -74,7 +78,7 @@ Future<MediaEditResult?> showMediaEditor(
 );
 
 /// The editor's tools. [none] shows the result.
-enum EditorTool { none, crop, draw }
+enum EditorTool { none, crop, draw, text, emoji, shapes }
 
 /// The editor screen. Use [showMediaEditor] to open it.
 class MediaEditorPage extends StatefulWidget {
@@ -101,6 +105,7 @@ const _ease = Cubic(0.2, 0.8, 0.2, 1);
 class _MediaEditorPageState extends State<MediaEditorPage>
     with TickerProviderStateMixin {
   ui.Image? _image;
+  ui.Image? _pixelated;
   Size _source = Size.zero;
   var _loadFailed = false;
   var _saving = false;
@@ -118,6 +123,24 @@ class _MediaEditorPageState extends State<MediaEditorPage>
   /// Line width, 0 thin to 1 thick.
   var _thickness = 0.35;
   List<Offset>? _livePoints;
+
+  // Overlays: text, emoji and shapes.
+  int? _selected;
+  OverlayHandle? _overlayDrag;
+  MediaOverlay? _overlayStart;
+  Offset _overlayPointer = Offset.zero;
+
+  /// The edit before a live change (a drag, typing), pushed to history
+  /// when the change ends.
+  MediaEdit? _before;
+  final _text = TextEditingController();
+  final _textFocus = FocusNode();
+  var _shapeColor = brushColors[1];
+  var _shapeThickness = 0.35;
+  late final _selection = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 160),
+  );
 
   /// The crop while a handle is dragged, before it lands in history.
   Rect? _liveCrop;
@@ -167,6 +190,8 @@ class _MediaEditorPageState extends State<MediaEditorPage>
   void initState() {
     super.initState();
     _cropFrom = _edit.crop;
+    _text.addListener(_onTextChanged);
+    _textFocus.addListener(_onTextFocus);
     _load();
   }
 
@@ -183,6 +208,12 @@ class _MediaEditorPageState extends State<MediaEditorPage>
         _source = source;
       });
       await _appear.forward();
+      final pixelated = await pixelatedCopy(image);
+      if (!mounted) {
+        pixelated.dispose();
+        return;
+      }
+      setState(() => _pixelated = pixelated);
     } on Object {
       if (mounted) setState(() => _loadFailed = true);
     }
@@ -191,11 +222,15 @@ class _MediaEditorPageState extends State<MediaEditorPage>
   @override
   void dispose() {
     _image?.dispose();
+    _pixelated?.dispose();
     _cropMode.dispose();
     _grid.dispose();
     _appear.dispose();
     _cropMove.dispose();
     _turn.dispose();
+    _selection.dispose();
+    _text.dispose();
+    _textFocus.dispose();
     super.dispose();
   }
 
@@ -203,9 +238,25 @@ class _MediaEditorPageState extends State<MediaEditorPage>
 
   void _commit(MediaEdit next, {bool glide = true}) {
     if (next == _edit) return;
-    _undo.add(_edit);
-    _redo.clear();
+    // During a live change (typing) everything folds into one step.
+    if (_before == null) {
+      _undo.add(_edit);
+      _redo.clear();
+    }
     _show(next, glide: glide);
+  }
+
+  /// Starts a live change: later [_show] calls replace the edit without
+  /// touching history until [_endLive].
+  void _beginLive() => _before ??= _edit;
+
+  /// Ends a live change, recording the edit before it as one undo step.
+  void _endLive() {
+    final before = _before;
+    _before = null;
+    if (before == null || before == _edit) return;
+    _undo.add(before);
+    _redo.clear();
   }
 
   void _undoEdit() {
@@ -270,10 +321,19 @@ class _MediaEditorPageState extends State<MediaEditorPage>
 
   void _setTool(EditorTool tool) {
     if (_saving) return;
+    _textFocus.unfocus();
     setState(() {
       _tool = _tool == tool ? EditorTool.none : tool;
       _hoverHandle = null;
     });
+    if (_tool == EditorTool.text) {
+      if (_edit.overlay(_selected) is! TextOverlay) _addText();
+      _textFocus.requestFocus();
+    } else if (_tool == EditorTool.shapes) {
+      if (_edit.overlay(_selected) is! ShapeOverlay) _select(null);
+    } else if (_tool != EditorTool.emoji) {
+      _select(null);
+    }
     if (_tool == EditorTool.crop) {
       _cropMode.animateTo(1, curve: _ease);
     } else {
@@ -310,6 +370,11 @@ class _MediaEditorPageState extends State<MediaEditorPage>
 
   Future<void> _done() async {
     if (_saving || _image == null) return;
+    if (_textFocus.hasFocus) {
+      // Enter in the text field finishes the text, not the edit.
+      _textFocus.unfocus();
+      return;
+    }
     final edit = _edit;
     if (edit.isIdentity) {
       Navigator.of(context).pop(
@@ -354,7 +419,11 @@ class _MediaEditorPageState extends State<MediaEditorPage>
   void _cancel() => Navigator.of(context).maybePop();
 
   void _escape() {
-    if (_tool != EditorTool.none) {
+    if (_textFocus.hasFocus) {
+      _textFocus.unfocus();
+    } else if (_selected != null) {
+      _select(null);
+    } else if (_tool != EditorTool.none) {
       _setTool(_tool);
     } else {
       _cancel();
@@ -393,6 +462,7 @@ class _MediaEditorPageState extends State<MediaEditorPage>
       BrushTool.pen || BrushTool.arrow => base,
       BrushTool.marker => base * 2.4,
       BrushTool.eraser => base * 2.6,
+      BrushTool.blur || BrushTool.pixelate => base * 3,
     };
   }
 
@@ -450,11 +520,267 @@ class _MediaEditorPageState extends State<MediaEditorPage>
   void _setColor(Color color) => setState(() => _color = color);
   void _setThickness(double value) => setState(() => _thickness = value);
 
+  // Overlays.
+
+  bool get _placing =>
+      !_saving &&
+      (_tool == EditorTool.text ||
+          _tool == EditorTool.emoji ||
+          _tool == EditorTool.shapes);
+
+  MediaOverlay? get _selectedOverlay => _edit.overlay(_selected);
+
+  SelectionFrame? get _selectionFrame {
+    final overlay = _selectedOverlay;
+    if (overlay == null || _stage.isEmpty) return null;
+    return SelectionFrame.of(overlay, _edit.orientedSize(_source), _layout);
+  }
+
+  void _select(int? id) {
+    if (id == _selected) return;
+    setState(() => _selected = id);
+    if (id == null) {
+      _selection.reverse();
+    } else {
+      _selection.forward(from: 0);
+    }
+    final overlay = _edit.overlay(id);
+    if (overlay is TextOverlay && _text.text != overlay.text) {
+      _text.text = overlay.text;
+    }
+    if (overlay is ShapeOverlay) {
+      _shapeColor = overlay.color;
+      _shapeThickness = (overlay.strokeWidth - 0.003) / 0.03;
+    }
+  }
+
+  /// Replaces the selected overlay with [f] of it, live or as one step.
+  void _updateSelected(
+    MediaOverlay Function(MediaOverlay) f, {
+    bool live = false,
+  }) {
+    final overlay = _selectedOverlay;
+    if (overlay == null) return;
+    final next = _edit.withOverlay(f(overlay));
+    if (live) {
+      _beginLive();
+      setState(() => _edit = next);
+    } else {
+      _commit(next);
+    }
+  }
+
+  void _addOverlay(MediaOverlay Function(int id) make) {
+    final overlay = make(_edit.nextOverlayId);
+    _commit(_edit.withOverlay(overlay));
+    _select(overlay.id);
+  }
+
+  void _addText() {
+    _text.text = '';
+    // Not a history step yet: the text lands in history once typed, and
+    // goes away untouched when left empty.
+    _beginLive();
+    final overlay = TextOverlay(
+      id: _edit.nextOverlayId,
+      center: _edit.crop.center,
+      text: '',
+      color: brushColors.first,
+    );
+    setState(() => _edit = _edit.withOverlay(overlay));
+    _select(overlay.id);
+  }
+
+  void _addEmoji(String emoji) => _addOverlay(
+    (id) => EmojiOverlay(id: id, center: _edit.crop.center, emoji: emoji),
+  );
+
+  void _addShape(ShapeKind kind) => _addOverlay(
+    (id) => ShapeOverlay(
+      id: id,
+      center: _edit.crop.center,
+      kind: kind,
+      color: _shapeColor,
+      strokeWidth: 0.003 + _shapeThickness * 0.03,
+      aspect: kind == ShapeKind.line || kind == ShapeKind.arrow ? 8 : 1.5,
+      scale: kind == ShapeKind.line || kind == ShapeKind.arrow ? 0.5 : 0.4,
+    ),
+  );
+
+  void _deleteSelected() {
+    final id = _selected;
+    if (id == null) return;
+    _textFocus.unfocus();
+    _select(null);
+    _commit(_edit.withoutOverlay(id));
+  }
+
+  void _onTextChanged() {
+    final overlay = _selectedOverlay;
+    if (overlay is! TextOverlay || overlay.text == _text.text) return;
+    _updateSelected(
+      (o) => (o as TextOverlay).copyWith(text: _text.text),
+      live: true,
+    );
+  }
+
+  void _onTextFocus() {
+    if (_textFocus.hasFocus) return;
+    // Typing ends: one undo step, and an empty text goes away.
+    final overlay = _selectedOverlay;
+    if (overlay is TextOverlay && overlay.text.trim().isEmpty) {
+      final before = _before;
+      _before = null;
+      setState(() {
+        _edit = (before ?? _edit).withoutOverlay(overlay.id);
+        _selected = null;
+      });
+      _selection.reverse();
+      return;
+    }
+    _endLive();
+  }
+
+  void _setTextLook(TextLook look) =>
+      _updateSelected((o) => (o as TextOverlay).copyWith(look: look));
+
+  void _setTextColor(Color color) =>
+      _updateSelected((o) => (o as TextOverlay).copyWith(color: color));
+
+  void _setTextScale(double scale) =>
+      _updateSelected((o) => o.placed(scale: scale), live: true);
+
+  void _setShapeColor(Color color) {
+    setState(() => _shapeColor = color);
+    if (_selectedOverlay is ShapeOverlay) {
+      _updateSelected((o) => (o as ShapeOverlay).copyWith(color: color));
+    }
+  }
+
+  void _setShapeFilled(bool filled) =>
+      _updateSelected((o) => (o as ShapeOverlay).copyWith(filled: filled));
+
+  void _setShapeThickness(double value) {
+    setState(() => _shapeThickness = value);
+    if (_selectedOverlay is ShapeOverlay) {
+      _updateSelected(
+        (o) => (o as ShapeOverlay).copyWith(strokeWidth: 0.003 + value * 0.03),
+        live: true,
+      );
+    }
+  }
+
+  /// [point] on the stage in pixels of the oriented picture.
+  Offset _toPicturePx(Offset point) {
+    final layout = _layout;
+    final scale = layout.scale;
+    if (scale <= 0) return Offset.zero;
+    return (point - layout.dest.topLeft) / scale + layout.viewport.topLeft;
+  }
+
+  /// A press at [point] in an overlay tool: selects what is under it and
+  /// arms a drag, or deletes through the delete handle.
+  void _onOverlayPress(Offset point) {
+    final frame = _selectionFrame;
+    final handle = frame?.hit(point);
+    if (handle == OverlayHandle.delete) {
+      _deleteSelected();
+      return;
+    }
+    if (handle != null) {
+      _startOverlayDrag(handle, point);
+      return;
+    }
+    final oriented = _edit.orientedSize(_source);
+    final hit = hitOverlay(
+      _toPicturePx(point),
+      _edit.overlays,
+      oriented,
+      slack: 10 / math.max(_layout.scale, 0.001),
+    );
+    if (hit == null) {
+      _textFocus.unfocus();
+      _select(null);
+      return;
+    }
+    _textFocus.unfocus();
+    _select(hit.id);
+    _startOverlayDrag(OverlayHandle.move, point);
+  }
+
+  void _startOverlayDrag(OverlayHandle handle, Offset point) {
+    setState(() {
+      _overlayDrag = handle;
+      _overlayStart = _selectedOverlay;
+      _overlayPointer = point;
+    });
+  }
+
+  void _onOverlayDrag(Offset point) {
+    final start = _overlayStart;
+    final handle = _overlayDrag;
+    if (start == null || handle == null) return;
+    final oriented = _edit.orientedSize(_source);
+    final scale = _layout.scale;
+    if (scale <= 0) return;
+    switch (handle) {
+      case OverlayHandle.move:
+        final d = (point - _overlayPointer) / scale;
+        final center = Offset(
+          (start.center.dx + d.dx / oriented.width).clamp(0.0, 1.0),
+          (start.center.dy + d.dy / oriented.height).clamp(0.0, 1.0),
+        );
+        _updateSelected((o) => o.placed(center: center), live: true);
+      case OverlayHandle.transform:
+        final frame = SelectionFrame.of(start, oriented, _layout);
+        final v0 = _overlayPointer - frame.center;
+        final v = point - frame.center;
+        if (v0.distance < 1 || v.distance < 1) return;
+        var rotation =
+            start.rotation + math.atan2(v.dy, v.dx) - math.atan2(v0.dy, v0.dx);
+        // Snap to the quarter turns.
+        final quarter = math.pi / 2;
+        final nearest = (rotation / quarter).round() * quarter;
+        if ((rotation - nearest).abs() < 0.04) rotation = nearest;
+        final factor = (v.distance / v0.distance).clamp(0.05, 20.0);
+        _updateSelected(
+          (o) => o.placed(
+            scale: (start.scale * factor).clamp(0.01, 3.0),
+            rotation: rotation,
+          ),
+          live: true,
+        );
+      case OverlayHandle.delete:
+        break;
+    }
+  }
+
+  void _onOverlayDragEnd() {
+    if (_overlayDrag == null) return;
+    setState(() {
+      _overlayDrag = null;
+      _overlayStart = null;
+    });
+    _endLive();
+  }
+
   // Crop dragging.
 
   bool get _cropping => _tool == EditorTool.crop && !_saving;
 
+  void _onPanDown(DragDownDetails details) {
+    // Overlays are grabbed on the press itself, so a drag measures from
+    // where the pointer went down, not from where the drag was accepted.
+    if (_placing) _onOverlayPress(details.localPosition);
+  }
+
   void _onPanStart(DragStartDetails details) {
+    if (_placing) {
+      // The drag was armed on the press; the accepted start already
+      // carries the first movement.
+      if (_overlayDrag != null) _onOverlayDrag(details.localPosition);
+      return;
+    }
     if (_drawing) return _onDrawStart(details.localPosition);
     if (!_cropping) return;
     final layout = _layout;
@@ -472,6 +798,7 @@ class _MediaEditorPageState extends State<MediaEditorPage>
   }
 
   void _onPanUpdate(DragUpdateDetails details) {
+    if (_overlayDrag != null) return _onOverlayDrag(details.localPosition);
     if (_drawing) return _onDrawUpdate(details.localPosition);
     final handle = _dragHandle;
     if (handle == null) return;
@@ -492,6 +819,7 @@ class _MediaEditorPageState extends State<MediaEditorPage>
   }
 
   void _onPanEnd([Object? _]) {
+    if (_overlayDrag != null) return _onOverlayDragEnd();
     if (_livePoints != null) return _onDrawEnd();
     final crop = _liveCrop;
     if (_dragHandle == null || crop == null) return;
@@ -503,7 +831,24 @@ class _MediaEditorPageState extends State<MediaEditorPage>
     _commit(_edit.copyWith(crop: crop), glide: false);
   }
 
+  OverlayHandle? _overlayHover;
+
   void _onHover(PointerHoverEvent event) {
+    if (_placing) {
+      final frame = _selectionFrame;
+      var handle = frame?.hit(event.localPosition);
+      if (handle == null && _layout.scale > 0) {
+        final hit = hitOverlay(
+          _toPicturePx(event.localPosition),
+          _edit.overlays,
+          _edit.orientedSize(_source),
+          slack: 10 / _layout.scale,
+        );
+        if (hit != null) handle = OverlayHandle.move;
+      }
+      if (handle != _overlayHover) setState(() => _overlayHover = handle);
+      return;
+    }
     if (!_cropping) {
       if (_hoverHandle != null) setState(() => _hoverHandle = null);
       return;
@@ -538,6 +883,14 @@ class _MediaEditorPageState extends State<MediaEditorPage>
           control: !ctrl,
         ): () =>
             _setTool(EditorTool.draw),
+        SingleActivator(
+          LogicalKeyboardKey.keyT,
+          meta: ctrl,
+          control: !ctrl,
+        ): () =>
+            _setTool(EditorTool.text),
+        const SingleActivator(LogicalKeyboardKey.delete): _deleteSelected,
+        const SingleActivator(LogicalKeyboardKey.backspace): _deleteSelected,
       },
       child: Focus(
         autofocus: true,
@@ -559,20 +912,58 @@ class _MediaEditorPageState extends State<MediaEditorPage>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _ToolPanel(
-                      visible: _tool == EditorTool.crop,
-                      child: _cropPanel(s),
-                    ),
-                    _ToolPanel(
-                      visible: _tool == EditorTool.draw,
-                      child: DrawPanel(
-                        brush: _brush,
-                        color: _color,
-                        thickness: _thickness,
-                        onBrush: _setBrush,
-                        onColor: _setColor,
-                        onThickness: _setThickness,
-                      ),
+                    // The panels sit on top of each other: only the
+                    // current tool's one is visible.
+                    Stack(
+                      alignment: Alignment.bottomCenter,
+                      children: [
+                        _ToolPanel(
+                          visible: _tool == EditorTool.crop,
+                          child: _cropPanel(s),
+                        ),
+                        _ToolPanel(
+                          visible: _tool == EditorTool.draw,
+                          child: DrawPanel(
+                            brush: _brush,
+                            color: _color,
+                            thickness: _thickness,
+                            onBrush: _setBrush,
+                            onColor: _setColor,
+                            onThickness: _setThickness,
+                          ),
+                        ),
+                        _ToolPanel(
+                          visible: _tool == EditorTool.text,
+                          child: TextPanel(
+                            controller: _text,
+                            focusNode: _textFocus,
+                            overlay: _selectedOverlay is TextOverlay
+                                ? _selectedOverlay! as TextOverlay
+                                : null,
+                            onLook: _setTextLook,
+                            onColor: _setTextColor,
+                            onScale: _setTextScale,
+                          ),
+                        ),
+                        _ToolPanel(
+                          visible: _tool == EditorTool.emoji,
+                          child: EmojiGridPanel(onEmoji: _addEmoji),
+                        ),
+                        _ToolPanel(
+                          visible: _tool == EditorTool.shapes,
+                          child: ShapePanel(
+                            overlay: _selectedOverlay is ShapeOverlay
+                                ? _selectedOverlay! as ShapeOverlay
+                                : null,
+                            color: _shapeColor,
+                            thickness: _shapeThickness,
+                            onAdd: _addShape,
+                            onColor: _setShapeColor,
+                            onFilled: _setShapeFilled,
+                            onThickness: _setShapeThickness,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 10),
                     _mainBar(c, s),
@@ -600,7 +991,15 @@ class _MediaEditorPageState extends State<MediaEditorPage>
       builder: (context, constraints) {
         _stage = constraints.biggest;
         return MouseRegion(
-          cursor: _drawing
+          cursor: _placing
+              ? (_overlayDrag == OverlayHandle.move
+                    ? SystemMouseCursors.grabbing
+                    : _overlayHover == OverlayHandle.move
+                    ? SystemMouseCursors.grab
+                    : _overlayHover != null
+                    ? SystemMouseCursors.click
+                    : MouseCursor.defer)
+              : _drawing
               ? SystemMouseCursors.precise
               : _cropping
               ? cursorFor(
@@ -611,6 +1010,8 @@ class _MediaEditorPageState extends State<MediaEditorPage>
           onHover: _onHover,
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
+            onTapUp: _placing ? (_) => _onOverlayDragEnd() : null,
+            onPanDown: _onPanDown,
             onPanStart: _onPanStart,
             onPanUpdate: _onPanUpdate,
             onPanEnd: _onPanEnd,
@@ -622,6 +1023,7 @@ class _MediaEditorPageState extends State<MediaEditorPage>
                 _cropMove,
                 _turn,
                 _appear,
+                _selection,
               ]),
               builder: (context, _) {
                 final mode = _ease.transform(_cropMode.value);
@@ -642,6 +1044,11 @@ class _MediaEditorPageState extends State<MediaEditorPage>
                     transform: transform,
                     child: CustomPaint(
                       size: Size.infinite,
+                      foregroundPainter: SelectionPainter(
+                        frame: _selectionFrame,
+                        accent: c.accent,
+                        opacity: _ease.transform(_selection.value),
+                      ),
                       painter: StagePainter(
                         image: image,
                         source: _source,
@@ -651,6 +1058,7 @@ class _MediaEditorPageState extends State<MediaEditorPage>
                         frameOpacity: mode,
                         gridOpacity: _grid.value,
                         liveStroke: _liveStroke,
+                        pixelated: _pixelated,
                       ),
                     ),
                   ),
@@ -669,7 +1077,7 @@ class _MediaEditorPageState extends State<MediaEditorPage>
       radius: 22,
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       child: SizedBox(
-        width: 460,
+        width: 560,
         child: Row(
           children: [
             const SizedBox(width: 4),
@@ -697,6 +1105,24 @@ class _MediaEditorPageState extends State<MediaEditorPage>
               tooltip: s.draw,
               selected: _tool == EditorTool.draw,
               onPressed: ready ? () => _setTool(EditorTool.draw) : null,
+            ),
+            MgIconButton(
+              icon: EditorIcons.text,
+              tooltip: s.text,
+              selected: _tool == EditorTool.text,
+              onPressed: ready ? () => _setTool(EditorTool.text) : null,
+            ),
+            MgIconButton(
+              icon: EditorIcons.emoji,
+              tooltip: s.emoji,
+              selected: _tool == EditorTool.emoji,
+              onPressed: ready ? () => _setTool(EditorTool.emoji) : null,
+            ),
+            MgIconButton(
+              icon: EditorIcons.shapes,
+              tooltip: s.shapes,
+              selected: _tool == EditorTool.shapes,
+              onPressed: ready ? () => _setTool(EditorTool.shapes) : null,
             ),
             const Spacer(),
             if (_saveFailed) ...[

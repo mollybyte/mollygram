@@ -62,4 +62,42 @@ abstract final class EditorIcons {
     '<path d="m7 20-3.5-3.5a2 2 0 0 1 0-2.8l9.2-9.2a2 2 0 0 1 2.8 0l4 4a2 2 0 0 1 0 2.8L12 18.8"/>'
         '<path d="M8.5 9.5 15 16"/><path d="M12 20h8"/>',
   );
+  static const text = MgIconData(
+    'text',
+    '<path d="M5 6V4h14v2"/><path d="M12 4v16"/><path d="M9 20h6"/>',
+  );
+  static const emoji = MgIconData(
+    'emoji',
+    '<circle cx="12" cy="12" r="9"/>'
+        '<path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/>'
+        '<path d="M9 9.5h.01M15 9.5h.01" stroke-width="2.4"/>',
+  );
+  static const shapes = MgIconData(
+    'shapes',
+    '<rect x="3" y="12" width="9" height="9" rx="1.5"/>'
+        '<circle cx="15.5" cy="8.5" r="5.5"/>',
+  );
+  static const rectangle = MgIconData(
+    'rectangle',
+    '<rect x="3.5" y="5.5" width="17" height="13" rx="2"/>',
+  );
+  static const ellipse = MgIconData(
+    'ellipse',
+    '<ellipse cx="12" cy="12" rx="8.5" ry="6.5"/>',
+  );
+  static const line = MgIconData('line', '<path d="M4 19 20 5"/>');
+  static const trash = MgIconData(
+    'trash',
+    '<path d="M4 7h16"/><path d="M10 11v6M14 11v6"/>'
+        '<path d="M6 7l1 13h10l1-13"/><path d="M9 7V4h6v3"/>',
+  );
+  static const blur = MgIconData(
+    'blur',
+    '<path d="M12 3.5c3.5 4.2 6 7.3 6 10.3a6 6 0 0 1-12 0c0-3 2.5-6.1 6-10.3z"/>'
+        '<path d="M9 14a3 3 0 0 0 3 3"/>',
+  );
+  static const pixelate = MgIconData(
+    'pixelate',
+    '<path d="M4 4h5v5H4zM9 9h5v5H9zM14 4h5v5h-5zM4 14h5v5H4zM14 14h5v5h-5z"/>',
+  );
 }

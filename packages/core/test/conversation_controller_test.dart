@@ -555,6 +555,63 @@ void main() {
     expect(json.sent.last['@type'], 'unpinChatMessage');
   });
 
+  test('follows membership and mute state of a channel', () async {
+    await controller.start();
+    json.push(
+      _chat(
+        lastRead: 0,
+        unread: 0,
+        last: 8,
+        type: {
+          '@type': 'chatTypeSupergroup',
+          'supergroup_id': 99,
+          'is_channel': true,
+        },
+      ),
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    final store = controller.store;
+    expect(store.membership(7), ChatMembership.unknown);
+
+    json.push(_supergroup(99, {'@type': 'chatMemberStatusLeft'}));
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    expect(store.membership(7), ChatMembership.left);
+    expect(store.canPost(7), isFalse);
+
+    await controller.joinChat(7);
+    expect(json.sent.last['@type'], 'joinChat');
+
+    json.push(
+      _supergroup(99, {
+        '@type': 'chatMemberStatusMember',
+        'member_since_date': 0,
+      }),
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    expect(store.membership(7), ChatMembership.member);
+    // A channel's plain member reads, but can't post.
+    expect(store.canPost(7), isFalse);
+    expect(store.isMuted(7), isFalse);
+
+    await controller.setMuted(7, muted: true);
+    final mute = json.sent.last;
+    expect(mute['@type'], 'setChatNotificationSettings');
+    final settings = mute['notification_settings']! as Map;
+    expect(settings['use_default_mute_for'], isFalse);
+    expect(settings['mute_for'], greaterThan(0));
+
+    json.push({
+      '@type': 'updateChatNotificationSettings',
+      'chat_id': 7,
+      'notification_settings': {
+        '@type': 'chatNotificationSettings',
+        'mute_for': 2147483647,
+      },
+    });
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    expect(store.isMuted(7), isTrue);
+  });
+
   test('finds photos and videos around a message, oldest first', () async {
     await controller.start();
 
@@ -695,12 +752,13 @@ Map<String, Object?> _chat({
   required int last,
   int mentions = 0,
   int reactions = 0,
+  Map<String, Object?> type = const {'@type': 'chatTypePrivate', 'user_id': 2},
 }) => {
   '@type': 'updateNewChat',
   'chat': {
     '@type': 'chat',
     'id': 7,
-    'type': {'@type': 'chatTypePrivate', 'user_id': 2},
+    'type': type,
     'title': 'Boris',
     'last_message': _message(id: last, chatId: 7, text: 'Last').toJson(),
     'unread_count': unread,
@@ -717,6 +775,34 @@ Map<String, Object?> _chat({
       'max_reaction_count': 11,
     },
     'video_chat': {'@type': 'videoChat'},
+  },
+};
+
+Map<String, Object?> _supergroup(int id, Map<String, Object?> status) => {
+  '@type': 'updateSupergroup',
+  'supergroup': {
+    '@type': 'supergroup',
+    'id': id,
+    'date': 0,
+    'status': status,
+    'member_count': 10,
+    'boost_level': 0,
+    'has_automatic_translation': false,
+    'has_linked_chat': false,
+    'has_location': false,
+    'sign_messages': false,
+    'show_message_sender': false,
+    'join_to_send_messages': false,
+    'join_by_request': false,
+    'is_slow_mode_enabled': false,
+    'is_channel': true,
+    'is_broadcast_group': false,
+    'is_forum': false,
+    'is_direct_messages_group': false,
+    'is_administered_direct_messages_group': false,
+    'has_direct_messages_group': false,
+    'has_forum_tabs': false,
+    'paid_message_star_count': 0,
   },
 };
 
@@ -884,6 +970,7 @@ final class _FakeTdJson implements td.TdJson {
         ],
         'next_from_message_id': 18,
       },
+      'joinChat' => {'@type': 'chatJoinResultSuccess'},
       'forwardMessages' => {
         '@type': 'messages',
         'total_count': 0,
