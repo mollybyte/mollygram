@@ -91,6 +91,8 @@ A plugin subscribes with `mg.on(event, handler)`, only during load and only to e
 | `notification.incoming` | intercept | `notifications.manage` | `{chatId, messageId, title, body}` | `{cancel}`, `{modify}` or `{defer: seconds}` |
 | `settings.changed` | observe | | `{key, value}` | |
 
+`message.render.code` hands a plugin one code block (a `pre` entity) and its language, not the message: without `messages.read` the host passes `message` on as `{chatId, id}` only, and the app may leave it out. A `code` node is used only when its spans spell exactly the code it was given, so a plugin can color a block but never change what it says; a node has at most 8000 spans.
+
 Events marked 1.1 arrived in SDK 1.1 for the built-in plugins from `forks-research.md` (items 8 and 9); existing events did not change. A plugin that subscribes to them declares `sdk: ^1.1`, otherwise the manifest is invalid.
 
 Events that carry messages (`chat.opened`, `message.incoming`, `message.edited`, `message.deleted`, `message.render.text`, `message.filter`) reach a `messages.read: chats[]` plugin only for the chats the user granted.
@@ -151,11 +153,22 @@ Shipped with the app in `packages/plugin_host/builtin`, built from TypeScript li
 - **Filters** (`dev.mollygram.filters`): collapses or hides advertising (`erid` tokens, `#ad`, `#реклама`, a "Sponsored" line) and messages with the user's keywords. Keywords match whole words in any script, ignoring case. Permissions: `messages.read: all`; no network, no storage.
 - **Translate** (`dev.mollygram.translate`): shows "Translate from German" under messages in another language, detected on the device, and translates them with Telegram's own translation, so the text goes nowhere it has not been already. Translates automatically when the user turns that on; caches translations keyed by the message text, so an edited message is translated again. Permissions: `messages.read: all`, `storage: 2mb`.
 
+- **Code highlight** (`dev.mollygram.codehighlight`): colors code blocks in messages through `message.render.code`. Knows the keywords, comments and strings of the common languages (JavaScript and TypeScript, Dart, Python, Go, Rust, C-like, Java-like, shell, SQL) and falls back to the keywords they share. Permissions: none.
+
 Rebuild after editing `src/index.ts`: `cd packages/plugin_host/builtin/<name> && npx -p typescript@5.9 tsc -p .`. CI checks that the committed `index.js` matches.
 
 ## Plugin settings screen
 
-`packages/plugins_ui` implements the screen from `design/Plugins.dc.html`, styled like macOS System Settings: a glass list of installed and available plugins with search, and a solid pane with the plugin's access, options, commands, manifest and uninstall. Installing a plugin, or an update that asks for more access, opens a consent sheet listing every permission; `messages.read: all` gets a separate warning. Permission rows and the built-in plugins' texts are localized in English and Russian; third-party plugins show their manifest texts as is.
+The Plugins page of the settings window (`packages/app/lib/src/settings/plugins_page.dart`) uses the shared settings widgets: installed and available plugins as rows, and a page per plugin with its switch, access, options, commands, manifest and uninstall. Installing from a file, or an update that asks for more access, opens a consent sheet listing every permission (for an update, only the new ones); `messages.read: all` gets a separate warning. The state and texts come from `packages/plugins_ui` (`PluginsController`, `PluginsStrings`): permission rows and the built-in plugins' texts are localized in English and Russian; third-party plugins show their manifest texts as is. `packages/plugins_ui` also keeps the standalone screen from `design/Plugins.dc.html`.
+
+## Running in the app
+
+`packages/app/lib/src/plugins` connects the sandbox to the app:
+
+- **Installing.** "Install from file…" asks for a plugin's `manifest.yaml`; its folder is loaded with `PluginBundle.load`, so an invalid manifest, a symlink out of the folder or code over 2 MB is refused with the host's errors. Nothing is copied until the user allows the access. The manifest and code are then copied to `plugins/bundles/<id>` in the app support folder, so the plugin no longer depends on the original file. Choices (on or off, settings, update time) are kept in `plugins/state.json`.
+- **Updating.** Picking a plugin that is already installed is an update. An older version is refused; one that asks for nothing new replaces the old at once; one that asks for more waits on the plugin's page ("Version 1.1.0 asks for more access", Review…), and the old version keeps running until the user allows the new access.
+- **Running.** A plugin runs in a `PluginWorker` only once the app has an event it hooks, and only for the events the app delivers so far: `message.render.code`. Turning it off, updating or uninstalling stops it; the host disabling it after failures is shown on its page. Host services beyond `ui.toast` and `text.detectLanguage` are not offered yet and fail with the `unavailable` code.
+- **Code blocks.** `FormattedTextView` asks the running plugins for each `pre` block of a message (up to 4096 characters), in install order, and colors it with the first valid answer, using the theme's colors for each token.
 
 ## Distribution
 

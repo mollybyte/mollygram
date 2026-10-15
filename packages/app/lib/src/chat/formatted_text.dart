@@ -1,15 +1,17 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../links/link_router.dart';
+import '../plugins/code_highlight.dart';
 
 /// Message text with its entities: bold, italic, code, links, mentions,
 /// spoilers. A [trailing] span (the room for the time) goes after the last
-/// line.
-class FormattedTextView extends StatefulWidget {
+/// line. Code blocks are colored by plugins, see [codeHighlightProvider].
+class FormattedTextView extends ConsumerStatefulWidget {
   const FormattedTextView({
     super.key,
     required this.text,
@@ -22,10 +24,10 @@ class FormattedTextView extends StatefulWidget {
   final TextStyle? style;
 
   @override
-  State<FormattedTextView> createState() => _FormattedTextViewState();
+  ConsumerState<FormattedTextView> createState() => _FormattedTextViewState();
 }
 
-class _FormattedTextViewState extends State<FormattedTextView> {
+class _FormattedTextViewState extends ConsumerState<FormattedTextView> {
   final _recognizers = <GestureRecognizer>[];
 
   /// Spoilers the user has tapped open, by their offset.
@@ -52,6 +54,7 @@ class _FormattedTextViewState extends State<FormattedTextView> {
       widget.text,
       colors: c,
       revealed: _revealed,
+      highlights: _highlights(),
       onLink: (url) {
         final r = TapGestureRecognizer()
           ..onTap = () => openLinkFrom(context, url);
@@ -69,6 +72,28 @@ class _FormattedTextViewState extends State<FormattedTextView> {
       TextSpan(style: widget.style, children: [...spans, ?widget.trailing]),
     );
   }
+
+  /// Colored pieces of the code blocks, by the block's offset.
+  Map<int, List<CodeSpan>> _highlights() {
+    final text = widget.text.text;
+    final result = <int, List<CodeSpan>>{};
+    for (final e in widget.text.entities) {
+      final language = switch (e.type) {
+        td.TextEntityTypePreCode(:final language) => language,
+        td.TextEntityTypePre() => '',
+        _ => null,
+      };
+      if (language == null || e.offset < 0) continue;
+      if (e.offset + e.length > text.length) continue;
+      final block = (
+        code: text.substring(e.offset, e.offset + e.length),
+        language: language.isEmpty ? null : language,
+      );
+      final spans = ref.watch(codeHighlightProvider(block)).value;
+      if (spans != null) result[e.offset] = spans;
+    }
+    return result;
+  }
 }
 
 /// Opens a link from a message in the browser. A link without a scheme
@@ -82,11 +107,13 @@ Future<void> openLink(String url) async {
 }
 
 /// Splits [text] at every entity boundary and styles each piece with all
-/// the entities that cover it; entities may nest.
+/// the entities that cover it; entities may nest. [highlights] colors the
+/// code blocks starting at its offsets.
 List<InlineSpan> buildEntitySpans(
   td.FormattedText text, {
   required MgColors colors,
   Set<int> revealed = const {},
+  Map<int, List<CodeSpan>> highlights = const {},
   GestureRecognizer Function(String url)? onLink,
   GestureRecognizer Function(int offset)? onSpoiler,
 }) {
@@ -102,6 +129,24 @@ List<InlineSpan> buildEntitySpans(
       ..add(e.offset)
       ..add(e.offset + e.length);
   }
+  // Colored code pieces as (start, end, color), cut like entities.
+  final tokens = <(int, int, Color)>[];
+  for (final MapEntry(key: start, value: spans) in highlights.entries) {
+    var at = start;
+    for (final span in spans) {
+      final end = at + span.text.length;
+      final color = codeTokenColor(span.token, colors);
+      if (color != null && end <= s.length) {
+        tokens.add((at, end, color));
+        cuts
+          ..add(at)
+          ..add(end);
+      }
+      at = end;
+    }
+  }
+  tokens.sort((a, b) => a.$1.compareTo(b.$1));
+  var nextToken = 0;
   final points = cuts.toList()..sort();
   final spans = <InlineSpan>[];
   for (var i = 0; i + 1 < points.length; i++) {
@@ -109,6 +154,10 @@ List<InlineSpan> buildEntitySpans(
     final end = points[i + 1];
     if (start == end) continue;
     final piece = s.substring(start, end);
+    while (nextToken < tokens.length && tokens[nextToken].$2 <= start) {
+      nextToken++;
+    }
+    final token = nextToken < tokens.length ? tokens[nextToken] : null;
     final covering = [
       for (final e in entities)
         if (e.offset <= start && e.offset + e.length >= end) e,
@@ -140,8 +189,12 @@ List<InlineSpan> buildEntitySpans(
             fontFamily: 'Menlo',
             fontFamilyFallback: const ['Consolas', 'monospace'],
             fontSize: MgType.body - 0.5,
-            color: colors.accent,
+            // A colored block keeps its plain text in the text color.
+            color: highlights.containsKey(e.offset) ? null : colors.accent,
           );
+          if (token case (final from, _, final color) when from <= start) {
+            style = style.copyWith(color: color);
+          }
         case td.TextEntityTypeBlockQuote() ||
             td.TextEntityTypeExpandableBlockQuote():
           style = style.copyWith(fontStyle: FontStyle.italic);

@@ -473,11 +473,82 @@ void main() {
     );
   });
 
-  testWidgets('shows the plugins page edge to edge', (tester) async {
+  testWidgets('plugins open their page and install after consent', (
+    tester,
+  ) async {
     await pump(tester);
     await tester.tap(find.text('Plugins'));
     await settle(tester);
-    expect(find.byType(PluginsScreen), findsOneWidget);
+    expect(find.text('Installed'), findsOneWidget);
+    expect(find.text('Available'), findsOneWidget);
+
+    await tester.tap(find.text('Chat statistics'));
+    await settle(tester);
+    expect(find.text('graphy · 0.6.1'), findsOneWidget);
+    expect(find.text('/stats'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('install')));
+    await settle(tester);
+    expect(find.byType(ConsentSheet), findsOneWidget);
+    expect(find.text('Install “Chat statistics”?'), findsOneWidget);
+    expect(
+      find.textContaining('This plugin can read all your messages'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const ValueKey('consent.allow')));
+    await settle(tester);
+    expect(find.byType(ConsentSheet), findsNothing);
+    expect(find.byKey(const ValueKey('enabled')), findsOneWidget);
+    expect(find.byKey(const ValueKey('uninstall')), findsOneWidget);
+  });
+
+  testWidgets('an update asking for more shows only the new access', (
+    tester,
+  ) async {
+    await pump(tester);
+    await tester.tap(find.text('Plugins'));
+    await settle(tester);
+    await tester.tap(find.text('Summary'));
+    await settle(tester);
+    await tester.tap(find.byKey(const ValueKey('review')));
+    await settle(tester);
+    expect(find.text('New access in this version:'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(ConsentSheet),
+        matching: find.text('Storage'),
+      ),
+      findsNothing,
+    );
+
+    await tester.tap(find.byKey(const ValueKey('consent.allow')));
+    await settle(tester);
+    expect(find.byKey(const ValueKey('review')), findsNothing);
+  });
+
+  testWidgets('a plugin is turned off from its page', (tester) async {
+    await pump(tester);
+    await tester.tap(find.text('Plugins'));
+    await settle(tester);
+    await tester.tap(find.text('Summary'));
+    await settle(tester);
+    await tester.tap(find.byKey(const ValueKey('enabled')));
+    await settle(tester);
+    await tester.tap(find.byKey(const ValueKey('manifest')));
+    await settle(tester);
+    expect(find.textContaining('id: dev.tgplug.summary'), findsOneWidget);
+
+    // Back on the list the plugin reads as off.
+    await tester.tap(find.byTooltip('Back'));
+    await settle(tester);
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('plugin:dev.tgplug.summary')),
+        matching: find.text('off'),
+      ),
+      findsOneWidget,
+    );
   });
 }
 

@@ -1,5 +1,7 @@
 import 'package:plugin_host/plugin_host.dart';
 
+import 'controller.dart';
+
 /// Texts of the plugins screen in English and Russian.
 ///
 /// Third-party plugins show their manifest texts as is; our own plugins are
@@ -44,6 +46,30 @@ final class PluginsStrings {
       _t('It will be able to use:', 'Плагин получит доступ:');
   String get newAccess =>
       _t('New access in this version:', 'Новый доступ в этой версии:');
+
+  String get uninstallConfirm => _t('Uninstall', 'Удалить');
+  String get uninstallMessage => _t(
+    'Its settings are removed with it.',
+    'Его настройки будут удалены вместе с ним.',
+  );
+  String uninstallTitle(String name) =>
+      _t('Uninstall “$name”?', 'Удалить «$name»?');
+
+  /// Why a picked file was not offered for install.
+  String installFailed(InstallFailure f) => switch (f.problem) {
+    InstallProblem.invalid => _t(
+      'This is not a valid plugin: ${f.details.join('; ')}',
+      'Это не плагин или он повреждён: ${f.details.join('; ')}',
+    ),
+    InstallProblem.older => _t(
+      'A newer version of this plugin is already installed.',
+      'Уже установлена более новая версия этого плагина.',
+    ),
+    InstallProblem.builtIn => _t(
+      'This plugin uses the id of a built-in plugin.',
+      'Этот плагин использует идентификатор встроенного плагина.',
+    ),
+  };
 
   String updated(String when) => _t('Updated $when', 'Обновлён $when');
   String installTitle(String name) =>
