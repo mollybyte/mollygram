@@ -327,5 +327,9 @@
   "muteChat": "Без звука",
   "unmuteChat": "Включить звук",
   "chatUnavailable": "Вы не можете участвовать в этом чате",
-  "chatActionFailed": "Не получилось, попробуйте ещё раз"
+  "chatActionFailed": "Не получилось, попробуйте ещё раз",
+  "menuSelect": "Выбрать",
+  "selectedCount": "{count, plural, one{Выбрано {count} сообщение} few{Выбрано {count} сообщения} other{Выбрано {count} сообщений}}",
+  "clearSelection": "Снять выделение",
+  "copy": "Копировать"
 }

@@ -2065,6 +2065,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t do that, try again'**
   String get chatActionFailed;
+
+  /// No description provided for @menuSelect.
+  ///
+  /// In en, this message translates to:
+  /// **'Select'**
+  String get menuSelect;
+
+  /// No description provided for @selectedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} selected} other{{count} selected}}'**
+  String selectedCount(int count);
+
+  /// No description provided for @clearSelection.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear selection'**
+  String get clearSelection;
+
+  /// No description provided for @copy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get copy;
 }
 
 class _AppLocalizationsDelegate

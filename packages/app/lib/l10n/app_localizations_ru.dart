@@ -1222,4 +1222,25 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get chatActionFailed => 'Не получилось, попробуйте ещё раз';
+
+  @override
+  String get menuSelect => 'Выбрать';
+
+  @override
+  String selectedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Выбрано $count сообщений',
+      few: 'Выбрано $count сообщения',
+      one: 'Выбрано $count сообщение',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get clearSelection => 'Снять выделение';
+
+  @override
+  String get copy => 'Копировать';
 }

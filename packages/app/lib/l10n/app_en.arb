@@ -507,5 +507,12 @@
   "muteChat": "Mute",
   "unmuteChat": "Unmute",
   "chatUnavailable": "You can't take part in this chat",
-  "chatActionFailed": "Couldn't do that, try again"
+  "chatActionFailed": "Couldn't do that, try again",
+  "menuSelect": "Select",
+  "selectedCount": "{count, plural, one{{count} selected} other{{count} selected}}",
+  "@selectedCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "clearSelection": "Clear selection",
+  "copy": "Copy"
 }

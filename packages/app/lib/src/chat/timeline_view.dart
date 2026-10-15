@@ -34,6 +34,7 @@ class TimelineView extends StatefulWidget {
     this.flashId,
     this.flash = 0,
     this.topInset = TimelineView.headerInset,
+    this.selection,
   });
 
   /// Newest first.
@@ -69,6 +70,10 @@ class TimelineView extends StatefulWidget {
   /// The space above the oldest message: the header, and the pinned bar
   /// when it shows.
   final double topInset;
+
+  /// The ids of the selected messages while messages are being selected;
+  /// null otherwise.
+  final Set<int>? selection;
 
   static const double headerInset = 72;
   static const double bottomInset = 88;
@@ -246,6 +251,7 @@ class _TimelineList extends StatelessWidget {
     final flashId = view.flashId;
     final flash = view.flash;
     final topInset = view.topInset;
+    final selection = view.selection;
     const bottomInset = TimelineView.bottomInset;
     final l10n = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).toLanguageTag();
@@ -297,6 +303,10 @@ class _TimelineList extends StatelessWidget {
                       endsRun: endsRun,
                       startsForwards: startsForwards,
                       lastReadOutbox: lastReadOutbox,
+                      selecting: selection != null,
+                      selected:
+                          selection != null &&
+                          row.messages.any((m) => selection.contains(m.id)),
                     ),
                     actions: actions,
                   ),
