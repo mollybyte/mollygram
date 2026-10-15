@@ -509,7 +509,8 @@ bool _isEditable(ConversationMessage message) => switch (message.content) {
 /// Asks before deleting [messages], whose [properties] say how each may go:
 /// the "also for" option shows only when every one of them can be deleted
 /// both ways. Nothing happens when one of them can't be deleted at all.
-Future<void> confirmDeleteMessages(
+/// Returns whether the deletion was requested.
+Future<bool> confirmDeleteMessages(
   BuildContext context, {
   required ConversationController conversations,
   required List<ConversationMessage> messages,
@@ -521,7 +522,7 @@ Future<void> confirmDeleteMessages(
   final count = messages.length;
   final forAll = properties.every((p) => p.canBeDeletedForAllUsers);
   final forSelf = properties.every((p) => p.canBeDeletedOnlyForSelf);
-  if (!forAll && !forSelf) return;
+  if (!forAll && !forSelf) return false;
   // In a channel, or for an outgoing message in a basic group, only
   // deleting for everyone may be possible; there is nothing to choose.
   final choice = forAll && forSelf;
@@ -541,11 +542,12 @@ Future<void> confirmDeleteMessages(
     optionValue: true,
     destructive: true,
   );
-  if (checked == null || !isShown()) return;
+  if (checked == null || !isShown()) return false;
   final revoke = choice ? checked : forAll;
   await conversations
       .deleteMessages(messages.first.chatId, [
         for (final message in messages) message.id,
       ], revoke: revoke)
       .catchError((Object _) {});
+  return true;
 }
