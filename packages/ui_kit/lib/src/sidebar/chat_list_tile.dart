@@ -126,8 +126,8 @@ class ChatListTile extends StatefulWidget {
   static const double avatarSize = 44;
   static const double senderAvatarSize = 15;
 
-  static const double _titleLine = 18;
-  static const double _line = 17;
+  static const double _titleLine = 19;
+  static const double _line = 18;
 
   /// The title line, a 1 px gap and the two lines under it.
   static const double _content = _titleLine + 1 + 2 * _line;
@@ -380,7 +380,7 @@ class _ChatListTileState extends State<ChatListTile> {
   /// The two lines under the title: what someone is doing; or who wrote
   /// last and the message on one line each; or the message on both.
   Widget _preview(MgColors c, bool on) {
-    const size = 12.5;
+    const size = 13.0;
     final activity = widget.activity;
     if (activity != null) {
       return MgStatusText(

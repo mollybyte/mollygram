@@ -68,4 +68,11 @@ void main() {
       MgColors.light.bubbleShadow,
     );
   });
+
+  test('a theme change away from a selection colour keeps the accent', () {
+    final from = MgColors.dark.copyWith(selection: const Color(0xFF6E57D6));
+    final to = MgColors.dark.copyWith(accent: const Color(0xFF3FB8C6));
+    expect(from.lerp(to, 1).selected, to.accent);
+    expect(from.lerp(to, 0.5).selected.a, 1);
+  });
 }

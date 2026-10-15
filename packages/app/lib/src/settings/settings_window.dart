@@ -69,7 +69,6 @@ final settingsSections = <SettingsSection>[
     tint: const Color(0xFFE5343B),
     title: (l10n) => l10n.notifications,
     builder: (context) => const NotificationsPage(),
-    fullBleed: true,
   ),
   SettingsSection(
     id: 'privacy',
@@ -320,16 +319,15 @@ class _SettingsWindowState extends ConsumerState<SettingsWindow>
     final title = page?.title ?? section.title(l10n);
     final pageKey = '${section.id}/${_nested.length}';
 
-    final sidebar = DecoratedBox(
-      decoration: BoxDecoration(
-        color: s.sidebar,
-        border: Border(right: BorderSide(color: c.separator, width: 0.5)),
-      ),
+    // Laid out as the chats' sidebar, so the window buttons sit in the
+    // same place: a title row over the search field, on the frame.
+    final sidebar = ColoredBox(
+      color: s.sidebar,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SizedBox(
-            height: SettingsWindow.titleBarHeight - 8,
+            height: SidebarIsland.topInset + SidebarIsland.titleBarHeight,
             child: WindowDragArea(),
           ),
           Padding(
@@ -468,13 +466,25 @@ class _SettingsWindowState extends ConsumerState<SettingsWindow>
               end: 1.0,
             ).animate(CurvedAnimation(parent: _appear, curve: settingsCurve)),
             child: ColoredBox(
-              color: s.pane,
+              color: s.sidebar,
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   SizedBox(width: SettingsWindow.sidebarWidth, child: sidebar),
+                  // The page lies on a card, as a chat does.
                   Expanded(
-                    child: SettingsNavigation(push: _push, child: pane),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        0,
+                        SidebarIsland.topInset,
+                        SidebarIsland.topInset,
+                        SidebarIsland.topInset,
+                      ),
+                      child: ChatCard(
+                        background: ColoredBox(color: s.pane),
+                        child: SettingsNavigation(push: _push, child: pane),
+                      ),
+                    ),
                   ),
                 ],
               ),

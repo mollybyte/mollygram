@@ -64,26 +64,30 @@ abstract final class MgWeight {
   static const FontWeight semibold = FontWeight.w600;
 }
 
-/// Type scale from the mockup. Everything uses the system font; sizes are
-/// in logical pixels and the base size is 13.
+/// Type scale. Everything uses the system font; sizes are in logical
+/// pixels and the base size is 14, a step over the mockup's 13, which read
+/// small on a real screen.
 abstract final class MgType {
-  /// Body text, message text: 13.
-  static const double body = 13;
+  /// Body text: 14.
+  static const double body = 14;
 
-  /// Chat titles in the list and the header, the composer: 13.5.
-  static const double title = 13.5;
+  /// Chat titles in the header, the composer: 14.5.
+  static const double title = 14.5;
 
-  /// Folder tabs: 12.5.
-  static const double tab = 12.5;
+  /// Folder tabs: 13.
+  static const double tab = 13;
 
-  /// Date pills: 12.
-  static const double small = 12;
+  /// Date pills: 12.5.
+  static const double small = 12.5;
 
-  /// Times in the chat list, header subtitles, folder counters: 11.5.
-  static const double caption = 11.5;
+  /// Times in the chat list, header subtitles, folder counters: 12.
+  static const double caption = 12;
 
-  /// Message meta, badges, file sizes: 11.
-  static const double meta = 11;
+  /// Message meta, badges, file sizes: 11.5.
+  static const double meta = 11.5;
+
+  /// Message text: 15.
+  static const double message = 15;
 }
 
 /// SF Pro's tracking for [size], as the system applies it to its own
@@ -97,7 +101,7 @@ double mgTracking(double size) {
   return -0.3;
 }
 
-/// The base text style: system font, 13 px, line height 1.4, system
+/// The base text style: system font, 14 px, line height 1.4, system
 /// tracking.
 TextStyle mgTextStyle(
   MgColors colors, {

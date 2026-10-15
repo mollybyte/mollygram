@@ -11,6 +11,7 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 import '../../l10n/app_localizations.dart';
 import '../avatar/peer_avatar.dart';
 import '../downloads/downloads_bar.dart';
+import '../folders/folder_icons.dart';
 import '../privacy/ghost_mode_capsule.dart';
 import '../session/providers.dart';
 import '../window_drag_area.dart';
@@ -79,6 +80,11 @@ class _SidebarState extends ConsumerState<Sidebar> {
     });
   }
 
+  /// The list on screen, and whether the last switch went rightwards, for
+  /// the direction the lists slide in.
+  ChatListLocation? _shownList;
+  var _forward = true;
+
   @override
   void dispose() {
     _searchTimer?.cancel();
@@ -124,6 +130,16 @@ class _SidebarState extends ConsumerState<Sidebar> {
         ? chats
         : _matching(query, [...chats, ...everything, ...archived, ...found]);
     final select = ref.read(selectedChatListProvider.notifier).select;
+    int place(ChatListLocation l) => l.isMain
+        ? 0
+        : l.isArchive
+        ? 1 << 20
+        : 1 + folders.indexWhere((f) => l == ChatListLocation.folder(f.id));
+    if (list != _shownList) {
+      final shown = _shownList;
+      _forward = shown == null || place(list) >= place(shown);
+      _shownList = list;
+    }
     final showArchive = list.isMain && query.isEmpty && archived.isNotEmpty;
 
     // In the archive the way back takes the folders' place.
@@ -148,11 +164,13 @@ class _SidebarState extends ConsumerState<Sidebar> {
             segments: [
               FolderSegment(
                 label: l10n.folderAll,
+                icon: folderIcon('All'),
                 onTap: () => select(const ChatListLocation.main()),
               ),
               for (final folder in folders)
                 FolderSegment(
                   label: folder.title,
+                  icon: folderIcon(folder.iconName),
                   onTap: () => select(ChatListLocation.folder(folder.id)),
                 ),
             ],
@@ -189,11 +207,11 @@ class _SidebarState extends ConsumerState<Sidebar> {
         duration: _listSwitch,
         switchInCurve: Curves.easeOutCubic,
         switchOutCurve: Curves.easeInCubic,
-        // Into the archive the list slides in from the right; back out of
-        // it, the main list comes back from the left.
+        // A folder further right, or the archive, slides in from the
+        // right; going back left, the list comes from the left.
         transitionBuilder: (child, animation) {
-          final fromRight =
-              child.key == const ValueKey(ChatListLocation.archive());
+          final incoming = child.key == ValueKey(list);
+          final fromRight = incoming == _forward;
           return FadeTransition(
             opacity: animation,
             child: SlideTransition(
@@ -206,7 +224,7 @@ class _SidebarState extends ConsumerState<Sidebar> {
           );
         },
         child: KeyedSubtree(
-          key: ValueKey(list.isArchive ? list : const ChatListLocation.main()),
+          key: ValueKey(list),
           child: shown.isEmpty && !showArchive
               ? Center(
                   child: Text(

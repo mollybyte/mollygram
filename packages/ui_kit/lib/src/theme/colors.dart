@@ -326,7 +326,11 @@ class MgColors extends ThemeExtension<MgColors> {
       ],
       frame: c(frame, other.frame),
       card: c(card, other.card),
-      selection: Color.lerp(selection, other.selection, t),
+      // Lerping towards a missing selection would fade it out; the accent
+      // stands in for it.
+      selection: selection == null && other.selection == null
+          ? null
+          : c(selected, other.selected),
     );
   }
 }

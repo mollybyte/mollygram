@@ -10,7 +10,10 @@ void main() {
   group('appThemes', () {
     test('a tinted wallpaper changes the glass and secondary text', () {
       final themes = appThemes(
-        const Preferences(wallpaperPreset: WallpaperPreset.mist),
+        const Preferences(
+          wallpaperKind: WallpaperKind.gradient,
+          wallpaperPreset: WallpaperPreset.sage,
+        ),
       );
       final light = colorsOf(themes.light);
       final dark = colorsOf(themes.dark);
@@ -20,21 +23,36 @@ void main() {
       expect(dark.fg2, isNot(MgColors.dark.fg2));
       // The accent is the one picked, whatever the wallpaper.
       final plain = colorsOf(
-        appThemes(const Preferences(wallpaperPreset: WallpaperPreset.classic))
-            .light,
+        appThemes(
+          const Preferences(
+            wallpaperKind: WallpaperKind.gradient,
+            wallpaperPreset: WallpaperPreset.classic,
+          ),
+        ).light,
       );
       expect(light.accent, plain.accent);
     });
 
     test('the classic gradient keeps the design tokens', () {
       final themes = appThemes(
-        const Preferences(wallpaperPreset: WallpaperPreset.classic),
+        const Preferences(
+          wallpaperKind: WallpaperKind.gradient,
+          wallpaperPreset: WallpaperPreset.classic,
+        ),
       );
       expect(colorsOf(themes.light).glass, MgColors.light.glass);
       expect(colorsOf(themes.dark).fg2, MgColors.dark.fg2);
     });
 
-    test('a plain background or a picture is not tinted', () {
+    test('a plain background or a picture takes the Mist tokens', () {
+      final mist = colorsOf(
+        appThemes(
+          const Preferences(
+            wallpaperKind: WallpaperKind.gradient,
+            wallpaperPreset: WallpaperPreset.mist,
+          ),
+        ).light,
+      );
       for (final kind in [WallpaperKind.plain, WallpaperKind.image]) {
         final themes = appThemes(
           Preferences(
@@ -43,7 +61,7 @@ void main() {
             wallpaperImage: kind == WallpaperKind.image ? '/a.png' : null,
           ),
         );
-        expect(colorsOf(themes.light).glass, MgColors.light.glass);
+        expect(colorsOf(themes.light).frame, mist.frame);
       }
     });
 

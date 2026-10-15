@@ -10,6 +10,7 @@ import 'package:mollygram/src/notifications/notification_service.dart';
 import 'package:mollygram/src/notifications/notification_settings.dart';
 import 'package:mollygram/src/notifications/notifications_page.dart';
 import 'package:mollygram/src/notifications/system_notifications.dart';
+import 'package:mollygram/src/settings/settings_style.dart';
 import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
@@ -198,7 +199,7 @@ void main() {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         locale: const Locale('en'),
-        home: Material(child: NotificationsPage(onClose: () {})),
+        home: const Material(child: NotificationsPage()),
       ),
     );
 
@@ -221,17 +222,11 @@ void main() {
       await tester.pumpWidget(page(storage));
       await tester.pumpAndSettle();
 
-      bool? toggled(String label) => tester
-          .widget<Semantics>(
-            find.byWidgetPredicate(
-              (w) =>
-                  w is Semantics &&
-                  w.properties.label == label &&
-                  w.properties.toggled != null,
-            ),
+      bool toggled(String label) => tester
+          .widget<SettingsSwitchRow>(
+            find.widgetWithText(SettingsSwitchRow, label),
           )
-          .properties
-          .toggled;
+          .value;
       expect(toggled(en.notificationsSound), isFalse);
       expect(toggled(en.notificationsShow), isTrue);
     });
