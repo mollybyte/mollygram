@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mollygram/l10n/app_localizations.dart';
+import 'package:mollygram/src/home/chat_view.dart';
 import 'package:mollygram/src/home/home_screen.dart';
 import 'package:mollygram/src/home/workspace.dart';
 import 'package:mollygram/src/home/workspace_storage.dart';
@@ -132,6 +133,16 @@ void main() {
     expect(header('Anna'), findsNothing);
     expect(header('Boris'), findsOneWidget);
     expect(container.read(workspaceControllerProvider).value.focusedChat, 2);
+  });
+
+  testWidgets('an open chat fills its card', (tester) async {
+    await pump(tester);
+    await tester.tap(row('Anna'));
+    await settle(tester);
+    final card = tester.getSize(find.byType(ChatCard));
+    final chat = tester.getSize(find.byType(ChatView));
+    expect(chat.width, card.width);
+    expect(chat.height, card.height);
   });
 
   testWidgets('a primary-click opens the chat beside the current one', (
