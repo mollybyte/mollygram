@@ -176,6 +176,7 @@ final class Preferences {
     this.language = AppLanguage.system,
     this.largeEmoji = true,
     this.loopStickers = true,
+    this.hideArchive = false,
     this.translateTo,
     this.translateSkip = const {},
     this.translateChats = const {},
@@ -241,6 +242,10 @@ final class Preferences {
   /// Animated stickers play on; off, they play once.
   final bool loopStickers;
 
+  /// The Archive row is out of the chat list; the archive stays reachable
+  /// from the rail and from search.
+  final bool hideArchive;
+
   /// The language chats are translated into, as a code such as `en`; null
   /// follows the app's language.
   final String? translateTo;
@@ -276,6 +281,7 @@ final class Preferences {
     AppLanguage? language,
     bool? largeEmoji,
     bool? loopStickers,
+    bool? hideArchive,
     String? translateTo,
     bool clearTranslateTo = false,
     Set<String>? translateSkip,
@@ -302,6 +308,7 @@ final class Preferences {
     language: language ?? this.language,
     largeEmoji: largeEmoji ?? this.largeEmoji,
     loopStickers: loopStickers ?? this.loopStickers,
+    hideArchive: hideArchive ?? this.hideArchive,
     translateTo: clearTranslateTo ? null : translateTo ?? this.translateTo,
     translateSkip: translateSkip ?? this.translateSkip,
     translateChats: translateChats ?? this.translateChats,
@@ -336,6 +343,7 @@ final class Preferences {
     'language': language.name,
     'largeEmoji': largeEmoji,
     'loopStickers': loopStickers,
+    'hideArchive': hideArchive,
     'translateTo': ?translateTo,
     if (translateSkip.isNotEmpty) 'translateSkip': translateSkip.toList(),
     if (translateChats.isNotEmpty) 'translateChats': translateChats.toList(),
@@ -404,6 +412,7 @@ final class Preferences {
           _byName(AppLanguage.values, json['language']) ?? defaults.language,
       largeEmoji: _bool(json['largeEmoji']) ?? defaults.largeEmoji,
       loopStickers: _bool(json['loopStickers']) ?? defaults.loopStickers,
+      hideArchive: _bool(json['hideArchive']) ?? defaults.hideArchive,
       translateTo:
           json['translateTo'] is String &&
               (json['translateTo'] as String).isNotEmpty

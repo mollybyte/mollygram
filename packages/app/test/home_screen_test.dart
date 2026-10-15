@@ -423,6 +423,39 @@ void main() {
     expect(row('Anna'), findsOneWidget);
   });
 
+  testWidgets('hides the archive row and keeps the archive in reach', (
+    tester,
+  ) async {
+    session.chatLists.store.upsert(
+      ChatListEntry(
+        id: 4,
+        title: 'Dmitry',
+        unreadCount: 2,
+        positions: [
+          ChatListPosition(
+            list: const ChatListLocation.archive(),
+            order: 5,
+            isPinned: false,
+          ),
+        ],
+      ),
+    );
+    await pump(tester);
+    await tester.tap(row('Archived chats'), buttons: kSecondaryButton);
+    await settle(tester);
+    await tester.tap(find.text('Hide archive'));
+    await settle(tester);
+    expect(row('Archived chats'), findsNothing);
+    expect(row('Anna'), findsOneWidget);
+
+    // The rail-less title row keeps a way in.
+    await tester.tap(find.byTooltip('Archived chats'));
+    await settle(tester);
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(row('Dmitry'), findsOneWidget);
+    expect(row('Anna'), findsNothing);
+  });
+
   testWidgets('shows who is typing in the list and the header', (tester) async {
     await pump(tester);
     await tester.tap(row('Boris'));

@@ -1622,6 +1622,30 @@ abstract class AppLocalizations {
   /// **'Mark all as read'**
   String get menuMarkAllRead;
 
+  /// No description provided for @menuHideArchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide archive'**
+  String get menuHideArchive;
+
+  /// No description provided for @menuShowArchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Show archive'**
+  String get menuShowArchive;
+
+  /// No description provided for @showArchiveRow.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive in the chat list'**
+  String get showArchiveRow;
+
+  /// No description provided for @showArchiveRowHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived chats stay in the rail and in search while the row is hidden.'**
+  String get showArchiveRowHint;
+
   /// No description provided for @menuClearHistory.
   ///
   /// In en, this message translates to:
