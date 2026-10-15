@@ -49,6 +49,7 @@
   "connectionConnecting": "Connecting…",
   "connectionUpdating": "Updating…",
   "nothingFound": "Nothing found",
+  "draftLabel": "Draft:",
   "newMessage": "New message",
   "contacts": "Contacts",
   "peopleSearchHint": "Name or username",

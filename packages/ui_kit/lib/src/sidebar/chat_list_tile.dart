@@ -33,6 +33,7 @@ class ChatListTile extends StatefulWidget {
     this.secret = false,
     this.online = false,
     this.activity,
+    this.draftLabel,
     this.selected = false,
     this.menuOpen = false,
     this.avatar,
@@ -69,6 +70,10 @@ class ChatListTile extends StatefulWidget {
 
   /// What someone is doing, such as "typing"; shown instead of [subtitle].
   final String? activity;
+
+  /// "Draft:" before [subtitle] when the chat has an unsent draft, drawn
+  /// in red as the official client does.
+  final String? draftLabel;
   final bool selected;
 
   /// The row's context menu is open: an accent outline, as on macOS.
@@ -262,6 +267,10 @@ class _ChatListTileState extends State<ChatListTile> {
                                   )
                                 : MgStatusText(
                                     widget.subtitle,
+                                    lead: widget.draftLabel,
+                                    leadColor: on
+                                        ? c.onAccent
+                                        : MgColors.draftRed,
                                     size: MgType.body,
                                     color: sub,
                                   ),

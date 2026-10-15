@@ -19,6 +19,8 @@ class MgStatusText extends StatelessWidget {
     this.size = MgType.caption,
     this.color,
     this.accentColor,
+    this.lead,
+    this.leadColor,
   });
 
   final String text;
@@ -31,6 +33,10 @@ class MgStatusText extends StatelessWidget {
 
   /// The color of an [accent] status; defaults to the accent.
   final Color? accentColor;
+
+  /// A word before [text] in its own color, such as "Draft:".
+  final String? lead;
+  final Color? leadColor;
 
   static const Duration duration = Duration(milliseconds: 220);
 
@@ -58,12 +64,21 @@ class MgStatusText extends StatelessWidget {
         ),
       ),
       child: Row(
-        key: ValueKey((text, accent, activity)),
+        key: ValueKey((text, accent, activity, lead)),
         mainAxisSize: MainAxisSize.min,
         children: [
           Flexible(
-            child: Text(
-              text,
+            child: Text.rich(
+              TextSpan(
+                children: [
+                  if (lead case final lead?)
+                    TextSpan(
+                      text: '$lead ',
+                      style: style.copyWith(color: leadColor ?? tint),
+                    ),
+                  TextSpan(text: text),
+                ],
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: style,

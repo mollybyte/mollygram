@@ -56,3 +56,15 @@ String formatPreview(AppLocalizations l10n, ChatPreview? preview) {
   };
   return preview.isOutgoing ? l10n.previewYou(body) : body;
 }
+
+/// What a chat-list row shows for an unsent draft: its text, or the kind of
+/// the draft when it is not text, such as a voice note.
+String draftText(AppLocalizations l10n, ChatDraft draft) {
+  final text = draft.text.replaceAll('\n', ' ');
+  final label = kindLabel(l10n, draft.kind);
+  return switch ((label.isEmpty, text.isEmpty)) {
+    (true, _) => text,
+    (false, true) => label,
+    (false, false) => '$label, $text',
+  };
+}
