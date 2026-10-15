@@ -67,6 +67,8 @@ final class Preferences {
     this.downloadFolder,
     this.shortcuts = const {},
     this.language = AppLanguage.system,
+    this.largeEmoji = true,
+    this.loopStickers = true,
   });
 
   static const minTextSize = 12;
@@ -101,6 +103,12 @@ final class Preferences {
   final Map<String, String?> shortcuts;
   final AppLanguage language;
 
+  /// A message of one to three emoji is shown large, without text around.
+  final bool largeEmoji;
+
+  /// Animated stickers play on; off, they play once.
+  final bool loopStickers;
+
   AutoDownload autoDownloadOf(AutoDownloadKind kind) =>
       autoDownload[kind] ?? defaultAutoDownload[kind]!;
 
@@ -114,6 +122,8 @@ final class Preferences {
     String? downloadFolder,
     Map<String, String?>? shortcuts,
     AppLanguage? language,
+    bool? largeEmoji,
+    bool? loopStickers,
   }) => Preferences(
     theme: theme ?? this.theme,
     accent: accent ?? this.accent,
@@ -124,6 +134,8 @@ final class Preferences {
     downloadFolder: downloadFolder ?? this.downloadFolder,
     shortcuts: shortcuts ?? this.shortcuts,
     language: language ?? this.language,
+    largeEmoji: largeEmoji ?? this.largeEmoji,
+    loopStickers: loopStickers ?? this.loopStickers,
   );
 
   /// The same with [kind] changed.
@@ -143,6 +155,8 @@ final class Preferences {
     'downloadFolder': ?downloadFolder,
     if (shortcuts.isNotEmpty) 'shortcuts': shortcuts,
     'language': language.name,
+    'largeEmoji': largeEmoji,
+    'loopStickers': loopStickers,
   };
 
   /// Reads what [toJson] wrote. Anything missing or unknown, say from an
@@ -178,6 +192,8 @@ final class Preferences {
       },
       language:
           _byName(AppLanguage.values, json['language']) ?? defaults.language,
+      largeEmoji: _bool(json['largeEmoji']) ?? defaults.largeEmoji,
+      loopStickers: _bool(json['loopStickers']) ?? defaults.loopStickers,
     );
   }
 }

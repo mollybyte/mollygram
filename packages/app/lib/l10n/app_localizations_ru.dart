@@ -539,6 +539,27 @@ class AppLocalizationsRu extends AppLocalizations {
   String get scheduleAction => 'Запланировать';
 
   @override
+  String get scheduledList => 'Запланированные сообщения';
+
+  @override
+  String scheduledCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count запланированных сообщений',
+      few: '$count запланированных сообщения',
+      one: '$count запланированное сообщение',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get menuSendNow => 'Отправить сейчас';
+
+  @override
+  String get menuReschedule => 'Перенести…';
+
+  @override
   String scheduledFor(String date) {
     return 'Запланировано на $date';
   }
@@ -1537,7 +1558,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get stickersFailed => 'Не удалось загрузить стикеры';
 
   @override
-  String get noStickerSets => 'Пока нет стикеров';
+  String get noStickerSets => 'Наборов пока нет';
 
   @override
   String get forwardedMessages => 'Пересланные сообщения';
@@ -3061,6 +3082,103 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get accountTtlFooter =>
       'Аккаунт удалится, если вы не зайдёте за это время.';
+
+  @override
+  String get stickersAndEmoji => 'Стикеры и эмодзи';
+
+  @override
+  String get largeEmoji => 'Большие эмодзи';
+
+  @override
+  String get largeEmojiHint =>
+      'Сообщение из одного–трёх эмодзи показывается крупно.';
+
+  @override
+  String get loopStickers => 'Повторять анимацию стикеров';
+
+  @override
+  String get animatedEmoji => 'Анимированные эмодзи';
+
+  @override
+  String get myStickers => 'Мои стикеры';
+
+  @override
+  String get myEmoji => 'Мои эмодзи';
+
+  @override
+  String get customEmoji => 'Пользовательские эмодзи';
+
+  @override
+  String get trendingStickers => 'Популярные стикеры';
+
+  @override
+  String get trendingEmoji => 'Популярные эмодзи';
+
+  @override
+  String get archivedStickers => 'Архивные стикеры';
+
+  @override
+  String get archivedEmoji => 'Архивные эмодзи';
+
+  @override
+  String get stickerSetsHint =>
+      'Перетащите, чтобы изменить порядок. Правый клик по набору — архивировать или удалить.';
+
+  @override
+  String get archiveSet => 'Архивировать';
+
+  @override
+  String get restoreSet => 'Восстановить';
+
+  @override
+  String get addSet => 'Добавить';
+
+  @override
+  String get addByLink => 'Добавить по ссылке';
+
+  @override
+  String get openSetLink => 'Открыть';
+
+  @override
+  String get stickerSetNotFound => 'По этой ссылке набора нет.';
+
+  @override
+  String get noArchivedSets => 'В архиве пусто';
+
+  @override
+  String get stickerSetLoadFailed => 'Не удалось загрузить наборы.';
+
+  @override
+  String stickerCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count стикеров',
+      few: '$count стикера',
+      one: '$count стикер',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String emojiCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count эмодзи',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get removeStickerSetTitle => 'Удалить набор стикеров?';
+
+  @override
+  String get removeEmojiSetTitle => 'Удалить набор эмодзи?';
+
+  @override
+  String get stickerSetLookupFailed =>
+      'Не удалось открыть набор. Проверьте подключение и попробуйте ещё раз.';
 
   @override
   String get keyboardShortcuts => 'Сочетания клавиш';

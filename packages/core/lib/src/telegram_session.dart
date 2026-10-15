@@ -22,6 +22,7 @@ import 'privacy_guard.dart';
 import 'privacy_settings_controller.dart';
 import 'proxy_controller.dart';
 import 'sticker_library.dart';
+import 'sticker_sets_controller.dart';
 import 'storage_usage.dart';
 import 'store/message_capture.dart';
 import 'tdlib_initializer.dart';
@@ -53,6 +54,7 @@ final class TelegramSession {
     required this.files,
     required this.notifications,
     required this.stickers,
+    required this.stickerSets,
     required this.peers,
     required this.account,
     required this.mentions,
@@ -83,6 +85,9 @@ final class TelegramSession {
   final FileController files;
   final NotificationController notifications;
   final StickerLibrary stickers;
+
+  /// Installed, archived and trending sticker and emoji sets.
+  final StickerSetsController stickerSets;
   final PeerInfoController peers;
   final AccountSettings account;
   final StorageManager storage;
@@ -160,6 +165,7 @@ final class TelegramSession {
     final management = ChatManagement(client);
     final folders = ChatFoldersController(client);
     final security = PrivacySettingsController(client);
+    final stickerSets = StickerSetsController(client);
     final session = TelegramSession._(
       tdlib: tdlib,
       authorization: authorization,
@@ -172,6 +178,7 @@ final class TelegramSession {
       files: files,
       notifications: notifications,
       stickers: StickerLibrary(client),
+      stickerSets: stickerSets,
       peers: peers,
       account: AccountSettings(client),
       mentions: mentions,
@@ -203,6 +210,7 @@ final class TelegramSession {
       await notifications.start();
       await folders.start();
       await security.start();
+      await stickerSets.start();
       await authorization.start();
       // Sending the parameters is part of starting: a wrong database key or
       // bad credentials must fail the session, not leave the UI waiting.
@@ -276,6 +284,7 @@ final class TelegramSession {
     await notifications.dispose();
     await folders.dispose();
     await security.dispose();
+    await stickerSets.dispose();
     await authorization.dispose();
     await _tdlib.close();
     // After close: requests sent while the client closes stay filtered.
