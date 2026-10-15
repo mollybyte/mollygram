@@ -202,4 +202,77 @@ void main() {
       );
     });
   });
+
+  group('Code highlight', () {
+    Future<List<CodeSpan>?> highlight(
+      PluginInstance p,
+      String code, {
+      String? language,
+    }) async {
+      final r = await p.dispatch(PluginEvent.messageRenderCode, {
+        'code': code,
+        'language': ?language,
+      });
+      if (r is! EventHandled) fail('$r');
+      return codeSpansFor(r.ui, code);
+    }
+
+    String tokenOf(List<CodeSpan> spans, String text) =>
+        spans.firstWhere((s) => s.text.trim() == text).token;
+
+    test('asks for nothing', () async {
+      final bundle = await PluginBundle.load(
+        Directory('builtin/code_highlight'),
+      );
+      expect(
+        bundle.manifest.permissions.escalationsFrom(PermissionSet.none),
+        isEmpty,
+      );
+      expect(bundle.manifest.hooks, ['message.render.code']);
+    });
+
+    test('colors keywords, strings, numbers, comments and calls', () async {
+      final p = await start('code_highlight');
+      const code = 'final n = max(42, "a\\"b"); // done\nclass Box {}';
+      final spans = (await highlight(p, code, language: 'dart'))!;
+      expect(spans.map((s) => s.text).join(), code);
+      expect(tokenOf(spans, 'final'), 'keyword');
+      expect(tokenOf(spans, 'max'), 'function');
+      expect(tokenOf(spans, '42'), 'number');
+      expect(tokenOf(spans, '"a\\"b"'), 'string');
+      expect(tokenOf(spans, '// done'), 'comment');
+      expect(tokenOf(spans, 'Box'), 'type');
+    });
+
+    test('follows the language', () async {
+      final p = await start('code_highlight');
+      final python = (await highlight(p, 'def f(): # note', language: 'py'))!;
+      expect(tokenOf(python, 'def'), 'keyword');
+      expect(tokenOf(python, '# note'), 'comment');
+      final sql = (await highlight(p, 'SELECT id FROM t', language: 'sql'))!;
+      expect(tokenOf(sql, 'SELECT'), 'keyword');
+      // Without a language the common keywords still stand out.
+      final plain = (await highlight(p, 'return x'))!;
+      expect(tokenOf(plain, 'return'), 'keyword');
+    });
+
+    test('keeps an unclosed string or comment to the end', () async {
+      final p = await start('code_highlight');
+      for (final code in ['x = "open', '/* never closed', "s = '''multi"]) {
+        final spans = await highlight(p, code, language: 'js');
+        expect(spans?.map((s) => s.text).join(), code, reason: code);
+      }
+    });
+
+    test('highlights the longest message within the time budget', () async {
+      final p = await start('code_highlight');
+      // A message holds at most 4096 characters.
+      final code = List.filled(
+        128,
+        'if (a < 10) { call("x", 1.5); }',
+      ).join('\n');
+      expect(await highlight(p, code, language: 'js'), isNotNull);
+      expect(p.status, PluginStatus.running);
+    });
+  });
 }

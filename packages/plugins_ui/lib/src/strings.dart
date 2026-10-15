@@ -280,6 +280,12 @@ const _ruPlugins = {
       'skip': 'Не переводить, коды языков',
     },
   ),
+  'dev.mollygram.codehighlight': PluginTexts(
+    name: 'Подсветка кода',
+    description:
+        'Раскрашивает блоки кода в сообщениях по синтаксису. Работает на '
+        'устройстве и не получает доступа к сообщениям, сети или хранилищу.',
+  ),
   'dev.mollygram.transcribe': PluginTexts(
     name: 'Расшифровка',
     description:

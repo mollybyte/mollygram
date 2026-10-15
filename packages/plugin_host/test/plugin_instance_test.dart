@@ -137,6 +137,62 @@ void main() {
     expect(r, isA<EventSkipped>());
   });
 
+  group('message.render.code', () {
+    const source = '''
+      mg.on("message.render.code", ({message, code}) => [
+        {type: "text", text: JSON.stringify(message ?? null)},
+        {type: "code", spans: [{text: code, token: "plain"}]},
+      ]);
+    ''';
+    final payload = {
+      'message': {'chatId': 10, 'id': 7, 'text': 'secret words', 'senderId': 2},
+      'language': 'dart',
+      'code': 'main() {}',
+    };
+
+    test('needs no permission and sees only the ids', () async {
+      final p = load(source, m: manifest(hooks: '  - message.render.code'));
+      final r = await p.dispatch(PluginEvent.messageRenderCode, payload);
+      final ui = (r as EventHandled).ui;
+      expect(ui.first['text'], '{"chatId":10,"id":7}');
+      expect(codeSpansFor(ui, 'main() {}'), [
+        (text: 'main() {}', token: 'plain'),
+      ]);
+    });
+
+    test('with messages.read the whole message is passed', () async {
+      final p = load(
+        source,
+        m: manifest(
+          permissions: '  messages.read: all',
+          hooks: '  - message.render.code',
+        ),
+      );
+      final r = await p.dispatch(PluginEvent.messageRenderCode, payload);
+      expect((r as EventHandled).ui.first['text'], contains('secret words'));
+    });
+
+    test('spans that change the code are not used', () async {
+      final p = load(
+        'mg.on("message.render.code", () => '
+        '[{type: "code", spans: [{text: "rm -rf /", token: "plain"}]}])',
+        m: manifest(hooks: '  - message.render.code'),
+      );
+      final r = await p.dispatch(PluginEvent.messageRenderCode, payload);
+      expect(codeSpansFor((r as EventHandled).ui, 'main() {}'), isNull);
+    });
+
+    test('too many spans are invalid UI', () async {
+      final p = load(
+        'mg.on("message.render.code", () => [{type: "code", spans: '
+        'Array.from({length: ${maxCodeSpans + 1}}, () => ({text: "x"}))}])',
+        m: manifest(hooks: '  - message.render.code'),
+      );
+      final r = await p.dispatch(PluginEvent.messageRenderCode, payload);
+      expect(r, isA<EventSkipped>());
+    });
+  });
+
   test('three failures in a row disable the plugin', () async {
     final p = load('mg.on("ui.action", () => { throw new Error("no") })');
     for (var i = 0; i < 3; i++) {

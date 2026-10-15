@@ -305,3 +305,30 @@ final class PluginManifest {
     );
   }
 }
+
+/// Orders two semver versions: negative when [a] is older than [b].
+///
+/// Build metadata is ignored; a pre-release sorts before its release, and
+/// pre-releases compare as text.
+int compareVersions(String a, String b) {
+  (List<int>, String?) parse(String v) {
+    final core = v.split('+').first;
+    final dash = core.indexOf('-');
+    final numbers = dash < 0 ? core : core.substring(0, dash);
+    return (
+      [for (final p in numbers.split('.')) int.tryParse(p) ?? 0],
+      dash < 0 ? null : core.substring(dash + 1),
+    );
+  }
+
+  final (x, xPre) = parse(a);
+  final (y, yPre) = parse(b);
+  for (var i = 0; i < 3; i++) {
+    final d = (i < x.length ? x[i] : 0).compareTo(i < y.length ? y[i] : 0);
+    if (d != 0) return d;
+  }
+  if (xPre == yPre) return 0;
+  if (xPre == null) return 1;
+  if (yPre == null) return -1;
+  return xPre.compareTo(yPre);
+}

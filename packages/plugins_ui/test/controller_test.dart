@@ -20,7 +20,12 @@ final class RecordingDelegate implements PluginsDelegate {
   Future<void> applyUpdate(PluginEntry e, PluginUpdate u) async =>
       calls.add('update ${e.id} ${u.manifest.version}');
   @override
-  Future<PluginEntry?> pickFile() async => file;
+  Future<PluginEntry?> pickFile() async {
+    if (invalid != null) throw ManifestException(invalid!);
+    return file;
+  }
+
+  List<String>? invalid;
 }
 
 PluginEntry plugin(
@@ -183,6 +188,57 @@ void main() {
     await c.installFromFile();
     expect(c.consent?.isUpdate, isTrue);
     expect(c.consent?.permissions.net, {'x.example.com'});
+  });
+
+  test('an update keeps the old version until its access is allowed', () async {
+    final c = PluginsController([
+      plugin('dev.a.b', installed: true),
+    ], delegate: delegate);
+    delegate.file = plugin(
+      'dev.a.b',
+      version: '2.0.0',
+      permissions: '  net: [api.example.com]',
+    );
+    await c.installFromFile();
+    expect(c.entry('dev.a.b')!.manifest.version, '1.0.0');
+    expect(c.entry('dev.a.b')!.update?.manifest.version, '2.0.0');
+    expect(c.consent?.permissions.net, {'api.example.com'});
+
+    // Declined: the update waits on the plugin's page.
+    c.cancelConsent();
+    expect(delegate.calls, isEmpty);
+    c.requestUpdate('dev.a.b');
+    await c.allowConsent();
+    expect(c.entry('dev.a.b')!.manifest.version, '2.0.0');
+    expect(c.entry('dev.a.b')!.update, isNull);
+    expect(delegate.calls, ['update dev.a.b 2.0.0']);
+  });
+
+  test('refuses an older version, a built-in id and a broken bundle', () async {
+    final c = PluginsController([
+      plugin('dev.a.b', installed: true, version: '1.2.0'),
+      PluginEntry.parse(
+        'id: dev.mollygram.filters\nname: Filters\nversion: 1.0.0\n'
+        'runtime: js\nsdk: ^1.0',
+        builtIn: true,
+      ),
+    ], delegate: delegate);
+    delegate.file = plugin('dev.a.b', version: '1.1.0');
+    await c.installFromFile();
+    expect(c.installFailure?.problem, InstallProblem.older);
+    expect(c.entry('dev.a.b')!.manifest.version, '1.2.0');
+
+    delegate.file = plugin('dev.mollygram.filters', version: '9.0.0');
+    await c.installFromFile();
+    expect(c.installFailure?.problem, InstallProblem.builtIn);
+
+    delegate.invalid = ['unknown permission "camera"'];
+    await c.installFromFile();
+    expect(c.installFailure?.problem, InstallProblem.invalid);
+    expect(c.installFailure?.details, ['unknown permission "camera"']);
+    c.dismissInstallFailure();
+    expect(c.installFailure, isNull);
+    expect(delegate.calls, isEmpty);
   });
 
   test('escalation matches the host rule', () {
