@@ -54,6 +54,23 @@ Future<StickerSetLookup> showStickerSetSheet(
   return StickerSetLookup.shown;
 }
 
+/// Shows the set with [setId] in the same sheet, as a tap on a sticker in
+/// a chat asks for it. Nothing opens when the set can't be fetched.
+Future<void> showStickerSetSheetById(BuildContext context, int setId) async {
+  final td.StickerSet set;
+  try {
+    final session = ProviderScope.containerOf(
+      context,
+      listen: false,
+    ).read(telegramSessionProvider).requireValue;
+    set = await session.stickerSets.byId(setId);
+  } on Object {
+    return;
+  }
+  if (!context.mounted) return;
+  await showFolderSheet<void>(context, StickerSetSheet(set: set));
+}
+
 /// A set's stickers in a grid, animated under the pointer, and the button
 /// that adds or removes the set.
 class StickerSetSheet extends ConsumerStatefulWidget {

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 
@@ -12,6 +13,7 @@ import '../home/format.dart';
 import '../links/link_router.dart';
 import '../plugins/message_hooks.dart';
 import '../settings/stickers/sticker_options.dart';
+import '../settings/stickers/sticker_set_sheet.dart';
 import 'bot_keyboard.dart';
 import 'concealed.dart';
 import 'custom_emoji.dart';
@@ -626,7 +628,7 @@ class _MessageBody extends StatelessWidget {
     }
     switch (content) {
       case td.MessageSticker(:final sticker):
-        return StickerContent(sticker: sticker);
+        return _TimelineSticker(sticker);
       case td.MessageAnimatedEmoji(:final animatedEmoji, :final emoji):
         final sticker = animatedEmoji.sticker;
         if (sticker == null) return _BigEmoji(emoji);
@@ -1051,6 +1053,29 @@ bool isEmojiOnly(String text) {
   final trimmed = text.trim();
   if (trimmed.isEmpty || !_emojiOnly.hasMatch(trimmed)) return false;
   return trimmed.replaceAll(RegExp(r'\s'), '').characters.length <= 3;
+}
+
+/// A sticker message. A click opens its set, as in the official client,
+/// so a set seen in any chat can be added from there. (While selecting,
+/// the row absorbs the click and selects itself, like everywhere else.)
+class _TimelineSticker extends StatelessWidget {
+  const _TimelineSticker(this.sticker);
+
+  final td.Sticker sticker;
+
+  @override
+  Widget build(BuildContext context) {
+    final content = StickerContent(sticker: sticker);
+    if (sticker.setId == 0) return content;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => unawaited(showStickerSetSheetById(context, sticker.setId)),
+        child: content,
+      ),
+    );
+  }
 }
 
 /// An animated emoji or a dice, drawn at the size of a big emoji rather

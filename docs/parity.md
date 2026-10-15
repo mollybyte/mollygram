@@ -138,7 +138,7 @@ M8 calls and macOS release, M9 after release.
 
 | Feature | Status | Notes | Size | M |
 |---|---|---|---|---|
-| Photos, videos, GIFs, stickers (WebP, TGS, WebM) in chat | done | #29 | | |
+| Photos, videos, GIFs, stickers (WebP, TGS, WebM) in chat | done | #29; a click on a sticker opens its set with Add or Remove, as in the official client | | |
 | Voice messages playback with waveform | done | | | |
 | Video circles playback at 120 fps | done | `packages/media` | | |
 | Files and music: download, open, cancel | done | | | |
