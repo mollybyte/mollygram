@@ -28,7 +28,7 @@
 The layout follows the official Telegram Desktop, so there is nothing to relearn. On top of it: liquid glass and the features the official client is missing.
 
 > [!NOTE]
-> Early stage: design mockups and the project foundation with TDLib bindings are in place. There is no UI or sign-in yet.
+> Early stage: sign-in, the chat list, chats with every message type, tabs, split view and the command palette work. The order of what comes next is in [`docs/roadmap.md`](docs/roadmap.md), the feature backlog against the official client in [`docs/parity.md`](docs/parity.md).
 
 ## Planned features
 
