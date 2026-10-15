@@ -6,6 +6,7 @@ import 'package:mollygram/src/app.dart';
 import 'package:mollygram/src/auth/sign_in_screen.dart';
 import 'package:mollygram/src/session/providers.dart';
 import 'package:mollygram/src/session/sign_in_actions.dart';
+import 'package:mollygram/src/settings/privacy/passcode.dart';
 import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' show TdException;
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
@@ -146,6 +147,7 @@ void main() {
           telegramApiConfigProvider.overrideWithValue(
             const TelegramApiConfig(apiId: 0, apiHash: ''),
           ),
+          passcodeStorageProvider.overrideWithValue(MemoryPasscodeStorage()),
         ],
         child: const MollygramApp(),
       ),

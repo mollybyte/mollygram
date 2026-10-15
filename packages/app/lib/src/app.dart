@@ -14,6 +14,7 @@ import 'session/close_before_exit.dart';
 import 'session/providers.dart';
 import 'settings/appearance.dart';
 import 'settings/preferences.dart';
+import 'settings/privacy/passcode_lock_screen.dart';
 
 class MollygramApp extends ConsumerWidget {
   const MollygramApp({super.key});
@@ -44,7 +45,7 @@ class MollygramApp extends ConsumerWidget {
       home: const _CloseSessionBeforeExit(
         child: Material(
           type: MaterialType.transparency,
-          child: AccountsLayer(child: _Root()),
+          child: PasscodeGate(child: AccountsLayer(child: _Root())),
         ),
       ),
     );

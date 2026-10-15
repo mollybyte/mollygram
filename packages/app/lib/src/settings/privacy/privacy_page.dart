@@ -7,9 +7,13 @@ import '../../../l10n/app_localizations.dart';
 import '../sessions_page.dart';
 import '../settings_style.dart';
 import '../settings_window.dart';
+import 'account_ttl_page.dart';
 import 'blocked_page.dart';
+import 'passcode.dart';
+import 'passcode_page.dart';
 import 'privacy_providers.dart';
 import 'privacy_rule_page.dart';
+import 'two_step_page.dart';
 
 /// The settings the Privacy and security page lists, in order.
 const privacyPageRules = [
@@ -95,6 +99,10 @@ class PrivacySecurityPage extends ConsumerWidget {
     final choices = ref.watch(privacyChoicesProvider);
     final blocked = ref.watch(blockedCountProvider).value;
     final sessions = ref.watch(activeSessionsProvider).value;
+    final passcode = ref.watch(passcodeLockProvider).settings.enabled;
+    final twoStep = ref.watch(twoStepProvider).value?.hasPassword;
+    final ttl = ref.watch(accountTtlProvider).value;
+    String onOff(bool on) => on ? l10n.twoStepOn : l10n.twoStepOff;
     Widget? value(String? text) =>
         text == null ? null : Text(text, style: mgTextStyle(c, color: c.fg2));
 
@@ -116,6 +124,34 @@ class PrivacySecurityPage extends ConsumerWidget {
               onTap: () => navigation.push(
                 l10n.blockedUsers,
                 (context) => const BlockedUsersPage(),
+              ),
+            ),
+            SettingsRow(
+              key: const ValueKey('passcode'),
+              leading: const SettingsSymbol(
+                icon: MgIcons.lock,
+                tint: Color(0xFF0A7CFF),
+              ),
+              title: l10n.passcodeLock,
+              trailing: value(onOff(passcode)),
+              chevron: true,
+              onTap: () => navigation.push(
+                l10n.passcodeLock,
+                (context) => const PasscodePage(),
+              ),
+            ),
+            SettingsRow(
+              key: const ValueKey('twoStep'),
+              leading: const SettingsSymbol(
+                icon: _keyIcon,
+                tint: Color(0xFFFF9500),
+              ),
+              title: l10n.twoStep,
+              trailing: value(twoStep == null ? null : onOff(twoStep)),
+              chevron: true,
+              onTap: () => navigation.push(
+                l10n.twoStep,
+                (context) => const TwoStepPage(),
               ),
             ),
             SettingsRow(
@@ -161,6 +197,22 @@ class PrivacySecurityPage extends ConsumerWidget {
               ),
           ],
         ),
+        SettingsGroup(
+          title: l10n.accountTtlTitle,
+          footer: SettingsFooter(l10n.accountTtlFooter),
+          children: [
+            SettingsRow(
+              key: const ValueKey('accountTtl'),
+              title: l10n.accountTtlRow,
+              trailing: value(ttl == null ? null : accountTtlLabel(l10n, ttl)),
+              chevron: true,
+              onTap: () => navigation.push(
+                l10n.accountTtlTitle,
+                (context) => const AccountTtlPage(),
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
@@ -177,4 +229,11 @@ const _devicesIcon = MgIconData(
   'devices',
   '<rect x="2.5" y="5" width="13" height="9" rx="1.5"/>'
       '<path d="M1 18h12"/><rect x="16.5" y="9" width="6" height="11" rx="1.5"/>',
+);
+
+/// A key, for two-step verification.
+const _keyIcon = MgIconData(
+  'key',
+  '<circle cx="8" cy="15" r="4.5"/><path d="M11.2 11.8L20 3M16.5 6.5l2.5 2.5'
+      'M14 9l2 2"/>',
 );

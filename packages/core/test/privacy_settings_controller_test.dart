@@ -269,6 +269,90 @@ void main() {
     expect(changes, 3);
   });
 
+  group('two-step verification', () {
+    test('reads the state', () async {
+      final state = await privacy.twoStep();
+      expect(state.hasPassword, isFalse);
+      expect(state.awaitsEmailCode, isFalse);
+    });
+
+    test('sets a password with a hint and a recovery email', () async {
+      final state = await privacy.setPassword(
+        oldPassword: '',
+        newPassword: 'secret',
+        hint: ' cat ',
+        email: ' a@mail.com ',
+      );
+      final request = sent('setPassword');
+      expect(request['new_password'], 'secret');
+      expect(request['new_hint'], 'cat');
+      expect(request['set_recovery_email_address'], isTrue);
+      expect(request['new_recovery_email_address'], 'a@mail.com');
+      expect(state.hasPassword, isFalse);
+      expect(state.pendingEmailPattern, 'a***@mail.com');
+      expect(state.codeLength, 6);
+
+      final confirmed = await privacy.checkEmailCode(' 123456 ');
+      expect(sent('checkRecoveryEmailAddressCode')['code'], '123456');
+      expect(confirmed.awaitsEmailCode, isFalse);
+      expect(confirmed.hasRecoveryEmail, isTrue);
+    });
+
+    test('a password without an email leaves the email alone', () async {
+      await privacy.setPassword(oldPassword: 'old', newPassword: 'new');
+      final request = sent('setPassword');
+      expect(request['old_password'], 'old');
+      expect(request['set_recovery_email_address'], isFalse);
+    });
+
+    test('removes the password', () async {
+      final state = await privacy.removePassword('secret');
+      expect(sent('setPassword')['new_password'], '');
+      expect(state.hasPassword, isFalse);
+    });
+
+    test('recovers a forgotten password through the email', () async {
+      expect(await privacy.requestPasswordRecovery(), 'a***@mail.com');
+      final state = await privacy.recoverPassword(
+        code: ' 111111 ',
+        newPassword: 'fresh',
+        hint: ' dog ',
+      );
+      final request = sent('recoverPassword');
+      expect(request['recovery_code'], '111111');
+      expect(request['new_password'], 'fresh');
+      expect(request['new_hint'], 'dog');
+      expect(state.hasPassword, isTrue);
+    });
+
+    test('a reset without the email waits', () async {
+      final reset = await privacy.resetPassword();
+      expect(
+        reset,
+        isA<PasswordResetPending>().having(
+          (r) => r.date,
+          'date',
+          DateTime.fromMillisecondsSinceEpoch(1800000000 * 1000),
+        ),
+      );
+    });
+
+    test('a wrong password is an error', () async {
+      json.failing.add('setRecoveryEmailAddress');
+      await expectLater(
+        privacy.setRecoveryEmail('wrong', 'b@mail.com'),
+        throwsA(isA<td.TdException>()),
+      );
+    });
+  });
+
+  test('reads and sets how long an unused account lives', () async {
+    expect(await privacy.accountTtl(), 180);
+    await privacy.setAccountTtl(365);
+    expect(sent('setAccountTtl')['ttl'], {'@type': 'accountTtl', 'days': 365});
+    expect(accountTtlChoices, [30, 90, 180, 365]);
+  });
+
   test('a failed unblock is not reported as done', () async {
     var changes = 0;
     privacy.blockedChanges.listen((_) => changes++);
@@ -296,6 +380,27 @@ Map<String, Object?> _rules(List<String> types) => {
   'rules': [
     for (final type in types) {'@type': type},
   ],
+};
+
+Map<String, Object?> _password({
+  required bool has,
+  bool pending = false,
+  bool email = false,
+}) => {
+  '@type': 'passwordState',
+  'has_password': has,
+  'password_hint': '',
+  'has_recovery_email_address': email,
+  'has_passport_data': false,
+  'recovery_email_address_code_info': pending
+      ? {
+          '@type': 'emailAddressAuthenticationCodeInfo',
+          'email_address_pattern': 'a***@mail.com',
+          'length': 6,
+        }
+      : null,
+  'login_email_address_pattern': '',
+  'pending_reset_date': 0,
 };
 
 Map<String, Object?> _user(int id, {bool bot = false}) => {
@@ -394,6 +499,33 @@ final class _FakeTdJson implements td.TdJson {
                   .take(decoded['limit']! as int)
                   .toList(),
             },
+            'getPasswordState' => _password(has: false),
+            // With a new email, TDLib keeps the password until the code
+            // is confirmed.
+            'setPassword' => _password(
+              has:
+                  decoded['new_password'] != '' &&
+                  decoded['set_recovery_email_address'] != true,
+              pending: decoded['set_recovery_email_address'] == true,
+            ),
+            'requestPasswordRecovery' => {
+              '@type': 'emailAddressAuthenticationCodeInfo',
+              'email_address_pattern': 'a***@mail.com',
+              'length': 6,
+            },
+            'recoverPassword' => _password(
+              has: decoded['new_password'] != '',
+              email: true,
+            ),
+            'resetPassword' => {
+              '@type': 'resetPasswordResultPending',
+              'pending_reset_date': 1800000000,
+            },
+            'checkRecoveryEmailAddressCode' => _password(
+              has: true,
+              email: true,
+            ),
+            'getAccountTtl' => {'@type': 'accountTtl', 'days': 180},
             _ => {'@type': 'ok'},
           };
     _queue.add(

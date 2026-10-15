@@ -9,6 +9,7 @@ import '../../l10n/app_localizations.dart';
 import '../home/format.dart';
 import '../home/workspace.dart';
 import '../session/providers.dart';
+import '../settings/privacy/passcode.dart';
 import 'notification_settings.dart';
 import 'system_notifications.dart';
 
@@ -176,6 +177,20 @@ String notificationBody(AppLocalizations l10n, MessageNotification n) {
   return text.isEmpty ? label : '$label, $text';
 }
 
+/// The settings as notifications follow them: while the passcode lock is
+/// on, or not yet known, no message text shows, as in TelegramSwift.
+NotificationSettings notificationSettingsUnder(
+  NotificationSettings settings,
+  PasscodeState lock,
+) => !lock.loaded || lock.locked
+    ? settings.copyWith(showPreview: false)
+    : settings;
+
+NotificationSettings _effective(Ref ref) => notificationSettingsUnder(
+  ref.read(notificationSettingsProvider),
+  ref.read(passcodeLockProvider),
+);
+
 final notificationServiceProvider = Provider.autoDispose<NotificationService>((
   ref,
 ) {
@@ -184,12 +199,17 @@ final notificationServiceProvider = Provider.autoDispose<NotificationService>((
     controller: session.notifications,
     system: ref.watch(systemNotificationsProvider),
     openChat: (chatId) => ref.read(workspaceControllerProvider).open(chatId),
-    settings: ref.read(notificationSettingsProvider),
+    settings: _effective(ref),
   );
-  ref.listen(
-    notificationSettingsProvider,
-    (_, next) => service.settings = next,
-  );
+  ref
+    ..listen(
+      notificationSettingsProvider,
+      (_, _) => service.settings = _effective(ref),
+    )
+    ..listen(
+      passcodeLockProvider.select((lock) => (lock.loaded, lock.locked)),
+      (_, _) => service.settings = _effective(ref),
+    );
   ref.onDispose(() => unawaited(service.dispose()));
   return service;
 });
