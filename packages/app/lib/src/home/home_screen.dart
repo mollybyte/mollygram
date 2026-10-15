@@ -7,6 +7,7 @@ import 'package:mollygram_shell/mollygram_shell.dart';
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../avatar/peer_avatar.dart';
 import '../commands/command_registry.dart';
 import '../contacts/people_sheet.dart';
 import '../downloads/downloads_sheet.dart';
@@ -19,6 +20,7 @@ import '../profile/peer_info_host.dart';
 import '../secret/secret_chat.dart';
 import '../session/accounts.dart';
 import '../session/connection_status_capsule.dart';
+import '../session/providers.dart';
 import '../settings/appearance.dart';
 import '../settings/settings_window.dart';
 import '../shared_media/message_jump.dart';
@@ -181,6 +183,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 controller: workspace,
                 directory: directory,
                 commandSource: () => _registry.commands,
+                chatAvatar: (chat, size) => PeerAvatar.chat(
+                  name: chat.title,
+                  size: size,
+                  photo: ref
+                      .read(telegramSessionProvider)
+                      .requireValue
+                      .chatLists
+                      .store
+                      .chat(chat.id)
+                      ?.photo,
+                ),
                 shortcuts: (id) => keys[id]?.activator,
                 sidebar: Padding(
                   padding: const EdgeInsets.all(8),

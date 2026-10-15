@@ -23,6 +23,7 @@ class WorkspaceShell extends StatefulWidget {
     this.commands = const [],
     this.commandSource,
     this.onOpenMessage,
+    this.chatAvatar,
     this.shortcuts,
   });
 
@@ -49,6 +50,9 @@ class WorkspaceShell extends StatefulWidget {
   final List<PaletteCommand> Function()? commandSource;
 
   final void Function(MessageHit message, OpenTarget target)? onOpenMessage;
+
+  /// Draws a palette chat row's avatar; see [CommandPalette.chatAvatar].
+  final Widget Function(ChatSummary chat, double size)? chatAvatar;
 
   /// The keys of the shell's actions (see [shellShortcutActions]) as the
   /// user set them. Without it the defaults apply.
@@ -179,6 +183,7 @@ class WorkspaceShellState extends State<WorkspaceShell> {
                         onOpenChat: (chat, target) =>
                             widget.controller.open(chat, target: target),
                         onOpenMessage: widget.onOpenMessage,
+                        chatAvatar: widget.chatAvatar,
                         onClose: closePalette,
                       ),
                     ),

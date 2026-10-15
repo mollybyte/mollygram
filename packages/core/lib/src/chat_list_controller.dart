@@ -272,6 +272,8 @@ final class ChatListController {
         );
       case td.UpdateChatTitle(:final chatId, :final title):
         store.updateTitle(chatId, title);
+      case td.UpdateChatPhoto(:final chatId, :final photo):
+        store.updatePhoto(chatId, photo);
       case td.UpdateChatReadInbox(:final chatId, :final unreadCount):
         store.updateUnreadCount(chatId, unreadCount);
       case td.UpdateChatLastMessage(
@@ -348,6 +350,7 @@ ChatListEntry _entryFrom(td.Chat chat) {
     muteFor: _muteFor(chat.notificationSettings),
     canDeleteForAll: chat.canBeDeletedForAllUsers,
     canDeleteOnlyForSelf: chat.canBeDeletedOnlyForSelf,
+    photo: chat.photo,
     positions: _positionsFrom(chat.positions),
     lastMessage: _previewFrom(chat.lastMessage),
     draft: _draftFrom(chat.draftMessage),

@@ -6,6 +6,7 @@ import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../avatar/peer_avatar.dart';
 
 /// Short and eased, like a macOS sheet; the window is not dimmed.
 const _transition = Duration(milliseconds: 160);
@@ -141,7 +142,13 @@ class _JoinSheetState extends State<JoinSheet> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Center(child: MonogramAvatar(name: p.title, size: 64)),
+                  Center(
+                    child: PeerAvatar.chat(
+                      name: p.title,
+                      size: 64,
+                      photo: p.photo,
+                    ),
+                  ),
                   const SizedBox(height: 12),
                   Text(
                     sent ? l10n.linkRequestSent : p.title,

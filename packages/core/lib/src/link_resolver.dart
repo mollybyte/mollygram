@@ -72,7 +72,11 @@ final class ChatJoinPreview {
     this.description = '',
     this.memberCount = 0,
     this.createsJoinRequest = false,
+    this.photo,
   });
+
+  /// The chat photo, when the link or the chat carries one.
+  final td.ChatPhotoInfo? photo;
 
   /// The chat, when TDLib knows it before joining (public chats); 0 for a
   /// private chat behind an invite link.
@@ -218,6 +222,7 @@ final class LinkResolver {
               username: username,
               memberCount: group.memberCount,
               description: await _description(supergroupId),
+              photo: chat.photo,
             ),
           );
         default:
@@ -261,6 +266,7 @@ final class LinkResolver {
         description: info.description,
         memberCount: info.memberCount,
         createsJoinRequest: info.createsJoinRequest,
+        photo: info.photo,
       ),
     );
   }
