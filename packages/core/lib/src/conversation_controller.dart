@@ -891,6 +891,65 @@ final class ConversationController {
     );
   }
 
+  /// The inline bot behind [username] (without the @): null when there is
+  /// no such user, or it is not a bot that answers inline queries.
+  Future<td.User?> inlineBot(String username) async {
+    final td.Chat chat;
+    try {
+      chat = await _client.send(td.SearchPublicChat(username: username));
+    } on Object {
+      return null;
+    }
+    if (chat.type case td.ChatTypePrivate(:final userId)) {
+      final user = await _client.send(td.GetUser(userId: userId));
+      if (user.type case td.UserTypeBot(isInline: true)) return user;
+    }
+    return null;
+  }
+
+  /// Asks inline bot [botUserId] for its results to [query], as the
+  /// composer shows them while the user types `@bot query`; [offset] is
+  /// the previous answer's `nextOffset` for the following page.
+  Future<td.InlineQueryResults> inlineResults(
+    int chatId,
+    int botUserId,
+    String query, {
+    String offset = '',
+  }) => _client.send(
+    td.GetInlineQueryResults(
+      botUserId: botUserId,
+      chatId: chatId,
+      query: query,
+      offset: offset,
+    ),
+  );
+
+  /// Sends result [resultId] of inline query [queryId], "via" the bot.
+  Future<void> sendInlineResult(
+    int chatId, {
+    required int queryId,
+    required String resultId,
+    int? replyTo,
+  }) async {
+    _add(
+      await _client.send(
+        td.SendInlineQueryResultMessage(
+          chatId: chatId,
+          replyTo: replyTo == null
+              ? null
+              : td.InputMessageReplyToMessage(
+                  messageId: replyTo,
+                  checklistTaskId: 0,
+                  pollOptionId: '',
+                ),
+          queryId: queryId,
+          resultId: resultId,
+          hideViaBot: false,
+        ),
+      ),
+    );
+  }
+
   Future<void> sendSticker(
     int chatId,
     td.Sticker sticker, {

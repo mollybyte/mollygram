@@ -2193,6 +2193,39 @@ void main() {
     expect(find.textContaining('🔥', findRichText: true), findsNothing);
   });
 
+  testWidgets('shows an inline bot\'s results and sends one via the bot', (
+    tester,
+  ) async {
+    await pump(tester);
+    await tester.enterText(find.byType(TextField), '@gif cats');
+    await tester.pump(const Duration(milliseconds: 400));
+    for (var i = 0; i < 4; i++) {
+      await tester.runAsync(() => Future<void>.delayed(_tick));
+      await tester.pump();
+    }
+    final query = json.sent.lastWhere(
+      (r) => r['@type'] == 'getInlineQueryResults',
+    );
+    expect(query['bot_user_id'], 50);
+    expect(query['query'], 'cats');
+    expect(find.bySemanticsLabel('Grumpy cat'), findsOneWidget);
+    expect(find.bySemanticsLabel('gif2.mp4'), findsOneWidget);
+
+    await tester.tap(find.bySemanticsLabel('Grumpy cat'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    final sent = json.sent.lastWhere(
+      (r) => r['@type'] == 'sendInlineQueryResultMessage',
+    );
+    expect(sent['query_id'], '777');
+    expect(sent['result_id'], 'a1');
+    expect(find.bySemanticsLabel('Grumpy cat'), findsNothing);
+    expect(
+      tester.widget<TextField>(find.byType(TextField)).controller!.text,
+      '',
+    );
+  });
+
   testWidgets('sends a saved GIF from the panel', (tester) async {
     await pump(tester);
     await tester.tap(find.byTooltip('Emoji and stickers'));
@@ -2830,6 +2863,45 @@ final class _FakeTdJson implements td.TdJson {
         'url': 'https://shop.example/app',
       },
       'getUser' when decoded['user_id'] == 2 => _user(2, 'Boris'),
+      'getUser' when decoded['user_id'] == 50 => {
+        ..._user(50, 'GIF Search'),
+        'type': {
+          '@type': 'userTypeBot',
+          'is_inline': true,
+          'inline_query_placeholder': 'Search GIFs',
+        },
+      },
+      'searchPublicChat' when decoded['username'] == 'gif' => {
+        ...(_chat(
+              lastRead: 0,
+              unread: 0,
+              last: 1,
+              type: {'@type': 'chatTypePrivate', 'user_id': 50},
+              empty: true,
+            )['chat']!
+            as Map<String, Object?>),
+        'id': 50,
+        'title': 'GIF Search',
+      },
+      'getInlineQueryResults' => {
+        '@type': 'inlineQueryResults',
+        'inline_query_id': 777,
+        'next_offset': '',
+        'results': [
+          {
+            '@type': 'inlineQueryResultAnimation',
+            'id': 'a1',
+            'animation': _animation(1),
+            'title': 'Grumpy cat',
+          },
+          {
+            '@type': 'inlineQueryResultAnimation',
+            'id': 'a2',
+            'animation': _animation(2),
+            'title': '',
+          },
+        ],
+      },
       'getUser' when decoded['user_id'] == 3 => _user(3, 'Vera', '79990001122'),
       'getChatAvailableMessageSenders' => {
         '@type': 'chatMessageSenders',

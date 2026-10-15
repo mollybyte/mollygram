@@ -1712,6 +1712,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gifsFailed => 'Couldn\'t load GIFs';
 
   @override
+  String get inlineSearching => 'Searching…';
+
+  @override
+  String get inlineNoResults => 'No results';
+
+  @override
   String get forwardedMessages => 'Forwarded messages';
 
   @override

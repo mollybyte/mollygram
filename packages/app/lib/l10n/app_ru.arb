@@ -472,6 +472,8 @@
   "noStickerSets": "Пока нет стикеров",
   "noGifs": "Сохранённых GIF пока нет",
   "gifsFailed": "Не удалось загрузить GIF",
+  "inlineSearching": "Поиск…",
+  "inlineNoResults": "Ничего не найдено",
   "forwardedMessages": "Пересланные сообщения",
   "leaveComment": "Оставить комментарий",
   "comments": "Комментарии",
