@@ -56,11 +56,11 @@ M8 calls and macOS release, M9 after release.
 | History with paging, flat no-bubble layout | done | #24, #29 | | |
 | Read receipts sent on view | done | `ViewMessages` | | |
 | Read ticks on outgoing messages | done | `UpdateChatReadOutbox` | | |
-| "New messages" separator and opening at the first unread | missing | | M | M1 |
-| Scroll-to-bottom button with unread counter | missing | | S | M1 |
-| Jump to next mention and reaction | missing | `GetChatMessageByDate`, `ReadAllChatMentions` | S | M1 |
+| "New messages" separator and opening at the first unread | done | Unread PR: `TimelineView` grows both ways from the first unread | | |
+| Scroll-to-bottom button with unread counter | done | Unread PR | | |
+| Jump to next mention and reaction | done | Unread PR: `SearchChatMessages` with the unread filters | | |
 | Pinned message bar with cycling and the pinned list | missing | `UpdateMessageIsPinned` is handled, no bar | M | M1 |
-| Jump to a replied message and back | missing | Needs history at an arbitrary message | M | M1 |
+| Jump to a replied message and back | partial | Unread PR: jump with a highlight; no "back" button yet | S | M1 |
 | Date headers and sticky date | partial | Date pills exist, not sticky while scrolling | S | M1 |
 | Jump to date (calendar) | missing | `ChatCalendarModalController` | M | M2 |
 | Header status: online, last seen, members, typing | missing | Header has the slot | S | M1 |
@@ -124,7 +124,7 @@ M8 calls and macOS release, M9 after release.
 | Contact sending | missing | | S | M2 |
 | Send preview: caption, send as files, albums | done | #31 | | |
 | Send preview: spoiler, self-destruct timer, compression choice | missing | `hasSpoiler`, `selfDestructType`; uncompressed default planned | S | M2 |
-| Media editor: crop, rotate, flip, aspect presets | missing | `EditImageModalController` | M | M4 |
+| Media editor: crop, rotate, flip, aspect presets | done | `packages/media_editor` | | |
 | Media editor: drawing (pen, marker, neon, eraser, colours, sizes) | missing | | M | M4 |
 | Media editor: text, stickers and emoji placed on the image | missing | | M | M4 |
 | Media editor: arrows and shapes, blur and pixelate brush | missing | | M | M4 |

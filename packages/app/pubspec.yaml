@@ -25,6 +25,7 @@ dependencies:
   media_kit_libs_video: ^1.0.7
   mollygram_core: any
   mollygram_media: any
+  mollygram_media_editor: any
   mollygram_plugins_ui: any
   mollygram_shell: any
   mollygram_tdlib: any
