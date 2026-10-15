@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +7,7 @@ import 'package:mollygram_shell/mollygram_shell.dart';
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../contacts/people_sheet.dart';
 import '../notifications/notification_service.dart';
 import '../notifications/notifications_page.dart';
 import '../session/connection_status_capsule.dart';
@@ -19,6 +22,10 @@ import 'workspace.dart';
 /// glass panels one shared backdrop read.
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
+
+  /// ⌘N (Ctrl+N off macOS): write to someone.
+  static SingleActivator get newMessageShortcut =>
+      primaryShortcut(LogicalKeyboardKey.keyN);
 
   /// ⌘, (Ctrl+, off macOS), the usual settings shortcut.
   static SingleActivator get pluginsShortcut =>
@@ -40,11 +47,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   void _closePage() => setState(() => _page = null);
 
+  void _newMessage() => unawaited(showPeopleSheet(context));
+
   List<PaletteCommand> _commands(AppLocalizations l10n) {
     final other = lookupAppLocalizations(
       Locale(l10n.localeName == 'ru' ? 'en' : 'ru'),
     );
     return [
+      PaletteCommand(
+        id: 'app.newMessage',
+        title: l10n.newMessage,
+        keywords: [other.newMessage],
+        shortcut: HomeScreen.newMessageShortcut,
+        run: _newMessage,
+      ),
+      PaletteCommand(
+        id: 'app.contacts',
+        title: l10n.contacts,
+        keywords: [other.contacts],
+        run: () =>
+            unawaited(showPeopleSheet(context, mode: PeopleSheetMode.contacts)),
+      ),
       PaletteCommand(
         id: 'app.plugins',
         title: l10n.plugins,
@@ -67,7 +90,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final workspace = ref.watch(workspaceControllerProvider);
     final directory = ref.watch(chatDirectoryProvider);
     final home = CallbackShortcuts(
-      bindings: {HomeScreen.pluginsShortcut: _openPlugins},
+      bindings: {
+        HomeScreen.pluginsShortcut: _openPlugins,
+        HomeScreen.newMessageShortcut: _newMessage,
+      },
       child: GlassScope(
         child: Stack(
           children: [

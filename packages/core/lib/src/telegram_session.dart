@@ -7,6 +7,7 @@ import 'authorization_stage.dart';
 import 'chat_list_controller.dart';
 import 'chat_search.dart';
 import 'connection_status.dart';
+import 'contacts_controller.dart';
 import 'conversation_controller.dart';
 import 'file_controller.dart';
 import 'notification_controller.dart';
@@ -29,6 +30,7 @@ final class TelegramSession {
     required this.notifications,
     required this.stickers,
     required this.connection,
+    required this.contacts,
     required this._initializer,
   });
 
@@ -44,6 +46,9 @@ final class TelegramSession {
 
   /// The connection state, for the "Connecting…" status in the window.
   final ConnectionMonitor connection;
+
+  /// Contacts and the users TDLib has sent.
+  final ContactsController contacts;
   final _errors = StreamController<Object>.broadcast(sync: true);
   StreamSubscription<AuthorizationStage>? _stageSubscription;
   Future<void>? _firstReconcile;
@@ -62,6 +67,7 @@ final class TelegramSession {
     final conversations = ConversationController(client);
     final files = FileController(client);
     final connection = ConnectionMonitor(client);
+    final contacts = ContactsController(client);
     final notifications = NotificationController(client);
     final session = TelegramSession._(
       tdlib: tdlib,
@@ -73,6 +79,7 @@ final class TelegramSession {
       notifications: notifications,
       stickers: StickerLibrary(client),
       connection: connection,
+      contacts: contacts,
       initializer: TdlibInitializer(client, parameters: parameters),
     );
     session._stageSubscription = authorization.stages.listen(session._onStage);
@@ -80,6 +87,7 @@ final class TelegramSession {
       await conversations.start();
       await files.start();
       await connection.start();
+      await contacts.start();
       await notifications.start();
       await authorization.start();
       // Sending the parameters is part of starting: a wrong database key or
@@ -134,6 +142,7 @@ final class TelegramSession {
     await conversations.dispose();
     await files.dispose();
     await connection.dispose();
+    await contacts.dispose();
     await notifications.dispose();
     await authorization.dispose();
     await _tdlib.close();

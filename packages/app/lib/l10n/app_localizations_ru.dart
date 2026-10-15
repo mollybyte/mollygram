@@ -149,6 +149,112 @@ class AppLocalizationsRu extends AppLocalizations {
   String get nothingFound => 'Ничего не найдено';
 
   @override
+  String get newMessage => 'Новое сообщение';
+
+  @override
+  String get contacts => 'Контакты';
+
+  @override
+  String get peopleSearchHint => 'Имя или имя пользователя';
+
+  @override
+  String get recentChats => 'Недавние';
+
+  @override
+  String get globalSearch => 'Глобальный поиск';
+
+  @override
+  String get noContacts => 'Контактов пока нет';
+
+  @override
+  String get presenceOnline => 'в сети';
+
+  @override
+  String get presenceJustNow => 'был(а) только что';
+
+  @override
+  String presenceMinutes(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'был(а) $count минуты назад',
+      many: 'был(а) $count минут назад',
+      few: 'был(а) $count минуты назад',
+      one: 'был(а) $count минуту назад',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String presenceToday(Object time) {
+    return 'был(а) сегодня в $time';
+  }
+
+  @override
+  String presenceYesterday(Object time) {
+    return 'был(а) вчера в $time';
+  }
+
+  @override
+  String presenceDate(Object date) {
+    return 'был(а) $date';
+  }
+
+  @override
+  String get presenceRecently => 'был(а) недавно';
+
+  @override
+  String get presenceLastWeek => 'был(а) на этой неделе';
+
+  @override
+  String get presenceLastMonth => 'был(а) в этом месяце';
+
+  @override
+  String get presenceLongAgo => 'был(а) давно';
+
+  @override
+  String get presenceBot => 'бот';
+
+  @override
+  String get addContact => 'Добавить контакт';
+
+  @override
+  String get contactFirstName => 'Имя';
+
+  @override
+  String get contactLastName => 'Фамилия (необязательно)';
+
+  @override
+  String get contactPhone => 'Номер телефона';
+
+  @override
+  String get contactAdd => 'Добавить';
+
+  @override
+  String get contactFirstNameRequired => 'Введите имя';
+
+  @override
+  String get contactPhoneRequired => 'Введите номер телефона';
+
+  @override
+  String get contactNotOnTelegram => 'Этого номера нет в Telegram';
+
+  @override
+  String get contactAddFailed =>
+      'Не удалось добавить контакт. Проверьте соединение и попробуйте ещё раз.';
+
+  @override
+  String get deleteContact => 'Удалить контакт';
+
+  @override
+  String deleteContactTitle(Object name) {
+    return 'Удалить $name из контактов?';
+  }
+
+  @override
+  String get deleteContactFailed => 'Не удалось удалить контакт';
+
+  @override
   String get selectChat => 'Выберите чат, чтобы начать общение';
 
   @override
