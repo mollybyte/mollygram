@@ -77,7 +77,7 @@ M8 calls and macOS release, M9 after release.
 | Spoilers, custom emoji in text | done | `concealed.dart` covers spoilers; custom emoji are drawn as their stickers (`GetCustomEmojiStickers`, one batch per frame), still, at 1.3× the text size, with the emoji text as the fallback | M | M2 |
 | Polls and quizzes: vote, results | done | Vote with radios or checkboxes and a Vote button, Retract vote, live results with bars, quiz answers coloured with the explanation, Stop poll from the menu; a public poll shows its latest voters and lists who voted for an option on a click | S | M2 |
 | Checklists (todo messages) | done | Title, tasks with accent boxes, struck-through done tasks with the avatar of who did them, a done count; a click marks a task done or not done when allowed | S | M9 |
-| Dice and slot animations | partial | | S | M9 |
+| Dice and slot animations | done | A dice message draws the sticker of its thrown value (the rolling one until the server picks it); the slot machine stacks its background, reels and lever | S | M9 |
 | Live location view | missing | | M | M2 |
 | Auto-translate and "Translate" in the menu | missing | Built-in Translate plugin planned | M | M5 |
 | Voice message transcription | missing | `RecognizeSpeech` (Premium) | S | M9 |

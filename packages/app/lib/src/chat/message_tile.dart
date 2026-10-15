@@ -630,12 +630,43 @@ class _MessageBody extends StatelessWidget {
       case td.MessageAnimatedEmoji(:final animatedEmoji, :final emoji):
         final sticker = animatedEmoji.sticker;
         if (sticker == null) return _BigEmoji(emoji);
-        return SizedBox.square(
-          dimension: 120,
-          child: FittedBox(child: StickerContent(sticker: sticker)),
-        );
-      case td.MessageDice(:final emoji):
-        return _BigEmoji(emoji);
+        return _LargeSticker(sticker);
+      case td.MessageDice(
+        :final initialState,
+        :final finalState,
+        :final emoji,
+        :final value,
+      ):
+        // The thrown value is a sticker of its own; before the server has
+        // picked one (the message just went out) the dice is shown rolling.
+        final state = value > 0 ? finalState ?? initialState : initialState;
+        return switch (state) {
+          td.DiceStickersRegular(:final sticker) => _LargeSticker(sticker),
+          td.DiceStickersSlotMachine(
+            :final background,
+            :final lever,
+            :final leftReel,
+            :final centerReel,
+            :final rightReel,
+          ) =>
+            SizedBox.square(
+              dimension: _LargeSticker.side,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  for (final part in [
+                    background,
+                    leftReel,
+                    centerReel,
+                    rightReel,
+                    lever,
+                  ])
+                    FittedBox(child: StickerContent(sticker: part)),
+                ],
+              ),
+            ),
+          null => _BigEmoji(emoji),
+        };
       case td.MessageVideoNote(:final videoNote):
         final note = VideoNoteContent(
           chatId: message.chatId,
@@ -1020,6 +1051,22 @@ bool isEmojiOnly(String text) {
   final trimmed = text.trim();
   if (trimmed.isEmpty || !_emojiOnly.hasMatch(trimmed)) return false;
   return trimmed.replaceAll(RegExp(r'\s'), '').characters.length <= 3;
+}
+
+/// An animated emoji or a dice, drawn at the size of a big emoji rather
+/// than a sticker.
+class _LargeSticker extends StatelessWidget {
+  const _LargeSticker(this.sticker);
+
+  final td.Sticker sticker;
+
+  static const double side = 120;
+
+  @override
+  Widget build(BuildContext context) => SizedBox.square(
+    dimension: side,
+    child: FittedBox(child: StickerContent(sticker: sticker)),
+  );
 }
 
 class _BigEmoji extends StatelessWidget {
