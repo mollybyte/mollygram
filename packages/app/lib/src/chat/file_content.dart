@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart' show Tooltip;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mollygram_core/mollygram_core.dart';
@@ -122,8 +123,10 @@ class DocumentContent extends ConsumerWidget {
   }
 }
 
-/// A voice message: play button, waveform and length.
-class VoiceNoteContent extends ConsumerWidget {
+/// A voice message: play button, waveform and length, and a button that
+/// asks Telegram for its transcript and shows it under the row, as the
+/// official client does.
+class VoiceNoteContent extends ConsumerStatefulWidget {
   const VoiceNoteContent({
     super.key,
     required this.chatId,
@@ -138,12 +141,36 @@ class VoiceNoteContent extends ConsumerWidget {
   final Widget? meta;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<VoiceNoteContent> createState() => _VoiceNoteContentState();
+}
+
+class _VoiceNoteContentState extends ConsumerState<VoiceNoteContent> {
+  /// Whether the transcript is shown; a message that already carries one
+  /// starts with it folded, like a new one.
+  var _open = false;
+
+  void _toggle() {
+    setState(() => _open = !_open);
+    if (_open && widget.voiceNote.speechRecognitionResult == null) {
+      final session = ref.read(telegramSessionProvider).asData?.value;
+      if (session == null) return;
+      unawaited(
+        session.conversations
+            .recognizeSpeech(widget.chatId, widget.messageId)
+            .catchError((Object _) {}),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final c = MgColors.of(context);
+    final l10n = AppLocalizations.of(context);
+    final voiceNote = widget.voiceNote;
     final samples = decodeWaveform(voiceNote.waveform);
-    return _AudioTrack(
-      chatId: chatId,
-      messageId: messageId,
+    final row = _AudioTrack(
+      chatId: widget.chatId,
+      messageId: widget.messageId,
       file: voiceNote.voice,
       duration: voiceNote.duration,
       builder: (context, button, progress, time, controls) => _FileRow(
@@ -157,10 +184,87 @@ class VoiceNoteContent extends ConsumerWidget {
           ),
         ),
         subtitle: time,
-        subtitleTrailing: controls == null
-            ? null
-            : SpeedButton(rate: controls.rate, onTap: controls.nextRate),
-        meta: meta,
+        subtitleTrailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (controls != null) ...[
+              SpeedButton(rate: controls.rate, onTap: controls.nextRate),
+              const SizedBox(width: 4),
+            ],
+            _TranscribeButton(
+              tooltip: _open ? l10n.hideTranscript : l10n.transcribe,
+              open: _open,
+              onTap: _toggle,
+            ),
+          ],
+        ),
+        meta: widget.meta,
+      ),
+    );
+    if (!_open) return row;
+    final result = voiceNote.speechRecognitionResult;
+    final (text, muted) = switch (result) {
+      td.SpeechRecognitionResultText(:final text) => (text, false),
+      td.SpeechRecognitionResultPending(:final partialText) => (
+        partialText.isEmpty ? l10n.transcribing : '$partialText…',
+        true,
+      ),
+      td.SpeechRecognitionResultError() => (l10n.transcriptionFailed, true),
+      null => (l10n.transcribing, true),
+    };
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        row,
+        Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 160),
+            child: Text(
+              text,
+              key: ValueKey(text),
+              style: mgTextStyle(c, color: muted ? c.fg2 : c.fg),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// The small "transcribe" button next to the voice message's time, filled
+/// with the accent while the transcript is shown.
+class _TranscribeButton extends StatelessWidget {
+  const _TranscribeButton({
+    required this.tooltip,
+    required this.open,
+    required this.onTap,
+  });
+
+  final String tooltip;
+  final bool open;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    return Tooltip(
+      message: tooltip,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 160),
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+            decoration: BoxDecoration(
+              color: c.accent.withValues(alpha: open ? 0.16 : 0.08),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: MgIcon(MgIcons.translate, size: 11, color: c.accent),
+          ),
+        ),
       ),
     );
   }

@@ -650,6 +650,30 @@ abstract class AppLocalizations {
   /// **'Voice message'**
   String get previewVoiceNote;
 
+  /// No description provided for @transcribe.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcribe'**
+  String get transcribe;
+
+  /// No description provided for @hideTranscript.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide transcript'**
+  String get hideTranscript;
+
+  /// No description provided for @transcribing.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcribing…'**
+  String get transcribing;
+
+  /// No description provided for @transcriptionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t transcribe this message'**
+  String get transcriptionFailed;
+
   /// No description provided for @previewAudio.
   ///
   /// In en, this message translates to:

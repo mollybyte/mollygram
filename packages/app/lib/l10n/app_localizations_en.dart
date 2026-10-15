@@ -315,6 +315,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get previewVoiceNote => 'Voice message';
 
   @override
+  String get transcribe => 'Transcribe';
+
+  @override
+  String get hideTranscript => 'Hide transcript';
+
+  @override
+  String get transcribing => 'Transcribing…';
+
+  @override
+  String get transcriptionFailed => 'Couldn\'t transcribe this message';
+
+  @override
   String get previewAudio => 'Audio';
 
   @override
