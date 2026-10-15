@@ -273,7 +273,12 @@ class _ChatViewState extends ConsumerState<ChatView> {
       ..addListener(_mentionsChanged);
     _scroll.addListener(_followScroll);
     _scroll.addListener(() => _topUp(_scroll));
-    _threadScroll.addListener(() => _topUp(_threadScroll));
+    _threadScroll.addListener(() {
+      _followList(_threadScroll);
+      _topUp(_threadScroll);
+    });
+    _pinnedScroll.addListener(() => _followList(_pinnedScroll));
+    _scheduledScroll.addListener(() => _followList(_scheduledScroll));
     _open(widget.chatId);
     WidgetsBinding.instance.addPostFrameCallback((_) => _takeJump());
   }
@@ -1695,6 +1700,20 @@ class _ChatViewState extends ConsumerState<ChatView> {
       setState(() => _returnTo = null);
     }
     _away.value = !atEnd || fromBottom > 360 || _returnTo != null;
+  }
+
+  /// Lets go of the newest message in a side list (comments, pinned or
+  /// scheduled messages) once the user scrolls away from it, and picks it
+  /// up again when they come back; without this the view snaps back to the
+  /// bottom and the list cannot be read upwards.
+  void _followList(TimelineScrollController controller) {
+    if (!controller.hasClients) return;
+    final position = controller.position;
+    if (!position.hasContentDimensions) return;
+    final fromBottom = position.pixels - position.minScrollExtent;
+    if (position.isScrollingNotifier.value || fromBottom < 2) {
+      controller.pinned = fromBottom < 2;
+    }
   }
 
   /// Rows ask for more history as they are built, but a page that came
