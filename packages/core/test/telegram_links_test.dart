@@ -70,4 +70,34 @@ void main() {
     expect(e('file:///etc/passwd'), isFalse);
     expect(e('javascript:alert(1)'), isFalse);
   });
+
+  test('recognizes hashtags, cashtags and bot commands', () {
+    expect(TelegramLinks.hashtag(' #news '), '#news');
+    expect(TelegramLinks.hashtag(r'$TON'), r'$TON');
+    expect(TelegramLinks.hashtag('#'), isNull);
+    expect(TelegramLinks.hashtag('#two words'), isNull);
+    expect(TelegramLinks.botCommand('/start'), '/start');
+    expect(TelegramLinks.botCommand('/help@some_bot'), '/help@some_bot');
+    expect(TelegramLinks.botCommand('/a/b'), isNull);
+    expect(TelegramLinks.botCommand('start'), isNull);
+  });
+
+  test('makes and reads tg://user links', () {
+    final link = TelegramLinks.userLink(55);
+    expect(link.toString(), 'tg://user?id=55');
+    expect(TelegramLinks.userIdOf(link), 55);
+    expect(TelegramLinks.userIdOf(Uri.parse('tg://user?id=x')), isNull);
+    expect(TelegramLinks.userIdOf(Uri.parse('tg://resolve?domain=a')), isNull);
+  });
+
+  test('turns t.me/s/ previews into channel links', () {
+    Uri unwrap(String s) => TelegramLinks.withoutWebPreview(Uri.parse(s));
+    expect(unwrap('https://t.me/s/news').toString(), 'https://t.me/news');
+    expect(unwrap('https://t.me/s/news/42').toString(), 'https://t.me/news/42');
+    expect(unwrap('https://t.me/s').toString(), 'https://t.me/s');
+    expect(
+      unwrap('https://example.com/s/news').toString(),
+      'https://example.com/s/news',
+    );
+  });
 }

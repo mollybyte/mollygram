@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
+import 'package:mollygram_core/mollygram_core.dart' show TelegramLinks;
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -165,11 +166,17 @@ List<InlineSpan> buildEntitySpans(
           style = style.copyWith(color: colors.accent);
           recognizer = onLink?.call('https://t.me/${whole.substring(1)}');
           cursor = SystemMouseCursors.click;
-        case td.TextEntityTypeMentionName() ||
-            td.TextEntityTypeHashtag() ||
+        case td.TextEntityTypeMentionName(:final userId):
+          style = style.copyWith(color: colors.accent);
+          recognizer = onLink?.call(TelegramLinks.userLink(userId).toString());
+          cursor = SystemMouseCursors.click;
+        // The router searches hashtags and sends bot commands.
+        case td.TextEntityTypeHashtag() ||
             td.TextEntityTypeCashtag() ||
             td.TextEntityTypeBotCommand():
           style = style.copyWith(color: colors.accent);
+          recognizer = onLink?.call(whole);
+          cursor = SystemMouseCursors.click;
         case td.TextEntityTypeSpoiler():
           if (!revealed.contains(e.offset)) {
             style = style.copyWith(

@@ -10,6 +10,7 @@ import '../../l10n/app_localizations.dart';
 import '../commands/command_registry.dart';
 import '../contacts/people_sheet.dart';
 import '../links/link_host.dart';
+import '../links/link_router.dart' show workspaceShellKey;
 import '../notifications/notification_service.dart';
 import '../privacy/ghost_mode_capsule.dart';
 import '../profile/peer_info_host.dart';
@@ -136,6 +137,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             const Positioned.fill(child: ChatBackground()),
             Positioned.fill(
               child: WorkspaceShell(
+                key: workspaceShellKey,
                 controller: workspace,
                 directory: directory,
                 commandSource: () => _registry.commands,

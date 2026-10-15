@@ -3,11 +3,14 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mollygram_core/mollygram_core.dart';
+import 'package:mollygram_shell/mollygram_shell.dart'
+    show WorkspaceShell, WorkspaceShellState;
 import 'package:url_launcher/url_launcher.dart';
 
 import '../commands/command_registry.dart';
 import '../home/workspace.dart';
 import '../session/providers.dart';
+import '../shared_media/message_jump.dart';
 
 /// What a link needs from the window: the join sheet and short notices.
 abstract interface class LinkPresenter {
@@ -46,6 +49,8 @@ class LinkRouter {
     required this._runCommand,
     required this._launch,
     this._openMessage,
+    this._search,
+    this._sendCommand,
   });
 
   final Future<LinkTarget?> Function(String raw) _resolve;
@@ -54,6 +59,13 @@ class LinkRouter {
   final bool Function(String commandId) _runCommand;
   final Future<bool> Function(Uri uri) _launch;
   final void Function(int chatId, int messageId)? _openMessage;
+
+  /// Searches messages for a hashtag.
+  final void Function(String hashtag)? _search;
+
+  /// Sends a bot command to the chat it was tapped in; false when there
+  /// is no such chat.
+  final Future<bool> Function(String command)? _sendCommand;
 
   /// The window that shows sheets; set by [LinkHost]. Without it a link
   /// still opens chats and pages, and skips the sheets.
@@ -95,6 +107,10 @@ class LinkRouter {
         }
         final chat = await presenter.confirmJoin(preview, () => _join(preview));
         if (chat != null && chat != 0) _openChat(chat);
+      case HashtagLinkTarget(:final hashtag):
+        _search?.call(hashtag);
+      case BotCommandLinkTarget(:final command):
+        await _sendCommand?.call(command);
       case CommandLinkTarget(:final commandId):
         if (!_runCommand(commandId)) {
           presenter?.showNotice(LinkNotice.unsupported);
@@ -123,6 +139,10 @@ Future<bool> launchExternal(Uri uri) async {
   }
 }
 
+/// The window's workspace, for links that open its search: set as the
+/// key of the [WorkspaceShell].
+final workspaceShellKey = GlobalKey<WorkspaceShellState>();
+
 /// The window's link router.
 final linkRouterProvider = Provider<LinkRouter>((ref) {
   final session = ref.watch(telegramSessionProvider).requireValue;
@@ -133,11 +153,30 @@ final linkRouterProvider = Provider<LinkRouter>((ref) {
     join: session.links.join,
     // An open chat is revealed where it is instead of being opened again.
     openChat: workspace.open,
-    // TODO(links): jump to the message once the chat view can open at a
-    // given message; for now the chat opens.
-    openMessage: (chatId, _) => workspace.open(chatId),
+    // The chat's view takes the jump as it opens, or now if it is open.
+    openMessage: (chatId, messageId) {
+      ref.read(messageJumpProvider.notifier).request(chatId, messageId);
+      workspace.open(chatId);
+    },
     runCommand: commands.run,
     launch: launchExternal,
+    // The ⌘K palette searches messages after a "#": "#news" finds the
+    // messages with the hashtag, as Telegram's own hashtag search does.
+    search: (hashtag) => workspaceShellKey.currentState?.openPalette(
+      hashtag.startsWith('#') ? hashtag : '#$hashtag',
+    ),
+    // A click in a pane focuses it first, so the focused chat is the one
+    // the command was tapped in.
+    sendCommand: (command) async {
+      final chatId = workspace.value.focusedChat;
+      if (chatId == null) return false;
+      try {
+        await session.conversations.sendText(chatId, command);
+      } on Object {
+        return false;
+      }
+      return true;
+    },
   );
 });
 

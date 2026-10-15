@@ -35,7 +35,20 @@ void main() {
         log.add('launch $uri');
         return true;
       },
+      search: (hashtag) => log.add('search $hashtag'),
+      sendCommand: (command) async {
+        log.add('send $command');
+        return true;
+      },
     )..presenter = presenter;
+  });
+
+  test('searches hashtags and sends bot commands', () async {
+    targets['#news'] = const HashtagLinkTarget('#news');
+    targets['/start'] = const BotCommandLinkTarget('/start');
+    await router.open('#news');
+    await router.open('/start');
+    expect(log, ['search #news', 'send /start']);
   });
 
   test('opens other sites in the browser', () async {

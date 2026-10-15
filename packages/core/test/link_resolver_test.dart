@@ -210,6 +210,44 @@ void main() {
     expect(tg, isA<UnsupportedLinkTarget>());
   });
 
+  test('hands hashtags and bot commands back without asking TDLib', () async {
+    expect(
+      (await links.resolve('#news') as HashtagLinkTarget?)?.hashtag,
+      '#news',
+    );
+    expect(
+      (await links.resolve(r'$TON') as HashtagLinkTarget?)?.hashtag,
+      r'$TON',
+    );
+    expect(
+      (await links.resolve('/start@somebot') as BotCommandLinkTarget?)?.command,
+      '/start@somebot',
+    );
+    expect(json.sent, isEmpty);
+  });
+
+  test('opens the private chat of a tg://user link', () async {
+    json.chat = _chat(9, 'Anna');
+    final target = await links.resolve('tg://user?id=55');
+    expect((target! as ChatLinkTarget).chatId, 9);
+    expect(sentTypes(), ['createPrivateChat']);
+    expect(json.sent.single['user_id'], 55);
+  });
+
+  test('reports a tg://user link to an unknown user', () async {
+    expect(await links.resolve('tg://user?id=55'), isA<MissingLinkTarget>());
+  });
+
+  test('opens a channel from its t.me/s/ web preview', () async {
+    json.linkType = {
+      '@type': 'internalLinkTypePublicChat',
+      'chat_username': 'news',
+    };
+    json.chat = _chat(7, 'News');
+    await links.resolve('https://t.me/s/news');
+    expect(json.sent.first['link'], 'https://t.me/news');
+  });
+
   group('join', () {
     const invite = ChatJoinPreview(
       title: 'Book club',
@@ -307,7 +345,7 @@ final class _FakeTdJson implements td.TdJson {
     if (decoded['@type'] != 'close') sent.add(decoded);
     final response = switch (decoded['@type']) {
       'getInternalLinkType' => linkType ?? _error,
-      'searchPublicChat' || 'getChat' => chat ?? _error,
+      'searchPublicChat' || 'getChat' || 'createPrivateChat' => chat ?? _error,
       'getSupergroup' => {
         '@type': 'supergroup',
         'id': 1,

@@ -30,6 +30,24 @@ final class JoinLinkTarget extends LinkTarget {
   final ChatJoinPreview preview;
 }
 
+/// A hashtag or cashtag in a message, such as `#news`: the app searches
+/// messages for it.
+final class HashtagLinkTarget extends LinkTarget {
+  const HashtagLinkTarget(this.hashtag);
+
+  /// With its `#` or `$`.
+  final String hashtag;
+}
+
+/// A bot command in a message, such as `/start`: tapping it sends it to
+/// the chat it was tapped in.
+final class BotCommandLinkTarget extends LinkTarget {
+  const BotCommandLinkTarget(this.command);
+
+  /// With its `/` and any `@botname`.
+  final String command;
+}
+
 /// A link that runs one of the app's commands, such as `tg://settings`.
 final class CommandLinkTarget extends LinkTarget {
   const CommandLinkTarget(this.commandId);
@@ -117,9 +135,21 @@ final class LinkResolver {
 
   /// What [raw] leads to: a URL, `@username` or a scheme-less link such as
   /// `t.me/durov`. Returns null for text that is not a link.
+  ///
+  /// Hashtags (`#news`, `$TON`) and bot commands (`/start`) come back as
+  /// such, `tg://user?id=` opens the private chat with that user and
+  /// `t.me/s/` channel previews lead to the channel.
   Future<LinkTarget?> resolve(String raw) async {
-    final uri = TelegramLinks.normalize(raw);
-    if (uri == null) return null;
+    if (TelegramLinks.hashtag(raw) case final tag?) {
+      return HashtagLinkTarget(tag);
+    }
+    if (TelegramLinks.botCommand(raw) case final command?) {
+      return BotCommandLinkTarget(command);
+    }
+    final normalized = TelegramLinks.normalize(raw);
+    if (normalized == null) return null;
+    final uri = TelegramLinks.withoutWebPreview(normalized);
+    if (TelegramLinks.userIdOf(uri) case final userId?) return _user(userId);
     if (!TelegramLinks.isTelegram(uri)) {
       return TelegramLinks.isExternal(uri) ? ExternalLinkTarget(uri) : null;
     }
@@ -244,6 +274,17 @@ final class LinkResolver {
     }
     if (info.chatId == 0) return const MissingLinkTarget();
     return ChatLinkTarget(info.chatId, messageId: info.message?.id);
+  }
+
+  Future<LinkTarget> _user(int userId) async {
+    try {
+      final chat = await _client.send(
+        td.CreatePrivateChat(userId: userId, force: false),
+      );
+      return ChatLinkTarget(chat.id);
+    } on td.TdException {
+      return const MissingLinkTarget();
+    }
   }
 
   Future<LinkTarget> _savedMessages() async {
