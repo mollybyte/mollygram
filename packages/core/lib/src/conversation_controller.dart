@@ -1127,30 +1127,44 @@ final class ConversationController {
 
   /// Starts a topic called [name] in forum [chatId], in one of Telegram's
   /// topic colours.
-  Future<td.ForumTopicInfo> createTopic(int chatId, String name) =>
-      _client.send(
-        td.CreateForumTopic(
-          chatId: chatId,
-          name: name,
-          isNameImplicit: false,
-          icon: td.ForumTopicIcon(
-            color: topicColors[name.hashCode.abs() % topicColors.length],
-            customEmojiId: 0,
-          ),
-        ),
-      );
+  Future<td.ForumTopicInfo> createTopic(
+    int chatId,
+    String name, {
+    int? color,
+    int customEmojiId = 0,
+  }) => _client.send(
+    td.CreateForumTopic(
+      chatId: chatId,
+      name: name,
+      isNameImplicit: false,
+      icon: td.ForumTopicIcon(
+        color: color ?? topicColors[name.hashCode.abs() % topicColors.length],
+        customEmojiId: customEmojiId,
+      ),
+    ),
+  );
 
-  /// Renames topic [forumTopicId] of forum [chatId].
-  Future<void> editTopicName(int chatId, int forumTopicId, String name) =>
-      _client.send(
-        td.EditForumTopic(
-          chatId: chatId,
-          forumTopicId: forumTopicId,
-          name: name,
-          editIconCustomEmoji: false,
-          iconCustomEmojiId: 0,
-        ),
-      );
+  /// The custom emoji anyone may put on a topic, from TDLib.
+  Future<List<td.Sticker>> topicDefaultIcons() async =>
+      (await _client.send(const td.GetForumTopicDefaultIcons())).stickers;
+
+  /// Renames topic [forumTopicId] of forum [chatId] and, when
+  /// [customEmojiId] is given, puts that custom emoji on it (0 for the
+  /// coloured tile instead).
+  Future<void> editTopic(
+    int chatId,
+    int forumTopicId, {
+    required String name,
+    int? customEmojiId,
+  }) => _client.send(
+    td.EditForumTopic(
+      chatId: chatId,
+      forumTopicId: forumTopicId,
+      name: name,
+      editIconCustomEmoji: customEmojiId != null,
+      iconCustomEmojiId: customEmojiId ?? 0,
+    ),
+  );
 
   /// Closes or reopens topic [forumTopicId] of forum [chatId].
   Future<void> setTopicClosed(int chatId, int forumTopicId, bool closed) =>

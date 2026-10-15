@@ -2443,7 +2443,14 @@ void main() {
 
     await tester.tap(find.text('New topic'));
     await tester.pump(const Duration(milliseconds: 250));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
     await tester.enterText(find.byType(TextField).last, 'Ideas');
+    await tester.pump();
+    // The colour tiles show the name's initial; a default icon replaces
+    // the tile.
+    expect(find.text('I'), findsNWidgets(6));
+    await tester.tap(find.byKey(const ValueKey('topic-icon-5')));
     await tester.pump();
     await tester.tap(find.text('Create'));
     await tester.runAsync(() => Future<void>.delayed(_tick));
@@ -2452,6 +2459,7 @@ void main() {
       (r) => r['@type'] == 'createForumTopic',
     );
     expect(created['name'], 'Ideas');
+    expect((created['icon']! as Map)['custom_emoji_id'], '5');
     expect(find.text('Topic name'), findsNothing);
   });
 
@@ -3176,6 +3184,19 @@ final class _FakeTdJson implements td.TdJson {
           },
         ],
         'messages_between': 0,
+      },
+      'getForumTopicDefaultIcons' => {
+        '@type': 'stickers',
+        'stickers': [
+          {
+            ..._sticker(8, '💡'),
+            'full_type': {
+              '@type': 'stickerFullTypeCustomEmoji',
+              'custom_emoji_id': 5,
+              'needs_repainting': false,
+            },
+          },
+        ],
       },
       'createForumTopic' => {
         ...(_forumTopic(9, decoded['name']! as String)['info']!
