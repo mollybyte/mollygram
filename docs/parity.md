@@ -122,7 +122,7 @@ M8 calls and macOS release, M9 after release.
 | Polls and quizzes creation | missing | `NewPollController` | M | M2 |
 | Location and venue sending | missing | | M | M2 |
 | Contact sending | missing | | S | M2 |
-| Media editor before sending: crop, rotate, draw, compression toggle | partial | Preview exists; uncompressed default planned | L | M4 |
+| Media editor before sending: crop, rotate, draw, compression toggle | partial | `packages/media_editor`: crop, rotate, flip; drawing, text, filters and video next | L | M4 |
 | Spoiler and self-destruct on media | missing | `hasSpoiler`, `selfDestructType` | S | M2 |
 | Slowmode and restriction notices | missing | | S | M2 |
 | Link preview control (remove, above/below) | missing | | S | M2 |
