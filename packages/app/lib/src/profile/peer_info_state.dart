@@ -108,3 +108,18 @@ final chatRightsProvider = FutureProvider.autoDispose.family<ChatRights, int>((
   ref.onDispose(subscription.cancel);
   return management.rights(chatId);
 });
+
+/// How a group or channel is set up, for its management rows; read
+/// again whenever the chat changes.
+final chatSettingsProvider = FutureProvider.autoDispose
+    .family<ChatSettings, int>((ref, chatId) {
+      final management = ref
+          .watch(telegramSessionProvider)
+          .requireValue
+          .management;
+      final subscription = management.changes
+          .where((id) => id == chatId)
+          .listen((_) => ref.invalidateSelf());
+      ref.onDispose(subscription.cancel);
+      return management.settings(chatId);
+    });

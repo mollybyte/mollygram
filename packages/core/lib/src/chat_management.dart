@@ -64,6 +64,7 @@ final class ManagedMember {
     this.isSelf = false,
     this.adminRights,
     this.permissions,
+    this.tag = '',
     this.canPromote = false,
     this.canRestrict = false,
     this.canRemove = false,
@@ -83,6 +84,10 @@ final class ManagedMember {
   /// A restricted member's permissions.
   final td.ChatPermissions? permissions;
 
+  /// An administrator's title, shown in place of "admin"; empty for
+  /// the usual one.
+  final String tag;
+
   /// May make an administrator, or edit and dismiss one.
   final bool canPromote;
   final bool canRestrict;
@@ -97,6 +102,160 @@ final class MemberPage {
   final bool hasMore;
   final int nextOffset;
 }
+
+/// How a group or channel is set up, for the owner and administrators:
+/// what everyone may do, who may join and what new members see.
+final class ChatSettings {
+  const ChatSettings({
+    required this.chatId,
+    required this.isChannel,
+    required this.isSupergroup,
+    required this.isForum,
+    required this.username,
+    required this.permissions,
+    required this.slowModeDelay,
+    required this.isAllHistoryAvailable,
+    required this.canToggleHistory,
+    required this.joinByRequest,
+    required this.linkedChatId,
+    required this.linkedChatTitle,
+    required this.bannedCount,
+    required this.restrictedCount,
+    required this.reactions,
+    required this.canGetEventLog,
+  });
+
+  final int chatId;
+  final bool isChannel;
+  final bool isSupergroup;
+  final bool isForum;
+
+  /// The public username, empty for a private chat.
+  final String username;
+  bool get isPublic => username.isNotEmpty;
+
+  /// What every member may do.
+  final td.ChatPermissions permissions;
+
+  /// Seconds between messages of one member; 0 when off.
+  final int slowModeDelay;
+
+  /// Whether new members see the messages from before they joined.
+  final bool isAllHistoryAvailable;
+
+  /// History can be hidden only in a private group without topics or a
+  /// linked channel.
+  final bool canToggleHistory;
+
+  /// Whether everyone who joins has to be approved.
+  final bool joinByRequest;
+
+  /// A channel's discussion group, or a group's channel; 0 for none.
+  final int linkedChatId;
+  final String linkedChatTitle;
+  final int bannedCount;
+  final int restrictedCount;
+  final td.ChatAvailableReactions reactions;
+
+  /// Recent actions exist only in supergroups and channels.
+  final bool canGetEventLog;
+}
+
+/// A user banned from a chat or restricted in it.
+final class RemovedMember {
+  const RemovedMember({
+    required this.userId,
+    required this.name,
+    required this.isBanned,
+    this.photo,
+    this.permissions,
+    this.until,
+  });
+
+  final int userId;
+  final String name;
+  final td.File? photo;
+
+  /// Banned, rather than restricted.
+  final bool isBanned;
+
+  /// What a restricted member may still do.
+  final td.ChatPermissions? permissions;
+
+  /// When the ban or restriction ends; null for good.
+  final DateTime? until;
+}
+
+/// Someone asking to join by a link that needs approval.
+final class JoinRequest {
+  const JoinRequest({
+    required this.userId,
+    required this.name,
+    required this.date,
+    this.bio = '',
+    this.photo,
+  });
+
+  final int userId;
+  final String name;
+  final DateTime date;
+  final String bio;
+  final td.File? photo;
+}
+
+/// One entry of the recent actions of a group or channel.
+final class AdminLogEntry {
+  const AdminLogEntry({
+    required this.id,
+    required this.date,
+    required this.actorName,
+    required this.action,
+    this.actorPhoto,
+    this.subjectName,
+  });
+
+  final int id;
+  final DateTime date;
+
+  /// Who did it.
+  final String actorName;
+  final td.File? actorPhoto;
+  final td.ChatEventAction action;
+
+  /// Whom it was done to, for actions about a member.
+  final String? subjectName;
+}
+
+/// Whether a username may be taken for a chat.
+enum UsernameCheck { ok, invalid, occupied, purchasable, tooMany }
+
+/// Reactions commonly allowed when the server has not said which exist.
+const defaultEmojiReactions = [
+  '👍',
+  '👎',
+  '❤',
+  '🔥',
+  '🥰',
+  '👏',
+  '😁',
+  '🤔',
+  '🤯',
+  '😱',
+  '🤬',
+  '😢',
+  '🎉',
+  '🤩',
+  '🤮',
+  '💩',
+  '🙏',
+  '👌',
+  '🕊',
+  '🤡',
+  '🥱',
+  '🥴',
+  '😍',
+  '🐳',
+];
 
 /// Creates, edits and moderates groups and channels: their members and
 /// administrators, title, description and photo, invite links, leaving
@@ -126,6 +285,12 @@ final class ChatManagement {
 
   /// What [members] learned about a chat for the pages after the first.
   final _pageContext = <int, (td.Chat, ChatRights)>{};
+
+  /// The reactions the server allows, from the first update about them.
+  List<String> _activeReactions = defaultEmojiReactions;
+
+  /// The emoji a chat may allow as reactions.
+  List<String> get activeReactions => _activeReactions;
 
   Future<void> start() async {
     _subscription ??= _client.updates.listen(_onUpdate);
@@ -163,6 +328,11 @@ final class ChatManagement {
         if (_chatOfSupergroup[supergroupId] case final chatId?) {
           _notify(chatId);
         }
+      case td.UpdateActiveEmojiReactions(:final emojis):
+        if (emojis.isNotEmpty) _activeReactions = emojis;
+      case td.UpdateChatAvailableReactions(:final chatId) ||
+          td.UpdateChatPendingJoinRequests(:final chatId):
+        _notify(chatId);
       default:
         break;
     }
@@ -477,8 +647,9 @@ final class ChatManagement {
   /// the users whose privacy settings kept them out of it.
   Future<({int chatId, List<int> notAdded})> createGroup(
     String title,
-    List<int> userIds,
-  ) async {
+    List<int> userIds, {
+    String? photoPath,
+  }) async {
     final created = await _client.send(
       td.CreateNewBasicGroupChat(
         userIds: userIds,
@@ -486,6 +657,7 @@ final class ChatManagement {
         messageAutoDeleteTime: 0,
       ),
     );
+    if (photoPath != null) await setPhoto(created.chatId, photoPath);
     return (
       chatId: created.chatId,
       notAdded: [
@@ -495,8 +667,14 @@ final class ChatManagement {
     );
   }
 
-  /// Creates a channel and returns its chat.
-  Future<int> createChannel(String title, {String description = ''}) async {
+  /// Creates a channel and returns its chat; with a [username] it is
+  /// public from the start, with a [photoPath] it has a photo.
+  Future<int> createChannel(
+    String title, {
+    String description = '',
+    String username = '',
+    String? photoPath,
+  }) async {
     final chat = await _client.send(
       td.CreateNewSupergroupChat(
         title: title.trim(),
@@ -507,7 +685,418 @@ final class ChatManagement {
         forImport: false,
       ),
     );
+    if (username.trim().isNotEmpty) await setUsername(chat.id, username);
+    if (photoPath != null) await setPhoto(chat.id, photoPath);
     return chat.id;
+  }
+
+  /// How [chatId] is set up, for its management rows.
+  Future<ChatSettings> settings(int chatId) async {
+    final chat = await _client.send(td.GetChat(chatId: chatId));
+    switch (chat.type) {
+      case td.ChatTypeSupergroup(:final supergroupId, :final isChannel):
+        _chatOfSupergroup[supergroupId] = chatId;
+        final group = await _client.send(
+          td.GetSupergroup(supergroupId: supergroupId),
+        );
+        final full = await _client.send(
+          td.GetSupergroupFullInfo(supergroupId: supergroupId),
+        );
+        final username = group.usernames?.editableUsername ?? '';
+        final linked = full.linkedChatId == 0
+            ? null
+            : await _client
+                  .send(td.GetChat(chatId: full.linkedChatId))
+                  .then<td.Chat?>((c) => c, onError: (Object _) => null);
+        return ChatSettings(
+          chatId: chatId,
+          isChannel: isChannel,
+          isSupergroup: true,
+          isForum: group.isForum,
+          username: username,
+          permissions: chat.permissions,
+          slowModeDelay: full.slowModeDelay,
+          isAllHistoryAvailable: full.isAllHistoryAvailable,
+          canToggleHistory:
+              !isChannel &&
+              !group.isForum &&
+              username.isEmpty &&
+              full.linkedChatId == 0,
+          joinByRequest: group.joinByRequest,
+          linkedChatId: full.linkedChatId,
+          linkedChatTitle: linked?.title ?? '',
+          bannedCount: full.bannedCount,
+          restrictedCount: full.restrictedCount,
+          reactions: chat.availableReactions,
+          canGetEventLog: true,
+        );
+      default:
+        return ChatSettings(
+          chatId: chatId,
+          isChannel: false,
+          isSupergroup: false,
+          isForum: false,
+          username: '',
+          permissions: chat.permissions,
+          slowModeDelay: 0,
+          isAllHistoryAvailable: true,
+          canToggleHistory: false,
+          joinByRequest: false,
+          linkedChatId: 0,
+          linkedChatTitle: '',
+          bannedCount: 0,
+          restrictedCount: 0,
+          reactions: chat.availableReactions,
+          canGetEventLog: false,
+        );
+    }
+  }
+
+  /// Sets what every member of [chatId] may do.
+  Future<void> setPermissions(int chatId, td.ChatPermissions permissions) =>
+      _client
+          .send(td.SetChatPermissions(chatId: chatId, permissions: permissions))
+          .then((_) => _notify(chatId));
+
+  /// Sets the seconds between one member's messages; 0 turns slow mode
+  /// off. Only the values Telegram takes are kept.
+  Future<void> setSlowMode(int chatId, int seconds) => _client
+      .send(td.SetChatSlowModeDelay(chatId: chatId, slowModeDelay: seconds))
+      .then((_) => _notify(chatId));
+
+  /// The seconds slow mode can be set to, as in the official apps.
+  static const slowModeDelays = [0, 10, 30, 60, 300, 900, 3600];
+
+  /// Whether new members of [chatId] see older messages.
+  Future<void> setHistoryAvailable(int chatId, {required bool available}) =>
+      _supergroupCall(
+        chatId,
+        (id) => td.ToggleSupergroupIsAllHistoryAvailable(
+          supergroupId: id,
+          isAllHistoryAvailable: available,
+        ),
+      );
+
+  /// Turns topics on or off in the group [chatId].
+  Future<void> setForum(int chatId, {required bool forum}) => _supergroupCall(
+    chatId,
+    (id) => td.ToggleSupergroupIsForum(
+      supergroupId: id,
+      isForum: forum,
+      hasForumTabs: false,
+    ),
+  );
+
+  /// Whether everyone who joins [chatId] by a link waits for approval.
+  Future<void> setJoinByRequest(int chatId, {required bool byRequest}) =>
+      _supergroupCall(
+        chatId,
+        (id) => td.ToggleSupergroupJoinByRequest(
+          supergroupId: id,
+          joinByRequest: byRequest,
+          guardBotUserId: 0,
+          applyToInviteLinks: false,
+        ),
+      );
+
+  /// Whether [username] may become the public link of [chatId].
+  Future<UsernameCheck> checkUsername(int chatId, String username) async {
+    final result = await _client.send(
+      td.CheckChatUsername(chatId: chatId, username: username.trim()),
+    );
+    return switch (result) {
+      td.CheckChatUsernameResultOk() => UsernameCheck.ok,
+      td.CheckChatUsernameResultUsernameOccupied() => UsernameCheck.occupied,
+      td.CheckChatUsernameResultUsernamePurchasable() =>
+        UsernameCheck.purchasable,
+      td.CheckChatUsernameResultPublicChatsTooMany() => UsernameCheck.tooMany,
+      _ => UsernameCheck.invalid,
+    };
+  }
+
+  /// Makes [chatId] public at t.me/[username], or private with an empty
+  /// one.
+  Future<void> setUsername(int chatId, String username) => _supergroupCall(
+    chatId,
+    (id) => td.SetSupergroupUsername(
+      supergroupId: id,
+      username: username.trim().replaceFirst('@', ''),
+    ),
+  );
+
+  /// Which reactions members of [chatId] may use.
+  Future<void> setReactions(int chatId, td.ChatAvailableReactions reactions) =>
+      _client
+          .send(
+            td.SetChatAvailableReactions(
+              chatId: chatId,
+              availableReactions: reactions,
+            ),
+          )
+          .then((_) => _notify(chatId));
+
+  /// Links the group [groupId] as the discussion of the channel
+  /// [channelId], or unlinks with a null [groupId]. Called from the
+  /// group's side, [channelId] is its channel.
+  Future<void> setDiscussionGroup(int channelId, int? groupId) => _client
+      .send(
+        td.SetChatDiscussionGroup(
+          chatId: channelId,
+          discussionChatId: groupId ?? 0,
+        ),
+      )
+      .then((_) => _notify(channelId));
+
+  /// The user's groups that may become a channel's discussion group.
+  Future<List<(int, String)>> suitableDiscussionGroups() async {
+    final chats = await _client.send(const td.GetSuitableDiscussionChats());
+    final loaded = await Future.wait([
+      for (final id in chats.chatIds) _client.send(td.GetChat(chatId: id)),
+    ]);
+    return [for (final chat in loaded) (chat.id, chat.title)];
+  }
+
+  /// Adds [userIds] to the group [chatId]; returns those whose privacy
+  /// settings kept them out.
+  Future<List<int>> addMembers(int chatId, List<int> userIds) async {
+    final failed = await _client.send(
+      td.AddChatMembers(chatId: chatId, userIds: userIds),
+    );
+    _notify(chatId);
+    return [for (final f in failed.failedToAddMembers) f.userId];
+  }
+
+  /// Gives an administrator of [chatId] a title shown in place of
+  /// "admin"; empty for the usual one.
+  Future<void> setAdminTitle(int chatId, int userId, String title) => _client
+      .send(
+        td.SetChatMemberTag(
+          chatId: chatId,
+          userId: userId,
+          tag: String.fromCharCodes(title.trim().runes.take(16)),
+        ),
+      )
+      .then((_) => _notify(chatId));
+
+  /// The users banned from [chatId] and the ones restricted in it, the
+  /// banned first. Only a supergroup or channel has any.
+  Future<List<RemovedMember>> removedMembers(
+    int chatId, {
+    String query = '',
+  }) async {
+    final chat = await _client.send(td.GetChat(chatId: chatId));
+    if (chat.type case td.ChatTypeSupergroup(:final supergroupId)) {
+      final found = await Future.wait([
+        for (final filter in [
+          td.SupergroupMembersFilterBanned(query: query),
+          td.SupergroupMembersFilterRestricted(query: query),
+        ])
+          _client.send(
+            td.GetSupergroupMembers(
+              supergroupId: supergroupId,
+              filter: filter,
+              offset: 0,
+              limit: 200,
+            ),
+          ),
+      ]);
+      final members = [...found.first.members, ...found.last.members];
+      final people = [
+        for (final member in members)
+          if (member.memberId is td.MessageSenderUser) member,
+      ];
+      final users = await Future.wait([
+        for (final member in people)
+          _client.send(td.GetUser(userId: _userOf(member))),
+      ]);
+      return [
+        for (final (i, member) in people.indexed)
+          switch (member.status) {
+            td.ChatMemberStatusBanned(:final bannedUntilDate) => RemovedMember(
+              userId: users[i].id,
+              name: userName(users[i]),
+              photo: users[i].profilePhoto?.small,
+              isBanned: true,
+              until: _date(bannedUntilDate),
+            ),
+            td.ChatMemberStatusRestricted(
+              :final restrictedUntilDate,
+              :final permissions,
+            ) =>
+              RemovedMember(
+                userId: users[i].id,
+                name: userName(users[i]),
+                photo: users[i].profilePhoto?.small,
+                isBanned: false,
+                permissions: permissions,
+                until: _date(restrictedUntilDate),
+              ),
+            _ => null,
+          },
+      ].nonNulls.toList();
+    }
+    return const [];
+  }
+
+  /// Lets a banned user join [chatId] again, or lifts a restriction.
+  Future<void> unban(int chatId, int userId, {required bool banned}) =>
+      _setStatus(
+        chatId,
+        userId,
+        banned
+            ? const td.ChatMemberStatusLeft()
+            : const td.ChatMemberStatusMember(memberUntilDate: 0),
+      );
+
+  /// Who is waiting to join [chatId] by a link that needs approval.
+  Future<List<JoinRequest>> joinRequests(int chatId) async {
+    final requests = await _client.send(
+      td.GetChatJoinRequests(
+        chatId: chatId,
+        inviteLink: '',
+        query: '',
+        limit: 100,
+      ),
+    );
+    final users = await Future.wait([
+      for (final request in requests.requests)
+        _client.send(td.GetUser(userId: request.userId)),
+    ]);
+    return [
+      for (final (i, request) in requests.requests.indexed)
+        JoinRequest(
+          userId: request.userId,
+          name: userName(users[i]),
+          photo: users[i].profilePhoto?.small,
+          date: _date(request.date) ?? DateTime.now(),
+          bio: request.bio,
+        ),
+    ];
+  }
+
+  /// Lets [userId] into [chatId], or turns them down.
+  Future<void> processJoinRequest(
+    int chatId,
+    int userId, {
+    required bool approve,
+  }) => _client
+      .send(
+        td.ProcessChatJoinRequest(
+          chatId: chatId,
+          userId: userId,
+          approve: approve,
+        ),
+      )
+      .then((_) => _notify(chatId));
+
+  /// Changes the name, expiry, limit or approval of an additional link.
+  Future<td.ChatInviteLink> editLink(
+    int chatId,
+    td.ChatInviteLink link, {
+    required String name,
+    DateTime? expiresAt,
+    int memberLimit = 0,
+    bool joinRequests = false,
+  }) async {
+    final edited = await _client.send(
+      td.EditChatInviteLink(
+        chatId: chatId,
+        inviteLink: link.inviteLink,
+        name: String.fromCharCodes(name.trim().runes.take(32)),
+        expirationDate: expiresAt == null
+            ? 0
+            : expiresAt.millisecondsSinceEpoch ~/ 1000,
+        memberLimit: joinRequests ? 0 : memberLimit,
+        createsJoinRequest: joinRequests,
+      ),
+    );
+    _notify(chatId);
+    return edited;
+  }
+
+  /// The recent actions of administrators in [chatId], newest first;
+  /// [fromEventId] pages on from an entry's id, [userIds] narrow it to
+  /// some administrators.
+  Future<List<AdminLogEntry>> recentActions(
+    int chatId, {
+    int fromEventId = 0,
+    List<int> userIds = const [],
+    int limit = 50,
+  }) async {
+    final events = await _client.send(
+      td.GetChatEventLog(
+        chatId: chatId,
+        query: '',
+        fromEventId: fromEventId,
+        limit: limit,
+        userIds: userIds,
+      ),
+    );
+    final names = <int, td.User>{};
+    Future<td.User?> user(int id) async {
+      if (id == 0) return null;
+      return names[id] ??= await _client.send(td.GetUser(userId: id));
+    }
+
+    Future<String> senderName(td.MessageSender sender) async =>
+        switch (sender) {
+          td.MessageSenderUser(:final userId) => userName(
+            (await user(userId))!,
+          ),
+          td.MessageSenderChat(:final chatId) => (await _client.send(
+            td.GetChat(chatId: chatId),
+          )).title,
+        };
+    final entries = <AdminLogEntry>[];
+    for (final event in events.events) {
+      final actor = await user(_senderUser(event.memberId));
+      final subjectId = switch (event.action) {
+        td.ChatEventMemberPromoted(:final userId) ||
+        td.ChatEventMemberInvited(:final userId) ||
+        td.ChatEventMemberTagChanged(:final userId) => userId,
+        td.ChatEventMemberRestricted(:final memberId) => _senderUser(memberId),
+        td.ChatEventMemberJoinedByRequest(:final approverUserId) =>
+          approverUserId,
+        _ => 0,
+      };
+      final subject = await user(subjectId);
+      entries.add(
+        AdminLogEntry(
+          id: event.id,
+          date: _date(event.date) ?? DateTime.now(),
+          actorName: actor != null
+              ? userName(actor)
+              : await senderName(event.memberId),
+          actorPhoto: actor?.profilePhoto?.small,
+          action: event.action,
+          subjectName: subject == null ? null : userName(subject),
+        ),
+      );
+    }
+    return entries;
+  }
+
+  /// The administrators of [chatId], to filter recent actions by.
+  Future<List<(int, String)>> administrators(int chatId) async {
+    final admins = await _client.send(td.GetChatAdministrators(chatId: chatId));
+    final users = await Future.wait([
+      for (final admin in admins.administrators)
+        _client.send(td.GetUser(userId: admin.userId)),
+    ]);
+    return [for (final user in users) (user.id, userName(user))];
+  }
+
+  Future<void> _supergroupCall(
+    int chatId,
+    td.TdFunction<td.Ok> Function(int supergroupId) request,
+  ) async {
+    final chat = await _client.send(td.GetChat(chatId: chatId));
+    if (chat.type case td.ChatTypeSupergroup(:final supergroupId)) {
+      await _client.send(request(supergroupId));
+      _notify(chatId);
+    } else {
+      throw StateError('Not a supergroup');
+    }
   }
 
   Future<void> _setStatus(
@@ -579,6 +1168,7 @@ final class ChatManagement {
       permissions: status is td.ChatMemberStatusRestricted
           ? status.permissions
           : null,
+      tag: member.tag,
       canPromote:
           !self &&
           rights.canPromoteMembers &&
@@ -606,10 +1196,15 @@ final class ChatManagement {
   }
 }
 
-int _userOf(td.ChatMember member) => switch (member.memberId) {
+int _userOf(td.ChatMember member) => _senderUser(member.memberId);
+
+int _senderUser(td.MessageSender sender) => switch (sender) {
   td.MessageSenderUser(:final userId) => userId,
   _ => 0,
 };
+
+DateTime? _date(int unix) =>
+    unix == 0 ? null : DateTime.fromMillisecondsSinceEpoch(unix * 1000);
 
 /// The owner, then the administrators, then everyone else; online first
 /// within each.

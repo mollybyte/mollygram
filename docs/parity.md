@@ -182,16 +182,16 @@ M8 calls and macOS release, M9 after release.
 
 | Feature | Status | Notes | Size | M |
 |---|---|---|---|---|
-| Create group and channel | partial | ⌘K New group (contacts, then a name) and New channel (name, description); no photo or public link at creation | S | M6 |
-| Edit title, photo, description, username, public/private | partial | Edit sheet for title, description and photo; username and public/private missing | S | M6 |
-| Add, remove, ban members; admin rights and titles | partial | Member context menu: make admin with a rights sheet, edit or dismiss, restrict, remove; adding members to an existing group and admin titles missing | M | M6 |
-| Group permissions, slow mode | missing | `ChannelPermissionsController` | M | M6 |
-| Invite links: create, revoke, join requests | partial | Primary link copy and revoke, additional links with expiry, limit and approval; editing a link and the join request queue missing | S | M6 |
+| Create group and channel | done | ⌘K New group (contacts, then a name and photo) and New channel (name, description, photo and an optional public link) | | |
+| Edit title, photo, description, username, public/private | done | Edit sheet for title, description and photo; the owner's "Group type" row switches between private and public with the link checked as typed (`profile/chat_type_sheet.dart`) | | |
+| Add, remove, ban members; admin rights and titles | done | Member context menu: make admin with a rights sheet and a title, edit or dismiss, restrict, remove; "Add members" picks contacts for an existing group or channel | | |
+| Group permissions, slow mode | done | Permissions sheet with what every member may do and slow mode off to 1 hour (`profile/permissions_sheet.dart`) | | |
+| Invite links: create, revoke, join requests | done | Primary link copy and revoke, additional links with expiry, limit and approval, editing a link; "Join requests" sheet with Approve and Dismiss, "Approve new members" switch | | |
 | Leave a group or channel, delete it for everyone | done | Info panel rows with a confirmation; delete only for the owner | | |
-| Linked discussion group | missing | | S | M6 |
-| Allowed reactions, chat history for new members | missing | | S | M6 |
-| Recent actions (admin log) | missing | `ChannelEventLogController` | M | M6 |
-| Enable topics in a group | missing | | S | M6 |
+| Linked discussion group | done | A channel picks one of the user's groups or unlinks it; a group shows its channel (`profile/discussion_sheet.dart`) | | |
+| Allowed reactions, chat history for new members | done | Reactions sheet: all, some (emoji chips) or none; "Show history to new members" switch where Telegram allows it | | |
+| Recent actions (admin log) | done | Recent actions sheet by day, filtered by administrator, every TDLib event in words (`profile/admin_log_sheet.dart`) | | |
+| Enable topics in a group | done | "Topics" switch in the management rows | | |
 | Channel and group statistics | missing | `ChannelStatsViewController` | L | M9 |
 | Boosts | missing | | M | M9 |
 

@@ -16,13 +16,22 @@ import '../chat/report.dart';
 import '../secret/secret_chat.dart';
 import '../session/providers.dart';
 import '../window_drag_area.dart';
+import 'add_members_sheet.dart';
+import 'admin_log_sheet.dart';
+import 'chat_type_sheet.dart';
+import 'discussion_sheet.dart';
 import 'edit_chat_sheet.dart';
 import 'invite_links_sheet.dart';
+import 'join_requests_sheet.dart';
 import 'last_seen.dart';
 import 'manage_sheet.dart';
 import 'member_sheets.dart';
 import 'peer_info_state.dart';
+import 'permissions_sheet.dart';
+import 'reactions_sheet.dart';
+import 'removed_users_sheet.dart';
 
+part 'management_section.dart';
 part 'members_section.dart';
 
 /// The content of the info panel for one chat: the photo, name and
@@ -500,21 +509,9 @@ class _Content extends ConsumerWidget {
               ],
             ),
           ],
-          if (rights.canManageLinks) ...[
+          if (!info.isUser && (rights.isOwner || rights.isAdmin)) ...[
             const SizedBox(height: 12),
-            _Group(
-              children: [
-                _NavRow(
-                  label: l10n.inviteLinks,
-                  onTap: () => unawaited(
-                    showManageSheet<void>(
-                      context,
-                      InviteLinksSheet(chatId: info.chatId),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            _ManagementSection(info: info, rights: rights),
           ],
           // Channel subscribers are for its administrators to see.
           if (channel
@@ -766,7 +763,8 @@ class _ActionRow extends StatelessWidget {
   }
 }
 
-/// A row that leads to another page of the panel.
+/// A row that leads to another page of the panel, with what is there
+/// now in grey before the chevron, like a System Settings row.
 class _NavRow extends StatelessWidget {
   const _NavRow({required this.label, required this.onTap, this.value});
 
@@ -789,7 +787,12 @@ class _NavRow extends StatelessWidget {
             children: [
               Expanded(child: Text(label, style: mgTextStyle(c))),
               if (value case final value?) ...[
-                Text(value, style: mgTextStyle(c, color: c.fg2)),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: mgTextStyle(c, color: c.fg2),
+                ),
                 const SizedBox(width: 4),
               ],
               MgIcon(MgIcons.chevron, size: 14, color: c.fg2),
@@ -945,6 +948,7 @@ class _MemberRow extends StatelessWidget {
     required this.online,
     required this.onTap,
     this.onMenu,
+    this.tag = '',
   });
 
   final PeerMember member;
@@ -953,13 +957,16 @@ class _MemberRow extends StatelessWidget {
   final VoidCallback onTap;
   final ValueChanged<Offset>? onMenu;
 
+  /// An administrator's own title, in place of "admin".
+  final String tag;
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final c = MgColors.of(context);
     final role = switch (member.role) {
-      MemberRole.owner => l10n.memberOwner,
-      MemberRole.admin => l10n.memberAdmin,
+      MemberRole.owner => tag.isNotEmpty ? tag : l10n.memberOwner,
+      MemberRole.admin => tag.isNotEmpty ? tag : l10n.memberAdmin,
       MemberRole.member => '',
     };
     return _Pressable(

@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mollygram_core/mollygram_core.dart';
@@ -43,9 +45,12 @@ List<PaletteCommand> newChatCommands(
 /// Creates a group (members first, then its name) or a channel (its name
 /// and description), then opens it.
 class NewChatSheet extends ConsumerStatefulWidget {
-  const NewChatSheet({super.key, required this.channel});
+  const NewChatSheet({super.key, required this.channel, this.pickPhoto});
 
   final bool channel;
+
+  /// Asks for an image; the system open panel by default.
+  final Future<String?> Function()? pickPhoto;
 
   @override
   ConsumerState<NewChatSheet> createState() => _NewChatSheetState();
@@ -55,6 +60,10 @@ class _NewChatSheetState extends ConsumerState<NewChatSheet> {
   final _search = TextEditingController();
   final _title = TextEditingController();
   final _about = TextEditingController();
+  final _username = TextEditingController();
+
+  /// The photo the chat starts with.
+  String? _photoPath;
 
   /// The people picked for a group, by id, with their names.
   final _picked = <int, String>{};
@@ -68,12 +77,30 @@ class _NewChatSheetState extends ConsumerState<NewChatSheet> {
   List<String>? _notAdded;
   String? _titleError;
 
+  /// The channel was made, but its public link was not free.
+  var _usernameTaken = false;
+
   @override
   void dispose() {
     _search.dispose();
     _title.dispose();
     _about.dispose();
+    _username.dispose();
     super.dispose();
+  }
+
+  Future<void> _choosePhoto() async {
+    final path = await (widget.pickPhoto ?? _pickFromDisk)();
+    if (path != null && mounted) setState(() => _photoPath = path);
+  }
+
+  static Future<String?> _pickFromDisk() async {
+    final file = await openFile(
+      acceptedTypeGroups: const [
+        XTypeGroup(label: 'Images', extensions: ['jpg', 'jpeg', 'png']),
+      ],
+    );
+    return file?.path;
   }
 
   /// Enter in a field; ignored while the chat is being created.
@@ -101,18 +128,36 @@ class _NewChatSheetState extends ConsumerState<NewChatSheet> {
               await management.createChannel(
                 _title.text,
                 description: _about.text,
+                photoPath: _photoPath,
               ),
               const <int>[],
             )
           : switch (await management.createGroup(_title.text, [
               ..._picked.keys,
-            ])) {
+            ], photoPath: _photoPath)) {
               (:final chatId, :final notAdded) => (chatId, notAdded),
             };
+      // The link is set on its own, so a taken one leaves a private
+      // channel rather than none.
+      var usernameTaken = false;
+      if (widget.channel && _username.text.trim().isNotEmpty) {
+        try {
+          await management.setUsername(chatId, _username.text);
+        } on Object {
+          usernameTaken = true;
+        }
+      }
       if (!mounted) return;
       ref.read(workspaceControllerProvider).open(chatId);
-      if (notAdded.isEmpty) {
+      if (notAdded.isEmpty && !usernameTaken) {
         Navigator.of(context).pop();
+        return;
+      }
+      if (usernameTaken) {
+        setState(() {
+          _busy = false;
+          _usernameTaken = true;
+        });
         return;
       }
       // Say who couldn't be added rather than leave them out silently.
@@ -133,8 +178,20 @@ class _NewChatSheetState extends ConsumerState<NewChatSheet> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final c = MgColors.of(context);
+    if (_usernameTaken) {
+      return ManageSheetFrame(
+        title: l10n.newChannel,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Text(
+            l10n.usernameNotSet(_username.text.trim()),
+            style: mgTextStyle(c, color: c.fg2),
+          ),
+        ),
+      );
+    }
     if (_notAdded case final names?) {
-      final c = MgColors.of(context);
       return ManageSheetFrame(
         title: l10n.newGroup,
         child: Padding(
@@ -159,6 +216,26 @@ class _NewChatSheetState extends ConsumerState<NewChatSheet> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Center(
+              child: _photoPath == null
+                  ? SenderAvatar(name: _title.text, size: 72)
+                  : ClipOval(
+                      child: Image.file(
+                        File(_photoPath!),
+                        width: 72,
+                        height: 72,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+            ),
+            const SizedBox(height: 6),
+            Center(
+              child: MgTextButton(
+                label: _photoPath == null ? l10n.setPhoto : l10n.changePhoto,
+                onPressed: _busy ? null : _choosePhoto,
+              ),
+            ),
+            const SizedBox(height: 8),
             MgUnderlineField(
               controller: _title,
               hintText: widget.channel ? l10n.channelName : l10n.groupName,
@@ -167,6 +244,8 @@ class _NewChatSheetState extends ConsumerState<NewChatSheet> {
               errorText: _titleError,
               onChanged: (_) {
                 if (_titleError != null) setState(() => _titleError = null);
+                // The monogram follows the name.
+                if (_photoPath == null) setState(() {});
               },
               onSubmitted: (_) => _submit(),
             ),
@@ -177,6 +256,27 @@ class _NewChatSheetState extends ConsumerState<NewChatSheet> {
                 hintText: l10n.descriptionHint,
                 fontSize: 14,
                 onSubmitted: (_) => _submit(),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 7),
+                    child: Text(
+                      't.me/',
+                      style: mgTextStyle(c, size: 14, color: c.fg2),
+                    ),
+                  ),
+                  Expanded(
+                    child: MgUnderlineField(
+                      controller: _username,
+                      hintText: l10n.publicLinkOptional,
+                      fontSize: 14,
+                      onSubmitted: (_) => _submit(),
+                    ),
+                  ),
+                ],
               ),
             ] else ...[
               const SizedBox(height: 10),
@@ -230,7 +330,7 @@ class _NewChatSheetState extends ConsumerState<NewChatSheet> {
                     itemCount: contacts.length,
                     itemBuilder: (context, i) {
                       final user = contacts[i];
-                      return _PickRow(
+                      return PickRow(
                         name: user.name,
                         photo: user.photo,
                         status: formatPresence(
@@ -255,8 +355,9 @@ class _NewChatSheetState extends ConsumerState<NewChatSheet> {
   }
 }
 
-class _PickRow extends StatelessWidget {
-  const _PickRow({
+class PickRow extends StatelessWidget {
+  const PickRow({
+    super.key,
     required this.name,
     required this.status,
     required this.picked,

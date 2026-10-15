@@ -6212,6 +6212,756 @@ abstract class AppLocalizations {
   /// **'Restore'**
   String get shortcutsRestoreConfirm;
 
+  /// No description provided for @adminTitleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Title (optional)'**
+  String get adminTitleHint;
+
+  /// No description provided for @adminTitleNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Shown to members in place of \"admin\".'**
+  String get adminTitleNote;
+
+  /// No description provided for @permCreateTopics.
+  ///
+  /// In en, this message translates to:
+  /// **'Create topics'**
+  String get permCreateTopics;
+
+  /// No description provided for @permissions.
+  ///
+  /// In en, this message translates to:
+  /// **'Permissions'**
+  String get permissions;
+
+  /// No description provided for @permissionsEveryone.
+  ///
+  /// In en, this message translates to:
+  /// **'What members can do'**
+  String get permissionsEveryone;
+
+  /// No description provided for @slowMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Slow mode'**
+  String get slowMode;
+
+  /// No description provided for @slowModeOffNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Members can send messages as often as they like.'**
+  String get slowModeOffNote;
+
+  /// No description provided for @slowModeNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Members can send one message every {interval}.'**
+  String slowModeNote(String interval);
+
+  /// No description provided for @off.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get off;
+
+  /// No description provided for @secondsShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}s'**
+  String secondsShort(int count);
+
+  /// No description provided for @minutesShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}m'**
+  String minutesShort(int count);
+
+  /// No description provided for @hoursShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}h'**
+  String hoursShort(int count);
+
+  /// No description provided for @removedUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'Removed users'**
+  String get removedUsers;
+
+  /// No description provided for @noRemovedUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody is banned or restricted.'**
+  String get noRemovedUsers;
+
+  /// No description provided for @unban.
+  ///
+  /// In en, this message translates to:
+  /// **'Unban'**
+  String get unban;
+
+  /// No description provided for @banned.
+  ///
+  /// In en, this message translates to:
+  /// **'Banned'**
+  String get banned;
+
+  /// No description provided for @bannedUntil.
+  ///
+  /// In en, this message translates to:
+  /// **'Banned {until}'**
+  String bannedUntil(String until);
+
+  /// No description provided for @restricted.
+  ///
+  /// In en, this message translates to:
+  /// **'Restricted'**
+  String get restricted;
+
+  /// No description provided for @cannot.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t {what}'**
+  String cannot(String what);
+
+  /// No description provided for @untilDate.
+  ///
+  /// In en, this message translates to:
+  /// **'until {date}'**
+  String untilDate(String date);
+
+  /// No description provided for @joinRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Join requests'**
+  String get joinRequests;
+
+  /// No description provided for @noJoinRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody is waiting to join.'**
+  String get noJoinRequests;
+
+  /// No description provided for @requestedOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Asked {date}'**
+  String requestedOn(String date);
+
+  /// No description provided for @approve.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve'**
+  String get approve;
+
+  /// No description provided for @dismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get dismiss;
+
+  /// No description provided for @recentActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent actions'**
+  String get recentActions;
+
+  /// No description provided for @recentActionsFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the recent actions.'**
+  String get recentActionsFailed;
+
+  /// No description provided for @noRecentActions.
+  ///
+  /// In en, this message translates to:
+  /// **'No recent actions.'**
+  String get noRecentActions;
+
+  /// No description provided for @recentActionsNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Actions of the last 48 hours.'**
+  String get recentActionsNote;
+
+  /// No description provided for @allAdmins.
+  ///
+  /// In en, this message translates to:
+  /// **'All admins'**
+  String get allAdmins;
+
+  /// No description provided for @logMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'a media message'**
+  String get logMedia;
+
+  /// No description provided for @logEditedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'edited a message: {text}'**
+  String logEditedMessage(String text);
+
+  /// No description provided for @logDeletedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'deleted a message: {text}'**
+  String logDeletedMessage(String text);
+
+  /// No description provided for @logPinnedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'pinned a message: {text}'**
+  String logPinnedMessage(String text);
+
+  /// No description provided for @logUnpinnedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'unpinned a message'**
+  String get logUnpinnedMessage;
+
+  /// No description provided for @logStoppedPoll.
+  ///
+  /// In en, this message translates to:
+  /// **'stopped a poll'**
+  String get logStoppedPoll;
+
+  /// No description provided for @logJoined.
+  ///
+  /// In en, this message translates to:
+  /// **'joined'**
+  String get logJoined;
+
+  /// No description provided for @logJoinedByLink.
+  ///
+  /// In en, this message translates to:
+  /// **'joined by the link {link}'**
+  String logJoinedByLink(String link);
+
+  /// No description provided for @logJoinedByRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'joined, approved by {name}'**
+  String logJoinedByRequest(String name);
+
+  /// No description provided for @logInvited.
+  ///
+  /// In en, this message translates to:
+  /// **'added {name}'**
+  String logInvited(String name);
+
+  /// No description provided for @logLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'left'**
+  String get logLeft;
+
+  /// No description provided for @logPromoted.
+  ///
+  /// In en, this message translates to:
+  /// **'made {name} an admin or changed their rights'**
+  String logPromoted(String name);
+
+  /// No description provided for @logDemoted.
+  ///
+  /// In en, this message translates to:
+  /// **'dismissed {name} as admin'**
+  String logDemoted(String name);
+
+  /// No description provided for @logBanned.
+  ///
+  /// In en, this message translates to:
+  /// **'banned {name}'**
+  String logBanned(String name);
+
+  /// No description provided for @logRestricted.
+  ///
+  /// In en, this message translates to:
+  /// **'restricted {name}'**
+  String logRestricted(String name);
+
+  /// No description provided for @logUnrestricted.
+  ///
+  /// In en, this message translates to:
+  /// **'lifted the restrictions of {name}'**
+  String logUnrestricted(String name);
+
+  /// No description provided for @logTitleChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'gave {name} the title {title}'**
+  String logTitleChanged(String name, String title);
+
+  /// No description provided for @logTitleSet.
+  ///
+  /// In en, this message translates to:
+  /// **'renamed the chat to {title}'**
+  String logTitleSet(String title);
+
+  /// No description provided for @logDescriptionChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'changed the description'**
+  String get logDescriptionChanged;
+
+  /// No description provided for @logPhotoChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'changed the photo'**
+  String get logPhotoChanged;
+
+  /// No description provided for @logPhotoRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'removed the photo'**
+  String get logPhotoRemoved;
+
+  /// No description provided for @logMadePrivate.
+  ///
+  /// In en, this message translates to:
+  /// **'made the chat private'**
+  String get logMadePrivate;
+
+  /// No description provided for @logMadePublic.
+  ///
+  /// In en, this message translates to:
+  /// **'made the chat public at t.me/{username}'**
+  String logMadePublic(String username);
+
+  /// No description provided for @logUsernamesChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'changed the links'**
+  String get logUsernamesChanged;
+
+  /// No description provided for @logPermissionsChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'changed the permissions'**
+  String get logPermissionsChanged;
+
+  /// No description provided for @logSlowModeOff.
+  ///
+  /// In en, this message translates to:
+  /// **'turned slow mode off'**
+  String get logSlowModeOff;
+
+  /// No description provided for @logSlowModeOn.
+  ///
+  /// In en, this message translates to:
+  /// **'set slow mode to {interval}'**
+  String logSlowModeOn(String interval);
+
+  /// No description provided for @logLinked.
+  ///
+  /// In en, this message translates to:
+  /// **'linked a chat'**
+  String get logLinked;
+
+  /// No description provided for @logUnlinked.
+  ///
+  /// In en, this message translates to:
+  /// **'unlinked the chat'**
+  String get logUnlinked;
+
+  /// No description provided for @logReactionsChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'changed the allowed reactions'**
+  String get logReactionsChanged;
+
+  /// No description provided for @logHistoryShown.
+  ///
+  /// In en, this message translates to:
+  /// **'made the history visible to new members'**
+  String get logHistoryShown;
+
+  /// No description provided for @logHistoryHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'hid the history from new members'**
+  String get logHistoryHidden;
+
+  /// No description provided for @logInvitesOn.
+  ///
+  /// In en, this message translates to:
+  /// **'let members add others'**
+  String get logInvitesOn;
+
+  /// No description provided for @logInvitesOff.
+  ///
+  /// In en, this message translates to:
+  /// **'stopped members adding others'**
+  String get logInvitesOff;
+
+  /// No description provided for @logSignaturesOn.
+  ///
+  /// In en, this message translates to:
+  /// **'turned signatures on'**
+  String get logSignaturesOn;
+
+  /// No description provided for @logSignaturesOff.
+  ///
+  /// In en, this message translates to:
+  /// **'turned signatures off'**
+  String get logSignaturesOff;
+
+  /// No description provided for @logProtectedOn.
+  ///
+  /// In en, this message translates to:
+  /// **'turned forwarding off'**
+  String get logProtectedOn;
+
+  /// No description provided for @logProtectedOff.
+  ///
+  /// In en, this message translates to:
+  /// **'turned forwarding on'**
+  String get logProtectedOff;
+
+  /// No description provided for @logLinkEdited.
+  ///
+  /// In en, this message translates to:
+  /// **'edited the link {link}'**
+  String logLinkEdited(String link);
+
+  /// No description provided for @logLinkRevoked.
+  ///
+  /// In en, this message translates to:
+  /// **'revoked the link {link}'**
+  String logLinkRevoked(String link);
+
+  /// No description provided for @logLinkDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'deleted the link {link}'**
+  String logLinkDeleted(String link);
+
+  /// No description provided for @logVideoChatStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'started a video chat'**
+  String get logVideoChatStarted;
+
+  /// No description provided for @logVideoChatEnded.
+  ///
+  /// In en, this message translates to:
+  /// **'ended the video chat'**
+  String get logVideoChatEnded;
+
+  /// No description provided for @logTopicsOn.
+  ///
+  /// In en, this message translates to:
+  /// **'turned topics on'**
+  String get logTopicsOn;
+
+  /// No description provided for @logTopicsOff.
+  ///
+  /// In en, this message translates to:
+  /// **'turned topics off'**
+  String get logTopicsOff;
+
+  /// No description provided for @logTopicCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'created the topic {name}'**
+  String logTopicCreated(String name);
+
+  /// No description provided for @logTopicEdited.
+  ///
+  /// In en, this message translates to:
+  /// **'edited the topic {name}'**
+  String logTopicEdited(String name);
+
+  /// No description provided for @logTopicDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'deleted the topic {name}'**
+  String logTopicDeleted(String name);
+
+  /// No description provided for @logTopicToggled.
+  ///
+  /// In en, this message translates to:
+  /// **'closed or reopened the topic {name}'**
+  String logTopicToggled(String name);
+
+  /// No description provided for @logTopicPinned.
+  ///
+  /// In en, this message translates to:
+  /// **'pinned or unpinned a topic'**
+  String get logTopicPinned;
+
+  /// No description provided for @logStickerSetChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'changed the sticker set'**
+  String get logStickerSetChanged;
+
+  /// No description provided for @logAutoDeleteChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'changed the auto-delete timer'**
+  String get logAutoDeleteChanged;
+
+  /// No description provided for @logOther.
+  ///
+  /// In en, this message translates to:
+  /// **'changed a setting'**
+  String get logOther;
+
+  /// No description provided for @groupType.
+  ///
+  /// In en, this message translates to:
+  /// **'Group type'**
+  String get groupType;
+
+  /// No description provided for @channelType.
+  ///
+  /// In en, this message translates to:
+  /// **'Channel type'**
+  String get channelType;
+
+  /// No description provided for @privateChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Private'**
+  String get privateChat;
+
+  /// No description provided for @publicChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Public'**
+  String get publicChat;
+
+  /// No description provided for @privateGroupNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Only people with an invite link can join.'**
+  String get privateGroupNote;
+
+  /// No description provided for @publicGroupNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone can find the group in search and join.'**
+  String get publicGroupNote;
+
+  /// No description provided for @privateChannelNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Only people with an invite link can subscribe.'**
+  String get privateChannelNote;
+
+  /// No description provided for @publicChannelNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone can find the channel in search and subscribe.'**
+  String get publicChannelNote;
+
+  /// No description provided for @usernameTaken.
+  ///
+  /// In en, this message translates to:
+  /// **'This link is already taken.'**
+  String get usernameTaken;
+
+  /// No description provided for @usernameInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Use 5 to 32 letters, digits and underscores, starting with a letter.'**
+  String get usernameInvalid;
+
+  /// No description provided for @usernameTooMany.
+  ///
+  /// In en, this message translates to:
+  /// **'You have too many public chats. Make one private first.'**
+  String get usernameTooMany;
+
+  /// No description provided for @usernameNotSet.
+  ///
+  /// In en, this message translates to:
+  /// **'The channel is created, but t.me/{username} is taken. Pick another link in its info.'**
+  String usernameNotSet(String username);
+
+  /// No description provided for @publicLinkOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'public link (optional)'**
+  String get publicLinkOptional;
+
+  /// No description provided for @reactions.
+  ///
+  /// In en, this message translates to:
+  /// **'Reactions'**
+  String get reactions;
+
+  /// No description provided for @reactionsAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get reactionsAll;
+
+  /// No description provided for @reactionsSome.
+  ///
+  /// In en, this message translates to:
+  /// **'Some'**
+  String get reactionsSome;
+
+  /// No description provided for @reactionsNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get reactionsNone;
+
+  /// No description provided for @reactionsAllNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Members can react with any emoji.'**
+  String get reactionsAllNote;
+
+  /// No description provided for @reactionsSomeNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Members can react only with the emoji picked here.'**
+  String get reactionsSomeNote;
+
+  /// No description provided for @reactionsNoneNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody can react to messages.'**
+  String get reactionsNoneNote;
+
+  /// No description provided for @discussionGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Discussion group'**
+  String get discussionGroup;
+
+  /// No description provided for @linkedChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Linked channel'**
+  String get linkedChannel;
+
+  /// No description provided for @discussionGroupNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Comments under posts go to this group.'**
+  String get discussionGroupNote;
+
+  /// No description provided for @linkedChannelNote.
+  ///
+  /// In en, this message translates to:
+  /// **'This group holds the comments of the channel.'**
+  String get linkedChannelNote;
+
+  /// No description provided for @pickDiscussionGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a group you manage for the comments under posts.'**
+  String get pickDiscussionGroup;
+
+  /// No description provided for @noSuitableGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'You have no group to link. Create one first.'**
+  String get noSuitableGroups;
+
+  /// No description provided for @unlink.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlink'**
+  String get unlink;
+
+  /// No description provided for @unlinkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlink?'**
+  String get unlinkTitle;
+
+  /// No description provided for @unlinkGroupMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Posts will have no comments until another group is linked.'**
+  String get unlinkGroupMessage;
+
+  /// No description provided for @unlinkChannelMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The group will no longer hold the channel\'s comments.'**
+  String get unlinkChannelMessage;
+
+  /// No description provided for @addMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Add members'**
+  String get addMembers;
+
+  /// No description provided for @addSubscribers.
+  ///
+  /// In en, this message translates to:
+  /// **'Add subscribers'**
+  String get addSubscribers;
+
+  /// No description provided for @add.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get add;
+
+  /// No description provided for @editLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit link'**
+  String get editLink;
+
+  /// No description provided for @manage.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage'**
+  String get manage;
+
+  /// No description provided for @historyForNewMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Show history to new members'**
+  String get historyForNewMembers;
+
+  /// No description provided for @topics.
+  ///
+  /// In en, this message translates to:
+  /// **'Topics'**
+  String get topics;
+
+  /// No description provided for @approveNewMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve new members'**
+  String get approveNewMembers;
+
+  /// No description provided for @none.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get none;
+
+  /// No description provided for @ofCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} of {total}'**
+  String ofCount(int count, int total);
+
+  /// No description provided for @chatLinkHint.
+  ///
+  /// In en, this message translates to:
+  /// **'link'**
+  String get chatLinkHint;
+
+  /// No description provided for @chatLinkAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This link is available.'**
+  String get chatLinkAvailable;
+
   /// No description provided for @chatBackground.
   ///
   /// In en, this message translates to:

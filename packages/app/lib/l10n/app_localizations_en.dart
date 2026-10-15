@@ -3710,6 +3710,455 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shortcutsRestoreConfirm => 'Restore';
 
   @override
+  String get adminTitleHint => 'Title (optional)';
+
+  @override
+  String get adminTitleNote => 'Shown to members in place of \"admin\".';
+
+  @override
+  String get permCreateTopics => 'Create topics';
+
+  @override
+  String get permissions => 'Permissions';
+
+  @override
+  String get permissionsEveryone => 'What members can do';
+
+  @override
+  String get slowMode => 'Slow mode';
+
+  @override
+  String get slowModeOffNote =>
+      'Members can send messages as often as they like.';
+
+  @override
+  String slowModeNote(String interval) {
+    return 'Members can send one message every $interval.';
+  }
+
+  @override
+  String get off => 'Off';
+
+  @override
+  String secondsShort(int count) {
+    return '${count}s';
+  }
+
+  @override
+  String minutesShort(int count) {
+    return '${count}m';
+  }
+
+  @override
+  String hoursShort(int count) {
+    return '${count}h';
+  }
+
+  @override
+  String get removedUsers => 'Removed users';
+
+  @override
+  String get noRemovedUsers => 'Nobody is banned or restricted.';
+
+  @override
+  String get unban => 'Unban';
+
+  @override
+  String get banned => 'Banned';
+
+  @override
+  String bannedUntil(String until) {
+    return 'Banned $until';
+  }
+
+  @override
+  String get restricted => 'Restricted';
+
+  @override
+  String cannot(String what) {
+    return 'Can\'t $what';
+  }
+
+  @override
+  String untilDate(String date) {
+    return 'until $date';
+  }
+
+  @override
+  String get joinRequests => 'Join requests';
+
+  @override
+  String get noJoinRequests => 'Nobody is waiting to join.';
+
+  @override
+  String requestedOn(String date) {
+    return 'Asked $date';
+  }
+
+  @override
+  String get approve => 'Approve';
+
+  @override
+  String get dismiss => 'Dismiss';
+
+  @override
+  String get recentActions => 'Recent actions';
+
+  @override
+  String get recentActionsFailed => 'Couldn\'t load the recent actions.';
+
+  @override
+  String get noRecentActions => 'No recent actions.';
+
+  @override
+  String get recentActionsNote => 'Actions of the last 48 hours.';
+
+  @override
+  String get allAdmins => 'All admins';
+
+  @override
+  String get logMedia => 'a media message';
+
+  @override
+  String logEditedMessage(String text) {
+    return 'edited a message: $text';
+  }
+
+  @override
+  String logDeletedMessage(String text) {
+    return 'deleted a message: $text';
+  }
+
+  @override
+  String logPinnedMessage(String text) {
+    return 'pinned a message: $text';
+  }
+
+  @override
+  String get logUnpinnedMessage => 'unpinned a message';
+
+  @override
+  String get logStoppedPoll => 'stopped a poll';
+
+  @override
+  String get logJoined => 'joined';
+
+  @override
+  String logJoinedByLink(String link) {
+    return 'joined by the link $link';
+  }
+
+  @override
+  String logJoinedByRequest(String name) {
+    return 'joined, approved by $name';
+  }
+
+  @override
+  String logInvited(String name) {
+    return 'added $name';
+  }
+
+  @override
+  String get logLeft => 'left';
+
+  @override
+  String logPromoted(String name) {
+    return 'made $name an admin or changed their rights';
+  }
+
+  @override
+  String logDemoted(String name) {
+    return 'dismissed $name as admin';
+  }
+
+  @override
+  String logBanned(String name) {
+    return 'banned $name';
+  }
+
+  @override
+  String logRestricted(String name) {
+    return 'restricted $name';
+  }
+
+  @override
+  String logUnrestricted(String name) {
+    return 'lifted the restrictions of $name';
+  }
+
+  @override
+  String logTitleChanged(String name, String title) {
+    return 'gave $name the title $title';
+  }
+
+  @override
+  String logTitleSet(String title) {
+    return 'renamed the chat to $title';
+  }
+
+  @override
+  String get logDescriptionChanged => 'changed the description';
+
+  @override
+  String get logPhotoChanged => 'changed the photo';
+
+  @override
+  String get logPhotoRemoved => 'removed the photo';
+
+  @override
+  String get logMadePrivate => 'made the chat private';
+
+  @override
+  String logMadePublic(String username) {
+    return 'made the chat public at t.me/$username';
+  }
+
+  @override
+  String get logUsernamesChanged => 'changed the links';
+
+  @override
+  String get logPermissionsChanged => 'changed the permissions';
+
+  @override
+  String get logSlowModeOff => 'turned slow mode off';
+
+  @override
+  String logSlowModeOn(String interval) {
+    return 'set slow mode to $interval';
+  }
+
+  @override
+  String get logLinked => 'linked a chat';
+
+  @override
+  String get logUnlinked => 'unlinked the chat';
+
+  @override
+  String get logReactionsChanged => 'changed the allowed reactions';
+
+  @override
+  String get logHistoryShown => 'made the history visible to new members';
+
+  @override
+  String get logHistoryHidden => 'hid the history from new members';
+
+  @override
+  String get logInvitesOn => 'let members add others';
+
+  @override
+  String get logInvitesOff => 'stopped members adding others';
+
+  @override
+  String get logSignaturesOn => 'turned signatures on';
+
+  @override
+  String get logSignaturesOff => 'turned signatures off';
+
+  @override
+  String get logProtectedOn => 'turned forwarding off';
+
+  @override
+  String get logProtectedOff => 'turned forwarding on';
+
+  @override
+  String logLinkEdited(String link) {
+    return 'edited the link $link';
+  }
+
+  @override
+  String logLinkRevoked(String link) {
+    return 'revoked the link $link';
+  }
+
+  @override
+  String logLinkDeleted(String link) {
+    return 'deleted the link $link';
+  }
+
+  @override
+  String get logVideoChatStarted => 'started a video chat';
+
+  @override
+  String get logVideoChatEnded => 'ended the video chat';
+
+  @override
+  String get logTopicsOn => 'turned topics on';
+
+  @override
+  String get logTopicsOff => 'turned topics off';
+
+  @override
+  String logTopicCreated(String name) {
+    return 'created the topic $name';
+  }
+
+  @override
+  String logTopicEdited(String name) {
+    return 'edited the topic $name';
+  }
+
+  @override
+  String logTopicDeleted(String name) {
+    return 'deleted the topic $name';
+  }
+
+  @override
+  String logTopicToggled(String name) {
+    return 'closed or reopened the topic $name';
+  }
+
+  @override
+  String get logTopicPinned => 'pinned or unpinned a topic';
+
+  @override
+  String get logStickerSetChanged => 'changed the sticker set';
+
+  @override
+  String get logAutoDeleteChanged => 'changed the auto-delete timer';
+
+  @override
+  String get logOther => 'changed a setting';
+
+  @override
+  String get groupType => 'Group type';
+
+  @override
+  String get channelType => 'Channel type';
+
+  @override
+  String get privateChat => 'Private';
+
+  @override
+  String get publicChat => 'Public';
+
+  @override
+  String get privateGroupNote => 'Only people with an invite link can join.';
+
+  @override
+  String get publicGroupNote => 'Anyone can find the group in search and join.';
+
+  @override
+  String get privateChannelNote =>
+      'Only people with an invite link can subscribe.';
+
+  @override
+  String get publicChannelNote =>
+      'Anyone can find the channel in search and subscribe.';
+
+  @override
+  String get usernameTaken => 'This link is already taken.';
+
+  @override
+  String get usernameInvalid =>
+      'Use 5 to 32 letters, digits and underscores, starting with a letter.';
+
+  @override
+  String get usernameTooMany =>
+      'You have too many public chats. Make one private first.';
+
+  @override
+  String usernameNotSet(String username) {
+    return 'The channel is created, but t.me/$username is taken. Pick another link in its info.';
+  }
+
+  @override
+  String get publicLinkOptional => 'public link (optional)';
+
+  @override
+  String get reactions => 'Reactions';
+
+  @override
+  String get reactionsAll => 'All';
+
+  @override
+  String get reactionsSome => 'Some';
+
+  @override
+  String get reactionsNone => 'None';
+
+  @override
+  String get reactionsAllNote => 'Members can react with any emoji.';
+
+  @override
+  String get reactionsSomeNote =>
+      'Members can react only with the emoji picked here.';
+
+  @override
+  String get reactionsNoneNote => 'Nobody can react to messages.';
+
+  @override
+  String get discussionGroup => 'Discussion group';
+
+  @override
+  String get linkedChannel => 'Linked channel';
+
+  @override
+  String get discussionGroupNote => 'Comments under posts go to this group.';
+
+  @override
+  String get linkedChannelNote =>
+      'This group holds the comments of the channel.';
+
+  @override
+  String get pickDiscussionGroup =>
+      'Pick a group you manage for the comments under posts.';
+
+  @override
+  String get noSuitableGroups => 'You have no group to link. Create one first.';
+
+  @override
+  String get unlink => 'Unlink';
+
+  @override
+  String get unlinkTitle => 'Unlink?';
+
+  @override
+  String get unlinkGroupMessage =>
+      'Posts will have no comments until another group is linked.';
+
+  @override
+  String get unlinkChannelMessage =>
+      'The group will no longer hold the channel\'s comments.';
+
+  @override
+  String get addMembers => 'Add members';
+
+  @override
+  String get addSubscribers => 'Add subscribers';
+
+  @override
+  String get add => 'Add';
+
+  @override
+  String get editLink => 'Edit link';
+
+  @override
+  String get manage => 'Manage';
+
+  @override
+  String get historyForNewMembers => 'Show history to new members';
+
+  @override
+  String get topics => 'Topics';
+
+  @override
+  String get approveNewMembers => 'Approve new members';
+
+  @override
+  String get none => 'None';
+
+  @override
+  String ofCount(int count, int total) {
+    return '$count of $total';
+  }
+
+  @override
+  String get chatLinkHint => 'link';
+
+  @override
+  String get chatLinkAvailable => 'This link is available.';
+
+  @override
   String get chatBackground => 'Chat background';
 
   @override

@@ -170,6 +170,7 @@ class ToggleRow extends StatelessWidget {
     required this.label,
     required this.value,
     this.onChanged,
+    this.padding = const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
   });
 
   final String label;
@@ -177,6 +178,7 @@ class ToggleRow extends StatelessWidget {
 
   /// Null when the user can't change it.
   final ValueChanged<bool>? onChanged;
+  final EdgeInsets padding;
 
   @override
   Widget build(BuildContext context) {
@@ -194,7 +196,7 @@ class ToggleRow extends StatelessWidget {
           behavior: HitTestBehavior.opaque,
           onTap: enabled ? () => onChanged!(!value) : null,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+            padding: padding,
             child: Row(
               children: [
                 Expanded(
@@ -320,6 +322,116 @@ class ChoiceRow<T> extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// A person in a management list: avatar, name, a line under it and
+/// short actions on the right, such as Approve and Dismiss.
+class PersonRow extends StatefulWidget {
+  const PersonRow({
+    super.key,
+    required this.name,
+    required this.avatar,
+    this.subtitle = '',
+    this.actions = const [],
+    this.onTap,
+  });
+
+  final String name;
+  final Widget avatar;
+  final String subtitle;
+
+  /// Label and what it does; a destructive one goes last.
+  final List<(String, VoidCallback)> actions;
+  final VoidCallback? onTap;
+
+  @override
+  State<PersonRow> createState() => _PersonRowState();
+}
+
+class _PersonRowState extends State<PersonRow> {
+  var _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    return MouseRegion(
+      cursor: widget.onTap == null
+          ? MouseCursor.defer
+          : SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+          decoration: BoxDecoration(
+            color: _hover && widget.onTap != null
+                ? c.hover
+                : const Color(0x00000000),
+            borderRadius: BorderRadius.circular(7),
+          ),
+          child: Row(
+            children: [
+              widget.avatar,
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: mgTextStyle(c, height: 1.3),
+                    ),
+                    if (widget.subtitle.isNotEmpty)
+                      Text(
+                        widget.subtitle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: mgTextStyle(
+                          c,
+                          size: MgType.caption,
+                          color: c.fg2,
+                          height: 1.3,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              for (final (label, action) in widget.actions)
+                MgTextButton(label: label, onPressed: action),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// What a sheet shows while its list loads, when it failed, or when
+/// there is nothing in it.
+class SheetNotice extends StatelessWidget {
+  const SheetNotice(this.text, {super.key});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Text(
+          text,
+          textAlign: TextAlign.center,
+          style: mgTextStyle(c, color: c.fg2),
+        ),
       ),
     );
   }
