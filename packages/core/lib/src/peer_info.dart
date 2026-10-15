@@ -129,6 +129,10 @@ final class PeerInfoController {
   final _entities = <String, td.FormattedText>{};
   final _phones = <String, String>{};
 
+  /// Block states set from the panel, until TDLib sends a full info that
+  /// has them.
+  final _blocked = <int, bool>{};
+
   /// The signed-in user, from TDLib's `my_id` option.
   int? _myId;
 
@@ -170,7 +174,9 @@ final class PeerInfoController {
           formattedPhone: _phones[user?.phoneNumber],
           birthdate: full?.birthdate,
           isMuted: muted,
-          isBlocked: blocked || full?.blockList is td.BlockListMain,
+          isBlocked:
+              _blocked[userId] ??
+              (blocked || full?.blockList is td.BlockListMain),
           isDeleted: user?.type is td.UserTypeDeleted,
           isSelf: userId == _myId,
         );
@@ -330,14 +336,16 @@ final class PeerInfoController {
       ),
     );
     // TDLib confirms with updateChatBlockList, but not always with a new
-    // full info; both are set so the panel does not wait or flip back.
+    // full info. Until a fresh one arrives the panel shows what the user
+    // chose, and keeps the bio and birthday it has.
     _chats[chatId]?.blockList = list;
-    _userFull.remove(userId);
+    _blocked[userId] = blocked;
     _notify();
     await _optional(() async {
       _userFull[userId] = await _client.send(
         td.GetUserFullInfo(userId: userId),
       );
+      _blocked.remove(userId);
       _notify();
     });
   }
@@ -357,6 +365,7 @@ final class PeerInfoController {
         value: td.OptionValueInteger(:final value),
       ):
         _myId = value;
+        _notify();
       case td.UpdateUser(:final user):
         _putUser(user);
         _notify();
@@ -365,6 +374,7 @@ final class PeerInfoController {
         _notify();
       case td.UpdateUserFullInfo(:final userId, :final userFullInfo):
         _userFull[userId] = userFullInfo;
+        _blocked.remove(userId);
         _notify();
       case td.UpdateBasicGroup(:final basicGroup):
         _basicGroups[basicGroup.id] = basicGroup;

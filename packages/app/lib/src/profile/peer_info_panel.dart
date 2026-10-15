@@ -46,10 +46,13 @@ class PeerInfoPanel extends ConsumerWidget {
         _TopBar(onBack: onBack, onClose: onClose),
         Expanded(
           child: switch (info) {
-            AsyncValue(value: final info?) => _Content(
-              info: info,
-              onMember: onMember,
-              onMessage: onMessage,
+            AsyncValue(value: final info?) => _MinuteTicker(
+              builder: (now) => _Content(
+                info: info,
+                now: now,
+                onMember: onMember,
+                onMessage: onMessage,
+              ),
             ),
             AsyncError() => Center(
               child: Text(l10n.infoFailed, style: mgTextStyle(c, color: c.fg2)),
@@ -121,14 +124,62 @@ class _TopBar extends StatelessWidget {
   }
 }
 
+/// Rebuilds at every new minute, so "last seen 5 minutes ago" and
+/// "online" stay true while the panel is open.
+class _MinuteTicker extends StatefulWidget {
+  const _MinuteTicker({required this.builder});
+
+  final Widget Function(DateTime now) builder;
+
+  @override
+  State<_MinuteTicker> createState() => _MinuteTickerState();
+}
+
+class _MinuteTickerState extends State<_MinuteTicker> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _schedule();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _schedule() {
+    final now = DateTime.now();
+    final next = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      now.hour,
+      now.minute,
+    ).add(const Duration(minutes: 1));
+    _timer = Timer(next.difference(now), () {
+      if (!mounted) return;
+      setState(() {});
+      _schedule();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.builder(DateTime.now());
+}
+
 class _Content extends ConsumerWidget {
   const _Content({
+    required this.now,
     required this.info,
     required this.onMember,
     required this.onMessage,
   });
 
   final PeerInfo info;
+  final DateTime now;
   final ValueChanged<int> onMember;
   final VoidCallback onMessage;
 
@@ -136,7 +187,6 @@ class _Content extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final c = MgColors.of(context);
-    final now = DateTime.now();
     final peers = ref.read(telegramSessionProvider).requireValue.peers;
     final title = info.isDeleted ? l10n.deletedAccount : info.title;
     final status = describePeerStatus(l10n, info, now: now);
@@ -221,17 +271,18 @@ class _Content extends ConsumerWidget {
                     label: l10n.infoMessage,
                     onTap: onMessage,
                   ),
-                  const SizedBox(width: 8),
+                  if (!info.isSelf) const SizedBox(width: 8),
                 ],
-                _ActionTile(
-                  icon: MgIcons.notifications,
-                  label: info.isMuted ? l10n.infoUnmute : l10n.infoMute,
-                  onTap: () => unawaited(
-                    peers
-                        .setMuted(info.chatId, muted: !info.isMuted)
-                        .catchError((Object _) {}),
+                if (!info.isSelf)
+                  _ActionTile(
+                    icon: MgIcons.notifications,
+                    label: info.isMuted ? l10n.infoUnmute : l10n.infoMute,
+                    onTap: () => unawaited(
+                      peers
+                          .setMuted(info.chatId, muted: !info.isMuted)
+                          .catchError((Object _) {}),
+                    ),
                   ),
-                ),
               ],
             ),
           ],

@@ -225,6 +225,31 @@ void main() {
       expect(find.text('Unblock user'), findsOneWidget);
     });
 
+    testWidgets('closes when no pane shows the chat any more', (tester) async {
+      await pump(tester);
+      open(10);
+      await settle(tester);
+
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump();
+      expect(container.read(peerInfoPanelsProvider), isEmpty);
+    });
+
+    testWidgets('offers no mute or block in Saved Messages', (tester) async {
+      json.push({
+        '@type': 'updateOption',
+        'name': 'my_id',
+        'value': {'@type': 'optionValueInteger', 'value': '5'},
+      });
+      await pump(tester);
+      open(10);
+      await settle(tester);
+
+      expect(find.text('Message'), findsOneWidget);
+      expect(find.text('Mute'), findsNothing);
+      expect(find.text('Block user'), findsNothing);
+    });
+
     testWidgets('lists group members and opens one', (tester) async {
       await pump(tester, chatId: 20);
       open(20);
@@ -297,6 +322,9 @@ final class _FakeTdJson implements td.TdJson {
   var _nextClientId = 0;
 
   Iterable<Object?> get types => sent.map((r) => r['@type']);
+
+  void push(Map<String, Object?> update) =>
+      _queue.add(jsonEncode({...update, '@client_id': 1}));
 
   final _chats = {
     10: _chat(10, 'Alina Petrova', {'@type': 'chatTypePrivate', 'user_id': 5}),

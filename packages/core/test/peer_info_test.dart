@@ -68,15 +68,20 @@ void main() {
       expect(info.isSelf, isFalse);
     });
 
-    test('knows the chat with yourself', () async {
+    test('learns which chat is your own after it loaded', () async {
+      await peers.load(10);
+      final changes = <void>[];
+      final subscription = peers.changes.listen(changes.add);
+      expect(peers.info(10)!.isSelf, isFalse);
       json.push({
         '@type': 'updateOption',
         'name': 'my_id',
         'value': {'@type': 'optionValueInteger', 'value': '5'},
       });
       await pumpEventQueue();
-      await peers.load(10);
       expect(peers.info(10)!.isSelf, isTrue);
+      expect(changes, isNotEmpty);
+      await subscription.cancel();
     });
 
     test('follows status and notification updates', () async {
@@ -138,6 +143,19 @@ void main() {
       });
       expect((request['block_list']! as Map)['@type'], 'blockListMain');
       expect(peers.info(10)!.isBlocked, isTrue);
+      expect(peers.info(10)!.bio!.text, 'Designer');
+    });
+
+    test('keeps the bio when the refresh after blocking fails', () async {
+      await peers.load(10);
+      json.answers['getUserFullInfo'] = {
+        '@type': 'error',
+        'code': 500,
+        'message': 'Internal',
+      };
+      await peers.setBlocked(10, blocked: true);
+      expect(peers.info(10)!.isBlocked, isTrue);
+      expect(peers.info(10)!.bio!.text, 'Designer');
     });
   });
 

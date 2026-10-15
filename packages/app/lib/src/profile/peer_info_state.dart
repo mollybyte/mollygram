@@ -60,6 +60,27 @@ class PeerInfoPanels extends Notifier<Set<int>> {
 
   void toggle(int chatId) =>
       state.contains(chatId) ? close(chatId) : open(chatId);
+
+  /// Panes showing each chat; a split view can show one chat twice.
+  final _hosts = <int, int>{};
+
+  /// A pane started showing [chatId].
+  void attach(int chatId) => _hosts[chatId] = (_hosts[chatId] ?? 0) + 1;
+
+  /// A pane stopped showing [chatId]. When no pane shows it any more its
+  /// panel closes, so opening the chat later does not bring back a panel
+  /// nobody asked for.
+  void detach(int chatId) {
+    // The whole scope may be gone with the window.
+    if (!ref.mounted) return;
+    final left = (_hosts[chatId] ?? 1) - 1;
+    if (left > 0) {
+      _hosts[chatId] = left;
+      return;
+    }
+    _hosts.remove(chatId);
+    close(chatId);
+  }
 }
 
 /// Shows [chatId] (bringing it forward when it is already open) with its

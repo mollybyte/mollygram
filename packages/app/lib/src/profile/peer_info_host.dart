@@ -46,9 +46,12 @@ class _PeerInfoHostState extends ConsumerState<PeerInfoHost>
   /// from a group's list go on top.
   late List<int> _stack = [widget.chatId];
 
+  late final _panels = ref.read(peerInfoPanelsProvider.notifier);
+
   @override
   void initState() {
     super.initState();
+    _panels.attach(widget.chatId);
     if (_isOpen) _slide.value = 1;
     _slide.addStatusListener((status) {
       if (status == AnimationStatus.dismissed) {
@@ -61,6 +64,9 @@ class _PeerInfoHostState extends ConsumerState<PeerInfoHost>
   void didUpdateWidget(PeerInfoHost old) {
     super.didUpdateWidget(old);
     if (old.chatId != widget.chatId) {
+      _panels
+        ..detach(old.chatId)
+        ..attach(widget.chatId);
       _stack = [widget.chatId];
       _slide.value = _isOpen ? 1 : 0;
     }
@@ -68,6 +74,10 @@ class _PeerInfoHostState extends ConsumerState<PeerInfoHost>
 
   @override
   void dispose() {
+    final panels = _panels;
+    final chatId = widget.chatId;
+    // Providers can't change while the tree is being torn down.
+    scheduleMicrotask(() => panels.detach(chatId));
     _curve.dispose();
     _slide.dispose();
     super.dispose();
