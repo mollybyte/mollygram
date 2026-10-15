@@ -282,8 +282,8 @@ class _TimelineList extends StatelessWidget {
 
     Widget build(TimelineItem item) {
       final Widget child = switch (item) {
-        TimelineDate(:final day) =>
-          onDateTap == null
+        TimelineDate(:final day) => SelectionContainer.disabled(
+          child: onDateTap == null
               ? DatePill(formatDay(l10n, day, locale))
               : MouseRegion(
                   cursor: SystemMouseCursors.click,
@@ -293,6 +293,7 @@ class _TimelineList extends StatelessWidget {
                     child: DatePill(formatDay(l10n, day, locale)),
                   ),
                 ),
+        ),
         TimelineRow(
           :final row,
           :final startsRun,
@@ -342,7 +343,12 @@ class _TimelineList extends StatelessWidget {
         child: TimelineView._holds(item, unreadFrom)
             ? Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [UnreadDivider(l10n.unreadMessages), padded],
+                children: [
+                  SelectionContainer.disabled(
+                    child: UnreadDivider(l10n.unreadMessages),
+                  ),
+                  padded,
+                ],
               )
             : padded,
       );
@@ -355,46 +361,51 @@ class _TimelineList extends StatelessWidget {
     }
 
     const center = ValueKey('center');
-    return CustomScrollView(
-      controller: controller,
-      reverse: true,
-      center: center,
-      // No off-screen cache: a message is built when it enters the
-      // viewport, which is when onShown reports it to TDLib as viewed.
-      scrollCacheExtent: const ScrollCacheExtent.pixels(0),
-      slivers: [
-        // The space under the newest message, below the anchor's rows, or
-        // right under the center when there are none, so offset 0 is the
-        // bottom from the first frame.
-        if (newer.isNotEmpty)
-          const SliverToBoxAdapter(child: SizedBox(height: bottomInset)),
-        SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, i) {
-              if (!reachedEnd && i >= newer.length - 8) onNearBottom();
-              return build(newer[i]);
-            },
-            childCount: newer.length,
-            findChildIndexCallback: (key) => indexOf(newer, key),
-          ),
-        ),
-        SliverPadding(
-          key: center,
-          padding: EdgeInsets.only(bottom: newer.isEmpty ? bottomInset : 0),
-          sliver: SliverList(
+    // Text can be selected across messages with the mouse and copied with
+    // the shortcut; the row's own menu stands in for the selection menu.
+    return SelectionArea(
+      contextMenuBuilder: (context, state) => const SizedBox.shrink(),
+      child: CustomScrollView(
+        controller: controller,
+        reverse: true,
+        center: center,
+        // No off-screen cache: a message is built when it enters the
+        // viewport, which is when onShown reports it to TDLib as viewed.
+        scrollCacheExtent: const ScrollCacheExtent.pixels(0),
+        slivers: [
+          // The space under the newest message, below the anchor's rows, or
+          // right under the center when there are none, so offset 0 is the
+          // bottom from the first frame.
+          if (newer.isNotEmpty)
+            const SliverToBoxAdapter(child: SizedBox(height: bottomInset)),
+          SliverList(
             delegate: SliverChildBuilderDelegate(
               (context, i) {
-                if (i >= older.length - 8) onNearTop();
-                if (!reachedEnd && newer.isEmpty && i < 8) onNearBottom();
-                return build(older[i]);
+                if (!reachedEnd && i >= newer.length - 8) onNearBottom();
+                return build(newer[i]);
               },
-              childCount: older.length,
-              findChildIndexCallback: (key) => indexOf(older, key),
+              childCount: newer.length,
+              findChildIndexCallback: (key) => indexOf(newer, key),
             ),
           ),
-        ),
-        SliverToBoxAdapter(child: SizedBox(height: topInset)),
-      ],
+          SliverPadding(
+            key: center,
+            padding: EdgeInsets.only(bottom: newer.isEmpty ? bottomInset : 0),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, i) {
+                  if (i >= older.length - 8) onNearTop();
+                  if (!reachedEnd && newer.isEmpty && i < 8) onNearBottom();
+                  return build(older[i]);
+                },
+                childCount: older.length,
+                findChildIndexCallback: (key) => indexOf(older, key),
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(child: SizedBox(height: topInset)),
+        ],
+      ),
     );
   }
 }

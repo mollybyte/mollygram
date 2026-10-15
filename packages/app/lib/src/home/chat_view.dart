@@ -20,6 +20,7 @@ import '../../l10n/app_localizations.dart';
 import '../chat/attachment_preview.dart';
 import '../chat/describe.dart';
 import '../chat/emoji_sticker_panel.dart';
+import '../chat/formatted_text.dart';
 import '../chat/forward_picker.dart';
 import '../chat/media_viewer.dart';
 import '../chat/message_actions.dart';
@@ -55,6 +56,13 @@ class _ChatViewState extends ConsumerState<ChatView> {
 
   /// The message the next one answers, shown above the composer.
   ConversationMessage? _replyTo;
+
+  /// The part of [_replyTo]'s text the reply quotes, if any.
+  QuoteSelection? _replyQuote;
+  QuoteSelection? _quoteAside;
+
+  /// The text selected in the timeline right now, for the Quote command.
+  ({ConversationMessage message, QuoteSelection quote})? _textSelection;
 
   /// The message whose text is in the composer for editing, and the draft
   /// it pushed aside, which comes back when editing ends.
@@ -162,6 +170,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
       ..reset();
     _failure = null;
     _replyTo = null;
+    _replyQuote = null;
     _editing = null;
     _setAside = '';
     _setAsideRanges = const [];
@@ -355,6 +364,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
     ),
     onJump: (messageId) => unawaited(_jumpTo(messageId)),
     onSelectToggle: _toggleSelected,
+    onTextSelected: (message, quote) => _textSelection = quote == null
+        ? null
+        : (message: message, quote: quote),
   );
 
   /// The scroll offset that puts the anchor's row just under the header.
@@ -518,8 +530,10 @@ class _ChatViewState extends ConsumerState<ChatView> {
       position: position,
       peerName: isPrivate ? chat.title : null,
       isShown: () => mounted && widget.chatId == row.primary.chatId,
+      quote: _textSelection,
       handlers: MessageMenuHandlers(
         onReply: _reply,
+        onQuote: (message, quote) => _reply(message, quote: quote),
         onEdit: _edit,
         onForward: (messages) => unawaited(_forward(messages)),
         onSelect: _select,
@@ -683,11 +697,14 @@ class _ChatViewState extends ConsumerState<ChatView> {
     );
   }
 
-  void _reply(ConversationMessage message) {
+  void _reply(ConversationMessage message, {QuoteSelection? quote}) {
     // The chat may have changed while the menu was open.
     if (message.chatId != widget.chatId) return;
     if (_editing != null) _stopEditing();
-    setState(() => _replyTo = message);
+    setState(() {
+      _replyTo = message;
+      _replyQuote = quote;
+    });
     _focus.requestFocus();
   }
 
@@ -697,10 +714,12 @@ class _ChatViewState extends ConsumerState<ChatView> {
       _setAside = _draft.text;
       _setAsideRanges = _draft.ranges;
       _replyAside = _replyTo;
+      _quoteAside = _replyQuote;
     }
     setState(() {
       _editing = message;
       _replyTo = null;
+      _replyQuote = null;
     });
     final text = captionOf(message.content);
     _draft.setFormatted(
@@ -719,7 +738,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
       _editing = null;
       if (_failure == _Failure.edit) _failure = null;
       _replyTo = _replyAside;
+      _replyQuote = _quoteAside;
       _replyAside = null;
+      _quoteAside = null;
     });
     _draft.setFormatted(draft, ranges);
   }
@@ -731,7 +752,10 @@ class _ChatViewState extends ConsumerState<ChatView> {
     } else if (_editing != null) {
       _stopEditing();
     } else if (_replyTo != null) {
-      setState(() => _replyTo = null);
+      setState(() {
+        _replyTo = null;
+        _replyQuote = null;
+      });
     }
   }
 
@@ -778,6 +802,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
       _panelOpen = false;
       _failure = null;
       _replyTo = null;
+      _replyQuote = null;
     });
     _focus.requestFocus();
     unawaited(_toLatestForSend());
@@ -799,6 +824,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     setState(() {
       _failure = null;
       _replyTo = null;
+      _replyQuote = null;
     });
     try {
       await _conversations.sendVoiceNote(
@@ -824,6 +850,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     setState(() {
       _failure = null;
       _replyTo = null;
+      _replyQuote = null;
     });
     try {
       await _conversations.sendVideoNote(
@@ -874,12 +901,20 @@ class _ChatViewState extends ConsumerState<ChatView> {
   }
 
   Future<void> _forward(List<ConversationMessage> messages) async {
-    final target = await pickForwardTarget(context);
-    if (target == null || messages.isEmpty) return;
+    final hasCaptions = messages.any(
+      (message) =>
+          message.content is! td.MessageText && message.text.isNotEmpty,
+    );
+    final choice = await pickForwardTarget(context, hasCaptions: hasCaptions);
+    if (choice == null || messages.isEmpty) return;
     try {
-      await _conversations.forwardMessages(target, messages.first.chatId, [
-        for (final message in messages) message.id,
-      ]);
+      await _conversations.forwardMessages(
+        choice.chatId,
+        messages.first.chatId,
+        [for (final message in messages) message.id],
+        hideSender: choice.hideSender,
+        hideCaptions: choice.hideCaptions,
+      );
     } catch (_) {
       // Such as a channel the user can't post in.
       if (mounted) setState(() => _failure = _Failure.forward);
@@ -933,6 +968,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     if (text.trim().isEmpty) return;
     final chatId = widget.chatId;
     final replyTo = _replyTo;
+    final quote = _replyQuote;
     final ranges = _draft.ranges;
     final formatted = formattedDraft(text, ranges);
     if (formatted.text.isEmpty) return;
@@ -940,6 +976,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     setState(() {
       _failure = null;
       _replyTo = null;
+      _replyQuote = null;
     });
     unawaited(_toLatestForSend());
     try {
@@ -948,6 +985,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
         formatted.text,
         replyTo: replyTo?.id,
         entities: formatted.entities,
+        quote: quote?.text,
+        quotePosition: quote?.position ?? 0,
       );
     } catch (_) {
       // Give the text back rather than lose it, unless the user has
@@ -956,7 +995,10 @@ class _ChatViewState extends ConsumerState<ChatView> {
       if (_draft.text.isEmpty) _draft.setFormatted(text, ranges);
       setState(() {
         _failure = _Failure.send;
-        _replyTo ??= replyTo;
+        if (_replyTo == null) {
+          _replyTo = replyTo;
+          _replyQuote = quote;
+        }
       });
     }
   }
@@ -1102,6 +1144,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     setState(() {
       _failure = null;
       _replyTo = null;
+      _replyQuote = null;
     });
     if (useDraft) _draft.clear();
     // The draft's formatting goes with it, unless the caption was
@@ -1155,11 +1198,11 @@ class _ChatViewState extends ConsumerState<ChatView> {
           height: size.$2,
         );
       case OutgoingKind.video || OutgoingKind.animation || OutgoingKind.audio:
+        // An edited video arrives measured by the editor.
+        if (file.duration > 0) return file;
         final info = await probeMedia(file.path);
         if (info == null) return file;
-        return OutgoingFile(
-          path: file.path,
-          kind: file.kind,
+        return file.copyWith(
           width: info.width,
           height: info.height,
           duration: info.duration.inSeconds,
@@ -1205,9 +1248,12 @@ class _ChatViewState extends ConsumerState<ChatView> {
     if (reply == null) return null;
     return ComposerContextBar(
       title: nameOfSender(l10n, _conversations.store, reply.sender),
-      text: describeContent(l10n, reply.content),
+      text: _replyQuote?.text ?? describeContent(l10n, reply.content),
       closeTooltip: l10n.close,
-      onClose: () => setState(() => _replyTo = null),
+      onClose: () => setState(() {
+        _replyTo = null;
+        _replyQuote = null;
+      }),
     );
   }
 

@@ -474,36 +474,10 @@ class _ConfirmState extends State<_Confirm> {
                   ],
                   if (widget.option != null) ...[
                     const SizedBox(height: 10),
-                    MergeSemantics(
-                      child: MouseRegion(
-                        cursor: SystemMouseCursors.click,
-                        child: GestureDetector(
-                          onTap: () => setState(() => _checked = !_checked),
-                          child: Row(
-                            children: [
-                              SizedBox.square(
-                                dimension: 18,
-                                child: Checkbox(
-                                  value: _checked,
-                                  activeColor: c.accent,
-                                  materialTapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                  visualDensity: VisualDensity.compact,
-                                  onChanged: (value) =>
-                                      setState(() => _checked = value ?? false),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  widget.option!,
-                                  style: mgTextStyle(c),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                    MgCheckRow(
+                      label: widget.option!,
+                      value: _checked,
+                      onChanged: (value) => setState(() => _checked = value),
                     ),
                   ],
                   const SizedBox(height: 16),
@@ -578,6 +552,255 @@ class _DialogButton extends StatelessWidget {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A checkbox with its label, the whole row clickable, as in the confirm
+/// dialog and the forward picker.
+class MgCheckRow extends StatelessWidget {
+  const MgCheckRow({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String label;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    return MergeSemantics(
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: () => onChanged(!value),
+          child: Row(
+            children: [
+              SizedBox.square(
+                dimension: 18,
+                child: Checkbox(
+                  value: value,
+                  activeColor: c.accent,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  visualDensity: VisualDensity.compact,
+                  onChanged: (checked) => onChanged(checked ?? false),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(child: Text(label, style: mgTextStyle(c))),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A row at the top of a message menu that tells who saw the message or
+/// reacted to it, with their avatars on the right, as in Telegram for
+/// macOS. A click closes the menu and runs [onSelected], which shows the
+/// list.
+class MgMenuInfoRow extends StatefulWidget {
+  const MgMenuInfoRow({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.avatars,
+    this.onSelected,
+  });
+
+  final MgIconData icon;
+  final String label;
+
+  /// Up to three small avatars, drawn overlapping.
+  final List<Widget> avatars;
+  final VoidCallback? onSelected;
+
+  @override
+  State<MgMenuInfoRow> createState() => _MgMenuInfoRowState();
+}
+
+class _MgMenuInfoRowState extends State<MgMenuInfoRow> {
+  var _hover = false;
+
+  void _select() {
+    final onSelected = widget.onSelected;
+    if (onSelected == null) return;
+    Navigator.of(context).pop();
+    onSelected();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    final enabled = widget.onSelected != null;
+    final lit = _hover && enabled;
+    final color = lit ? c.onAccent : c.fg;
+    return Semantics(
+      button: enabled,
+      label: widget.label,
+      onTap: enabled ? _select : null,
+      excludeSemantics: true,
+      child: MouseRegion(
+        cursor: enabled ? SystemMouseCursors.click : MouseCursor.defer,
+        onEnter: (_) => setState(() => _hover = true),
+        onExit: (_) => setState(() => _hover = false),
+        child: GestureDetector(
+          onTap: enabled ? _select : null,
+          child: Container(
+            height: 26,
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            decoration: BoxDecoration(
+              color: lit ? c.accent : const Color(0x00000000),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Row(
+              children: [
+                MgIcon(widget.icon, size: 14, color: color),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    widget.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: mgTextStyle(c, color: color),
+                  ),
+                ),
+                if (widget.avatars.isNotEmpty) ...[
+                  const SizedBox(width: 10),
+                  SizedBox(
+                    width: 18 + 12.0 * (widget.avatars.length - 1),
+                    height: 18,
+                    child: Stack(
+                      children: [
+                        for (var i = 0; i < widget.avatars.length; i++)
+                          Positioned(
+                            left: 12.0 * i,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: lit ? c.accent : c.glassSolid,
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: ClipOval(
+                                child: SizedBox.square(
+                                  dimension: 18,
+                                  child: widget.avatars[i],
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// One person of an [MgPeopleList]: avatar, name and what they did on the
+/// right, such as a reaction or when they read the message.
+@immutable
+class MgPerson {
+  const MgPerson({required this.avatar, required this.name, this.trailing});
+
+  final Widget avatar;
+  final String name;
+  final String? trailing;
+}
+
+/// The people who saw a message or reacted to it, in a glass panel shown
+/// with [showMgPopover].
+class MgPeopleList extends StatelessWidget {
+  const MgPeopleList({super.key, required this.title, required this.people});
+
+  final String title;
+  final List<MgPerson> people;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 220, maxWidth: 300),
+      child: Glass(
+        radius: 12,
+        padding: const EdgeInsets.all(5),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(10, 5, 10, 6),
+              child: Text(
+                title,
+                style: mgTextStyle(
+                  c,
+                  size: MgType.caption,
+                  weight: FontWeight.w600,
+                  color: c.fg2,
+                ),
+              ),
+            ),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 320),
+              child: ListView(
+                shrinkWrap: true,
+                padding: EdgeInsets.zero,
+                children: [
+                  for (final person in people)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      child: Row(
+                        children: [
+                          ClipOval(
+                            child: SizedBox.square(
+                              dimension: 24,
+                              child: person.avatar,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              person.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: mgTextStyle(c),
+                            ),
+                          ),
+                          if (person.trailing case final trailing?) ...[
+                            const SizedBox(width: 10),
+                            Text(
+                              trailing,
+                              style: mgTextStyle(
+                                c,
+                                size: MgType.caption,
+                                color: c.fg2,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

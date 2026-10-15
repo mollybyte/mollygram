@@ -282,6 +282,51 @@ void main() {
     expect(controller.store.message(7, 3)?.text, 'Quoted');
   });
 
+  test('quotes part of the original in a reply', () async {
+    await controller.start();
+
+    await controller.sendText(
+      7,
+      'Agreed',
+      replyTo: 10,
+      quote: 'the big one',
+      quotePosition: 17,
+    );
+
+    final send = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    final replyTo = send['reply_to']! as Map;
+    expect(replyTo['message_id'], 10);
+    final quote = replyTo['quote']! as Map;
+    expect((quote['text']! as Map)['text'], 'the big one');
+    expect(quote['position'], 17);
+
+    await controller.sendText(7, 'Plain', replyTo: 10);
+    final plain = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    expect((plain['reply_to']! as Map)['quote'], isNull);
+  });
+
+  test('asks who saw a message, who reacted and when it was read', () async {
+    await controller.start();
+
+    final viewers = await controller.viewers(7, 10);
+    expect(viewers.single.userId, 3);
+    final added = await controller.addedReactions(7, 10);
+    expect(added.single.senderId, isA<td.MessageSenderUser>());
+    final read = await controller.readDate(7, 10);
+    expect(read, isA<td.MessageReadDateRead>());
+    expect(
+      json.sent
+          .map((r) => r['@type'])
+          .where(
+            (t) =>
+                t == 'getMessageViewers' ||
+                t == 'getMessageAddedReactions' ||
+                t == 'getMessageReadDate',
+          ),
+      hasLength(3),
+    );
+  });
+
   test('unpins every message of a chat', () async {
     await controller.start();
     controller.store.setPinned(7, [30, 20]);
@@ -415,6 +460,22 @@ void main() {
     );
     expect(forward['chat_id'], 8);
     expect(forward['from_chat_id'], 7);
+    expect(forward['send_copy'], isFalse);
+
+    // Without the senders' names the messages go as copies; captions can
+    // only be dropped then.
+    await controller.forwardMessages(8, 7, [3], hideCaptions: true);
+    expect(json.sent.last['send_copy'], isFalse);
+    expect(json.sent.last['remove_caption'], isFalse);
+    await controller.forwardMessages(
+      8,
+      7,
+      [3],
+      hideSender: true,
+      hideCaptions: true,
+    );
+    expect(json.sent.last['send_copy'], isTrue);
+    expect(json.sent.last['remove_caption'], isTrue);
   });
 
   test('sends files as albums with the caption on the first', () async {
@@ -1057,6 +1118,30 @@ final class _FakeTdJson implements td.TdJson {
         'allow_custom_emoji': true,
         'are_tags': false,
         'unavailability_reason': reactionsUnavailable,
+      },
+      'getMessageViewers' => {
+        '@type': 'messageViewers',
+        'viewers': [
+          {'@type': 'messageViewer', 'user_id': 3, 'view_date': 1700000000},
+        ],
+      },
+      'getMessageAddedReactions' => {
+        '@type': 'addedReactions',
+        'total_count': 1,
+        'reactions': [
+          {
+            '@type': 'addedReaction',
+            'type': {'@type': 'reactionTypeEmoji', 'emoji': '👍'},
+            'sender_id': {'@type': 'messageSenderUser', 'user_id': 2},
+            'is_outgoing': false,
+            'date': 1700000000,
+          },
+        ],
+        'next_offset': '',
+      },
+      'getMessageReadDate' => {
+        '@type': 'messageReadDateRead',
+        'read_date': 1700000000,
       },
       'getChatMessageByDate' when byDateError != null => {
         '@type': 'error',

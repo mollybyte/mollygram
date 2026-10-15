@@ -437,6 +437,44 @@ class AppLocalizationsEn extends AppLocalizations {
   String get menuReply => 'Reply';
 
   @override
+  String get menuQuote => 'Quote';
+
+  @override
+  String seenBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Seen by $count',
+      one: 'Seen by $count',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String reactedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count reactions',
+      one: '$count reaction',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String readAt(String time) {
+    return 'Read $time';
+  }
+
+  @override
+  String get notReadYet => 'Not read yet';
+
+  @override
+  String editedAt(String time) {
+    return 'Edited $time';
+  }
+
+  @override
   String get menuEdit => 'Edit';
 
   @override
@@ -520,6 +558,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get forwardSearch => 'Search chats';
+
+  @override
+  String get forwardHideSender => 'Hide sender names';
+
+  @override
+  String get forwardHideCaptions => 'Hide captions';
 
   @override
   String get noChatsFound => 'No chats found';
@@ -1729,6 +1773,142 @@ class AppLocalizationsEn extends AppLocalizations {
   String get copy => 'Copy';
 
   @override
+  String get chatFolders => 'Chat folders';
+
+  @override
+  String get chatFoldersHint =>
+      'Sort chats into folders and switch between them in the sidebar.';
+
+  @override
+  String get createFolder => 'Create folder';
+
+  @override
+  String get newFolder => 'New folder';
+
+  @override
+  String get editFolder => 'Edit folder';
+
+  @override
+  String get folderName => 'Folder name';
+
+  @override
+  String get folderIcon => 'Folder icon';
+
+  @override
+  String get folderIncluded => 'Included chats';
+
+  @override
+  String get folderExcluded => 'Excluded chats';
+
+  @override
+  String get folderAddChats => 'Add chats';
+
+  @override
+  String get folderExcludeChats => 'Exclude chats';
+
+  @override
+  String get folderIncludedHint =>
+      'Choose chats or kinds of chats that will appear in this folder.';
+
+  @override
+  String get folderExcludedHint =>
+      'Choose chats or kinds of chats that will never appear in this folder.';
+
+  @override
+  String get folderContacts => 'Contacts';
+
+  @override
+  String get folderNonContacts => 'Non-contacts';
+
+  @override
+  String get folderGroups => 'Groups';
+
+  @override
+  String get folderChannels => 'Channels';
+
+  @override
+  String get folderBots => 'Bots';
+
+  @override
+  String get folderMuted => 'Muted';
+
+  @override
+  String get folderRead => 'Read';
+
+  @override
+  String get folderArchived => 'Archived';
+
+  @override
+  String get folderChatTypes => 'Chat types';
+
+  @override
+  String get folderChats => 'Chats';
+
+  @override
+  String get folderBot => 'bot';
+
+  @override
+  String get folderGroup => 'group';
+
+  @override
+  String get folderChannel => 'channel';
+
+  @override
+  String get folderSavedMessages => 'Saved Messages';
+
+  @override
+  String get folderRemove => 'Remove';
+
+  @override
+  String get folderAdd => 'Add';
+
+  @override
+  String get folderReorder => 'Drag to reorder';
+
+  @override
+  String get folderReorderHint =>
+      'Drag the handles to change the order of folders in the sidebar.';
+
+  @override
+  String get recommendedFolders => 'Recommended folders';
+
+  @override
+  String get deleteFolder => 'Delete folder';
+
+  @override
+  String get deleteFolderMessage => 'The chats in it won\'t be deleted.';
+
+  @override
+  String get deleteFolderLeave =>
+      'The chats in it won\'t be deleted. You can also leave the chats this folder was shared with you through:';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get save => 'Save';
+
+  @override
+  String deleteFolderTitle(String name) {
+    return 'Delete “$name”?';
+  }
+
+  @override
+  String folderLimit(int count) {
+    return 'You can have up to $count folders.';
+  }
+
+  @override
+  String folderChatsLimit(int count) {
+    return 'A folder can have up to $count chats.';
+  }
+
+  @override
+  String folderChatsCounter(int count, int max) {
+    return '$count of $max';
+  }
+
+  @override
   String get previousMonth => 'Previous month';
 
   @override
@@ -1802,4 +1982,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get resetStoredDataTitle =>
       'Delete the stored data that can\'t be read and start again?';
+
+  @override
+  String get folderDeletedChat => 'Deleted chat';
 }

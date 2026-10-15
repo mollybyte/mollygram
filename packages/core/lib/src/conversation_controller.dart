@@ -229,6 +229,36 @@ final class ConversationController {
     _notify();
   }
 
+  /// Who saw [messageId] of [chatId], in a small group; TDLib keeps the
+  /// list only for recent messages.
+  Future<List<td.MessageViewer>> viewers(int chatId, int messageId) async {
+    final viewers = await _client.send(
+      td.GetMessageViewers(chatId: chatId, messageId: messageId),
+    );
+    return viewers.viewers;
+  }
+
+  /// Who reacted to [messageId] of [chatId], newest first, up to [limit].
+  Future<List<td.AddedReaction>> addedReactions(
+    int chatId,
+    int messageId, {
+    int limit = 100,
+  }) async {
+    final added = await _client.send(
+      td.GetMessageAddedReactions(
+        chatId: chatId,
+        messageId: messageId,
+        offset: '',
+        limit: limit,
+      ),
+    );
+    return added.reactions;
+  }
+
+  /// When the other side read [messageId] of [chatId], in a private chat.
+  Future<td.MessageReadDate> readDate(int chatId, int messageId) =>
+      _client.send(td.GetMessageReadDate(chatId: chatId, messageId: messageId));
+
   /// Unpins every message of [chatId].
   Future<void> unpinAll(int chatId) async {
     await _client.send(td.UnpinAllChatMessages(chatId: chatId));
@@ -384,12 +414,15 @@ final class ConversationController {
   }
 
   /// Sends [text] with its formatting [entities], as a reply to [replyTo]
-  /// when it is set.
+  /// when it is set, quoting [quote] of its text at [quotePosition] when
+  /// that is given.
   Future<void> sendText(
     int chatId,
     String text, {
     int? replyTo,
     List<td.TextEntity> entities = const [],
+    String? quote,
+    int quotePosition = 0,
   }) async {
     if (text.trim().isEmpty) {
       throw ArgumentError.value(
@@ -405,6 +438,12 @@ final class ConversationController {
             ? null
             : td.InputMessageReplyToMessage(
                 messageId: replyTo,
+                quote: quote == null || quote.isEmpty
+                    ? null
+                    : td.InputTextQuote(
+                        text: td.FormattedText(text: quote, entities: const []),
+                        position: quotePosition,
+                      ),
                 checklistTaskId: 0,
                 pollOptionId: '',
               ),
@@ -693,16 +732,19 @@ final class ConversationController {
   Future<void> forwardMessages(
     int toChatId,
     int fromChatId,
-    List<int> messageIds,
-  ) async {
+    List<int> messageIds, {
+    bool hideSender = false,
+    bool hideCaptions = false,
+  }) async {
     if (messageIds.isEmpty) return;
     await _client.send(
       td.ForwardMessages(
         chatId: toChatId,
         fromChatId: fromChatId,
         messageIds: messageIds,
-        sendCopy: false,
-        removeCaption: false,
+        // Sent as copies, the messages carry no "forwarded from".
+        sendCopy: hideSender,
+        removeCaption: hideSender && hideCaptions,
       ),
     );
   }

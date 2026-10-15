@@ -143,6 +143,24 @@
   "play": "Play",
   "pause": "Pause",
   "menuReply": "Reply",
+  "menuQuote": "Quote",
+  "seenBy": "{count, plural, one{Seen by {count}} other{Seen by {count}}}",
+  "@seenBy": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "reactedCount": "{count, plural, one{{count} reaction} other{{count} reactions}}",
+  "@reactedCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "readAt": "Read {time}",
+  "@readAt": {
+    "placeholders": { "time": { "type": "String" } }
+  },
+  "notReadYet": "Not read yet",
+  "editedAt": "Edited {time}",
+  "@editedAt": {
+    "placeholders": { "time": { "type": "String" } }
+  },
   "menuEdit": "Edit",
   "menuCopyText": "Copy text",
   "menuCopyLink": "Copy link",
@@ -174,6 +192,8 @@
   "editingMessage": "Editing",
   "forwardTitle": "Forward to chat",
   "forwardSearch": "Search chats",
+  "forwardHideSender": "Hide sender names",
+  "forwardHideCaptions": "Hide captions",
   "noChatsFound": "No chats found",
   "editFailed": "Couldn't save the changes",
   "attachTitle": "{count, plural, one{Send {count} file} other{Send {count} files}}",
@@ -687,6 +707,59 @@
   },
   "clearSelection": "Clear selection",
   "copy": "Copy",
+  "chatFolders": "Chat folders",
+  "chatFoldersHint": "Sort chats into folders and switch between them in the sidebar.",
+  "createFolder": "Create folder",
+  "newFolder": "New folder",
+  "editFolder": "Edit folder",
+  "folderName": "Folder name",
+  "folderIcon": "Folder icon",
+  "folderIncluded": "Included chats",
+  "folderExcluded": "Excluded chats",
+  "folderAddChats": "Add chats",
+  "folderExcludeChats": "Exclude chats",
+  "folderIncludedHint": "Choose chats or kinds of chats that will appear in this folder.",
+  "folderExcludedHint": "Choose chats or kinds of chats that will never appear in this folder.",
+  "folderContacts": "Contacts",
+  "folderNonContacts": "Non-contacts",
+  "folderGroups": "Groups",
+  "folderChannels": "Channels",
+  "folderBots": "Bots",
+  "folderMuted": "Muted",
+  "folderRead": "Read",
+  "folderArchived": "Archived",
+  "folderChatTypes": "Chat types",
+  "folderChats": "Chats",
+  "folderBot": "bot",
+  "folderGroup": "group",
+  "folderChannel": "channel",
+  "folderSavedMessages": "Saved Messages",
+  "folderRemove": "Remove",
+  "folderAdd": "Add",
+  "folderReorder": "Drag to reorder",
+  "folderReorderHint": "Drag the handles to change the order of folders in the sidebar.",
+  "recommendedFolders": "Recommended folders",
+  "deleteFolder": "Delete folder",
+  "deleteFolderMessage": "The chats in it won't be deleted.",
+  "deleteFolderLeave": "The chats in it won't be deleted. You can also leave the chats this folder was shared with you through:",
+  "delete": "Delete",
+  "save": "Save",
+  "deleteFolderTitle": "Delete “{name}”?",
+  "@deleteFolderTitle": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "folderLimit": "You can have up to {count} folders.",
+  "@folderLimit": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "folderChatsLimit": "A folder can have up to {count} chats.",
+  "@folderChatsLimit": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "folderChatsCounter": "{count} of {max}",
+  "@folderChatsCounter": {
+    "placeholders": { "count": { "type": "int" }, "max": { "type": "int" } }
+  },
   "previousMonth": "Previous month",
   "nextMonth": "Next month",
   "pinnedList": "Pinned messages",
@@ -710,5 +783,6 @@
   "storedDataUnreadable": "Stored data can't be read",
   "storedDataUnreadableHint": "Its key is missing from the keychain. Reset to start again.",
   "resetStoredData": "Reset",
-  "resetStoredDataTitle": "Delete the stored data that can't be read and start again?"
+  "resetStoredDataTitle": "Delete the stored data that can't be read and start again?",
+  "folderDeletedChat": "Deleted chat"
 }

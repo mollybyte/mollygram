@@ -9,22 +9,42 @@ import '../../l10n/app_localizations.dart';
 import '../home/format.dart';
 import '../session/providers.dart';
 
-/// Asks which chat to forward to. Completes with its id, or null when the
-/// user closes the picker.
-Future<int?> pickForwardTarget(BuildContext context) => showGeneralDialog<int>(
+/// Where to forward, and how: without the senders' names, and then
+/// without the captions, as the official apps offer.
+@immutable
+final class ForwardChoice {
+  const ForwardChoice({
+    required this.chatId,
+    this.hideSender = false,
+    this.hideCaptions = false,
+  });
+
+  final int chatId;
+  final bool hideSender;
+  final bool hideCaptions;
+}
+
+/// Asks which chat to forward to. Completes with the choice, or null when
+/// the user closes the picker. [hasCaptions] offers hiding the captions.
+Future<ForwardChoice?> pickForwardTarget(
+  BuildContext context, {
+  bool hasCaptions = false,
+}) => showGeneralDialog<ForwardChoice>(
   context: context,
   barrierDismissible: true,
   barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
   barrierColor: const Color(0x00000000),
   transitionDuration: Duration.zero,
-  pageBuilder: (context, _, _) => const Material(
+  pageBuilder: (context, _, _) => Material(
     type: MaterialType.transparency,
-    child: Center(child: _ForwardPicker()),
+    child: Center(child: _ForwardPicker(hasCaptions: hasCaptions)),
   ),
 );
 
 class _ForwardPicker extends ConsumerStatefulWidget {
-  const _ForwardPicker();
+  const _ForwardPicker({required this.hasCaptions});
+
+  final bool hasCaptions;
 
   @override
   ConsumerState<_ForwardPicker> createState() => _ForwardPickerState();
@@ -34,6 +54,16 @@ class _ForwardPickerState extends ConsumerState<_ForwardPicker> {
   var _query = '';
   final _search = FocusNode();
   final _scroll = ScrollController();
+  var _hideSender = false;
+  var _hideCaptions = false;
+
+  void _pick(int chatId) => Navigator.of(context).pop(
+    ForwardChoice(
+      chatId: chatId,
+      hideSender: _hideSender,
+      hideCaptions: _hideSender && _hideCaptions,
+    ),
+  );
 
   /// Chats TDLib found for the query, archived ones included; null while
   /// the query is empty.
@@ -106,7 +136,7 @@ class _ForwardPickerState extends ConsumerState<_ForwardPicker> {
     }
     return SizedBox(
       width: 360,
-      height: 480,
+      height: 540,
       child: Glass(
         radius: 14,
         padding: const EdgeInsets.fromLTRB(10, 12, 10, 10),
@@ -125,9 +155,7 @@ class _ForwardPickerState extends ConsumerState<_ForwardPicker> {
               hintText: l10n.forwardSearch,
               onChanged: (value) => unawaited(_find(value)),
               onSubmitted: (_) {
-                if (matches.isNotEmpty) {
-                  Navigator.of(context).pop(matches.first.id);
-                }
+                if (matches.isNotEmpty) _pick(matches.first.id);
               },
             ),
             const SizedBox(height: 8),
@@ -150,11 +178,38 @@ class _ForwardPickerState extends ConsumerState<_ForwardPicker> {
                           key: ValueKey(chat.id),
                           title: chat.title,
                           subtitle: formatPreview(l10n, chat.lastMessage),
-                          onTap: () => Navigator.of(context).pop(chat.id),
+                          onTap: () => _pick(chat.id),
                         );
                       },
                     ),
             ),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.only(left: 4),
+              child: MgCheckRow(
+                label: l10n.forwardHideSender,
+                value: _hideSender,
+                onChanged: (value) => setState(() => _hideSender = value),
+              ),
+            ),
+            // Captions can only go once the messages are sent as copies.
+            if (widget.hasCaptions)
+              Padding(
+                padding: const EdgeInsets.only(left: 4, top: 6),
+                child: AnimatedOpacity(
+                  opacity: _hideSender ? 1 : 0.45,
+                  duration: const Duration(milliseconds: 150),
+                  child: IgnorePointer(
+                    ignoring: !_hideSender,
+                    child: MgCheckRow(
+                      label: l10n.forwardHideCaptions,
+                      value: _hideSender && _hideCaptions,
+                      onChanged: (value) =>
+                          setState(() => _hideCaptions = value),
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
