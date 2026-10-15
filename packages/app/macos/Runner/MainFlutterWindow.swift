@@ -12,6 +12,7 @@ class MainFlutterWindow: NSWindow {
   private static let buttonsSpacing: CGFloat = 20
 
   private var notifications: NotificationsChannel?
+  private var voiceCapture: VoiceCaptureChannel?
 
   override func awakeFromNib() {
     let flutterViewController = FlutterViewController()
@@ -49,6 +50,8 @@ class MainFlutterWindow: NSWindow {
     // the app is not lost.
     notifications = NotificationsChannel(
       messenger: flutterViewController.engine.binaryMessenger, window: self)
+
+    voiceCapture = VoiceCaptureChannel(messenger: flutterViewController.engine.binaryMessenger)
 
     RegisterGeneratedPlugins(registry: flutterViewController)
 

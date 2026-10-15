@@ -24,6 +24,7 @@ import '../chat/message_actions.dart';
 import '../chat/message_tile.dart';
 import '../chat/timeline.dart';
 import '../session/providers.dart';
+import '../voice/voice_record_composer.dart';
 import '../window_drag_area.dart';
 
 /// One conversation: messages scroll under the floating header and
@@ -263,6 +264,31 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _focus.requestFocus();
     try {
       await _conversations.sendSticker(chatId, sticker, replyTo: replyTo?.id);
+    } catch (_) {
+      if (!mounted || widget.chatId != chatId) return;
+      setState(() {
+        _failure = _Failure.send;
+        _replyTo ??= replyTo;
+      });
+    }
+  }
+
+  /// Sends a voice message recorded in the composer (lib/src/voice).
+  Future<void> _sendVoice(RecordedVoice voice) async {
+    final chatId = widget.chatId;
+    final replyTo = _replyTo;
+    setState(() {
+      _failure = null;
+      _replyTo = null;
+    });
+    try {
+      await _conversations.sendVoiceNote(
+        chatId,
+        path: voice.path,
+        duration: voice.duration,
+        waveform: voice.waveform,
+        replyTo: replyTo?.id,
+      );
     } catch (_) {
       if (!mounted || widget.chatId != chatId) return;
       setState(() {
@@ -697,26 +723,32 @@ class _ChatViewState extends ConsumerState<ChatView> {
                   ),
                 TapRegion(
                   groupId: _EmojiPanelRegion,
-                  child: Composer(
-                    controller: _draft,
-                    focusNode: _focus,
-                    header: _composerHeader(l10n),
-                    onCancel: _panelOpen || _editing != null || _replyTo != null
-                        ? _cancel
-                        : null,
-                    onEditLast: () => unawaited(_editLast()),
-                    onAttach: () => unawaited(_chooseFiles()),
-                    onEmoji: _togglePanel,
-                    onPaste: _paste,
-                    allowEmpty: _editing != null && _isCaption(_editing!),
-                    labels: ComposerLabels(
-                      hint: l10n.messageHint,
-                      attach: l10n.attach,
-                      emoji: l10n.emoji,
-                      record: l10n.record,
-                      send: l10n.send,
+                  child: VoiceRecordComposer(
+                    onRecorded: _sendVoice,
+                    builder: (context, recordButton, recordingBar) => Composer(
+                      controller: _draft,
+                      focusNode: _focus,
+                      header: _composerHeader(l10n),
+                      onCancel:
+                          _panelOpen || _editing != null || _replyTo != null
+                          ? _cancel
+                          : null,
+                      onEditLast: () => unawaited(_editLast()),
+                      onAttach: () => unawaited(_chooseFiles()),
+                      onEmoji: _togglePanel,
+                      onPaste: _paste,
+                      allowEmpty: _editing != null && _isCaption(_editing!),
+                      labels: ComposerLabels(
+                        hint: l10n.messageHint,
+                        attach: l10n.attach,
+                        emoji: l10n.emoji,
+                        record: l10n.record,
+                        send: l10n.send,
+                      ),
+                      onSend: (text) => unawaited(_send(text)),
+                      recordButton: recordButton,
+                      replacement: recordingBar,
                     ),
-                    onSend: (text) => unawaited(_send(text)),
                   ),
                 ),
               ],

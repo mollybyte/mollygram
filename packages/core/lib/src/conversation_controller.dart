@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 
@@ -228,6 +229,39 @@ final class ConversationController {
               height: sticker.height,
             ),
             emoji: sticker.emoji,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Sends a recorded voice message: an Ogg Opus file at [path] with its
+  /// length and Telegram's packed 5-bit [waveform].
+  Future<void> sendVoiceNote(
+    int chatId, {
+    required String path,
+    required Duration duration,
+    required Uint8List waveform,
+    int? replyTo,
+  }) async {
+    _add(
+      await _client.send(
+        td.SendMessage(
+          chatId: chatId,
+          replyTo: replyTo == null
+              ? null
+              : td.InputMessageReplyToMessage(
+                  messageId: replyTo,
+                  checklistTaskId: 0,
+                  pollOptionId: '',
+                ),
+          inputMessageContent: td.InputMessageVoiceNote(
+            voiceNote: td.InputVoiceNote(
+              voiceNote: td.InputFileLocal(path: path),
+              // Rounded up, as the official apps do: 0.4 s shows as 0:01.
+              duration: (duration.inMilliseconds / 1000).ceil(),
+              waveform: waveform,
+            ),
           ),
         ),
       ),

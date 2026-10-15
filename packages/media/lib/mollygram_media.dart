@@ -1,5 +1,5 @@
 /// Mollygram media: playback of video messages (circles), GIFs, video and
-/// voice messages, and later recording.
+/// voice messages, and voice recording.
 ///
 /// Call [MollygramMedia.ensureInitialized] once in `main()` before creating
 /// players. The app also needs `media_kit_libs_video` (or the per-platform
@@ -9,6 +9,9 @@ library;
 import 'package:media_kit/media_kit.dart';
 
 export 'src/audio/audio_track_player.dart';
+export 'src/audio/ogg_opus_writer.dart';
+export 'src/audio/voice_recorder.dart';
+export 'src/audio/voice_waveform.dart';
 export 'src/circle/circle_player.dart';
 export 'src/circle/circle_player_pool.dart';
 export 'src/circle/circle_quality.dart';
