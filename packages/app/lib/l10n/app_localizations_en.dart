@@ -981,6 +981,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pollCreate => 'Create';
 
   @override
+  String get startBot => 'Start';
+
+  @override
   String get contentGame => 'Game';
 
   @override

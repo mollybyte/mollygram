@@ -993,6 +993,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get pollCreate => 'Создать';
 
   @override
+  String get startBot => 'Запустить';
+
+  @override
   String get contentGame => 'Игра';
 
   @override

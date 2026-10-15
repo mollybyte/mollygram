@@ -1005,6 +1005,58 @@ void main() {
     expect(find.text('New quiz'), findsNothing);
   });
 
+  testWidgets('starts a bot and offers its commands after a slash', (
+    tester,
+  ) async {
+    session.conversations.store
+      ..setBot(2, true)
+      ..setBotCommands(7, const [
+        BotCommand(botUserId: 2, command: 'start', description: 'Begin'),
+        BotCommand(botUserId: 2, command: 'settings', description: 'Set up'),
+      ]);
+    json.chat = const [];
+    json.push(_chat(lastRead: 0, unread: 0, last: 0, empty: true));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await pump(tester, group: false);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(Composer), findsNothing);
+    await tester.tap(find.text('Start'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    final start = json.sent.lastWhere(
+      (r) => r['@type'] == 'sendBotStartMessage',
+    );
+    expect(start['bot_user_id'], 2);
+    expect(start['chat_id'], 7);
+
+    // The bot answered: the composer is back, and / lists its commands.
+    json.push({
+      '@type': 'updateNewMessage',
+      'message': _message(id: 20, senderId: 2, text: 'Hello').toJson(),
+    });
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+    expect(find.byType(Composer), findsOneWidget);
+    await tester.enterText(find.byType(TextField), '/se');
+    await tester.pumpAndSettle();
+    expect(find.text('/settings'), findsOneWidget);
+    expect(find.text('/start'), findsNothing);
+
+    await tester.tap(find.text('/settings'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    final sent = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    expect(
+      ((sent['input_message_content']! as Map)['text']! as Map)['text'],
+      '/settings',
+    );
+    expect(
+      tester.widget<TextField>(find.byType(TextField)).controller!.text,
+      isEmpty,
+    );
+  });
+
   testWidgets('lists the scheduled messages and acts on one', (tester) async {
     json.chat = [for (var id = 1; id <= 10; id++) id];
     json.push(_chat(lastRead: 10, unread: 0, last: 10, scheduled: true));
@@ -1567,6 +1619,7 @@ Map<String, Object?> _chat({
   String? draft,
   bool scheduled = false,
   int replyMarkup = 0,
+  bool empty = false,
 }) => {
   '@type': 'updateNewChat',
   'chat': {
@@ -1576,11 +1629,12 @@ Map<String, Object?> _chat({
     'reply_markup_message_id': replyMarkup,
     'type': type,
     'title': 'Boris',
-    'last_message': _message(
-      id: last,
-      senderId: 2,
-      text: 'Message $last',
-    ).toJson(),
+    if (!empty)
+      'last_message': _message(
+        id: last,
+        senderId: 2,
+        text: 'Message $last',
+      ).toJson(),
     'unread_count': unread,
     'last_read_inbox_message_id': lastRead,
     'last_read_outbox_message_id': 0,

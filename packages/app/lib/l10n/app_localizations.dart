@@ -1730,6 +1730,12 @@ abstract class AppLocalizations {
   /// **'Create'**
   String get pollCreate;
 
+  /// No description provided for @startBot.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get startBot;
+
   /// No description provided for @contentGame.
   ///
   /// In en, this message translates to:

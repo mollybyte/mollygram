@@ -356,6 +356,7 @@
   "pollExplanationHint": "Explanation (optional)",
   "pollQuizHint": "Mark the correct answer; voters see the explanation after answering.",
   "pollCreate": "Create",
+  "startBot": "Start",
   "contentGame": "Game",
   "contentInvoice": "Invoice",
   "contentStory": "Story",

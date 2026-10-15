@@ -456,24 +456,70 @@ final class ConversationController {
   /// their updates only while open.
   Future<void> openChat(int chatId) async {
     await _client.send(td.OpenChat(chatId: chatId));
-    // The slowmode of a supergroup comes with its full info; TDLib sends
-    // changes on its own once it has been asked.
-    final supergroupId = store.supergroupIdOf(chatId);
-    if (supergroupId == null) return;
+    // The slowmode of a supergroup and the commands of the chat's bots
+    // come with its full info; TDLib sends changes on its own once it has
+    // been asked.
     try {
-      final full = await _client.send(
-        td.GetSupergroupFullInfo(supergroupId: supergroupId),
-      );
-      store.setSlowMode(
-        supergroupId,
-        delay: full.slowModeDelay,
-        expiresIn: full.slowModeDelayExpiresIn,
-      );
-      _notify();
+      if (store.supergroupIdOf(chatId) case final supergroupId?) {
+        final full = await _client.send(
+          td.GetSupergroupFullInfo(supergroupId: supergroupId),
+        );
+        store.setSlowMode(
+          supergroupId,
+          delay: full.slowModeDelay,
+          expiresIn: full.slowModeDelayExpiresIn,
+        );
+        _setBotCommands(chatId, full.botCommands);
+        _notify();
+      } else if (store.basicGroupIdOf(chatId) case final basicGroupId?) {
+        final full = await _client.send(
+          td.GetBasicGroupFullInfo(basicGroupId: basicGroupId),
+        );
+        if (_setBotCommands(chatId, full.botCommands)) _notify();
+      } else if (store.privateUserIdOf(chatId) case final userId?) {
+        final user = await _client.send(td.GetUser(userId: userId));
+        if (store.setBot(userId, user.type is td.UserTypeBot)) _notify();
+        if (user.type is! td.UserTypeBot) return;
+        final full = await _client.send(td.GetUserFullInfo(userId: userId));
+        final commands = [
+          if (full.botInfo case final info?)
+            td.BotCommands(botUserId: userId, commands: info.commands),
+        ];
+        if (_setBotCommands(chatId, commands)) _notify();
+      }
     } on Object {
       // Without the full info the chat still works; slowmode shows up on
-      // the first send.
+      // the first send and the bot's commands can still be typed.
     }
+  }
+
+  /// Stores the commands of [chatId]'s bots from [sets]; true when they
+  /// changed. Ephemeral commands, meant for one message, are left out.
+  bool _setBotCommands(int? chatId, List<td.BotCommands> sets) {
+    if (chatId == null) return false;
+    return store.setBotCommands(chatId, [
+      for (final set in sets)
+        for (final command in set.commands)
+          if (!command.isEphemeral)
+            BotCommand(
+              botUserId: set.botUserId,
+              command: command.command,
+              description: command.description,
+            ),
+    ]);
+  }
+
+  /// Presses Start in a chat with a bot, which sends /start.
+  Future<void> sendBotStart(int chatId, int botUserId) async {
+    _add(
+      await _client.send(
+        td.SendBotStartMessage(
+          botUserId: botUserId,
+          chatId: chatId,
+          parameter: '',
+        ),
+      ),
+    );
   }
 
   /// Saves what the user has typed in [chatId] as its draft, so the other
@@ -1129,7 +1175,8 @@ final class ConversationController {
         final color = store.setColor(sender, user.accentColorId);
         final photo = store.setPhoto(sender, user.profilePhoto?.small);
         final name = store.setUserName(user.id, _nameOf(user));
-        if (color || photo || name) _notify();
+        final bot = store.setBot(user.id, user.type is td.UserTypeBot);
+        if (color || photo || name || bot) _notify();
       case td.UpdateNewChat(:final chat):
         store
           ..setChatTitle(chat.id, chat.title)
@@ -1164,7 +1211,28 @@ final class ConversationController {
           delay: supergroupFullInfo.slowModeDelay,
           expiresIn: supergroupFullInfo.slowModeDelayExpiresIn,
         );
+        _setBotCommands(
+          store.chatOfSupergroup(supergroupId),
+          supergroupFullInfo.botCommands,
+        );
         _notify();
+      case td.UpdateBasicGroupFullInfo(
+        :final basicGroupId,
+        :final basicGroupFullInfo,
+      ):
+        if (_setBotCommands(
+          store.chatOfBasicGroup(basicGroupId),
+          basicGroupFullInfo.botCommands,
+        )) {
+          _notify();
+        }
+      case td.UpdateUserFullInfo(:final userId, :final userFullInfo):
+        if (_setBotCommands(store.chatOfPrivateUser(userId), [
+          if (userFullInfo.botInfo case final info?)
+            td.BotCommands(botUserId: userId, commands: info.commands),
+        ])) {
+          _notify();
+        }
       case td.UpdateSupergroup(:final supergroup):
         if (store.setSupergroupStatus(supergroup.id, supergroup.status) !=
             null) {

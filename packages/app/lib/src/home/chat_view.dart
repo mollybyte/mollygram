@@ -35,6 +35,7 @@ import '../chat/timeline.dart';
 import '../chat/timeline_scroll.dart';
 import '../chat/timeline_view.dart';
 import '../chat_search/chat_search_bar.dart';
+import '../compose/command_suggester.dart';
 import '../compose/emoji_suggester.dart';
 import '../compose/mention_suggester.dart';
 import '../compose/rich_text_bridge.dart';
@@ -63,6 +64,10 @@ class _ChatViewState extends ConsumerState<ChatView> {
   final _draft = RichTextEditingController();
   late final _mentions = MentionSuggester(controller: _draft);
   late final _emojiHints = EmojiSuggester(controller: _draft);
+  late final _commands = CommandSuggester(
+    controller: _draft,
+    onSend: (command) => unawaited(_send(command)),
+  );
   late final _stickerHints = StickerSuggester(controller: _draft);
   final _focus = FocusNode();
   late final ConversationController _conversations;
@@ -181,6 +186,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _emojiHints.search = (query) =>
         stickers.emojiSuggestions(query, languages: _inputLanguages());
     _emojiHints.addListener(_mentionsChanged);
+    _commands.addListener(_mentionsChanged);
     _stickerHints.search = _stickerSearch();
     _stickerHints.addListener(_mentionsChanged);
     _scroll.addListener(_followScroll);
@@ -211,6 +217,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
       ..search = _mentionSearch()
       ..reset();
     _emojiHints.reset();
+    _commands
+      ..commands = const []
+      ..reset();
     _stickerHints.search = _stickerSearch();
     _stickerHints.reset();
     _failure = null;
@@ -248,6 +257,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _close(widget.chatId);
     _mentions.dispose();
     _emojiHints.dispose();
+    _commands.dispose();
     _stickerHints.dispose();
     _draft.dispose();
     _focus.dispose();
@@ -1341,6 +1351,45 @@ class _ChatViewState extends ConsumerState<ChatView> {
 
   void _mentionsChanged() => setState(() {});
 
+  /// The popup over the composer shows one kind of suggestion at a time:
+  /// members for an @, then bot commands for a /, then emoji for a :word.
+  ({
+    List<ComposerSuggestion> suggestions,
+    void Function(int index) pick,
+    VoidCallback dismiss,
+  })
+  get _suggester {
+    if (_mentions.suggestions.isNotEmpty) {
+      return (
+        suggestions: _mentions.suggestions,
+        pick: _mentions.pick,
+        dismiss: _mentions.dismiss,
+      );
+    }
+    if (_commands.suggestions.isNotEmpty) {
+      return (
+        suggestions: _commands.suggestions,
+        pick: _commands.pick,
+        dismiss: _commands.dismiss,
+      );
+    }
+    return (
+      suggestions: _emojiHints.suggestions,
+      pick: _emojiHints.pick,
+      dismiss: _emojiHints.dismiss,
+    );
+  }
+
+  /// Hands the chat's bot commands to the / popup once they are known.
+  void _syncCommands(ConversationStore store) {
+    final commands = store.botCommands(widget.chatId);
+    if (identical(commands, _commands.commands)) return;
+    _commands.commands = commands;
+    scheduleMicrotask(() {
+      if (mounted) _commands.refresh();
+    });
+  }
+
   /// Stickers for an emoji, as this chat may see them.
   Future<List<td.Sticker>> Function(String emoji) _stickerSearch() {
     final chatId = widget.chatId;
@@ -1894,6 +1943,18 @@ class _ChatViewState extends ConsumerState<ChatView> {
   /// only read. Null when the composer belongs.
   Widget? _actionBar(AppLocalizations l10n, ConversationStore store) {
     final chatId = widget.chatId;
+    // A bot not yet spoken to starts with its button, not the composer.
+    if (store.botUserIdOf(chatId) case final botUserId?
+        when store.lastMessageId(chatId) == 0 &&
+            store.messagesFor(chatId).isEmpty) {
+      return ComposerActionBar(
+        label: l10n.startBot,
+        loading: _actionPending,
+        onPressed: () => unawaited(
+          _chatAction(() => _conversations.sendBotStart(chatId, botUserId)),
+        ),
+      );
+    }
     if (store.canPost(chatId)) {
       if (store.canSendText(chatId)) return null;
       // A member the group or an admin keeps from writing sees why.
@@ -1980,6 +2041,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     });
     final messages = ref.watch(conversationProvider(widget.chatId));
     final store = session.conversations.store;
+    _syncCommands(store);
     if (_scheduledOpen &&
         store.scheduledVersion(widget.chatId) != _scheduledSeen) {
       _scheduledSeen = store.scheduledVersion(widget.chatId);
@@ -2204,16 +2266,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
                       onRecordedVideo: _sendVideoNote,
                       builder: (context, recordButton, recordingBar) =>
                           Composer(
-                            suggestions: _mentions.suggestions.isNotEmpty
-                                ? _mentions.suggestions
-                                : _emojiHints.suggestions,
-                            onSuggestion: _mentions.suggestions.isNotEmpty
-                                ? _mentions.pick
-                                : _emojiHints.pick,
-                            onDismissSuggestions:
-                                _mentions.suggestions.isNotEmpty
-                                ? _mentions.dismiss
-                                : _emojiHints.dismiss,
+                            suggestions: _suggester.suggestions,
+                            onSuggestion: _suggester.pick,
+                            onDismissSuggestions: _suggester.dismiss,
                             controller: _draft,
                             focusNode: _focus,
                             header: _composerHeader(l10n),
