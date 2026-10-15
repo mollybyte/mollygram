@@ -493,6 +493,27 @@
   "scrollToBottom": "Scroll to the newest message",
   "nextMention": "Next mention",
   "nextReaction": "Next reaction",
+  "linkJoinChannel": "Join channel",
+  "linkJoinGroup": "Join group",
+  "linkRequestToJoin": "Request to join",
+  "linkViewChannel": "View channel",
+  "linkViewGroup": "View group",
+  "linkSubscribers": "{count, plural, =0{No subscribers} one{{count} subscriber} other{{count} subscribers}}",
+  "@linkSubscribers": {
+    "placeholders": { "count": { "type": "int", "format": "decimalPattern" } }
+  },
+  "linkMembers": "{count, plural, =0{No members} one{{count} member} other{{count} members}}",
+  "@linkMembers": {
+    "placeholders": { "count": { "type": "int", "format": "decimalPattern" } }
+  },
+  "linkApprovalHint": "An admin has to approve your request.",
+  "linkRequestSent": "Request sent",
+  "linkRequestSentHint": "You'll join once an admin approves it.",
+  "linkJoinFailed": "Couldn't join. Try again later.",
+  "linkMissing": "This link is invalid or has expired.",
+  "linkUnsupported": "Mollygram can't open this kind of link yet.",
+  "done": "Done",
+  "linkForbidden": "You can't view this chat.",
   "menuPin": "Pin",
   "menuUnpin": "Unpin",
   "pinnedMessage": "Pinned message",

@@ -9,6 +9,7 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../home/format.dart';
+import '../links/link_router.dart';
 import 'concealed.dart';
 import 'describe.dart';
 import 'file_content.dart';
@@ -794,7 +795,7 @@ class _LinkPreview extends StatelessWidget {
       description: preview.description.text,
       image: image,
       largeImage: large,
-      onTap: () => openLink(preview.url),
+      onTap: () => openLinkFrom(context, preview.url),
     );
   }
 }

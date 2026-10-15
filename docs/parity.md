@@ -65,7 +65,7 @@ M8 calls and macOS release, M9 after release.
 | Jump to date (calendar) | missing | `ChatCalendarModalController` | M | M2 |
 | Header status: online, last seen, members, typing | missing | Header has the slot | S | M1 |
 | Join and mute buttons for channels and groups you are not in | done | Join in place of the composer; Mute and Unmute in channels you only read | | |
-| Open `t.me` and `tg://` links, usernames, hashtags, bot commands | missing | `GetInternalLinkType` | M | M1 |
+| Open `t.me` and `tg://` links, usernames, hashtags, bot commands | partial | Links, mentions, invites and `tg://` work (`links/`); hashtags, bot commands, mention names and the jump to a linked message are missing | S | M1 |
 | Link previews in messages | partial | Check `MessageText.linkPreview` rendering | M | M1 |
 | Text selection across messages | missing | `ChatSelectText` | M | M2 |
 | Multi-select mode: forward, delete, copy several | missing | | M | M2 |
