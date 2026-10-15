@@ -329,6 +329,19 @@
   },
   "contentLocation": "Location",
   "contentLiveLocation": "Live location",
+  "liveLocationEnded": "Live location ended",
+  "liveMinutesLeft": "{minutes} min left",
+  "@liveMinutesLeft": {
+    "placeholders": {
+      "minutes": {"type": "int"}
+    }
+  },
+  "liveHoursLeft": "{hours} h left",
+  "@liveHoursLeft": {
+    "placeholders": {
+      "hours": {"type": "int"}
+    }
+  },
   "contentContact": "Contact",
   "contentPoll": "Poll",
   "contentQuiz": "Quiz",

@@ -899,6 +899,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contentLiveLocation => 'Live location';
 
   @override
+  String get liveLocationEnded => 'Live location ended';
+
+  @override
+  String liveMinutesLeft(int minutes) {
+    return '$minutes min left';
+  }
+
+  @override
+  String liveHoursLeft(int hours) {
+    return '$hours h left';
+  }
+
+  @override
   String get contentContact => 'Contact';
 
   @override

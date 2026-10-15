@@ -756,6 +756,8 @@ class _MessageBody extends StatelessWidget {
           context,
           content,
           isOutgoing: message.isOutgoing,
+          chatId: message.chatId,
+          sender: message.message.senderId,
           onPollVote: onPollVote == null
               ? null
               : (optionIds) => onPollVote(message, optionIds),

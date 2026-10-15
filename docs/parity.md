@@ -78,7 +78,7 @@ M8 calls and macOS release, M9 after release.
 | Polls and quizzes: vote, results | done | Vote with radios or checkboxes and a Vote button, Retract vote, live results with bars, quiz answers coloured with the explanation, Stop poll from the menu; a public poll shows its latest voters and lists who voted for an option on a click | S | M2 |
 | Checklists (todo messages) | done | Title, tasks with accent boxes, struck-through done tasks with the avatar of who did them, a done count; a click marks a task done or not done when allowed | S | M9 |
 | Dice and slot animations | done | A dice message draws the sticker of its thrown value (the rolling one until the server picks it); the slot machine stacks its background, reels and lever | S | M9 |
-| Live location view | missing | | M | M2 |
+| Live location view | partial | Locations, venues and live locations show a map from `getMapThumbnailFile` with a pin (the sharer's avatar for a live one), the venue's name and address or the time left; a click opens Maps. No live map of several sharers | M | M2 |
 | Auto-translate and "Translate" in the menu | missing | Built-in Translate plugin planned | M | M5 |
 | Voice message transcription | done | A button next to a voice message's time asks TDLib (`RecognizeSpeech`, Premium with free trials) and shows the transcript under the waveform, partial text while it runs, a quiet note on failure; a second click folds it | S | M9 |
 | Message effects and reaction animations | missing | | M | M9 |

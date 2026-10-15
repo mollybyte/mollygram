@@ -5,7 +5,7 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 import '../../l10n/app_localizations.dart';
 import '../links/link_router.dart';
 import 'checklist_content.dart';
-import 'formatted_text.dart';
+import 'location_content.dart';
 import 'poll_content.dart';
 
 /// The text lines of contents that have no media of their own: places,
@@ -14,11 +14,14 @@ import 'poll_content.dart';
 /// [onPollVote] lets a poll be voted in, [onPollVoters] lists who voted
 /// for an option and [recentVoters] shows the latest voters' avatars;
 /// [onChecklistToggle] marks a checklist's task done or not done and
-/// [completerAvatar] draws who did it.
+/// [completerAvatar] draws who did it, and the [sender] of a live
+/// location in its pin; [chatId] is the chat a map is drawn for.
 Widget? otherContent(
   BuildContext context,
   td.MessageContent content, {
   bool isOutgoing = false,
+  int chatId = 0,
+  td.MessageSender? sender,
   void Function(List<int> optionIds)? onPollVote,
   void Function(int optionIndex, Offset position)? onPollVoters,
   Widget? recentVoters,
@@ -27,21 +30,20 @@ Widget? otherContent(
 }) {
   final l10n = AppLocalizations.of(context);
   return switch (content) {
-    td.MessageLocation(:final location) => _Labeled(
-      icon: '📍',
-      title: l10n.contentLocation,
-      onTap: () => openLink(_mapUrl(location)),
+    td.MessageLocation(:final location) => LocationContent(
+      location: location,
+      chatId: chatId,
     ),
-    td.MessageLiveLocation(:final location) => _Labeled(
-      icon: '📍',
-      title: l10n.contentLiveLocation,
-      onTap: () => openLink(_mapUrl(location.location)),
+    td.MessageLiveLocation(:final location) && final live => LocationContent(
+      location: location.location,
+      live: live,
+      avatar: sender == null ? null : completerAvatar?.call(sender, 22),
+      chatId: chatId,
     ),
-    td.MessageVenue(:final venue) => _Labeled(
-      icon: '📍',
-      title: venue.title,
-      subtitle: venue.address,
-      onTap: () => openLink(_mapUrl(venue.location)),
+    td.MessageVenue(:final venue) => LocationContent(
+      location: venue.location,
+      venue: venue,
+      chatId: chatId,
     ),
     td.MessageContact(:final contact) => _ContactCard(contact),
     td.MessagePoll(:final poll, :final description) => PollContent(
@@ -90,9 +92,6 @@ Widget? otherContent(
   };
 }
 
-String _mapUrl(td.Location l) =>
-    'https://maps.apple.com/?ll=${l.latitude},${l.longitude}&q=${l.latitude},${l.longitude}';
-
 String _callTitle(
   AppLocalizations l10n,
   bool isOutgoing,
@@ -112,23 +111,17 @@ String _callLength(AppLocalizations l10n, int seconds) => seconds < 60
     : l10n.durationMinutes(seconds ~/ 60);
 
 class _Labeled extends StatelessWidget {
-  const _Labeled({
-    required this.icon,
-    required this.title,
-    this.subtitle,
-    this.onTap,
-  });
+  const _Labeled({required this.icon, required this.title, this.subtitle});
 
   final String icon;
   final String title;
   final String? subtitle;
-  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final c = MgColors.of(context);
     final subtitle = this.subtitle;
-    final body = Row(
+    return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(icon, style: const TextStyle(fontSize: 22)),
@@ -155,11 +148,6 @@ class _Labeled extends StatelessWidget {
           ),
         ),
       ],
-    );
-    if (onTap == null) return body;
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(onTap: onTap, child: body),
     );
   }
 }

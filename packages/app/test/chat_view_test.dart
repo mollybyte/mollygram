@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mollygram/l10n/app_localizations.dart';
 import 'package:mollygram/src/chat/bot_keyboard.dart';
+import 'package:mollygram/src/chat/location_content.dart';
 import 'package:mollygram/src/chat/media_content.dart';
 import 'package:mollygram/src/chat/media_providers.dart';
 import 'package:mollygram/src/chat/recent_emoji.dart';
@@ -1202,6 +1203,44 @@ void main() {
     expect((sent['payload']! as Map)['data'], base64.encode([1, 2, 3]));
     expect(find.text('Pong'), findsOneWidget);
     await tester.pump(const Duration(seconds: 3));
+  });
+
+  testWidgets('shows a venue on a map with its name and address', (
+    tester,
+  ) async {
+    json.history = [
+      td.Message.fromJson({
+        ..._message(id: 18, senderId: 2, text: '').toJson(),
+        'content': {
+          '@type': 'messageVenue',
+          'venue': {
+            '@type': 'venue',
+            'location': {
+              '@type': 'location',
+              'latitude': 55.7539,
+              'longitude': 37.6208,
+              'horizontal_accuracy': 0,
+            },
+            'title': 'Red Square',
+            'address': 'Moscow',
+            'provider': '',
+            'id': '',
+            'type': '',
+          },
+        },
+      }),
+      ..._history,
+    ];
+    await pump(tester);
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    expect(find.text('Red Square'), findsOneWidget);
+    expect(find.text('Moscow'), findsOneWidget);
+    final map = json.sent.lastWhere((r) => r['@type'] == 'getMapThumbnailFile');
+    expect((map['location']! as Map)['latitude'], 55.7539);
+    expect(map['zoom'], 15);
+    expect(map['chat_id'], 7);
+    expect(find.byType(LocationContent), findsOneWidget);
   });
 
   testWidgets('puts a switch-to-inline button\'s query in the composer', (
@@ -3154,6 +3193,7 @@ final class _FakeTdJson implements td.TdJson {
       },
       'getUser' when decoded['user_id'] == 2 => _user(2, 'Boris'),
       'getMe' => _user(7, 'Me', '79990000000'),
+      'getMapThumbnailFile' => _stickerFile(900),
       'getUser' when decoded['user_id'] == 50 => {
         ..._user(50, 'GIF Search'),
         'usernames': {
