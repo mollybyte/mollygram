@@ -947,8 +947,9 @@ class _TopBar extends StatelessWidget {
           Align(
             alignment: Alignment.centerLeft,
             child: Padding(
-              // Clear of the window's traffic lights.
-              padding: const EdgeInsets.only(left: 64, right: 220),
+              // Clear of the window's traffic lights, which end about 75 px
+              // in, with a comfortable gap before the avatar.
+              padding: const EdgeInsets.only(left: 80, right: 220),
               child: who ?? const SizedBox.shrink(),
             ),
           ),
