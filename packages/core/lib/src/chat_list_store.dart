@@ -72,6 +72,24 @@ final class ChatPreview {
   final bool isOutgoing;
 }
 
+/// The unsent draft of a chat, as the chat list shows it.
+final class ChatDraft {
+  const ChatDraft({
+    required this.text,
+    required this.date,
+    this.kind = ChatPreviewKind.text,
+  });
+
+  /// What the draft holds when it is not text, such as a voice note.
+  final ChatPreviewKind kind;
+
+  /// The draft's text; empty for a draft that is only a reply.
+  final String text;
+
+  /// Unix time in seconds.
+  final int date;
+}
+
 /// What kind of chat a chat-list entry is.
 enum ChatType {
   /// A one-to-one chat with a user or a bot, including Saved Messages.
@@ -106,6 +124,7 @@ final class ChatListEntry {
     required this.unreadCount,
     required List<ChatListPosition> positions,
     this.lastMessage,
+    this.draft,
     this.type = ChatType.private,
     this.peerId = 0,
     this.secretChatId = 0,
@@ -153,6 +172,9 @@ final class ChatListEntry {
   final List<ChatListPosition> positions;
   final ChatPreview? lastMessage;
 
+  /// The unsent draft, shown in place of [lastMessage].
+  final ChatDraft? draft;
+
   /// A basic group or a supergroup that is not a channel: incoming messages
   /// come from different people, so they show the sender's name.
   bool get isGroup => type.isGroup;
@@ -187,6 +209,7 @@ final class ChatListEntry {
     List<ChatListPosition>? positions,
     ChatPreview? Function()? lastMessage,
     td.ChatPhotoInfo? Function()? photo,
+    ChatDraft? Function()? draft,
   }) => ChatListEntry(
     id: id,
     title: title ?? this.title,
@@ -204,6 +227,7 @@ final class ChatListEntry {
     canDeleteOnlyForSelf: canDeleteOnlyForSelf ?? this.canDeleteOnlyForSelf,
     positions: positions ?? this.positions,
     lastMessage: lastMessage == null ? this.lastMessage : lastMessage(),
+    draft: draft == null ? this.draft : draft(),
   );
 }
 
@@ -297,6 +321,24 @@ final class ChatListStore {
   void replacePositions(int chatId, List<ChatListPosition> positions) {
     final chat = _chats[chatId];
     if (chat != null) _chats[chatId] = chat.copyWith(positions: positions);
+  }
+
+  /// A draft change comes with the chat's positions, as it can move it.
+  void updateDraft(
+    int chatId,
+    ChatDraft? draft,
+    List<ChatListPosition> positions,
+  ) {
+    final chat = _chats[chatId];
+    if (chat == null) return;
+    // TDLib may send an old draft after the user has changed it; a draft
+    // older than the one shown is stale.
+    final shown = chat.draft;
+    if (draft != null && shown != null && draft.date < shown.date) {
+      _chats[chatId] = chat.copyWith(positions: positions);
+      return;
+    }
+    _chats[chatId] = chat.copyWith(positions: positions, draft: () => draft);
   }
 
   void updateLastMessage(

@@ -148,6 +148,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nothingFound => 'Nothing found';
 
   @override
+  String get draftLabel => 'Draft:';
+
+  @override
   String get newMessage => 'New message';
 
   @override
