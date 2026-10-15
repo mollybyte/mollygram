@@ -188,13 +188,22 @@ class MessageTile extends StatelessWidget {
     final locale = Localizations.localeOf(buildContext).toLanguageTag();
     final info = message.message.interactionInfo;
     final isPost = message.message.isChannelPost;
+    final compact = NumberFormat.compact(locale: locale);
     final meta = MessageMeta(
       time: formatMessageTime(message.date, locale),
       status: _status,
       label: message.editDate > 0 ? l10n.edited : null,
       views: isPost && info != null && info.viewCount > 0
-          ? NumberFormat.compact(locale: locale).format(info.viewCount)
+          ? compact.format(info.viewCount)
           : null,
+      forwards: isPost && info != null && info.forwardCount > 0
+          ? compact.format(info.forwardCount)
+          : null,
+      tooltip: [
+        formatFullDate(message.date, locale),
+        if (message.editDate > 0)
+          l10n.editedAt(formatFullDate(message.editDate, locale)),
+      ].join('\n'),
     );
     final reactions = info?.reactions?.reactions;
     final comments = isPost ? info?.replyInfo : null;

@@ -440,6 +440,41 @@ class AppLocalizationsEn extends AppLocalizations {
   String get menuQuote => 'Quote';
 
   @override
+  String seenBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Seen by $count',
+      one: 'Seen by $count',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String reactedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count reactions',
+      one: '$count reaction',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String readAt(String time) {
+    return 'Read $time';
+  }
+
+  @override
+  String get notReadYet => 'Not read yet';
+
+  @override
+  String editedAt(String time) {
+    return 'Edited $time';
+  }
+
+  @override
   String get menuEdit => 'Edit';
 
   @override

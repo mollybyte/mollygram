@@ -890,6 +890,36 @@ abstract class AppLocalizations {
   /// **'Quote'**
   String get menuQuote;
 
+  /// No description provided for @seenBy.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{Seen by {count}} other{Seen by {count}}}'**
+  String seenBy(int count);
+
+  /// No description provided for @reactedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} reaction} other{{count} reactions}}'**
+  String reactedCount(int count);
+
+  /// No description provided for @readAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Read {time}'**
+  String readAt(String time);
+
+  /// No description provided for @notReadYet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not read yet'**
+  String get notReadYet;
+
+  /// No description provided for @editedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Edited {time}'**
+  String editedAt(String time);
+
   /// No description provided for @menuEdit.
   ///
   /// In en, this message translates to:
