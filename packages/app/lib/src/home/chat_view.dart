@@ -683,6 +683,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
       ),
       header: _threadComposerHeader(l10n),
       allowEmpty: _threadEditing != null && _isCaption(_threadEditing!),
+      onAttach: () => unawaited(_chooseFiles()),
+      onPaste: _paste,
       onSend: (text) => unawaited(_sendComment(text)),
     ),
   );
@@ -2043,6 +2045,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
   }) async {
     final paths = _onlyFiles(picked);
     if (paths.isEmpty) return;
+    if (_thread case final thread?) return _offerFilesToThread(thread, paths);
     final chatId = widget.chatId;
     // The draft becomes the caption, as in the official apps; not while
     // editing, where the composer holds another message's text.
@@ -2101,6 +2104,55 @@ class _ChatViewState extends ConsumerState<ChatView> {
       setState(() {
         _failure = _Failure.attach;
         _replyTo ??= replyTo;
+      });
+    }
+  }
+
+  /// Files dropped, pasted or chosen while the comments are open go into
+  /// the thread, the comment draft as their caption.
+  Future<void> _offerFilesToThread(
+    MessageThread thread,
+    List<String> paths,
+  ) async {
+    final useDraft = _threadEditing == null;
+    final draft = useDraft ? _threadDraft.text : '';
+    final draftFormats = useDraft ? _threadDraft.ranges : const <FormatRange>[];
+    final choice = await showAttachmentPreview(
+      context,
+      paths: paths,
+      caption: draft,
+    );
+    if (choice == null || !mounted || _thread != thread) return;
+    final replyTo = _threadReplyTo;
+    setState(() {
+      _failure = null;
+      _threadReplyTo = null;
+      _threadQuote = null;
+    });
+    if (useDraft) _threadDraft.clear();
+    final captionRanges = choice.caption == draft
+        ? draftFormats
+        : const <FormatRange>[];
+    final caption = formattedDraft(choice.caption, captionRanges);
+    try {
+      final files = <OutgoingFile>[];
+      for (final file in choice.files) {
+        files.add(await _measure(file));
+      }
+      await thread.sendFiles(
+        files,
+        caption: caption.text,
+        captionEntities: caption.entities,
+        replyTo: replyTo?.id,
+      );
+    } catch (_) {
+      if (!mounted || _thread != thread) return;
+      if (useDraft && _threadDraft.text.isEmpty) {
+        _threadDraft.setFormatted(choice.caption, captionRanges);
+      }
+      setState(() {
+        _failure = _Failure.attach;
+        _threadReplyTo ??= replyTo;
       });
     }
   }

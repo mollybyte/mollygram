@@ -2,6 +2,7 @@ import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -907,6 +908,45 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pump();
     expect(find.text('First comment'), findsNothing);
+  });
+
+  testWidgets('drops a file into the comments', (tester) async {
+    final directory = Directory.systemTemp.createTempSync('comments');
+    addTearDown(() => directory.deleteSync(recursive: true));
+    final file = File('${directory.path}/notes.txt')..writeAsStringSync('hi');
+    json.history = [
+      _message(id: 14, senderId: 2, text: 'Post', comments: 2),
+      ..._history,
+    ];
+    await pump(tester, group: false);
+    await tester.tap(find.text('2 comments'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+
+    await tester.enterText(find.byType(TextField), 'Read this');
+    tester.widget<DropTarget>(find.byType(DropTarget)).onDragDone!(
+      DropDoneDetails(
+        files: [DropItemFile(file.path)],
+        localPosition: Offset.zero,
+        globalPosition: Offset.zero,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Send'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+
+    final send = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    expect(send['chat_id'], -100);
+    expect((send['topic_id']! as Map)['message_thread_id'], 40);
+    final content = send['input_message_content']! as Map;
+    expect(content['@type'], 'inputMessageDocument');
+    expect((content['caption']! as Map)['text'], 'Read this');
+    expect(
+      tester.widget<TextField>(find.byType(TextField)).controller!.text,
+      isEmpty,
+    );
   });
 
   testWidgets('marks a post whose comments are unread', (tester) async {

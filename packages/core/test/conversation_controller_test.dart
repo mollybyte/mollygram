@@ -1085,6 +1085,20 @@ void main() {
     expect(replyTo['message_id'], 41);
     expect(((replyTo['quote']! as Map)['text']! as Map)['text'], 'First');
 
+    // A file goes into the thread too, under the root.
+    await thread.sendFiles(const [
+      OutgoingFile(path: '/tmp/a.pdf', kind: OutgoingKind.document),
+    ], caption: 'Paper');
+    final file = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    expect(file['chat_id'], -100);
+    expect((file['topic_id']! as Map)['message_thread_id'], 40);
+    expect((file['reply_to']! as Map)['message_id'], 40);
+    expect(
+      (file['input_message_content']! as Map)['@type'],
+      'inputMessageDocument',
+    );
+    expect(thread.messages.first.id, 44);
+
     json.push({
       '@type': 'updateDeleteMessages',
       'chat_id': -100,
