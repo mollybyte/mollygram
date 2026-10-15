@@ -160,8 +160,9 @@ final class VideoPlayback {
       await subscription.cancel();
     }
     _state.dispose();
-    // An `open` still running must finish before the player goes away.
-    await _busy.timeout(const Duration(seconds: 3), onTimeout: () {});
+    // An `open` still running must finish before the player goes away; a
+    // timeout would not cancel it, only bring the crash back.
+    await _busy;
     await _player.dispose();
   }
 }
