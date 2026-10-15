@@ -478,6 +478,69 @@ void main() {
     expect(store.draft(7), isNull);
   });
 
+  test('previews the link in a draft and sends how it should show', () async {
+    await controller.start();
+
+    final none = await controller.linkPreview(
+      const td.FormattedText(text: 'Plain words', entities: []),
+    );
+    expect(none, isNull);
+
+    final preview = await controller.linkPreview(
+      const td.FormattedText(text: 'See https://example.com/a', entities: []),
+    );
+    expect(preview?.title, 'An example page');
+    expect(json.sent.last['@type'], 'getLinkPreview');
+
+    await controller.sendText(
+      7,
+      'See https://example.com/a',
+      linkPreviewOptions: const td.LinkPreviewOptions(
+        isDisabled: false,
+        url: 'https://example.com/a',
+        forceSmallMedia: false,
+        forceLargeMedia: false,
+        showAboveText: true,
+      ),
+    );
+    final sent = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    final options =
+        (sent['input_message_content']! as Map)['link_preview_options']! as Map;
+    expect(options['show_above_text'], isTrue);
+    expect(options['url'], 'https://example.com/a');
+
+    // A draft that drops its preview differs from one that keeps it.
+    await controller.saveDraft(
+      7,
+      text: const td.FormattedText(
+        text: 'See https://example.com/a',
+        entities: [],
+      ),
+    );
+    final before = json.sent.length;
+    await controller.saveDraft(
+      7,
+      text: const td.FormattedText(
+        text: 'See https://example.com/a',
+        entities: [],
+      ),
+      linkPreviewOptions: const td.LinkPreviewOptions(
+        isDisabled: true,
+        url: '',
+        forceSmallMedia: false,
+        forceLargeMedia: false,
+        showAboveText: false,
+      ),
+    );
+    expect(json.sent.length, before + 1);
+    final draft = json.sent.last['draft_message']! as Map;
+    expect(
+      ((draft['content']! as Map)['link_preview_options']!
+          as Map)['is_disabled'],
+      isTrue,
+    );
+  });
+
   test('reports messages step by step as the server asks', () async {
     await controller.start();
 
@@ -1367,6 +1430,35 @@ final class _FakeTdJson implements td.TdJson {
       'getOption' when decoded['name'] == 'message_caption_length_max' => {
         '@type': 'optionValueInteger',
         'value': '10',
+      },
+      'getLinkPreview'
+          when ((decoded['text']! as Map)['text']! as String).contains(
+            'example.com',
+          ) =>
+        {
+          '@type': 'linkPreview',
+          'url': 'https://example.com/a',
+          'display_url': 'example.com/a',
+          'site_name': 'Example',
+          'title': 'An example page',
+          'description': {
+            '@type': 'formattedText',
+            'text': 'Nothing to see',
+            'entities': <Object?>[],
+          },
+          'author': '',
+          'type': {'@type': 'linkPreviewTypeArticle'},
+          'has_large_media': false,
+          'show_large_media': false,
+          'show_media_above_description': false,
+          'skip_confirmation': false,
+          'show_above_text': false,
+          'instant_view_version': 0,
+        },
+      'getLinkPreview' => {
+        '@type': 'error',
+        'code': 404,
+        'message': 'Not Found',
       },
       _ => {'@type': 'ok'},
     };

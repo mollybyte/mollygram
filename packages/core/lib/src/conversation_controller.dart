@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
@@ -438,6 +439,7 @@ final class ConversationController {
     int chatId, {
     td.FormattedText? text,
     int? replyTo,
+    td.LinkPreviewOptions? linkPreviewOptions,
   }) async {
     final draft = text == null && replyTo == null
         ? null
@@ -452,6 +454,7 @@ final class ConversationController {
             date: 0,
             content: td.DraftMessageContentText(
               text: text ?? const td.FormattedText(text: '', entities: []),
+              linkPreviewOptions: linkPreviewOptions,
             ),
             effectId: 0,
           );
@@ -464,13 +467,19 @@ final class ConversationController {
 
   static bool _draftDiffers(td.DraftMessage? a, td.DraftMessage? b) {
     if (a == null || b == null) return (a == null) != (b == null);
-    final aText = switch (a.content) {
-      td.DraftMessageContentText(:final text) => text,
-      _ => null,
+    final (aText, aPreview) = switch (a.content) {
+      td.DraftMessageContentText(:final text, :final linkPreviewOptions) => (
+        text,
+        linkPreviewOptions,
+      ),
+      _ => (null, null),
     };
-    final bText = switch (b.content) {
-      td.DraftMessageContentText(:final text) => text,
-      _ => null,
+    final (bText, bPreview) = switch (b.content) {
+      td.DraftMessageContentText(:final text, :final linkPreviewOptions) => (
+        text,
+        linkPreviewOptions,
+      ),
+      _ => (null, null),
     };
     final aReply = switch (a.replyTo) {
       td.InputMessageReplyToMessage(:final messageId) => messageId,
@@ -482,7 +491,24 @@ final class ConversationController {
     };
     return aReply != bReply ||
         aText?.text != bText?.text ||
-        aText?.entities.length != bText?.entities.length;
+        aText?.entities.length != bText?.entities.length ||
+        jsonEncode(aPreview?.toJson()) != jsonEncode(bPreview?.toJson());
+  }
+
+  /// The preview Telegram would attach to [text], for the first link in
+  /// it, under [options] when they are given; null when there is no link
+  /// or the site gives nothing to show.
+  Future<td.LinkPreview?> linkPreview(
+    td.FormattedText text, {
+    td.LinkPreviewOptions? options,
+  }) async {
+    try {
+      return await _client.send(
+        td.GetLinkPreview(text: text, linkPreviewOptions: options),
+      );
+    } on td.TdException {
+      return null;
+    }
   }
 
   /// Remembers that TDLib refused a message for [seconds] under slowmode,
@@ -520,7 +546,8 @@ final class ConversationController {
 
   /// Sends [text] with its formatting [entities], as a reply to [replyTo]
   /// when it is set, quoting [quote] of its text at [quotePosition] when
-  /// that is given.
+  /// that is given. [linkPreviewOptions] shape the preview of a link in
+  /// the text, or drop it; null leaves it to Telegram's defaults.
   Future<void> sendText(
     int chatId,
     String text, {
@@ -528,6 +555,7 @@ final class ConversationController {
     List<td.TextEntity> entities = const [],
     String? quote,
     int quotePosition = 0,
+    td.LinkPreviewOptions? linkPreviewOptions,
   }) async {
     if (text.trim().isEmpty) {
       throw ArgumentError.value(
@@ -554,6 +582,7 @@ final class ConversationController {
               ),
         inputMessageContent: td.InputMessageText(
           text: td.FormattedText(text: text, entities: entities),
+          linkPreviewOptions: linkPreviewOptions,
           clearDraft: true,
         ),
       ),

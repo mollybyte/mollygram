@@ -573,6 +573,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get editingMessage => 'Editing';
 
   @override
+  String get linkPreviewAboveText => 'Show the preview above the text';
+
+  @override
+  String get linkPreviewBelowText => 'Show the preview below the text';
+
+  @override
+  String get removeLinkPreview => 'Remove the link preview';
+
+  @override
   String get forwardTitle => 'Forward to chat';
 
   @override
