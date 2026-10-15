@@ -2510,4 +2510,240 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get folderDeletedChat => 'Удалённый чат';
+
+  @override
+  String get passcodeLock => 'Код-пароль';
+
+  @override
+  String get passcodeAbout =>
+      'Код-пароль блокирует Mollygram на этом Mac. Он не отправляется в Telegram и действует только здесь.';
+
+  @override
+  String get passcodeTurnOn => 'Включить код-пароль';
+
+  @override
+  String get passcodeTurnOff => 'Выключить код-пароль';
+
+  @override
+  String get passcodeTurnOffAction => 'Выключить';
+
+  @override
+  String get passcodeChange => 'Сменить код-пароль';
+
+  @override
+  String get passcodeCurrent => 'Текущий код-пароль';
+
+  @override
+  String get passcodeNew => 'Новый код-пароль';
+
+  @override
+  String get passcodeRepeat => 'Повторите код-пароль';
+
+  @override
+  String get passcodeTooShort => 'Нужно хотя бы 4 символа.';
+
+  @override
+  String get passcodesDontMatch => 'Код-пароли не совпадают.';
+
+  @override
+  String get passcodeWrong => 'Неверный код-пароль';
+
+  @override
+  String get passcodeAutoLock => 'Автоблокировка';
+
+  @override
+  String get passcodeAwayHour => 'Через 1 час';
+
+  @override
+  String passcodeAwayFor(int minutes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      minutes,
+      locale: localeName,
+      other: 'Через $minutes минуты',
+      many: 'Через $minutes минут',
+      few: 'Через $minutes минуты',
+      one: 'Через $minutes минуту',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get passcodeLockNowHint => 'Нажмите ⌘L, чтобы заблокировать сразу.';
+
+  @override
+  String get passcodeLocked => 'Mollygram заблокирован';
+
+  @override
+  String get passcodeEnter => 'Введите код-пароль, чтобы продолжить.';
+
+  @override
+  String get passcodeHint => 'Код-пароль';
+
+  @override
+  String get passcodeForgot => 'Забыли код-пароль?';
+
+  @override
+  String get passcodeLogOutTitle => 'Выйти, чтобы убрать код-пароль?';
+
+  @override
+  String get passcodeLogOutMessage =>
+      'Код-пароль нельзя восстановить. Выход убирает его, а чаты вернутся, когда вы снова войдёте.';
+
+  @override
+  String get twoStep => 'Двухэтапная аутентификация';
+
+  @override
+  String get twoStepOn => 'Вкл.';
+
+  @override
+  String get twoStepOff => 'Выкл.';
+
+  @override
+  String get twoStepOffAbout =>
+      'Задайте пароль, который Telegram спросит после кода при входе на новом устройстве.';
+
+  @override
+  String get twoStepOnAbout =>
+      'Telegram спрашивает этот пароль после кода при входе на новом устройстве.';
+
+  @override
+  String get twoStepLoadFailed =>
+      'Не удалось загрузить двухэтапную аутентификацию.';
+
+  @override
+  String get twoStepSetPassword => 'Задать пароль';
+
+  @override
+  String get twoStepSetPasswordAbout =>
+      'Резервная почта поможет сбросить пароль, если вы его забудете.';
+
+  @override
+  String get twoStepChangePassword => 'Сменить пароль';
+
+  @override
+  String get twoStepCurrentPassword => 'Текущий пароль';
+
+  @override
+  String get twoStepNewPassword => 'Новый пароль';
+
+  @override
+  String get twoStepRepeatPassword => 'Повторите пароль';
+
+  @override
+  String get twoStepHint => 'Подсказка (необязательно)';
+
+  @override
+  String twoStepHintIs(String hint) {
+    return 'Подсказка: $hint';
+  }
+
+  @override
+  String get twoStepHintIsPassword => 'Подсказка не может совпадать с паролем.';
+
+  @override
+  String get twoStepRecoveryEmail => 'Резервная почта';
+
+  @override
+  String get twoStepRecoveryEmailAbout =>
+      'На этот адрес Telegram пришлёт код, чтобы сбросить забытый пароль.';
+
+  @override
+  String get twoStepSetEmail => 'Указать резервную почту';
+
+  @override
+  String get twoStepChangeEmail => 'Сменить резервную почту';
+
+  @override
+  String get twoStepEmailInvalid => 'Неверный адрес почты.';
+
+  @override
+  String get twoStepPasswordRejected =>
+      'Telegram не принял этот пароль. Попробуйте другой.';
+
+  @override
+  String get twoStepConfirmEmail => 'Подтвердите резервную почту';
+
+  @override
+  String twoStepCodeSent(String email) {
+    return 'Telegram отправил код на $email.';
+  }
+
+  @override
+  String get twoStepEnterCode => 'Ввести код';
+
+  @override
+  String get twoStepCode => 'Код';
+
+  @override
+  String get twoStepCheckCode => 'Подтвердить';
+
+  @override
+  String get twoStepResendCode => 'Отправить код ещё раз';
+
+  @override
+  String get twoStepCancelEmail => 'Не использовать эту почту';
+
+  @override
+  String get twoStepEmailConfirmed => 'Резервная почта подтверждена.';
+
+  @override
+  String get twoStepPasswordSet => 'Двухэтапная аутентификация включена.';
+
+  @override
+  String get twoStepPasswordChanged => 'Пароль изменён.';
+
+  @override
+  String get twoStepTurnOff => 'Выключить двухэтапную аутентификацию';
+
+  @override
+  String get twoStepTurnOffAbout =>
+      'Для входа на новом устройстве будет нужен только код.';
+
+  @override
+  String get twoStepTurnOffAction => 'Выключить';
+
+  @override
+  String get twoStepTurnedOff => 'Двухэтапная аутентификация выключена.';
+
+  @override
+  String get passwordsDontMatch => 'Пароли не совпадают.';
+
+  @override
+  String get accountTtlTitle => 'Удаление аккаунта';
+
+  @override
+  String get accountTtlRow => 'Если не заходить';
+
+  @override
+  String get accountTtlQuestion => 'Удалить аккаунт, если я не захожу';
+
+  @override
+  String get accountTtlAbout =>
+      'Если вы ни разу не зайдёте за это время, аккаунт удалится вместе со всеми сообщениями и контактами.';
+
+  @override
+  String ttlMonths(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count месяца',
+      many: '$count месяцев',
+      few: '$count месяца',
+      one: '$count месяц',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String ttlDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count дня',
+      many: '$count дней',
+      few: '$count дня',
+      one: '$count день',
+    );
+    return '$_temp0';
+  }
 }

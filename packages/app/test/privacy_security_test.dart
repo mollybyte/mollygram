@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mollygram/l10n/app_localizations.dart';
 import 'package:mollygram/src/privacy/privacy_settings.dart';
 import 'package:mollygram/src/session/providers.dart';
+import 'package:mollygram/src/settings/privacy/passcode.dart';
 import 'package:mollygram/src/settings/privacy/privacy_page.dart';
 import 'package:mollygram/src/settings/settings_window.dart';
 import 'package:mollygram_core/mollygram_core.dart';
@@ -66,6 +67,12 @@ void main() {
 
     tearDown(() => session.dispose());
 
+    late MemoryPasscodeStorage passcodes;
+    setUp(() {
+      passcodes = MemoryPasscodeStorage();
+      PasscodeHash.defaultIterations = 100;
+    });
+
     Future<void> settle(WidgetTester tester) async {
       for (var i = 0; i < 6; i++) {
         await tester.runAsync(() => Future<void>.delayed(_tick));
@@ -85,6 +92,7 @@ void main() {
             privacySettingsStorageProvider.overrideWithValue(
               MemoryPrivacySettingsStorage(),
             ),
+            passcodeStorageProvider.overrideWithValue(passcodes),
           ],
           child: MaterialApp(
             theme: buildMgTheme(MgColors.light),
@@ -311,6 +319,111 @@ void main() {
       ]);
     });
 
+    Future<void> fill(WidgetTester tester, List<String> values) async {
+      final fields = find.descendant(
+        of: find.byType(MgUnderlineField),
+        matching: find.byType(EditableText),
+      );
+      for (var i = 0; i < values.length; i++) {
+        await tester.enterText(fields.at(i), values[i]);
+      }
+      await tester.pump();
+    }
+
+    testWidgets('sets a two-step password and confirms the email', (
+      tester,
+    ) async {
+      await pump(tester);
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('twoStep')),
+          matching: find.text('Off'),
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Two-step verification'));
+      await settle(tester);
+      await tester.tap(find.text('Set password'));
+      await settle(tester);
+
+      await fill(tester, ['secret', 'secreT', 'cat', 'a@mail.com']);
+      await tester.tap(find.text('Save'));
+      await settle(tester);
+      expect(find.text("The passwords don't match."), findsOneWidget);
+      expect(json.sent.where((r) => r['@type'] == 'setPassword'), isEmpty);
+
+      await fill(tester, ['secret', 'secret', 'cat', 'a@mail.com']);
+      await tester.tap(find.text('Save'));
+      await settle(tester);
+      final request = json.sent.lastWhere((r) => r['@type'] == 'setPassword');
+      expect(request['new_hint'], 'cat');
+      expect(request['new_recovery_email_address'], 'a@mail.com');
+      expect(find.text('Telegram sent a code to a***@mail.com.'), findsWidgets);
+
+      await tester.tap(find.text('Enter the code'));
+      await settle(tester);
+      await fill(tester, ['11111']);
+      await tester.tap(find.text('Confirm'));
+      await settle(tester);
+      expect(find.text('Invalid code'), findsOneWidget);
+
+      await fill(tester, ['12345']);
+      await tester.tap(find.text('Confirm'));
+      await settle(tester);
+      expect(find.text('The recovery email is confirmed.'), findsOneWidget);
+      expect(find.text('Change password'), findsOneWidget);
+      expect(find.text('Change recovery email'), findsOneWidget);
+    });
+
+    testWidgets('changes how long an unused account lives', (tester) async {
+      await pump(tester);
+      expect(find.text('6 months'), findsOneWidget);
+      await tester.tap(find.text('If away for'));
+      await settle(tester);
+      await tester.tap(find.text('12 months'));
+      await settle(tester);
+      expect(json.sent.lastWhere((r) => r['@type'] == 'setAccountTtl')['ttl'], {
+        '@type': 'accountTtl',
+        'days': 365,
+      });
+    });
+
+    testWidgets('turns the passcode on and picks when it locks', (
+      tester,
+    ) async {
+      await pump(tester);
+      await tester.tap(find.text('Passcode lock'));
+      await settle(tester);
+      await tester.tap(find.text('Turn passcode on'));
+      await settle(tester);
+      await fill(tester, ['12', '12']);
+      await tester.tap(find.text('Save'));
+      await settle(tester);
+      expect(find.text('Use at least 4 characters.'), findsOneWidget);
+
+      await fill(tester, ['2580', '2580']);
+      await tester.tap(find.text('Save'));
+      await settle(tester);
+      expect(PasscodeSettings.fromJson(passcodes.saved).enabled, isTrue);
+      expect(find.text('Change passcode'), findsOneWidget);
+
+      await tester.tap(find.text('If away for 15 minutes'));
+      await settle(tester);
+      expect(PasscodeSettings.fromJson(passcodes.saved).autoLockMinutes, 15);
+
+      await tester.tap(find.text('Turn passcode off'));
+      await settle(tester);
+      await fill(tester, ['0000']);
+      await tester.tap(find.text('Turn off'));
+      await settle(tester);
+      expect(find.text('Wrong passcode'), findsOneWidget);
+      await fill(tester, ['2580']);
+      await tester.tap(find.text('Turn off'));
+      await settle(tester);
+      expect(passcodes.saved, isNull);
+      expect(find.text('Turn passcode on'), findsOneWidget);
+    });
+
     testWidgets('blocks and unblocks', (tester) async {
       await pump(tester);
       await tester.tap(find.text('Blocked users'));
@@ -397,6 +510,28 @@ final class _FakeTdJson implements td.TdJson {
 
   var _blocked = [9, 6];
 
+  var password = '';
+  var pendingEmail = false;
+  var hasEmail = false;
+  var ttl = 180;
+
+  Map<String, Object?> _password() => {
+    '@type': 'passwordState',
+    'has_password': password.isNotEmpty,
+    'password_hint': '',
+    'has_recovery_email_address': hasEmail,
+    'has_passport_data': false,
+    'recovery_email_address_code_info': pendingEmail
+        ? {
+            '@type': 'emailAddressAuthenticationCodeInfo',
+            'email_address_pattern': 'a***@mail.com',
+            'length': 5,
+          }
+        : null,
+    'login_email_address_pattern': '',
+    'pending_reset_date': 0,
+  };
+
   /// Blocks [count] more made-up people, for paging.
   void blockMany(int count) =>
       _blocked = [..._blocked, for (var i = 0; i < count; i++) 1000 + i];
@@ -470,6 +605,27 @@ final class _FakeTdJson implements td.TdJson {
       'getUser' =>
         _users[decoded['user_id']] ??
             _user(decoded['user_id']! as int, 'P${decoded['user_id']}'),
+      'getPasswordState' => _password(),
+      'setPassword' => () {
+        password = decoded['new_password']! as String;
+        pendingEmail = decoded['set_recovery_email_address'] == true;
+        return _password();
+      }(),
+      'checkRecoveryEmailAddressCode' when decoded['code'] == '12345' => () {
+        pendingEmail = false;
+        hasEmail = true;
+        return _password();
+      }(),
+      'checkRecoveryEmailAddressCode' => {
+        '@type': 'error',
+        'code': 400,
+        'message': 'EMAIL_CODE_INVALID',
+      },
+      'getAccountTtl' => {'@type': 'accountTtl', 'days': ttl},
+      'setAccountTtl' => () {
+        ttl = (decoded['ttl']! as Map)['days']! as int;
+        return {'@type': 'ok'};
+      }(),
       'getActiveSessions' => {
         '@type': 'sessions',
         'sessions': <Object?>[],

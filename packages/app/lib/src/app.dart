@@ -13,6 +13,7 @@ import 'session/close_before_exit.dart';
 import 'session/providers.dart';
 import 'settings/appearance.dart';
 import 'settings/preferences.dart';
+import 'settings/privacy/passcode_lock_screen.dart';
 
 class MollygramApp extends ConsumerWidget {
   const MollygramApp({super.key});
@@ -39,7 +40,10 @@ class MollygramApp extends ConsumerWidget {
       ],
       supportedLocales: AppLocalizations.supportedLocales,
       home: const _CloseSessionBeforeExit(
-        child: Material(type: MaterialType.transparency, child: _Root()),
+        child: Material(
+          type: MaterialType.transparency,
+          child: PasscodeGate(child: _Root()),
+        ),
       ),
     );
   }

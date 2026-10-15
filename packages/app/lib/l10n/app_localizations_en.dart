@@ -2482,4 +2482,233 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get folderDeletedChat => 'Deleted chat';
+
+  @override
+  String get passcodeLock => 'Passcode lock';
+
+  @override
+  String get passcodeAbout =>
+      'A passcode locks Mollygram on this Mac. It isn\'t sent to Telegram and works only here.';
+
+  @override
+  String get passcodeTurnOn => 'Turn passcode on';
+
+  @override
+  String get passcodeTurnOff => 'Turn passcode off';
+
+  @override
+  String get passcodeTurnOffAction => 'Turn off';
+
+  @override
+  String get passcodeChange => 'Change passcode';
+
+  @override
+  String get passcodeCurrent => 'Current passcode';
+
+  @override
+  String get passcodeNew => 'New passcode';
+
+  @override
+  String get passcodeRepeat => 'Repeat the passcode';
+
+  @override
+  String get passcodeTooShort => 'Use at least 4 characters.';
+
+  @override
+  String get passcodesDontMatch => 'The passcodes don\'t match.';
+
+  @override
+  String get passcodeWrong => 'Wrong passcode';
+
+  @override
+  String get passcodeAutoLock => 'Auto-lock';
+
+  @override
+  String get passcodeAwayHour => 'If away for 1 hour';
+
+  @override
+  String passcodeAwayFor(int minutes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      minutes,
+      locale: localeName,
+      other: 'If away for $minutes minutes',
+      one: 'If away for $minutes minute',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get passcodeLockNowHint => 'Press ⌘L to lock right away.';
+
+  @override
+  String get passcodeLocked => 'Mollygram is locked';
+
+  @override
+  String get passcodeEnter => 'Enter your passcode to continue.';
+
+  @override
+  String get passcodeHint => 'Passcode';
+
+  @override
+  String get passcodeForgot => 'Forgot passcode?';
+
+  @override
+  String get passcodeLogOutTitle => 'Log out to remove the passcode?';
+
+  @override
+  String get passcodeLogOutMessage =>
+      'The passcode can\'t be recovered. Logging out removes it; your chats come back when you sign in again.';
+
+  @override
+  String get twoStep => 'Two-step verification';
+
+  @override
+  String get twoStepOn => 'On';
+
+  @override
+  String get twoStepOff => 'Off';
+
+  @override
+  String get twoStepOffAbout =>
+      'Set a password that Telegram asks for, after the code, when you sign in on a new device.';
+
+  @override
+  String get twoStepOnAbout =>
+      'Telegram asks for this password, after the code, when you sign in on a new device.';
+
+  @override
+  String get twoStepLoadFailed => 'Couldn\'t load two-step verification.';
+
+  @override
+  String get twoStepSetPassword => 'Set password';
+
+  @override
+  String get twoStepSetPasswordAbout =>
+      'A recovery email lets you reset the password if you forget it.';
+
+  @override
+  String get twoStepChangePassword => 'Change password';
+
+  @override
+  String get twoStepCurrentPassword => 'Current password';
+
+  @override
+  String get twoStepNewPassword => 'New password';
+
+  @override
+  String get twoStepRepeatPassword => 'Repeat the password';
+
+  @override
+  String get twoStepHint => 'Hint (optional)';
+
+  @override
+  String twoStepHintIs(String hint) {
+    return 'Hint: $hint';
+  }
+
+  @override
+  String get twoStepHintIsPassword => 'The hint can\'t be the password itself.';
+
+  @override
+  String get twoStepRecoveryEmail => 'Recovery email';
+
+  @override
+  String get twoStepRecoveryEmailAbout =>
+      'Telegram sends a code to this address to reset the password if you forget it.';
+
+  @override
+  String get twoStepSetEmail => 'Set recovery email';
+
+  @override
+  String get twoStepChangeEmail => 'Change recovery email';
+
+  @override
+  String get twoStepEmailInvalid => 'This email address isn\'t valid.';
+
+  @override
+  String get twoStepPasswordRejected =>
+      'Telegram didn\'t accept this password. Try another.';
+
+  @override
+  String get twoStepConfirmEmail => 'Confirm the recovery email';
+
+  @override
+  String twoStepCodeSent(String email) {
+    return 'Telegram sent a code to $email.';
+  }
+
+  @override
+  String get twoStepEnterCode => 'Enter the code';
+
+  @override
+  String get twoStepCode => 'Code';
+
+  @override
+  String get twoStepCheckCode => 'Confirm';
+
+  @override
+  String get twoStepResendCode => 'Send the code again';
+
+  @override
+  String get twoStepCancelEmail => 'Don\'t use this email';
+
+  @override
+  String get twoStepEmailConfirmed => 'The recovery email is confirmed.';
+
+  @override
+  String get twoStepPasswordSet => 'Two-step verification is on.';
+
+  @override
+  String get twoStepPasswordChanged => 'The password is changed.';
+
+  @override
+  String get twoStepTurnOff => 'Turn off two-step verification';
+
+  @override
+  String get twoStepTurnOffAbout =>
+      'Signing in on a new device will then need only the code.';
+
+  @override
+  String get twoStepTurnOffAction => 'Turn off';
+
+  @override
+  String get twoStepTurnedOff => 'Two-step verification is off.';
+
+  @override
+  String get passwordsDontMatch => 'The passwords don\'t match.';
+
+  @override
+  String get accountTtlTitle => 'Delete my account';
+
+  @override
+  String get accountTtlRow => 'If away for';
+
+  @override
+  String get accountTtlQuestion => 'Delete my account if I\'m away for';
+
+  @override
+  String get accountTtlAbout =>
+      'If you don\'t come online at least once in this period, your account is deleted with all its messages and contacts.';
+
+  @override
+  String ttlMonths(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count months',
+      one: '$count month',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String ttlDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days',
+      one: '$count day',
+    );
+    return '$_temp0';
+  }
 }

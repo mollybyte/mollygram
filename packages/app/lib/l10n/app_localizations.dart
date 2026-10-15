@@ -4225,6 +4225,390 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Deleted chat'**
   String get folderDeletedChat;
+
+  /// No description provided for @passcodeLock.
+  ///
+  /// In en, this message translates to:
+  /// **'Passcode lock'**
+  String get passcodeLock;
+
+  /// No description provided for @passcodeAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'A passcode locks Mollygram on this Mac. It isn\'t sent to Telegram and works only here.'**
+  String get passcodeAbout;
+
+  /// No description provided for @passcodeTurnOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn passcode on'**
+  String get passcodeTurnOn;
+
+  /// No description provided for @passcodeTurnOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn passcode off'**
+  String get passcodeTurnOff;
+
+  /// No description provided for @passcodeTurnOffAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off'**
+  String get passcodeTurnOffAction;
+
+  /// No description provided for @passcodeChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Change passcode'**
+  String get passcodeChange;
+
+  /// No description provided for @passcodeCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current passcode'**
+  String get passcodeCurrent;
+
+  /// No description provided for @passcodeNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New passcode'**
+  String get passcodeNew;
+
+  /// No description provided for @passcodeRepeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat the passcode'**
+  String get passcodeRepeat;
+
+  /// No description provided for @passcodeTooShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Use at least 4 characters.'**
+  String get passcodeTooShort;
+
+  /// No description provided for @passcodesDontMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'The passcodes don\'t match.'**
+  String get passcodesDontMatch;
+
+  /// No description provided for @passcodeWrong.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong passcode'**
+  String get passcodeWrong;
+
+  /// No description provided for @passcodeAutoLock.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-lock'**
+  String get passcodeAutoLock;
+
+  /// No description provided for @passcodeAwayHour.
+  ///
+  /// In en, this message translates to:
+  /// **'If away for 1 hour'**
+  String get passcodeAwayHour;
+
+  /// No description provided for @passcodeAwayFor.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes, plural, one{If away for {minutes} minute} other{If away for {minutes} minutes}}'**
+  String passcodeAwayFor(int minutes);
+
+  /// No description provided for @passcodeLockNowHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Press ⌘L to lock right away.'**
+  String get passcodeLockNowHint;
+
+  /// No description provided for @passcodeLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Mollygram is locked'**
+  String get passcodeLocked;
+
+  /// No description provided for @passcodeEnter.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your passcode to continue.'**
+  String get passcodeEnter;
+
+  /// No description provided for @passcodeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Passcode'**
+  String get passcodeHint;
+
+  /// No description provided for @passcodeForgot.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot passcode?'**
+  String get passcodeForgot;
+
+  /// No description provided for @passcodeLogOutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Log out to remove the passcode?'**
+  String get passcodeLogOutTitle;
+
+  /// No description provided for @passcodeLogOutMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The passcode can\'t be recovered. Logging out removes it; your chats come back when you sign in again.'**
+  String get passcodeLogOutMessage;
+
+  /// No description provided for @twoStep.
+  ///
+  /// In en, this message translates to:
+  /// **'Two-step verification'**
+  String get twoStep;
+
+  /// No description provided for @twoStepOn.
+  ///
+  /// In en, this message translates to:
+  /// **'On'**
+  String get twoStepOn;
+
+  /// No description provided for @twoStepOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get twoStepOff;
+
+  /// No description provided for @twoStepOffAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'Set a password that Telegram asks for, after the code, when you sign in on a new device.'**
+  String get twoStepOffAbout;
+
+  /// No description provided for @twoStepOnAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'Telegram asks for this password, after the code, when you sign in on a new device.'**
+  String get twoStepOnAbout;
+
+  /// No description provided for @twoStepLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load two-step verification.'**
+  String get twoStepLoadFailed;
+
+  /// No description provided for @twoStepSetPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Set password'**
+  String get twoStepSetPassword;
+
+  /// No description provided for @twoStepSetPasswordAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'A recovery email lets you reset the password if you forget it.'**
+  String get twoStepSetPasswordAbout;
+
+  /// No description provided for @twoStepChangePassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Change password'**
+  String get twoStepChangePassword;
+
+  /// No description provided for @twoStepCurrentPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Current password'**
+  String get twoStepCurrentPassword;
+
+  /// No description provided for @twoStepNewPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'New password'**
+  String get twoStepNewPassword;
+
+  /// No description provided for @twoStepRepeatPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat the password'**
+  String get twoStepRepeatPassword;
+
+  /// No description provided for @twoStepHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Hint (optional)'**
+  String get twoStepHint;
+
+  /// No description provided for @twoStepHintIs.
+  ///
+  /// In en, this message translates to:
+  /// **'Hint: {hint}'**
+  String twoStepHintIs(String hint);
+
+  /// No description provided for @twoStepHintIsPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'The hint can\'t be the password itself.'**
+  String get twoStepHintIsPassword;
+
+  /// No description provided for @twoStepRecoveryEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery email'**
+  String get twoStepRecoveryEmail;
+
+  /// No description provided for @twoStepRecoveryEmailAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'Telegram sends a code to this address to reset the password if you forget it.'**
+  String get twoStepRecoveryEmailAbout;
+
+  /// No description provided for @twoStepSetEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Set recovery email'**
+  String get twoStepSetEmail;
+
+  /// No description provided for @twoStepChangeEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Change recovery email'**
+  String get twoStepChangeEmail;
+
+  /// No description provided for @twoStepEmailInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'This email address isn\'t valid.'**
+  String get twoStepEmailInvalid;
+
+  /// No description provided for @twoStepPasswordRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Telegram didn\'t accept this password. Try another.'**
+  String get twoStepPasswordRejected;
+
+  /// No description provided for @twoStepConfirmEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm the recovery email'**
+  String get twoStepConfirmEmail;
+
+  /// No description provided for @twoStepCodeSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Telegram sent a code to {email}.'**
+  String twoStepCodeSent(String email);
+
+  /// No description provided for @twoStepEnterCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the code'**
+  String get twoStepEnterCode;
+
+  /// No description provided for @twoStepCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Code'**
+  String get twoStepCode;
+
+  /// No description provided for @twoStepCheckCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get twoStepCheckCode;
+
+  /// No description provided for @twoStepResendCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Send the code again'**
+  String get twoStepResendCode;
+
+  /// No description provided for @twoStepCancelEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t use this email'**
+  String get twoStepCancelEmail;
+
+  /// No description provided for @twoStepEmailConfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'The recovery email is confirmed.'**
+  String get twoStepEmailConfirmed;
+
+  /// No description provided for @twoStepPasswordSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Two-step verification is on.'**
+  String get twoStepPasswordSet;
+
+  /// No description provided for @twoStepPasswordChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'The password is changed.'**
+  String get twoStepPasswordChanged;
+
+  /// No description provided for @twoStepTurnOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off two-step verification'**
+  String get twoStepTurnOff;
+
+  /// No description provided for @twoStepTurnOffAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'Signing in on a new device will then need only the code.'**
+  String get twoStepTurnOffAbout;
+
+  /// No description provided for @twoStepTurnOffAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off'**
+  String get twoStepTurnOffAction;
+
+  /// No description provided for @twoStepTurnedOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Two-step verification is off.'**
+  String get twoStepTurnedOff;
+
+  /// No description provided for @passwordsDontMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'The passwords don\'t match.'**
+  String get passwordsDontMatch;
+
+  /// No description provided for @accountTtlTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete my account'**
+  String get accountTtlTitle;
+
+  /// No description provided for @accountTtlRow.
+  ///
+  /// In en, this message translates to:
+  /// **'If away for'**
+  String get accountTtlRow;
+
+  /// No description provided for @accountTtlQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete my account if I\'m away for'**
+  String get accountTtlQuestion;
+
+  /// No description provided for @accountTtlAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'If you don\'t come online at least once in this period, your account is deleted with all its messages and contacts.'**
+  String get accountTtlAbout;
+
+  /// No description provided for @ttlMonths.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} month} other{{count} months}}'**
+  String ttlMonths(int count);
+
+  /// No description provided for @ttlDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} day} other{{count} days}}'**
+  String ttlDays(int count);
 }
 
 class _AppLocalizationsDelegate

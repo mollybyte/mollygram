@@ -214,8 +214,9 @@ M8 calls and macOS release, M9 after release.
 | Notifications and sounds: per-type, badge, preview, sound | partial | Global switches, preview, sound and badge done (`NotificationsPage`); per-type scopes (private, groups, channels) and tones missing | S | M1 |
 | Active sessions and terminate | partial | List, terminate one or all others; no auto-terminate period | S | M1 |
 | Privacy and security: last seen, phone, photo, calls, forwards, groups, blocked list | done | Nine settings with Everybody / My contacts / Nobody and always / never lists, finding by phone, blocked list with block and unblock ([privacy_settings_controller.dart](../packages/core/lib/src/privacy_settings_controller.dart)); exceptions add people from the contacts only, groups already in a list are kept and can be removed | | |
-| Two-step verification setup | missing | `TwoStepVerification` | M | M6 |
-| Passcode lock and Touch ID | missing | `PasscodeSettingsViewController`, `LocalAuth` | M | M7 |
+| Two-step verification setup | done | Set, change and remove the password with a hint, recovery email with its code (resend, cancel); password recovery by email is not there yet | | |
+| Passcode lock and Touch ID | partial | Passcode lock: salted PBKDF2 hash in the keychain, locked at launch, auto-lock after 1, 5, 15 or 60 minutes away, ⌘L, blurred lock screen, log out when forgotten; no Touch ID | S | M7 |
+| Delete account if away for 1, 3, 6 or 12 months | done | Privacy and security, Delete my account | | |
 | Data and storage: cache usage, clear, limits, network usage | partial | Usage by kind, clear by kind, download folder; auto-download switches are stored but not yet applied; no limits or network usage | M | M7 |
 | Appearance: theme, accent, night mode schedule, chat background, text size | partial | Theme, accent, wallpaper on or off, message text size, reduce motion; no night schedule or custom backgrounds | M | M7 |
 | Language: UI language picker, translation settings | partial | RU and EN follow the system | S | M7 |
