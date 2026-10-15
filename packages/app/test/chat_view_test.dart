@@ -98,6 +98,8 @@ void main() {
 
   Future<void> rightClick(WidgetTester tester, String text) async {
     await tester.tap(find.text(text), buttons: kSecondaryButton);
+    // The menu asks for the message's properties, then who saw it.
+    await tester.runAsync(() => Future<void>.delayed(_tick));
     await tester.runAsync(() => Future<void>.delayed(_tick));
     await tester.pump();
   }
@@ -559,6 +561,78 @@ void main() {
     expect(forward['chat_id'], 9);
     expect(forward['message_ids'], [12]);
     expect(forward['send_copy'], isFalse);
+  });
+
+  testWidgets('selects text with the mouse and replies with it quoted', (
+    tester,
+  ) async {
+    await pump(tester);
+
+    // Drag across the whole of "From Vera".
+    final text = tester.getRect(find.text('From Vera'));
+    final gesture = await tester.startGesture(
+      Offset(text.left + 1, text.center.dy),
+      kind: PointerDeviceKind.mouse,
+    );
+    await tester.pump();
+    await gesture.moveTo(Offset(text.right + 30, text.center.dy));
+    await tester.pump();
+    await gesture.up();
+    await tester.pump();
+
+    await rightClick(tester, 'From Vera');
+    // The selection hands focus over before the menu shows.
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Quote'));
+    await tester.pumpAndSettle();
+    // The composer's reply bar carries the quote.
+    expect(find.byType(ComposerContextBar), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(ComposerContextBar),
+        matching: find.text('From Vera'),
+      ),
+      findsOneWidget,
+    );
+
+    await tester.enterText(find.byType(TextField), 'Noted');
+    await tester.pump();
+    await tester.tap(find.byType(MgSendButton));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+
+    final send = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    final replyTo = send['reply_to']! as Map;
+    expect(replyTo['message_id'], 12);
+    final quote = replyTo['quote']! as Map;
+    expect((quote['text']! as Map)['text'], 'From Vera');
+    expect(quote['position'], 0);
+  });
+
+  testWidgets('tells who saw a message and lists them', (tester) async {
+    await pump(tester);
+
+    await rightClick(tester, 'From Boris');
+    await tester.pumpAndSettle();
+    expect(find.text('Seen by 1'), findsOneWidget);
+    await tester.tap(find.text('Seen by 1'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(MgPeopleList), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(MgPeopleList),
+        matching: find.text('Vera'),
+      ),
+      findsOneWidget,
+    );
+
+    // A message TDLib keeps no viewers for has no such row.
+    await tester.tapAt(const Offset(5, 5));
+    await tester.pumpAndSettle();
+    await rightClick(tester, 'From Vera');
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Seen by'), findsNothing);
   });
 
   testWidgets('forwards without the sender name when asked', (tester) async {
@@ -1136,6 +1210,14 @@ final class _FakeTdJson implements td.TdJson {
         'can_be_pinned': true,
         'can_be_deleted_only_for_self': true,
         'can_be_deleted_for_all_users': true,
+        'can_get_viewers': decoded['message_id'] == 10,
+        'can_get_added_reactions': true,
+      },
+      'getMessageViewers' => {
+        '@type': 'messageViewers',
+        'viewers': [
+          {'@type': 'messageViewer', 'user_id': 3, 'view_date': 1760000500},
+        ],
       },
       'getMessageAvailableReactions' => {
         '@type': 'availableReactions',

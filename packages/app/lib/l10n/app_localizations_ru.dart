@@ -439,6 +439,45 @@ class AppLocalizationsRu extends AppLocalizations {
   String get menuReply => 'Ответить';
 
   @override
+  String get menuQuote => 'Цитировать';
+
+  @override
+  String seenBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Просмотрели: $count',
+      one: 'Просмотрели: $count',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String reactedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count реакций',
+      few: '$count реакции',
+      one: '$count реакция',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String readAt(String time) {
+    return 'Прочитано $time';
+  }
+
+  @override
+  String get notReadYet => 'Ещё не прочитано';
+
+  @override
+  String editedAt(String time) {
+    return 'Изменено $time';
+  }
+
+  @override
   String get menuEdit => 'Изменить';
 
   @override

@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart' show Tooltip;
 import 'package:flutter/widgets.dart';
 
 import '../icons.dart';
@@ -60,6 +61,8 @@ class MessageMeta extends StatelessWidget {
     this.status = MessageStatus.none,
     this.label,
     this.views,
+    this.forwards,
+    this.tooltip,
     this.color,
   });
 
@@ -69,6 +72,12 @@ class MessageMeta extends StatelessWidget {
 
   /// How many people saw a channel post, already formatted ("1.2K").
   final String? views;
+
+  /// How many times a channel post was forwarded, formatted likewise.
+  final String? forwards;
+
+  /// The full date and the edit time, shown on hover.
+  final String? tooltip;
 
   /// Defaults to the secondary text color.
   final Color? color;
@@ -100,6 +109,7 @@ class MessageMeta extends StatelessWidget {
     MessageStatus status = MessageStatus.none,
     String? label,
     String? views,
+    String? forwards,
   }) {
     final style = styleOf(MgColors.of(context));
     final scaler = MediaQuery.textScalerOf(context);
@@ -122,6 +132,9 @@ class MessageMeta extends StatelessWidget {
     if (views != null) {
       width += _viewsIcon + _viewsGap + measure(views) + _labelGap;
     }
+    if (forwards != null) {
+      width += _viewsIcon + _viewsGap + measure(forwards) + _labelGap;
+    }
     return width;
   }
 
@@ -130,7 +143,7 @@ class MessageMeta extends StatelessWidget {
     final c = MgColors.of(context);
     final style = styleOf(c, color: color);
     final tick = _tick(status);
-    return Row(
+    final row = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         if (label != null) ...[
@@ -143,6 +156,12 @@ class MessageMeta extends StatelessWidget {
           Text(views!, style: style),
           const SizedBox(width: _labelGap),
         ],
+        if (forwards != null) ...[
+          MgIcon(MgIcons.forward, size: _viewsIcon, color: style.color),
+          const SizedBox(width: _viewsGap),
+          Text(forwards!, style: style),
+          const SizedBox(width: _labelGap),
+        ],
         Text(time, style: style),
         if (tick != null) ...[
           const SizedBox(width: _tickGap),
@@ -153,6 +172,13 @@ class MessageMeta extends StatelessWidget {
           ),
         ],
       ],
+    );
+    final tooltip = this.tooltip;
+    if (tooltip == null) return row;
+    return Tooltip(
+      message: tooltip,
+      waitDuration: const Duration(milliseconds: 600),
+      child: row,
     );
   }
 }

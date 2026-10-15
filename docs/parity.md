@@ -67,7 +67,7 @@ M8 calls and macOS release, M9 after release.
 | Join and mute buttons for channels and groups you are not in | done | Join in place of the composer; Mute and Unmute in channels you only read | | |
 | Open `t.me` and `tg://` links, usernames, hashtags, bot commands | done | `links/`: links, mentions and mentions by name, invites, `tg://user?id=`, `t.me/s/` previews, message links jump to the message; hashtags open the ⌘K message search, bot commands are sent to the chat | | |
 | Link previews in messages | partial | Check `MessageText.linkPreview` rendering | M | M1 |
-| Text selection across messages | missing | `ChatSelectText`; whole messages go through multi-select | M | M2 |
+| Text selection across messages | done | Mouse selection over the timeline, copy with the shortcut | M | M2 |
 | Multi-select mode: forward, delete, copy several | done | Select from the menu, click rows, bar in place of the composer; no shift-click range yet | M | M2 |
 | Forum topics: topic list, topic chat, create and close topics | missing | Service messages render only | L | M2 |
 | Channel comments (discussion thread) | missing | `GetMessageThread` | M | M2 |
@@ -90,14 +90,14 @@ M8 calls and macOS release, M9 after release.
 | Reply, edit, delete (for me / for everyone), forward, copy text, copy link | done | #30 | | |
 | Quick reactions and toggling reactions | done | #30 | | |
 | Full reaction picker (all emoji, custom reactions) | missing | | M | M1 |
-| Reply with quote (part of the text) | missing | `InputTextQuote` | S | M2 |
+| Reply with quote (part of the text) | done | Select text, Quote in the menu | S | M2 |
 | Pin and unpin | done (#49) | | S | M1 |
 | Forward without author or caption | done | Checkboxes in the forward picker | S | M2 |
 | Save media to Downloads, show in Finder | missing | | S | M1 |
 | Report message | missing | `ReportChat` | S | M2 |
-| Who read and who reacted | missing | `GetMessageViewers`, `GetMessageAddedReactions` | S | M2 |
-| Message info: view count, forwards, edit date | partial | | S | M2 |
-| Select and copy part of a message | partial | Whole messages copy via multi-select; part of a message needs text selection | | M2 |
+| Who read and who reacted | done | Rows at the top of the message menu, read time in private chats | S | M2 |
+| Message info: view count, forwards, edit date | done | Views and forwards on channel posts, full date and edit time on hover | S | M2 |
+| Select and copy part of a message | done | | | M2 |
 
 ### Composer
 
