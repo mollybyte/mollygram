@@ -3,17 +3,21 @@ import 'dart:async';
 import 'package:flutter/material.dart' show Tooltip;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_media/mollygram_media.dart' show AudioTrackPlayer;
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../home/format.dart';
 import '../home/workspace.dart';
 import '../session/providers.dart';
 import '../shared_media/message_jump.dart';
 import 'describe.dart';
 import 'file_content.dart';
 import 'media_providers.dart';
+import 'message_tile.dart' show SenderAvatar;
+import 'voice_autoplay.dart';
 
 /// The voice message or music file that is playing, as a glass capsule at
 /// the right of the chat header, like the player bar of the official
@@ -79,6 +83,36 @@ class _Capsule extends ConsumerWidget {
     if (track.chatId != currentChatId) {
       ref.read(workspaceControllerProvider).open(track.chatId);
     }
+  }
+
+  /// The chat's voice messages, or its music, under the list button; a
+  /// click plays that one.
+  Future<void> _showPlaylist(BuildContext context, WidgetRef ref) async {
+    final session = ref.read(telegramSessionProvider).asData?.value;
+    if (session == null) return;
+    final box = context.findRenderObject() as RenderBox;
+    final position = box.localToGlobal(Offset(0, box.size.height + 8));
+    final store = session.conversations.store;
+    final current = store.message(track.chatId, track.messageId);
+    final voice = current?.content is! td.MessageAudio;
+    final tracks = [
+      for (final m in store.messagesFor(track.chatId))
+        if ((m.content is td.MessageVoiceNote) == voice &&
+            audioFileOf(m.content) != null)
+          m,
+    ]..sort((a, b) => a.id.compareTo(b.id));
+    if (tracks.isEmpty) return;
+    await showMgPopover(
+      context,
+      position: position,
+      child: _Playlist(
+        tracks: tracks,
+        store: store,
+        currentId: track.messageId,
+        onPick: (message) =>
+            unawaited(playAudioMessage(session, player, track.chatId, message)),
+      ),
+    );
   }
 
   @override
@@ -200,7 +234,14 @@ class _Capsule extends ConsumerWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: 2),
+              Builder(
+                builder: (context) => MgIconButton(
+                  icon: MgIcons.list,
+                  tooltip: l10n.playlist,
+                  onPressed: () => unawaited(_showPlaylist(context, ref)),
+                ),
+              ),
               MgIconButton(
                 icon: MgIcons.close,
                 tooltip: l10n.close,
@@ -209,6 +250,196 @@ class _Capsule extends ConsumerWidget {
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+/// The chat's voice messages or music in order, oldest first, in a glass
+/// panel: who sent each (or its title), how long it is, the one playing in
+/// the accent.
+class _Playlist extends StatelessWidget {
+  const _Playlist({
+    required this.tracks,
+    required this.store,
+    required this.currentId,
+    required this.onPick,
+  });
+
+  final List<ConversationMessage> tracks;
+  final ConversationStore store;
+  final int currentId;
+  final void Function(ConversationMessage message) onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final c = MgColors.of(context);
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 240, maxWidth: 320),
+      child: Glass(
+        radius: 12,
+        padding: const EdgeInsets.all(5),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(10, 5, 10, 6),
+              child: Text(
+                l10n.playlist,
+                style: mgTextStyle(
+                  c,
+                  size: MgType.caption,
+                  weight: FontWeight.w600,
+                  color: c.fg2,
+                ),
+              ),
+            ),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 360),
+              child: ListView(
+                shrinkWrap: true,
+                padding: EdgeInsets.zero,
+                children: [
+                  for (final message in tracks)
+                    _PlaylistRow(
+                      message: message,
+                      store: store,
+                      current: message.id == currentId,
+                      onTap: () {
+                        Navigator.of(context).maybePop();
+                        if (message.id != currentId) onPick(message);
+                      },
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PlaylistRow extends StatefulWidget {
+  const _PlaylistRow({
+    required this.message,
+    required this.store,
+    required this.current,
+    required this.onTap,
+  });
+
+  final ConversationMessage message;
+  final ConversationStore store;
+  final bool current;
+  final VoidCallback onTap;
+
+  @override
+  State<_PlaylistRow> createState() => _PlaylistRowState();
+}
+
+class _PlaylistRowState extends State<_PlaylistRow> {
+  var _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final c = MgColors.of(context);
+    final message = widget.message;
+    final sender = nameOfSender(l10n, widget.store, message.sender);
+    final (title, subtitle, seconds) = switch (message.content) {
+      td.MessageAudio(:final audio) => (
+        audio.title.isNotEmpty
+            ? audio.title
+            : audio.fileName.isNotEmpty
+            ? audio.fileName
+            : l10n.previewAudio,
+        audio.performer.isNotEmpty ? audio.performer : sender,
+        audio.duration,
+      ),
+      td.MessageVoiceNote(:final voiceNote) => (
+        sender,
+        formatChatTime(
+          message.date,
+          Localizations.localeOf(context).toString(),
+        ),
+        voiceNote.duration,
+      ),
+      _ => (sender, '', 0),
+    };
+    final color = widget.current ? c.accent : c.fg;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+          decoration: BoxDecoration(
+            color: _hover ? c.hover : const Color(0x00000000),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              ClipOval(
+                child: SizedBox.square(
+                  dimension: 26,
+                  child: SenderAvatar(
+                    name: sender,
+                    photo: widget.store.photoOf(message.sender),
+                    size: 26,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: mgTextStyle(
+                        c,
+                        weight: widget.current
+                            ? FontWeight.w600
+                            : FontWeight.w400,
+                        color: color,
+                        height: 1.2,
+                      ),
+                    ),
+                    if (subtitle.isNotEmpty)
+                      Text(
+                        subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: mgTextStyle(
+                          c,
+                          size: MgType.caption,
+                          color: c.fg2,
+                          height: 1.2,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                formatDuration(seconds),
+                style: mgTextStyle(
+                  c,
+                  size: MgType.caption,
+                  color: widget.current ? c.accent : c.fg2,
+                ).copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

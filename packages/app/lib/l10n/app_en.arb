@@ -767,6 +767,7 @@
   "sharedMusicEmpty": "No music yet",
   "sharedLoadFailed": "Couldn't load the list",
   "showInChat": "Show in chat",
+  "playlist": "Playlist",
   "joinChannel": "Join channel",
   "joinGroup": "Join group",
   "muteChat": "Mute",

@@ -1720,6 +1720,45 @@ void main() {
     expect(find.byTooltip('Show in chat'), findsNothing);
   });
 
+  testWidgets('lists the chat\'s voice messages as the player\'s playlist', (
+    tester,
+  ) async {
+    json.history = [
+      td.Message.fromJson(_voiceMessage(23, 3)),
+      td.Message.fromJson(_voiceMessage(21, 2)),
+      ..._history,
+    ];
+    await pump(tester);
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(ChatView)),
+    );
+    final player = container.read(audioPlayerProvider);
+    player.debugLoad((
+      chatId: 7,
+      messageId: 21,
+    ), duration: const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Playlist'));
+    await tester.pumpAndSettle();
+    expect(find.text('Playlist'), findsOneWidget);
+    final panel = find
+        .ancestor(of: find.text('Playlist'), matching: find.byType(Glass))
+        .first;
+    expect(
+      find.descendant(of: panel, matching: find.text('0:03')),
+      findsNWidgets(2),
+    );
+
+    // Vera's message is the other one; picking it downloads and plays it.
+    await tester.tap(find.text('Vera').last);
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+    expect(find.text('Playlist'), findsNothing);
+    final download = json.sent.lastWhere((r) => r['@type'] == 'downloadFile');
+    expect(download['file_id'], 523);
+  });
+
   testWidgets('jumps to a day from the search bar', (tester) async {
     await pump(tester);
     // The shortcut needs the focus inside the chat.
@@ -2820,6 +2859,22 @@ Map<String, Object?> _photo(int id) => {
       ],
     },
     'caption': {'@type': 'formattedText', 'text': '', 'entities': <Object?>[]},
+  },
+};
+
+Map<String, Object?> _voiceMessage(int id, int senderId) => {
+  ..._message(id: id, senderId: senderId, text: '').toJson(),
+  'content': {
+    '@type': 'messageVoiceNote',
+    'voice_note': {
+      '@type': 'voiceNote',
+      'duration': 3,
+      'waveform': '',
+      'mime_type': 'audio/ogg',
+      'voice': _stickerFile(500 + id),
+    },
+    'caption': {'@type': 'formattedText', 'text': '', 'entities': <Object?>[]},
+    'is_listened': false,
   },
 };
 
