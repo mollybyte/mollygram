@@ -50,6 +50,7 @@ final class PeerInfo {
     this.memberCount = 0,
     this.members = const [],
     this.isMuted = false,
+    this.autoDeleteTime = 0,
     this.isBlocked = false,
     this.isDeleted = false,
     this.isSelf = false,
@@ -90,6 +91,10 @@ final class PeerInfo {
   /// channels and when the group hides its members.
   final List<PeerMember> members;
   final bool isMuted;
+
+  /// After how many seconds messages in the chat delete themselves; 0
+  /// when they don't.
+  final int autoDeleteTime;
   final bool isBlocked;
 
   /// A deleted account: no actions apply to it.
@@ -180,6 +185,7 @@ final class PeerInfoController {
           formattedPhone: _phones[user?.phoneNumber],
           birthdate: full?.birthdate,
           isMuted: muted,
+          autoDeleteTime: chat.autoDeleteTime,
           isBlocked:
               _blocked[userId] ??
               (blocked || full?.blockList is td.BlockListMain),
@@ -198,6 +204,7 @@ final class PeerInfoController {
           memberCount: _basicGroups[basicGroupId]?.memberCount ?? 0,
           members: _membersOf(chatId),
           isMuted: muted,
+          autoDeleteTime: chat.autoDeleteTime,
         );
       case td.ChatTypeSupergroup(:final supergroupId, :final isChannel):
         final group = _supergroups[supergroupId];
@@ -216,6 +223,7 @@ final class PeerInfoController {
           memberCount: full?.memberCount ?? group?.memberCount ?? 0,
           members: isChannel ? const [] : _membersOf(chatId),
           isMuted: muted,
+          autoDeleteTime: chat.autoDeleteTime,
         );
     }
   }
@@ -298,7 +306,12 @@ final class PeerInfoController {
   }
 
   /// Mutes [chatId] forever, or unmutes it.
-  Future<void> setMuted(int chatId, {required bool muted}) async {
+  Future<void> setMuted(int chatId, {required bool muted}) =>
+      setMuteFor(chatId, muted ? muteForever : 0);
+
+  /// Mutes [chatId] for [seconds] ([muteForever] for good), or unmutes
+  /// it when 0.
+  Future<void> setMuteFor(int chatId, int seconds) async {
     final chat = _chats[chatId];
     if (chat == null) return;
     final s = chat.notificationSettings;
@@ -307,7 +320,7 @@ final class PeerInfoController {
         chatId: chatId,
         notificationSettings: td.ChatNotificationSettings(
           useDefaultMuteFor: false,
-          muteFor: muted ? muteForever : 0,
+          muteFor: seconds,
           useDefaultSound: s.useDefaultSound,
           soundId: s.soundId,
           useDefaultShowPreview: s.useDefaultShowPreview,
@@ -329,6 +342,15 @@ final class PeerInfoController {
       ),
     );
   }
+
+  /// Makes messages in [chatId] delete themselves [seconds] after they
+  /// are sent; 0 turns it off.
+  Future<void> setAutoDeleteTime(int chatId, int seconds) => _client.send(
+    td.SetChatMessageAutoDeleteTime(
+      chatId: chatId,
+      messageAutoDeleteTime: seconds,
+    ),
+  );
 
   /// Blocks or unblocks the user of the private chat [chatId].
   Future<void> setBlocked(int chatId, {required bool blocked}) async {
@@ -420,6 +442,12 @@ final class PeerInfoController {
         _notify();
       case td.UpdateChatBlockList(:final chatId, :final blockList):
         _chats[chatId]?.blockList = blockList;
+        _notify();
+      case td.UpdateChatMessageAutoDeleteTime(
+        :final chatId,
+        :final messageAutoDeleteTime,
+      ):
+        _chats[chatId]?.autoDeleteTime = messageAutoDeleteTime;
         _notify();
       case td.UpdateScopeNotificationSettings(
         :final scope,
@@ -524,12 +552,14 @@ final class _ChatState {
       title = chat.title,
       photo = chat.photo,
       notificationSettings = chat.notificationSettings,
+      autoDeleteTime = chat.messageAutoDeleteTime,
       blockList = chat.blockList;
 
   final td.ChatType type;
   String title;
   td.ChatPhotoInfo? photo;
   td.ChatNotificationSettings notificationSettings;
+  int autoDeleteTime;
   td.BlockList? blockList;
 }
 

@@ -841,6 +841,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get infoUnmute => 'Unmute';
 
   @override
+  String muteForHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'For $count hours',
+      one: 'For 1 hour',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String muteForDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'For $count days',
+      one: 'For 1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get muteUntilEnabled => 'Until I turn it back on';
+
+  @override
+  String get autoDeleteTitle => 'Auto-delete messages';
+
+  @override
   String get blockUser => 'Block user';
 
   @override
