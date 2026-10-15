@@ -53,6 +53,7 @@ class Composer extends StatefulWidget {
     this.onSendMenu,
     this.extraButton,
     this.onAttach,
+    this.onAttachMenu,
     this.onEmoji,
     this.onRecord,
     this.onCancel,
@@ -84,6 +85,10 @@ class Composer extends StatefulWidget {
   /// scheduled messages while it has some.
   final Widget? extraButton;
   final VoidCallback? onAttach;
+
+  /// A click on the attach button, with the point above it where a menu
+  /// of what to attach goes. Takes the place of [onAttach] when set.
+  final void Function(Offset position)? onAttachMenu;
   final VoidCallback? onEmoji;
   final VoidCallback? onRecord;
 
@@ -409,11 +414,19 @@ class _ComposerState extends State<Composer> {
     final fieldRow = Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        MgIconButton(
-          icon: MgIcons.attach,
-          tooltip: l.attach,
-          iconSize: 18,
-          onPressed: widget.onAttach,
+        Builder(
+          builder: (context) => MgIconButton(
+            icon: MgIcons.attach,
+            tooltip: l.attach,
+            iconSize: 18,
+            onPressed: switch (widget.onAttachMenu) {
+              null => widget.onAttach,
+              final onMenu => () {
+                final box = context.findRenderObject()! as RenderBox;
+                onMenu(box.localToGlobal(Offset(box.size.width / 2, 0)));
+              },
+            },
+          ),
         ),
         const SizedBox(width: 2),
         Expanded(

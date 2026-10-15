@@ -935,6 +935,52 @@ class AppLocalizationsEn extends AppLocalizations {
   String get botNoAnswer => 'The bot did not answer';
 
   @override
+  String get attachFile => 'File…';
+
+  @override
+  String get attachPoll => 'Poll…';
+
+  @override
+  String get newPollTitle => 'New poll';
+
+  @override
+  String get newQuizTitle => 'New quiz';
+
+  @override
+  String get pollQuestionHint => 'Ask a question';
+
+  @override
+  String get pollOptionsTitle => 'Options';
+
+  @override
+  String get pollOptionHint => 'Add an option';
+
+  @override
+  String get pollRemoveOption => 'Remove option';
+
+  @override
+  String get pollCorrectAnswer => 'Correct answer';
+
+  @override
+  String get pollAnonymousVoting => 'Anonymous voting';
+
+  @override
+  String get pollMultipleAnswers => 'Multiple answers';
+
+  @override
+  String get pollQuizMode => 'Quiz mode';
+
+  @override
+  String get pollExplanationHint => 'Explanation (optional)';
+
+  @override
+  String get pollQuizHint =>
+      'Mark the correct answer; voters see the explanation after answering.';
+
+  @override
+  String get pollCreate => 'Create';
+
+  @override
   String get contentGame => 'Game';
 
   @override

@@ -1640,6 +1640,96 @@ abstract class AppLocalizations {
   /// **'The bot did not answer'**
   String get botNoAnswer;
 
+  /// No description provided for @attachFile.
+  ///
+  /// In en, this message translates to:
+  /// **'File…'**
+  String get attachFile;
+
+  /// No description provided for @attachPoll.
+  ///
+  /// In en, this message translates to:
+  /// **'Poll…'**
+  String get attachPoll;
+
+  /// No description provided for @newPollTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New poll'**
+  String get newPollTitle;
+
+  /// No description provided for @newQuizTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New quiz'**
+  String get newQuizTitle;
+
+  /// No description provided for @pollQuestionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask a question'**
+  String get pollQuestionHint;
+
+  /// No description provided for @pollOptionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Options'**
+  String get pollOptionsTitle;
+
+  /// No description provided for @pollOptionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add an option'**
+  String get pollOptionHint;
+
+  /// No description provided for @pollRemoveOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove option'**
+  String get pollRemoveOption;
+
+  /// No description provided for @pollCorrectAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct answer'**
+  String get pollCorrectAnswer;
+
+  /// No description provided for @pollAnonymousVoting.
+  ///
+  /// In en, this message translates to:
+  /// **'Anonymous voting'**
+  String get pollAnonymousVoting;
+
+  /// No description provided for @pollMultipleAnswers.
+  ///
+  /// In en, this message translates to:
+  /// **'Multiple answers'**
+  String get pollMultipleAnswers;
+
+  /// No description provided for @pollQuizMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiz mode'**
+  String get pollQuizMode;
+
+  /// No description provided for @pollExplanationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Explanation (optional)'**
+  String get pollExplanationHint;
+
+  /// No description provided for @pollQuizHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark the correct answer; voters see the explanation after answering.'**
+  String get pollQuizHint;
+
+  /// No description provided for @pollCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get pollCreate;
+
   /// No description provided for @contentGame.
   ///
   /// In en, this message translates to:

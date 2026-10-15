@@ -120,7 +120,7 @@ M8 calls and macOS release, M9 after release.
 | Video message (circle) recording | partial | Hold, lock, cancel, 60 s limit; 640×640 H.264 via AVFoundation on macOS. Front camera only, no flip or preview before sending | L | M4 |
 | Silent send and scheduled messages, scheduled list | partial | Right click or long press on Send: without sound, or at a day and time; a clock in the composer opens the scheduled list with Send now, Reschedule and Delete; sending media later is still missing | S | M2 |
 | Send as (channel identity) | missing | `ChatInputSendAsView` | S | M6 |
-| Polls and quizzes creation | missing | `NewPollController` | M | M2 |
+| Polls and quizzes creation | done | Attach menu > Poll… in groups and channels: question, up to ten options, anonymous voting, multiple answers, quiz mode with the right answer and an explanation | M | M2 |
 | Location and venue sending | missing | | M | M2 |
 | Contact sending | missing | | S | M2 |
 | Send preview: caption, send as files, albums | done | #31 | | |

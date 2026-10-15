@@ -27,6 +27,7 @@ import '../chat/link_preview_bar.dart';
 import '../chat/media_viewer.dart';
 import '../chat/message_actions.dart';
 import '../chat/message_tile.dart';
+import '../chat/poll_composer.dart';
 import '../chat/schedule_picker.dart';
 import '../chat/slow_mode.dart';
 import '../chat/sticker_suggestions.dart';
@@ -1501,6 +1502,51 @@ class _ChatViewState extends ConsumerState<ChatView> {
   }
 
   /// The attach button: pick files, then confirm them in the preview.
+  /// The attach button's menu: files, and a poll where the chat allows
+  /// one (groups and channels).
+  Future<void> _attachMenu(Offset position) async {
+    final l10n = AppLocalizations.of(context);
+    final store = _conversations.store;
+    final chat = ref.read(chatEntryProvider(widget.chatId)).value;
+    final canPoll =
+        chat != null && (chat.isGroup || store.isChannel(widget.chatId));
+    await showMgMenu(
+      context,
+      position: position,
+      items: [
+        MgMenuItem(
+          label: l10n.attachFile,
+          onSelected: () => unawaited(_chooseFiles()),
+        ),
+        if (canPoll)
+          MgMenuItem(
+            label: l10n.attachPoll,
+            onSelected: () => unawaited(_createPoll()),
+          ),
+      ],
+    );
+  }
+
+  Future<void> _createPoll() async {
+    final chatId = widget.chatId;
+    final poll = await composePoll(
+      context,
+      inChannel: _conversations.store.isChannel(chatId),
+    );
+    if (poll == null || !mounted || widget.chatId != chatId) return;
+    final replyTo = _replyTo;
+    setState(() {
+      _replyTo = null;
+      _replyQuote = null;
+      _failure = null;
+    });
+    try {
+      await _conversations.sendPoll(chatId, poll, replyTo: replyTo?.id);
+    } on td.TdException {
+      if (mounted) setState(() => _failure = _Failure.send);
+    }
+  }
+
   Future<void> _chooseFiles() async {
     final picked = await openFiles();
     if (!mounted || picked.isEmpty) return;
@@ -2178,7 +2224,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
                                 ? _cancel
                                 : null,
                             onEditLast: () => unawaited(_editLast()),
-                            onAttach: () => unawaited(_chooseFiles()),
+                            onAttachMenu: (position) =>
+                                unawaited(_attachMenu(position)),
                             onEmoji: _togglePanel,
                             extraButton: _composerExtras(l10n, store),
                             onPaste: _paste,
