@@ -14,8 +14,8 @@ import 'preferences.dart';
 ({Color light, Color dark}) accentColors(AccentChoice choice) =>
     switch (choice) {
       AccentChoice.violet => (
-        light: const Color(0xFF6A4FD8),
-        dark: const Color(0xFFA792FF),
+        light: const Color(0xFF6142E0),
+        dark: const Color(0xFF9F82FF),
       ),
       AccentChoice.blue => (
         light: MgColors.light.accent,
@@ -66,7 +66,7 @@ import 'preferences.dart';
         // The light violet of the dark theme is too pale under the white
         // text of the selected row.
         selection: preferences.accent == AccentChoice.violet
-            ? const Color(0xFF6E57D6)
+            ? const Color(0xFF6F4FEA)
             : null,
       ),
       metrics: metrics,
@@ -92,10 +92,10 @@ typedef SurfaceTint = ({
 SurfaceTint? surfaceTint(WallpaperPreset preset) => switch (preset) {
   WallpaperPreset.mist => (
     light: (c) => c.copyWith(
-      fg: const Color(0xFF1C1A22),
-      fg2: const Color(0xFF6B6676),
-      muted: const Color(0xFFA39EAD),
-      separator: const Color(0x141C1A22),
+      fg: const Color(0xFF18161E),
+      fg2: const Color(0xFF5C5768),
+      muted: const Color(0xFF8F8A9B),
+      separator: const Color(0x1F1C1A22),
       hover: const Color(0x0F1C1A22),
       field: const Color(0x0F1C1A22),
       avatarTop: const Color(0xFFCFC8DC),
@@ -107,10 +107,10 @@ SurfaceTint? surfaceTint(WallpaperPreset preset) => switch (preset) {
       frame: const Color(0xFFE7E3EE),
     ),
     dark: (c) => c.copyWith(
-      fg: const Color(0xFFEEEAF5),
-      fg2: const Color(0xFFA49FB0),
-      muted: const Color(0xFF6C6778),
-      separator: const Color(0x14EEEAF5),
+      fg: const Color(0xFFF7F5FB),
+      fg2: const Color(0xFFB9B4C6),
+      muted: const Color(0xFF857F93),
+      separator: const Color(0x1FEEEAF5),
       hover: const Color(0x0FEEEAF5),
       field: const Color(0x0FEEEAF5),
       avatarTop: const Color(0xFF5B5468),
