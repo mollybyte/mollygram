@@ -893,6 +893,10 @@
   "deleteTopicConfirm": "Delete «{name}» with all its messages?",
   "@deleteTopicConfirm": {"placeholders": {"name": {"type": "String"}}},
   "topicActionFailed": "Couldn't change the topic",
+  "sponsored": "Sponsored",
+  "recommended": "Recommended",
+  "sponsoredOpen": "Open",
+  "sponsoredAbout": "Telegram shows this message on behalf of the sponsor. It is picked by the channel's topic, not by your data.",
   "unpinAll": "Unpin all messages",
   "unpinAllTitle": "{count, plural, one{Unpin {count} message?} other{Unpin all {count} messages?}}",
   "@unpinAllTitle": {

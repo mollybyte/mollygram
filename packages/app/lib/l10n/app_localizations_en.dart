@@ -2290,6 +2290,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get topicActionFailed => 'Couldn\'t change the topic';
 
   @override
+  String get sponsored => 'Sponsored';
+
+  @override
+  String get recommended => 'Recommended';
+
+  @override
+  String get sponsoredOpen => 'Open';
+
+  @override
+  String get sponsoredAbout =>
+      'Telegram shows this message on behalf of the sponsor. It is picked by the channel\'s topic, not by your data.';
+
+  @override
   String get unpinAll => 'Unpin all messages';
 
   @override

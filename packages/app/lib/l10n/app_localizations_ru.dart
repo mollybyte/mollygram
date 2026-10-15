@@ -2314,6 +2314,19 @@ class AppLocalizationsRu extends AppLocalizations {
   String get topicActionFailed => 'Не удалось изменить тему';
 
   @override
+  String get sponsored => 'Реклама';
+
+  @override
+  String get recommended => 'Рекомендация';
+
+  @override
+  String get sponsoredOpen => 'Открыть';
+
+  @override
+  String get sponsoredAbout =>
+      'Это сообщение Telegram показывает от имени рекламодателя. Оно подобрано по теме канала, а не по вашим данным.';
+
+  @override
   String get unpinAll => 'Открепить все';
 
   @override

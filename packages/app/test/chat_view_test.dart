@@ -2338,6 +2338,46 @@ void main() {
     expect(find.text('Topic name'), findsNothing);
   });
 
+  testWidgets('shows a channel\'s sponsored message and counts the click', (
+    tester,
+  ) async {
+    json.push(_supergroup(98, {'@type': 'chatMemberStatusMember'}));
+    json.push(
+      _chat(
+        lastRead: 60,
+        unread: 0,
+        last: 60,
+        type: {
+          '@type': 'chatTypeSupergroup',
+          'supergroup_id': 98,
+          'is_channel': true,
+        },
+      ),
+    );
+    await pump(tester);
+    for (var i = 0; i < 3; i++) {
+      await tester.runAsync(() => Future<void>.delayed(_tick));
+      await tester.pump();
+    }
+    expect(find.text('Example Co'), findsOneWidget);
+    expect(find.text('Sponsored'), findsOneWidget);
+    expect(find.text('Try Example today'), findsOneWidget);
+    final viewed = json.sent.lastWhere(
+      (r) =>
+          r['@type'] == 'viewMessages' &&
+          (r['message_ids'] as List).contains(1000),
+    );
+    expect(viewed['chat_id'], 7);
+
+    await tester.tap(find.text('Learn more'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    final clicked = json.sent.lastWhere(
+      (r) => r['@type'] == 'clickChatSponsoredMessage',
+    );
+    expect(clicked['message_id'], 1000);
+  });
+
   testWidgets('sends a saved GIF from the panel', (tester) async {
     await pump(tester);
     await tester.tap(find.byTooltip('Emoji and stickers'));
@@ -2990,6 +3030,36 @@ final class _FakeTdJson implements td.TdJson {
         'next_offset_forum_topic_id': 0,
       },
       'getForumTopic' => _forumTopic(5, 'Bugs', lastId: 51, unread: 2),
+      'getChatSponsoredMessages' => {
+        '@type': 'sponsoredMessages',
+        'messages': [
+          {
+            '@type': 'sponsoredMessage',
+            'message_id': 1000,
+            'is_recommended': false,
+            'can_be_reported': true,
+            'content': {
+              '@type': 'messageText',
+              'text': {
+                '@type': 'formattedText',
+                'text': 'Try Example today',
+                'entities': <Object?>[],
+              },
+            },
+            'sponsor': {
+              '@type': 'advertisementSponsor',
+              'url': 'https://example.com',
+              'info': 'Ads by Example',
+            },
+            'title': 'Example Co',
+            'button_text': 'Learn more',
+            'accent_color_id': 0,
+            'background_custom_emoji_id': 0,
+            'additional_info': '',
+          },
+        ],
+        'messages_between': 0,
+      },
       'createForumTopic' => {
         ...(_forumTopic(9, decoded['name']! as String)['info']!
             as Map<String, Object?>),
