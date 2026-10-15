@@ -2591,6 +2591,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
                             session.chatSearch.find(widget.chatId, query),
                         onResult: (id) => unawaited(_jumpTo(id)),
                         onClose: _closeSearch,
+                        onCalendar: (position) =>
+                            unawaited(_openCalendar(DateTime.now(), position)),
                       ),
                     )
                   : _thread != null

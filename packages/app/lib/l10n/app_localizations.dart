@@ -3104,6 +3104,12 @@ abstract class AppLocalizations {
   /// **'Search in chat'**
   String get searchInChat;
 
+  /// No description provided for @searchByDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Jump to date'**
+  String get searchByDate;
+
   /// No description provided for @searchCounter.
   ///
   /// In en, this message translates to:

@@ -18,12 +18,17 @@ class ChatSearchBar extends StatefulWidget {
     required this.find,
     required this.onResult,
     required this.onClose,
+    this.onCalendar,
   });
 
   /// Starts a search for a query.
   final ChatSearchResults Function(String query) find;
   final ValueChanged<int> onResult;
   final VoidCallback onClose;
+
+  /// A click on the calendar button, with the point under it where a
+  /// calendar for jumping to a day goes. Absent, there is no button.
+  final void Function(Offset position)? onCalendar;
 
   /// How long typing pauses before the search runs.
   static const debounce = Duration(milliseconds: 280);
@@ -193,6 +198,21 @@ class _ChatSearchBarState extends State<ChatSearchBar> {
               tooltip: l10n.searchNewer,
               onPressed: results?.hasNewer ?? false ? newer : null,
             ),
+            if (widget.onCalendar case final onCalendar?)
+              Builder(
+                builder: (context) => MgIconButton(
+                  icon: MgIcons.recent,
+                  tooltip: l10n.searchByDate,
+                  onPressed: () {
+                    final box = context.findRenderObject()! as RenderBox;
+                    onCalendar(
+                      box.localToGlobal(
+                        Offset(box.size.width / 2, box.size.height),
+                      ),
+                    );
+                  },
+                ),
+              ),
             MgIconButton(
               icon: MgIcons.close,
               tooltip: l10n.close,

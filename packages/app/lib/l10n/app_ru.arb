@@ -501,6 +501,7 @@
   "hidePinned": "Скрыть закреплённые",
   "backToPrevious": "Вернуться назад",
   "searchInChat": "Поиск в чате",
+  "searchByDate": "Перейти к дате",
   "searchCounter": "{index} из {count}",
   "searchNoResults": "Ничего не найдено",
   "searchOlder": "Предыдущий результат",
