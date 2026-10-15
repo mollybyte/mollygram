@@ -7,7 +7,9 @@ import 'authorization_controller.dart';
 import 'authorization_stage.dart';
 import 'chat_list_controller.dart';
 import 'chat_search.dart';
+import 'chat_search_controller.dart';
 import 'connection_status.dart';
+import 'contacts_controller.dart';
 import 'conversation_controller.dart';
 import 'file_controller.dart';
 import 'link_resolver.dart';
@@ -40,6 +42,7 @@ final class TelegramSession {
     required this.chatLists,
     required this.conversations,
     required this.search,
+    required this.chatSearch,
     required this.files,
     required this.notifications,
     required this.stickers,
@@ -48,6 +51,7 @@ final class TelegramSession {
     required this.mentions,
     required this.storage,
     required this.connection,
+    required this.contacts,
     required this.links,
     required this._initializer,
   });
@@ -58,6 +62,9 @@ final class TelegramSession {
   final ChatListController chatLists;
   final ConversationController conversations;
   final ChatSearch search;
+
+  /// Search inside one chat and its shared media.
+  final ChatSearchController chatSearch;
   final FileController files;
   final NotificationController notifications;
   final StickerLibrary stickers;
@@ -71,6 +78,8 @@ final class TelegramSession {
   /// The connection state, for the "Connecting…" status in the window.
   final ConnectionMonitor connection;
 
+  /// Contacts and the users TDLib has sent.
+  final ContactsController contacts;
   final LinkResolver links;
   final _errors = StreamController<Object>.broadcast(sync: true);
   final _closedElsewhere = Completer<void>();
@@ -93,6 +102,7 @@ final class TelegramSession {
     final mentions = MentionSearch(client);
     final peers = PeerInfoController(client);
     final connection = ConnectionMonitor(client);
+    final contacts = ContactsController(client);
     final notifications = NotificationController(client);
     final session = TelegramSession._(
       tdlib: tdlib,
@@ -100,6 +110,7 @@ final class TelegramSession {
       chatLists: ChatListController(client),
       conversations: conversations,
       search: ChatSearch(client),
+      chatSearch: ChatSearchController(client),
       files: files,
       notifications: notifications,
       stickers: StickerLibrary(client),
@@ -108,6 +119,7 @@ final class TelegramSession {
       mentions: mentions,
       storage: StorageManager(client),
       connection: connection,
+      contacts: contacts,
       links: LinkResolver(client),
       initializer: TdlibInitializer(client, parameters: parameters),
     );
@@ -124,6 +136,7 @@ final class TelegramSession {
       await mentions.start();
       await peers.start();
       await connection.start();
+      await contacts.start();
       await notifications.start();
       await authorization.start();
       // Sending the parameters is part of starting: a wrong database key or
@@ -193,6 +206,7 @@ final class TelegramSession {
     await mentions.dispose();
     await peers.dispose();
     await connection.dispose();
+    await contacts.dispose();
     await notifications.dispose();
     await authorization.dispose();
     await _tdlib.close();

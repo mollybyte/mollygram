@@ -128,7 +128,7 @@ M8 calls and macOS release, M9 after release.
 | Media editor: drawing (pen, marker, arrow, eraser, colours, thickness) | done | `packages/media_editor` | | |
 | Media editor: text, stickers and emoji placed on the image | partial | Text and emoji done; stickers need the app’s sticker picker | M | M4 |
 | Media editor: arrows and shapes, blur and pixelate brush | done | `packages/media_editor` | | |
-| Media editor: filters and adjustments (brightness, contrast, saturation, warmth, vignette) | missing | | M | M4 |
+| Media editor: filters and adjustments (brightness, contrast, saturation, warmth, vignette) | done | `packages/media_editor`: seven looks, six sliders | | |
 | Video editor: trim, mute, cover frame, quality | missing | `VideoEditorModalController` | M | M4 |
 | Slowmode and restriction notices | missing | | S | M2 |
 | Link preview control (remove, above/below) | missing | | S | M2 |
@@ -160,9 +160,9 @@ M8 calls and macOS release, M9 after release.
 |---|---|---|---|---|
 | Chat search in the sidebar and ⌘K palette | done | `chat_search.dart`, #27 | | |
 | Global message search | partial | `SearchMessages` used by the palette; no jump to the message | M | M2 |
-| Search inside a chat, by sender, by date | missing | `ChatSearchView` | M | M2 |
+| Search inside a chat, by sender, by date | partial | ⌘F capsule with result arrows (`chat_search/`); sender filter in core only, no date jump | S | M2 |
 | Hashtag and cashtag search | missing | | S | M2 |
-| Search filters (media, links, files, voice) | missing | | S | M2 |
+| Search filters (media, links, files, voice) | partial | `ChatSearchController` filters back the shared media tabs; not offered in ⌘F yet | S | M2 |
 | Recent searches and top peers | missing | | S | M2 |
 
 ### Profiles and info panels
@@ -171,7 +171,7 @@ M8 calls and macOS release, M9 after release.
 |---|---|---|---|---|
 | User profile: photo, bio, username, phone, birthday, actions | done | `PeerInfoController` in core, inspector panel in `app/lib/src/profile` | | |
 | Group and channel info: description, link, members count | done | First 50 members, most recently active first | | |
-| Shared media tabs: media, files, links, voice, music, GIFs, groups in common | missing | `PeerMediaController` | L | M2 |
+| Shared media tabs: media, files, links, voice, music, GIFs, groups in common | partial | `SharedMediaView` has media, files, links, voice, music; GIFs and groups in common missing; in the info panel | M | M2 |
 | Members list with search | partial | First page in the info panel, no search or paging | M | M6 |
 | Profile photo gallery | missing | | S | M2 |
 | Per-chat notifications and auto-delete timer | partial | Mute and unmute in the info panel; no mute-for durations, no auto-delete | S | M1 |
@@ -199,8 +199,8 @@ M8 calls and macOS release, M9 after release.
 |---|---|---|---|---|
 | Sign in: QR, phone, code, 2FA password | done | #16, #24 | | |
 | Sign up (new account), email code, account reset | partial | Unsupported steps show a notice | M | M6 |
-| Contacts list, add and edit contact | missing | `ContactsController` | M | M6 |
-| New message / compose (pick a user) | missing | `ComposeViewController` | S | M1 |
+| Contacts list, add and edit contact | partial | Contacts sheet: list with status, add by phone, delete; editing a contact's name is not there yet | S | M6 |
+| New message / compose (pick a user) | done | ⌘N sheet: recent chats, contacts, username search | | |
 | Edit own profile: name, bio, username, photo, birthday | partial | Name, username and bio in Settings; photo and birthday missing | M | M6 |
 | Multiple accounts and switching | missing | Several TDLib clients | L | M6 |
 | Log out | done | Settings, My profile, Log out | | |

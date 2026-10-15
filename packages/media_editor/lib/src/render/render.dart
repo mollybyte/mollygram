@@ -68,11 +68,15 @@ void paintEdited(
       ..restore();
   }
 
+  final colorFilter = edit.adjustments.isIdentity
+      ? null
+      : ColorFilter.matrix(edit.adjustments.colorMatrix);
   picture(
     image,
     Paint()
       ..filterQuality = FilterQuality.high
-      ..isAntiAlias = true,
+      ..isAntiAlias = true
+      ..colorFilter = colorFilter,
   );
   final short = math.min(oriented.width, oriented.height);
   for (final stroke in effects) {
@@ -89,6 +93,7 @@ void paintEdited(
         Paint()
           ..filterQuality = FilterQuality.high
           ..blendMode = BlendMode.srcIn
+          ..colorFilter = colorFilter
           ..imageFilter = ui.ImageFilter.blur(
             sigmaX: sigma,
             sigmaY: sigma,
@@ -100,10 +105,14 @@ void paintEdited(
         pixelated!,
         Paint()
           ..filterQuality = FilterQuality.none
-          ..blendMode = BlendMode.srcIn,
+          ..blendMode = BlendMode.srcIn
+          ..colorFilter = colorFilter,
       );
     }
     canvas.restore();
+  }
+  if (edit.adjustments.vignette > 0) {
+    paintVignette(canvas, edit.cropIn(oriented), edit.adjustments.vignette);
   }
   paintStrokes(
     canvas,
@@ -146,6 +155,45 @@ Future<(ui.Image, Size)> decodePicture(Uint8List bytes, {int? maxSide}) async {
   picture.dispose();
   full.dispose();
   return (small, source);
+}
+
+/// Darkens the corners of [rect] by [amount], 0 to 1.
+void paintVignette(Canvas canvas, Rect rect, double amount) {
+  final radius = math.max(rect.width, rect.height) * 0.75;
+  canvas.drawRect(
+    rect,
+    Paint()
+      ..shader = ui.Gradient.radial(
+        rect.center,
+        radius,
+        [
+          const Color(0x00000000),
+          const Color(0x00000000),
+          Color.fromRGBO(0, 0, 0, 0.85 * amount),
+        ],
+        [0, 0.45, 1],
+        TileMode.clamp,
+        // Squash the circle into the picture's shape, around its centre.
+        Float64List.fromList([
+          1,
+          0,
+          0,
+          0,
+          0,
+          rect.height / rect.width,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          rect.center.dy * (1 - rect.height / rect.width),
+          0,
+          1,
+        ]),
+      ),
+  );
 }
 
 /// Cells of the pixelate brush, as a fraction of the longer side.

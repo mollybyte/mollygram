@@ -7,6 +7,7 @@
 library;
 
 export 'src/editor.dart' show MediaEditResult, MediaEditorPage, showMediaEditor;
+export 'src/model/adjustments.dart';
 export 'src/model/crop_geometry.dart' show CropHandle, resizeCrop;
 export 'src/model/media_edit.dart' show AspectPreset, MediaEdit, unitRect;
 export 'src/model/overlay.dart';

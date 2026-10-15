@@ -148,6 +148,110 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nothingFound => 'Nothing found';
 
   @override
+  String get newMessage => 'New message';
+
+  @override
+  String get contacts => 'Contacts';
+
+  @override
+  String get peopleSearchHint => 'Name or username';
+
+  @override
+  String get recentChats => 'Recent';
+
+  @override
+  String get globalSearch => 'Global search';
+
+  @override
+  String get noContacts => 'No contacts yet';
+
+  @override
+  String get presenceOnline => 'online';
+
+  @override
+  String get presenceJustNow => 'last seen just now';
+
+  @override
+  String presenceMinutes(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'last seen $count minutes ago',
+      one: 'last seen $count minute ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String presenceToday(Object time) {
+    return 'last seen today at $time';
+  }
+
+  @override
+  String presenceYesterday(Object time) {
+    return 'last seen yesterday at $time';
+  }
+
+  @override
+  String presenceDate(Object date) {
+    return 'last seen $date';
+  }
+
+  @override
+  String get presenceRecently => 'last seen recently';
+
+  @override
+  String get presenceLastWeek => 'last seen within a week';
+
+  @override
+  String get presenceLastMonth => 'last seen within a month';
+
+  @override
+  String get presenceLongAgo => 'last seen a long time ago';
+
+  @override
+  String get presenceBot => 'bot';
+
+  @override
+  String get addContact => 'Add contact';
+
+  @override
+  String get contactFirstName => 'First name';
+
+  @override
+  String get contactLastName => 'Last name (optional)';
+
+  @override
+  String get contactPhone => 'Phone number';
+
+  @override
+  String get contactAdd => 'Add';
+
+  @override
+  String get contactFirstNameRequired => 'Enter a first name';
+
+  @override
+  String get contactPhoneRequired => 'Enter a phone number';
+
+  @override
+  String get contactNotOnTelegram => 'This number is not on Telegram';
+
+  @override
+  String get contactAddFailed =>
+      'Couldn\'t add the contact. Check the connection and try again.';
+
+  @override
+  String get deleteContact => 'Delete contact';
+
+  @override
+  String deleteContactTitle(Object name) {
+    return 'Delete $name from contacts?';
+  }
+
+  @override
+  String get deleteContactFailed => 'Couldn\'t delete the contact';
+
+  @override
   String get selectChat => 'Select a chat to start messaging';
 
   @override
@@ -1472,6 +1576,62 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get backToPrevious => 'Back to where you were';
+
+  @override
+  String get searchInChat => 'Search in chat';
+
+  @override
+  String searchCounter(int index, int count) {
+    return '$index of $count';
+  }
+
+  @override
+  String get searchNoResults => 'No results';
+
+  @override
+  String get searchOlder => 'Previous result';
+
+  @override
+  String get searchNewer => 'Next result';
+
+  @override
+  String get sharedMedia => 'Shared media';
+
+  @override
+  String get sharedMediaTab => 'Media';
+
+  @override
+  String get sharedFilesTab => 'Files';
+
+  @override
+  String get sharedLinksTab => 'Links';
+
+  @override
+  String get sharedVoiceTab => 'Voice';
+
+  @override
+  String get sharedMusicTab => 'Music';
+
+  @override
+  String get sharedMediaEmpty => 'No photos or videos yet';
+
+  @override
+  String get sharedFilesEmpty => 'No files yet';
+
+  @override
+  String get sharedLinksEmpty => 'No links yet';
+
+  @override
+  String get sharedVoiceEmpty => 'No voice messages yet';
+
+  @override
+  String get sharedMusicEmpty => 'No music yet';
+
+  @override
+  String get sharedLoadFailed => 'Couldn\'t load the list';
+
+  @override
+  String get showInChat => 'Show in chat';
 
   @override
   String get joinChannel => 'Join channel';

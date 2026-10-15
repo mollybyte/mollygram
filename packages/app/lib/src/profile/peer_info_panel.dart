@@ -25,10 +25,14 @@ class PeerInfoPanel extends ConsumerWidget {
     required this.onMember,
     required this.onMessage,
     this.onBack,
+    this.onSharedMedia,
   });
 
   final int chatId;
   final VoidCallback onClose;
+
+  /// Opens the chat's shared media; without it the row isn't shown.
+  final VoidCallback? onSharedMedia;
 
   /// Shown as a back button when the panel came here from a member list.
   final VoidCallback? onBack;
@@ -43,7 +47,7 @@ class PeerInfoPanel extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _TopBar(onBack: onBack, onClose: onClose),
+        _TopBar(title: l10n.peerInfo, onBack: onBack, onClose: onClose),
         Expanded(
           child: switch (info) {
             AsyncValue(value: final info?) => _MinuteTicker(
@@ -52,6 +56,7 @@ class PeerInfoPanel extends ConsumerWidget {
                 now: now,
                 onMember: onMember,
                 onMessage: onMessage,
+                onSharedMedia: onSharedMedia,
               ),
             ),
             AsyncError() => Center(
@@ -65,9 +70,36 @@ class PeerInfoPanel extends ConsumerWidget {
   }
 }
 
-class _TopBar extends StatelessWidget {
-  const _TopBar({required this.onClose, this.onBack});
+/// A page the info panel goes on to, such as the shared media: [title]
+/// over [child], with a back button to the info.
+class PeerInfoPage extends StatelessWidget {
+  const PeerInfoPage({
+    super.key,
+    required this.title,
+    required this.onBack,
+    required this.onClose,
+    required this.child,
+  });
 
+  final String title;
+  final VoidCallback onBack;
+  final VoidCallback onClose;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      _TopBar(title: title, onBack: onBack, onClose: onClose),
+      Expanded(child: child),
+    ],
+  );
+}
+
+class _TopBar extends StatelessWidget {
+  const _TopBar({required this.title, required this.onClose, this.onBack});
+
+  final String title;
   final VoidCallback onClose;
   final VoidCallback? onBack;
 
@@ -100,7 +132,9 @@ class _TopBar extends StatelessWidget {
                 Expanded(
                   child: IgnorePointer(
                     child: Text(
-                      l10n.peerInfo,
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
                       style: mgTextStyle(
                         c,
@@ -176,12 +210,14 @@ class _Content extends ConsumerWidget {
     required this.info,
     required this.onMember,
     required this.onMessage,
+    required this.onSharedMedia,
   });
 
   final PeerInfo info;
   final DateTime now;
   final ValueChanged<int> onMember;
   final VoidCallback onMessage;
+  final VoidCallback? onSharedMedia;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -289,6 +325,14 @@ class _Content extends ConsumerWidget {
           if (details.isNotEmpty) ...[
             const SizedBox(height: 16),
             _Group(children: details),
+          ],
+          if (onSharedMedia case final onSharedMedia? when !info.isDeleted) ...[
+            const SizedBox(height: 12),
+            _Group(
+              children: [
+                _NavRow(label: l10n.sharedMedia, onTap: onSharedMedia),
+              ],
+            ),
           ],
           if (canAct && info.kind == PeerKind.user && !info.isSelf) ...[
             const SizedBox(height: 12),
@@ -513,6 +557,34 @@ class _ActionRow extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         child: Text(label, style: mgTextStyle(c, color: color)),
+      ),
+    );
+  }
+}
+
+/// A row that leads to another page of the panel.
+class _NavRow extends StatelessWidget {
+  const _NavRow({required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    return Semantics(
+      button: true,
+      child: _Pressable(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+          child: Row(
+            children: [
+              Expanded(child: Text(label, style: mgTextStyle(c))),
+              MgIcon(MgIcons.chevron, size: 14, color: c.fg2),
+            ],
+          ),
+        ),
       ),
     );
   }
