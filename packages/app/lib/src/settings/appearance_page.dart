@@ -306,6 +306,7 @@ class AppearancePage extends ConsumerWidget {
 
 String _accentName(AppLocalizations l10n, AccentChoice choice) =>
     switch (choice) {
+      AccentChoice.violet => l10n.accentViolet,
       AccentChoice.blue => l10n.accentBlue,
       AccentChoice.indigo => l10n.accentIndigo,
       AccentChoice.teal => l10n.accentTeal,

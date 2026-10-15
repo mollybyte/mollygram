@@ -13,6 +13,10 @@ import 'preferences.dart';
 /// toned down where the system one is loud.
 ({Color light, Color dark}) accentColors(AccentChoice choice) =>
     switch (choice) {
+      AccentChoice.violet => (
+        light: const Color(0xFF6A4FD8),
+        dark: const Color(0xFFA792FF),
+      ),
       AccentChoice.blue => (
         light: MgColors.light.accent,
         dark: MgColors.dark.accent,
@@ -56,7 +60,17 @@ import 'preferences.dart';
   final dark = tint?.dark(MgColors.dark) ?? MgColors.dark;
   return (
     light: buildMgTheme(light.copyWith(accent: accent.light), metrics: metrics),
-    dark: buildMgTheme(dark.copyWith(accent: accent.dark), metrics: metrics),
+    dark: buildMgTheme(
+      dark.copyWith(
+        accent: accent.dark,
+        // The light violet of the dark theme is too pale under the white
+        // text of the selected row.
+        selection: preferences.accent == AccentChoice.violet
+            ? const Color(0xFF6E57D6)
+            : null,
+      ),
+      metrics: metrics,
+    ),
   );
 }
 
@@ -71,30 +85,42 @@ typedef SurfaceTint = ({
 /// How [preset] tints the surfaces, or null for the gradients that keep
 /// the classic tokens.
 ///
-/// The three tinted presets come from the colours canvas: Mist is a cool
-/// grey-blue with whitish glass, Sage the Telegram gradient at about half
-/// its saturation, Linen a warm paper neutral.
+/// The three tinted presets come from the colours canvas: Mist is the
+/// Stage window's own soft lavender (frame, text and avatars as on the
+/// fresh-directions canvas), Sage the Telegram gradient at about half its
+/// saturation, Linen a warm paper neutral.
 SurfaceTint? surfaceTint(WallpaperPreset preset) => switch (preset) {
   WallpaperPreset.mist => (
     light: (c) => c.copyWith(
-      fg2: const Color(0xFF5F6B7A),
-      muted: const Color(0xFF8E99A8),
-      glass: const Color(0x80FAFCFF),
-      glassSolid: const Color(0xF0F4F7FA),
+      fg: const Color(0xFF1C1A22),
+      fg2: const Color(0xFF6B6676),
+      muted: const Color(0xFFA39EAD),
+      separator: const Color(0x141C1A22),
+      hover: const Color(0x0F1C1A22),
+      field: const Color(0x0F1C1A22),
+      avatarTop: const Color(0xFFCFC8DC),
+      avatarBottom: const Color(0xFFA79EB8),
+      glass: const Color(0x80FBFAFD),
+      glassSolid: const Color(0xF0F6F4F9),
       rim: const Color(0xD9FFFFFF),
-      field: const Color(0x0F142846),
-      shadow: const Color(0x261E2A3A),
-      frame: const Color(0xFFE3E7EC),
+      shadow: const Color(0x1A281450),
+      frame: const Color(0xFFE7E3EE),
     ),
     dark: (c) => c.copyWith(
-      fg2: const Color(0xFF97A3B0),
-      muted: const Color(0xFF687482),
-      glass: const Color(0x801E242C),
-      glassSolid: const Color(0xF0222830),
+      fg: const Color(0xFFEEEAF5),
+      fg2: const Color(0xFFA49FB0),
+      muted: const Color(0xFF6C6778),
+      separator: const Color(0x14EEEAF5),
+      hover: const Color(0x0FEEEAF5),
+      field: const Color(0x0FEEEAF5),
+      avatarTop: const Color(0xFF5B5468),
+      avatarBottom: const Color(0xFF433D4F),
+      glass: const Color(0x80262330),
+      glassSolid: const Color(0xF0262330),
       rim: const Color(0x1AFFFFFF),
       highlight: const Color(0x24FFFFFF),
-      frame: const Color(0xFF191E24),
-      card: const Color(0xFF232931),
+      frame: const Color(0xFF1E1B25),
+      card: const Color(0xFF2A2733),
     ),
   ),
   WallpaperPreset.sage => (

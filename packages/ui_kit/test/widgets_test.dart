@@ -523,14 +523,22 @@ void main() {
     expect(find.byType(MgSendButton), findsOneWidget);
   });
 
-  testWidgets('composer stays within its max width', (tester) async {
+  testWidgets('composer spans the whole card as its bottom edge', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1400, 300);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
-      themed(const SizedBox.expand(child: Composer(labels: _labels))),
+      themed(
+        const Align(
+          alignment: Alignment.bottomCenter,
+          child: Composer(labels: _labels),
+        ),
+      ),
     );
-    expect(tester.getSize(find.byType(Glass)).width, Composer.maxWidth);
+    expect(tester.getSize(find.byType(Composer)).width, 1400);
+    expect(find.byType(Glass), findsNothing);
   });
 
   testWidgets('header keeps the title left and the actions at the right '
@@ -555,9 +563,9 @@ void main() {
     final fill = tester.getRect(find.byKey(const Key('fill')));
     expect(bar.width, 1000);
     // The bar keeps 8 px of air at the left and 6 at the right.
-    expect(title.left, 8);
-    expect(fill.left, 8);
-    expect(fill.right, 1000 - 6 - 80);
+    expect(title.left, 20);
+    expect(fill.left, 20);
+    expect(fill.right, 1000 - 12 - 80);
   });
 
   testWidgets('a wide header title stays clear of the actions', (tester) async {
@@ -577,7 +585,7 @@ void main() {
     );
     final title = tester.getRect(find.byKey(const Key('title')));
     final actions = tester.getRect(find.byKey(const Key('actions')));
-    expect(title.left, 8);
+    expect(title.left, 20);
     expect(title.right, lessThanOrEqualTo(actions.left - 8));
   });
 

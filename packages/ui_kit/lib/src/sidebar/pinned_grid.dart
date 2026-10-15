@@ -25,14 +25,16 @@ class PinnedChatGrid extends StatelessWidget {
         children.sublist(i, (i + columns).clamp(0, children.length)),
     ];
     return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+      padding: const EdgeInsets.fromLTRB(10, 0, 10, 8),
       child: Column(
         children: [
           for (final row in rows)
             Row(
               children: [
-                for (var i = 0; i < columns; i++)
+                for (var i = 0; i < columns; i++) ...[
+                  if (i > 0) const SizedBox(width: 2),
                   Expanded(child: i < row.length ? row[i] : const SizedBox()),
+                ],
               ],
             ),
         ],
@@ -41,7 +43,7 @@ class PinnedChatGrid extends StatelessWidget {
   }
 }
 
-/// One pinned chat: a 44 px avatar with its name under it. The open chat
+/// One pinned chat: a 40 px avatar with its name under it. The open chat
 /// gets an accent ring; unread messages a badge at the avatar's corner,
 /// cut out of the frame by a ring of the frame's colour.
 class PinnedChatTile extends StatefulWidget {
@@ -82,7 +84,7 @@ class PinnedChatTile extends StatefulWidget {
   /// A secondary click or a long press, with its global position.
   final ValueChanged<Offset>? onContextMenu;
 
-  static const double avatarSize = 44;
+  static const double avatarSize = 40;
 
   @override
   State<PinnedChatTile> createState() => _PinnedChatTileState();
@@ -125,7 +127,7 @@ class _PinnedChatTileState extends State<PinnedChatTile> {
           child: AnimatedContainer(
             duration: _ease,
             curve: Curves.easeOutCubic,
-            padding: const EdgeInsets.fromLTRB(2, 8, 2, 6),
+            padding: const EdgeInsets.fromLTRB(2, 8, 2, 8),
             decoration: BoxDecoration(
               color: _hover || widget.menuOpen
                   ? c.hover
@@ -145,7 +147,7 @@ class _PinnedChatTileState extends State<PinnedChatTile> {
                   child: Stack(
                     clipBehavior: Clip.none,
                     children: [
-                      // The ring: frame-coloured gap, then the accent.
+                      // The ring: a frame-coloured gap, then the accent.
                       Positioned.fill(
                         child: AnimatedContainer(
                           duration: _ease,
@@ -157,33 +159,20 @@ class _PinnedChatTileState extends State<PinnedChatTile> {
                                 color: on
                                     ? c.accent
                                     : c.accent.withValues(alpha: 0),
-                                spreadRadius: on ? 2.5 : 0,
+                                spreadRadius: on ? 4 : 2,
                               ),
+                              BoxShadow(color: c.frame, spreadRadius: 2),
                             ],
                           ),
                         ),
                       ),
                       Positioned.fill(
-                        child: AnimatedContainer(
-                          duration: _ease,
-                          curve: Curves.easeOutCubic,
-                          padding: EdgeInsets.all(on ? 2.5 : 0),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: c.frame,
-                          ),
-                          child: FittedBox(
-                            child: SizedBox.square(
-                              dimension: PinnedChatTile.avatarSize,
-                              child:
-                                  widget.avatar ??
-                                  MonogramAvatar(
-                                    name: widget.title,
-                                    size: PinnedChatTile.avatarSize,
-                                  ),
+                        child:
+                            widget.avatar ??
+                            MonogramAvatar(
+                              name: widget.title,
+                              size: PinnedChatTile.avatarSize,
                             ),
-                          ),
-                        ),
                       ),
                       if (widget.online)
                         Positioned(
@@ -226,7 +215,6 @@ class _PinnedChatTileState extends State<PinnedChatTile> {
                   style: mgTextStyle(
                     c,
                     size: MgType.meta,
-                    weight: on ? MgWeight.medium : MgWeight.regular,
                     color: on ? c.fg : c.fg2,
                     height: 1.25,
                   ),

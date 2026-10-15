@@ -8,8 +8,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mollygram_core/mollygram_core.dart' show MediaDownloadKind;
 import 'package:path_provider/path_provider.dart';
 
-/// The app's accent colors, calm ones only. Blue is the system default.
-enum AccentChoice { blue, indigo, teal, green, orange, graphite }
+/// The app's accent colors, calm ones only. Violet is the Stage window's
+/// own; blue is the system one.
+enum AccentChoice { violet, blue, indigo, teal, green, orange, graphite }
 
 /// Media kinds that can download on their own.
 enum AutoDownloadKind { photos, videos, files }
@@ -158,7 +159,7 @@ enum AppLanguage {
 final class Preferences {
   const Preferences({
     this.theme = ThemeMode.system,
-    this.accent = AccentChoice.blue,
+    this.accent = AccentChoice.violet,
     this.wallpaperKind = WallpaperKind.gradient,
     this.wallpaperPreset = WallpaperPreset.mist,
     this.wallpaperImage,
@@ -314,6 +315,7 @@ final class Preferences {
   Map<String, Object?> toJson() => {
     'theme': theme.name,
     'accent': accent.name,
+    'accentVersion': 2,
     'wallpaper': wallpaper,
     'wallpaperKind': wallpaperKind.name,
     'wallpaperPreset': wallpaperPreset.name,
@@ -358,7 +360,13 @@ final class Preferences {
             : defaults.wallpaperKind);
     return Preferences(
       theme: _byName(ThemeMode.values, json['theme']) ?? defaults.theme,
-      accent: _byName(AccentChoice.values, json['accent']) ?? defaults.accent,
+      accent: switch (_byName(AccentChoice.values, json['accent'])) {
+        // Blue was the default before the Stage window and was saved as
+        // such; it moves to the new default once.
+        AccentChoice.blue when json['accentVersion'] != 2 => defaults.accent,
+        final choice? => choice,
+        null => defaults.accent,
+      },
       wallpaperKind: kind == WallpaperKind.image && image is! String
           ? defaults.wallpaperKind
           : kind,

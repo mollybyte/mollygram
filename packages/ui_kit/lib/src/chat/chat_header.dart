@@ -24,7 +24,7 @@ class ChatHeaderBar extends StatelessWidget {
   final Widget actions;
   final Widget? fill;
 
-  static const double height = 52;
+  static const double height = 54;
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +35,7 @@ class ChatHeaderBar extends StatelessWidget {
         border: Border(bottom: BorderSide(color: c.separator, width: 0.5)),
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(8, 0, 6, 0),
+        padding: const EdgeInsets.fromLTRB(20, 0, 12, 0),
         child: SizedBox(
           height: height,
           child: CustomMultiChildLayout(
@@ -127,7 +127,7 @@ class ChatTitleCapsule extends StatelessWidget {
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(9, 0, 14, 0),
+        padding: const EdgeInsets.only(right: 14),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -135,10 +135,10 @@ class ChatTitleCapsule extends StatelessWidget {
               width: 32,
               height: 32,
               child: Center(
-                child: avatar ?? MonogramAvatar(name: title, size: 30),
+                child: avatar ?? MonogramAvatar(name: title, size: 32),
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 12),
             Flexible(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -158,7 +158,7 @@ class ChatTitleCapsule extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: mgTextStyle(
                             c,
-                            size: MgType.title,
+                            size: 14,
                             weight: FontWeight.w600,
                             height: 1.2,
                           ),
@@ -200,12 +200,12 @@ class ChatActionsCapsule extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
+      padding: const EdgeInsets.only(left: 8),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           for (var i = 0; i < children.length; i++) ...[
-            if (i > 0) const SizedBox(width: 2),
+            if (i > 0) const SizedBox(width: 4),
             children[i],
           ],
         ],

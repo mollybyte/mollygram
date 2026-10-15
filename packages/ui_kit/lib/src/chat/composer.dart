@@ -6,7 +6,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../glass/glass.dart';
 import '../icon_button.dart';
 import '../icons.dart';
 import '../theme/colors.dart';
@@ -131,9 +130,6 @@ class Composer extends StatefulWidget {
   final List<ComposerSuggestion> suggestions;
   final ValueChanged<int>? onSuggestion;
   final VoidCallback? onDismissSuggestions;
-
-  /// The composer is at most 712 px wide, centered in the chat.
-  static const double maxWidth = 712;
 
   @override
   State<Composer> createState() => _ComposerState();
@@ -421,9 +417,8 @@ class _ComposerState extends State<Composer> {
         ?widget.leading,
         Builder(
           builder: (context) => MgIconButton(
-            icon: MgIcons.attach,
+            icon: MgIcons.plus,
             tooltip: l.attach,
-            iconSize: 18,
             onPressed: switch (widget.onAttachMenu) {
               null => widget.onAttach,
               final onMenu => () {
@@ -433,7 +428,7 @@ class _ComposerState extends State<Composer> {
             },
           ),
         ),
-        const SizedBox(width: 2),
+        const SizedBox(width: 8),
         Expanded(
           child: ConstrainedBox(
             constraints: const BoxConstraints(minHeight: 32),
@@ -460,19 +455,23 @@ class _ComposerState extends State<Composer> {
             ),
           ),
         ),
-        const SizedBox(width: 2),
+        const SizedBox(width: 8),
         ?widget.extraButton,
         MgIconButton(
           icon: MgIcons.emoji,
           tooltip: l.emoji,
-          iconSize: 18,
           onPressed: widget.onEmoji,
         ),
       ],
     );
-    final composer = Glass(
-      radius: 22,
-      padding: const EdgeInsets.fromLTRB(6, 4, 4, 4),
+    // A solid bar across the card's bottom, the card's own continuation
+    // under a hairline.
+    final composer = Container(
+      decoration: BoxDecoration(
+        color: c.card,
+        border: Border(top: BorderSide(color: c.separator)),
+      ),
+      padding: const EdgeInsets.fromLTRB(14, 10, 12, 10),
       child: _withHeader(
         Row(
           crossAxisAlignment: CrossAxisAlignment.end,
@@ -512,7 +511,7 @@ class _ComposerState extends State<Composer> {
                 ],
               ),
             ),
-            const SizedBox(width: 2),
+            const SizedBox(width: 8),
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 150),
               switchInCurve: Curves.easeOutBack,
@@ -538,10 +537,8 @@ class _ComposerState extends State<Composer> {
                       key: const ValueKey('record'),
                       child:
                           widget.recordButton ??
-                          MgIconButton(
-                            icon: MgIcons.mic,
+                          MgRecordButton(
                             tooltip: l.record,
-                            iconSize: 18,
                             onPressed: widget.onRecord,
                           ),
                     ),
@@ -551,57 +548,54 @@ class _ComposerState extends State<Composer> {
       ),
     );
     final suggestions = widget.suggestions;
-    return Center(
-      heightFactor: 1,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: Composer.maxWidth),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // The list grows in over the composer rather than popping up.
-            AnimatedSize(
-              duration: const Duration(milliseconds: 160),
-              curve: Curves.easeOutCubic,
-              alignment: Alignment.bottomLeft,
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 160),
-                switchInCurve: Curves.easeOutCubic,
-                switchOutCurve: Curves.easeInCubic,
-                transitionBuilder: (child, animation) => FadeTransition(
-                  opacity: animation,
-                  child: SlideTransition(
-                    position: Tween(
-                      begin: const Offset(0, 0.06),
-                      end: Offset.zero,
-                    ).animate(animation),
-                    child: child,
-                  ),
-                ),
-                child: suggestions.isEmpty
-                    ? const SizedBox(key: ValueKey('none'), width: 0)
-                    : Padding(
-                        key: const ValueKey('suggestions'),
-                        padding: const EdgeInsets.only(bottom: 6),
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 320),
-                          child: ComposerSuggestionList(
-                            suggestions: suggestions,
-                            highlighted: _highlighted.clamp(
-                              0,
-                              suggestions.length - 1,
-                            ),
-                            onPick: (i) => widget.onSuggestion?.call(i),
-                            onHover: (i) => setState(() => _highlighted = i),
-                          ),
-                        ),
-                      ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // The list grows in over the composer rather than popping up.
+        AnimatedSize(
+          duration: const Duration(milliseconds: 160),
+          curve: Curves.easeOutCubic,
+          alignment: Alignment.bottomLeft,
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 160),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeInCubic,
+            transitionBuilder: (child, animation) => FadeTransition(
+              opacity: animation,
+              child: SlideTransition(
+                position: Tween(
+                  begin: const Offset(0, 0.06),
+                  end: Offset.zero,
+                ).animate(animation),
+                child: child,
               ),
             ),
-            composer,
-          ],
+            child: suggestions.isEmpty
+                ? const SizedBox(key: ValueKey('none'), width: 0)
+                : Padding(
+                    key: const ValueKey('suggestions'),
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 320),
+                        child: ComposerSuggestionList(
+                          suggestions: suggestions,
+                          highlighted: _highlighted.clamp(
+                            0,
+                            suggestions.length - 1,
+                          ),
+                          onPick: (i) => widget.onSuggestion?.call(i),
+                          onHover: (i) => setState(() => _highlighted = i),
+                        ),
+                      ),
+                    ),
+                  ),
+          ),
         ),
-      ),
+        composer,
+      ],
     );
   }
 }

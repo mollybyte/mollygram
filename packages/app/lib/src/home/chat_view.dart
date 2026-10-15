@@ -3774,97 +3774,113 @@ class _ChatViewState extends ConsumerState<ChatView> {
             ),
           ),
           Positioned(
-            left: 24,
-            right: 24,
-            bottom: 12,
+            left: 0,
+            right: 0,
+            bottom: 0,
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (!_panelOpen && !_listOpen) _jumpButtons(l10n, store),
-                if (store.slowModeUntil(widget.chatId) case final until?)
-                  SlowModeNotice(
-                    key: ValueKey(until),
-                    until: until,
-                    label: l10n.slowModeWait,
-                  ),
-                if (_failure case final failure?)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 6),
-                    child: Text(
-                      switch (failure) {
-                        _Failure.send => l10n.sendFailed,
-                        _Failure.edit => l10n.editFailed,
-                        _Failure.attach => l10n.attachFailed,
-                        _Failure.forward => l10n.forwardFailed,
-                        _Failure.chatAction => l10n.chatActionFailed,
-                      },
-                      textAlign: TextAlign.center,
-                      style: mgTextStyle(
-                        c,
-                        size: MgType.small,
-                        color: MessageMeta.failedColor,
-                      ),
-                    ),
-                  ),
-                if (_selected == null &&
-                    !_listOpen &&
-                    !_panelOpen &&
-                    _editing == null &&
-                    _stickerHints.stickers.isNotEmpty)
-                  StickerSuggestionStrip(
-                    stickers: _stickerHints.stickers,
-                    onPick: (sticker) =>
-                        unawaited(_sendSuggestedSticker(sticker)),
-                  ),
-                if (_selected == null &&
-                    !_listOpen &&
-                    !_panelOpen &&
-                    _editing == null &&
-                    _inline.active)
-                  InlineResultsPanel(
-                    results: _inline.results,
-                    loading: _inline.loading,
-                    onPick: (result) => unawaited(_sendInlineResult(result)),
-                    onMore: _inline.hasMore
-                        ? () => unawaited(_inline.loadMore())
-                        : null,
-                  ),
-                ?keyboardPanel,
-                if (_panelOpen)
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: TapRegion(
-                        groupId: _EmojiPanelRegion,
-                        onTapOutside: (_) => _closePanel(),
-                        child: EmojiStickerPanel(
-                          height: (MediaQuery.sizeOf(context).height - 220)
-                              .clamp(220, 400),
-                          onEmoji: _insertEmoji,
-                          onSticker: (sticker) =>
-                              unawaited(_sendSticker(sticker)),
-                          onGif: (gif) => unawaited(_sendAnimation(gif)),
-                          onClose: _closePanel,
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (!_panelOpen && !_listOpen) _jumpButtons(l10n, store),
+                      if (store.slowModeUntil(widget.chatId) case final until?)
+                        SlowModeNotice(
+                          key: ValueKey(until),
+                          until: until,
+                          label: l10n.slowModeWait,
                         ),
-                      ),
-                    ),
+                      if (_failure case final failure?)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Text(
+                            switch (failure) {
+                              _Failure.send => l10n.sendFailed,
+                              _Failure.edit => l10n.editFailed,
+                              _Failure.attach => l10n.attachFailed,
+                              _Failure.forward => l10n.forwardFailed,
+                              _Failure.chatAction => l10n.chatActionFailed,
+                            },
+                            textAlign: TextAlign.center,
+                            style: mgTextStyle(
+                              c,
+                              size: MgType.small,
+                              color: MessageMeta.failedColor,
+                            ),
+                          ),
+                        ),
+                      if (_selected == null &&
+                          !_listOpen &&
+                          !_panelOpen &&
+                          _editing == null &&
+                          _stickerHints.stickers.isNotEmpty)
+                        StickerSuggestionStrip(
+                          stickers: _stickerHints.stickers,
+                          onPick: (sticker) =>
+                              unawaited(_sendSuggestedSticker(sticker)),
+                        ),
+                      if (_selected == null &&
+                          !_listOpen &&
+                          !_panelOpen &&
+                          _editing == null &&
+                          _inline.active)
+                        InlineResultsPanel(
+                          results: _inline.results,
+                          loading: _inline.loading,
+                          onPick: (result) =>
+                              unawaited(_sendInlineResult(result)),
+                          onMore: _inline.hasMore
+                              ? () => unawaited(_inline.loadMore())
+                              : null,
+                        ),
+                      ?keyboardPanel,
+                      if (_panelOpen)
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: TapRegion(
+                              groupId: _EmojiPanelRegion,
+                              onTapOutside: (_) => _closePanel(),
+                              child: EmojiStickerPanel(
+                                height:
+                                    (MediaQuery.sizeOf(context).height - 220)
+                                        .clamp(220, 400),
+                                onEmoji: _insertEmoji,
+                                onSticker: (sticker) =>
+                                    unawaited(_sendSticker(sticker)),
+                                onGif: (gif) => unawaited(_sendAnimation(gif)),
+                                onClose: _closePanel,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ?_sponsoredCard(store),
+                    ],
                   ),
-                ?_sponsoredCard(store),
+                ),
+                // The composer is the card's own bottom edge; the other
+                // bars still float over the messages.
                 if (_thread case final thread?)
                   _threadComposer(l10n, thread)
                 else if (_forum || _savedOpen)
                   const SizedBox.shrink()
-                else if (_scheduledOpen)
-                  _scheduledBar(l10n)
-                else if (_pinnedListOpen)
-                  _unpinAllBar(l10n, store)
-                else if (_selected != null)
-                  _selectionBar(l10n)
-                else if (secret?.status == SecretChatStatus.closed)
-                  SecretChatClosedBar(chatId: widget.chatId)
-                else if (_actionBar(l10n, store) case final bar?)
-                  bar
+                else if (switch (null) {
+                      _ when _scheduledOpen => _scheduledBar(l10n),
+                      _ when _pinnedListOpen => _unpinAllBar(l10n, store),
+                      _ when _selected != null => _selectionBar(l10n),
+                      _ when secret?.status == SecretChatStatus.closed =>
+                        SecretChatClosedBar(chatId: widget.chatId),
+                      _ => _actionBar(l10n, store),
+                    }
+                    case final bar?)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+                    child: bar,
+                  )
                 else
                   TapRegion(
                     groupId: _EmojiPanelRegion,

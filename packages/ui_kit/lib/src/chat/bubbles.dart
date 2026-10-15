@@ -100,7 +100,7 @@ class MessageMeta extends StatelessWidget {
   static const Color failedColor = Color(0xFFFF3B30);
 
   static TextStyle styleOf(MgColors c, {Color? color}) =>
-      mgTextStyle(c, size: MgType.meta, color: color ?? c.fg2, height: 1.35);
+      mgTextStyle(c, size: MgType.meta, color: color ?? c.muted, height: 1.35);
 
   /// The laid out width of a meta, used to leave room for it after text.
   static double widthOf(

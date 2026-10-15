@@ -45,47 +45,29 @@ class _Window extends StatelessWidget {
                 children: [
                   Positioned.fill(
                     child: ListView(
-                      padding: const EdgeInsets.fromLTRB(24, 72, 24, 88),
+                      padding: const EdgeInsets.fromLTRB(28, 70, 28, 64),
                       children: const [
                         DatePill('Today'),
-                        _Row(
-                          out: false,
-                          child: TextMessageBubble(
-                            text: 'Did the new build land on your Mac?',
-                            time: '21:04',
-                            outgoing: false,
-                          ),
+                        _Flat(
+                          name: 'Anna Petrova',
+                          time: '21:04',
+                          lines: ['Did the new build land on your Mac?'],
                         ),
-                        _Row(
-                          out: true,
-                          child: TextMessageBubble(
-                            text: 'Yes, it opens instantly now',
-                            time: '21:10',
-                            outgoing: true,
-                            status: MessageStatus.read,
-                          ),
+                        _Flat(
+                          name: 'You',
+                          time: '21:10',
+                          lines: [
+                            'Yes, it opens instantly now',
+                            'and the list keeps up while it scrolls',
+                          ],
                         ),
-                        _Row(
-                          out: true,
-                          child: TextMessageBubble(
-                            text: 'wrong chat',
-                            time: '21:11',
-                            outgoing: true,
-                            status: MessageStatus.sent,
-                            label: 'deleted',
-                            dimmed: true,
-                          ),
-                        ),
-                        _Row(
-                          out: false,
-                          child: TextMessageBubble(
-                            text:
-                                'A longer message that wraps onto a second line '
-                                'so the time has to sit next to its last word.',
-                            time: '21:12',
-                            outgoing: false,
-                            label: 'edited',
-                          ),
+                        _Flat(
+                          name: 'Anna Petrova',
+                          time: '21:12',
+                          lines: [
+                            'A longer message that wraps onto a second line '
+                                'so the reader sees how text flows in the card.',
+                          ],
                         ),
                       ],
                     ),
@@ -128,9 +110,9 @@ class _Window extends StatelessWidget {
                     ),
                   ),
                   const Positioned(
-                    left: 24,
-                    right: 24,
-                    bottom: 12,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
                     child: Composer(labels: _labels),
                   ),
                 ],
@@ -165,8 +147,9 @@ class _Window extends StatelessWidget {
                 children: const [
                   ChatListTile(
                     title: 'Anna Petrova',
+                    sender: 'You',
                     subtitle:
-                        'You: yes, it opens instantly now, and the '
+                        'yes, it opens instantly now, and the '
                         'list keeps up while it scrolls',
                     time: '21:10',
                     status: MessageStatus.read,
@@ -177,8 +160,9 @@ class _Window extends StatelessWidget {
                   ChatListTile(
                     title: 'Design',
                     subtitle: 'pushed the new icons',
+                    kind: ChatRowKind.group,
                     sender: 'Mark',
-                    senderAvatar: MonogramAvatar(name: 'Mark', size: 16),
+                    senderAvatar: MonogramAvatar(name: 'Mark', size: 15),
                     time: '20:41',
                     unread: 12,
                     mentions: true,
@@ -194,7 +178,10 @@ class _Window extends StatelessWidget {
                   ),
                   ChatListTile(
                     title: 'Flutter Desktop',
-                    subtitle: 'Release notes are out',
+                    kind: ChatRowKind.channel,
+                    subtitle:
+                        'Release notes are out: what is new in the desktop '
+                        'embedder this month',
                     verified: true,
                     time: '18:02',
                     unread: 1234,
@@ -224,20 +211,46 @@ class _Window extends StatelessWidget {
   }
 }
 
-class _Row extends StatelessWidget {
-  const _Row({required this.out, required this.child});
+/// A flat message run as the app's timeline draws it.
+class _Flat extends StatelessWidget {
+  const _Flat({required this.name, required this.time, required this.lines});
 
-  final bool out;
-  final Widget child;
+  final String name;
+  final String time;
+  final List<String> lines;
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(top: 6, bottom: 4),
-    child: Align(
-      alignment: out ? Alignment.centerRight : Alignment.centerLeft,
-      child: child,
-    ),
-  );
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          MonogramAvatar(name: name, size: 32),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: mgTextStyle(c, weight: FontWeight.w600, height: 1.35),
+                ),
+                for (final line in lines)
+                  Text(line, style: mgTextStyle(c, size: 14, height: 1.5)),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Padding(
+            padding: const EdgeInsets.only(top: 1),
+            child: Text(time, style: MessageMeta.styleOf(c)),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 Future<void> _shoot(

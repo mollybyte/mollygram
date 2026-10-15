@@ -221,8 +221,8 @@ class MessageTile extends StatelessWidget {
   final MessageRowActions actions;
 
   /// The avatar column and the gap after it.
-  static const double avatarSize = 36;
-  static const double contentIndent = avatarSize + 10;
+  static const double avatarSize = 32;
+  static const double contentIndent = avatarSize + 12;
 
   MessageStatus get _status {
     final message = row.primary;
@@ -419,7 +419,7 @@ class MessageTile extends StatelessWidget {
                   )
                 : null,
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -433,8 +433,7 @@ class MessageTile extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: mgTextStyle(
                         c,
-                        weight: MgWeight.medium,
-                        color: peerNameColor(c, store.colorOf(message.sender)),
+                        weight: FontWeight.w600,
                         height: 1.35,
                       ),
                     ),
@@ -449,7 +448,11 @@ class MessageTile extends StatelessWidget {
                       ),
                     ),
                   ),
-                content,
+                // Message text reads at 14 on 21 px lines.
+                DefaultTextStyle.merge(
+                  style: const TextStyle(fontSize: 14, height: 1.5),
+                  child: content,
+                ),
               ],
             ),
           ),

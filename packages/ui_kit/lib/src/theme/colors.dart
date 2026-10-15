@@ -36,6 +36,7 @@ class MgColors extends ThemeExtension<MgColors> {
     required this.wallpaper,
     required this.frame,
     required this.card,
+    this.selection,
   });
 
   final Brightness brightness;
@@ -121,6 +122,13 @@ class MgColors extends ThemeExtension<MgColors> {
 
   /// The chat card: the solid surface of a conversation pane.
   final Color card;
+
+  /// The fill of the selected chat row, when it differs from [accent] (a
+  /// light accent of the dark theme needs a deeper fill under white text).
+  final Color? selection;
+
+  /// The fill of the selected chat row.
+  Color get selected => selection ?? accent;
 
   bool get isDark => brightness == Brightness.dark;
 
@@ -241,6 +249,7 @@ class MgColors extends ThemeExtension<MgColors> {
     List<Color>? wallpaper,
     Color? frame,
     Color? card,
+    Object? selection = _keep,
   }) {
     return MgColors(
       brightness: brightness ?? this.brightness,
@@ -274,6 +283,9 @@ class MgColors extends ThemeExtension<MgColors> {
       wallpaper: wallpaper ?? this.wallpaper,
       frame: frame ?? this.frame,
       card: card ?? this.card,
+      selection: identical(selection, _keep)
+          ? this.selection
+          : selection as Color?,
     );
   }
 
@@ -314,6 +326,7 @@ class MgColors extends ThemeExtension<MgColors> {
       ],
       frame: c(frame, other.frame),
       card: c(card, other.card),
+      selection: Color.lerp(selection, other.selection, t),
     );
   }
 }

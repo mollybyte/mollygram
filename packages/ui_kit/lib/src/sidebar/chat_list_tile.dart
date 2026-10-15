@@ -11,18 +11,23 @@ import '../theme/colors.dart';
 import '../theme/metrics.dart';
 import '../theme/theme.dart';
 
-/// A row of the chat list (`.row`). Rows are solid, never glass; the
-/// selected row is filled with the accent.
+/// What a chat is, for the small glyph before its title.
+enum ChatRowKind { private, group, channel }
+
+/// A row of the chat list. Rows are solid, never glass; the selected row
+/// is filled with the accent.
 ///
-/// Like the official client's dialog row: a lock before the title of a
-/// secret chat, a verified mark and a crossed-out speaker after the title,
-/// the delivery ticks and the time on the right. Below, in a group, who
-/// wrote last with their small avatar, then the last message with a
-/// thumbnail of its photo or video; elsewhere the message takes both
-/// lines. What someone is doing right now replaces them in the accent
-/// color. The reaction, mention and unread badges sit at the bottom right,
-/// or a pin when a pinned chat has nothing unread. An online user gets a
-/// dot on the avatar.
+/// Like the official client's dialog row, at the Stage window's metrics: a
+/// 44 px avatar, then the title line (a glyph for groups and channels, a
+/// lock for secret chats, the title, a verified mark, a crossed-out
+/// speaker for muted chats; the delivery ticks and the time at the right).
+/// Under it, who wrote last on a line of their own (with their small
+/// avatar in a group, "You" for the user), then the message with
+/// thumbnails of its photos or videos; without a sender the message takes
+/// both lines. What someone is doing right now replaces them in the
+/// accent color. The reaction, mention and unread badges sit at the bottom
+/// right, or a pin when a pinned chat has nothing unread. An online user
+/// gets a green dot on the avatar.
 class ChatListTile extends StatefulWidget {
   const ChatListTile({
     super.key,
@@ -37,12 +42,13 @@ class ChatListTile extends StatefulWidget {
     this.muted = false,
     this.pinned = false,
     this.secret = false,
+    this.kind = ChatRowKind.private,
     this.online = false,
     this.activity,
     this.draftLabel,
     this.sender,
     this.senderAvatar,
-    this.thumbnail,
+    this.thumbnails = const [],
     this.status = MessageStatus.none,
     this.verified = false,
     this.selected = false,
@@ -76,6 +82,9 @@ class ChatListTile extends StatefulWidget {
   /// An end-to-end encrypted chat: a lock before the title.
   final bool secret;
 
+  /// A group or a channel gets its glyph before the title.
+  final ChatRowKind kind;
+
   /// The user of a private chat is online: a dot on the avatar.
   final bool online;
 
@@ -86,16 +95,16 @@ class ChatListTile extends StatefulWidget {
   /// in red as the official client does.
   final String? draftLabel;
 
-  /// Who wrote the last message, in a group; null to give the message
-  /// both lines.
+  /// Who wrote the last message: a name in a group, "You" for the user;
+  /// null to give the message both lines.
   final String? sender;
 
   /// A small avatar before [sender], [senderAvatarSize] across.
   final Widget? senderAvatar;
 
-  /// A tiny picture of the last message's photo or video, drawn before the
-  /// text.
-  final ImageProvider? thumbnail;
+  /// Tiny pictures of the last message's photos or videos, drawn before
+  /// the text.
+  final List<ImageProvider> thumbnails;
 
   /// The delivery ticks of the user's own last message, before the time.
   final MessageStatus status;
@@ -114,19 +123,24 @@ class ChatListTile extends StatefulWidget {
   /// A secondary click or a long press, with its global position.
   final ValueChanged<Offset>? onContextMenu;
 
-  static const double avatarSize = 50;
-  static const double senderAvatarSize = 16;
+  static const double avatarSize = 44;
+  static const double senderAvatarSize = 15;
 
-  /// The title line and the two lines under it.
-  static const double _content = 18 + 3 + 2 * _line;
-  static const double _line = 16;
+  static const double _titleLine = 18;
+  static const double _line = 17;
 
-  /// The height of every row, including the gap below it; the list lays
-  /// rows out at this fixed extent.
-  static const double extent = _content + 2 * (8 + _ring) + 1;
+  /// The title line, a 1 px gap and the two lines under it.
+  static const double _content = _titleLine + 1 + 2 * _line;
 
   /// The menu outline drawn inside the row, which pads its content.
   static const double _ring = 1.5;
+
+  /// The height of every row, including the 1 px gap below it; the list
+  /// lays rows out at this fixed extent.
+  static const double extent = _content + 2 * (8 + _ring) + 1;
+
+  /// The online dot's green.
+  static const Color onlineGreen = Color(0xFF34C759);
 
   @override
   State<ChatListTile> createState() => _ChatListTileState();
@@ -147,85 +161,12 @@ class _ChatListTileState extends State<ChatListTile> {
 
   static const _badgeDuration = Duration(milliseconds: 260);
 
-  /// The two lines under the title: what someone is doing; or who wrote
-  /// last and the message on one line each; or the message on both.
-  Widget _preview(MgColors c, Color sub, bool on, String? activity) {
-    if (activity != null) {
-      return MgStatusText(
-        activity,
-        accent: true,
-        activity: true,
-        size: MgType.body,
-        accentColor: on ? c.onAccent : null,
-      );
-    }
-    final thumbnail = widget.thumbnail;
-    final text = MgStatusText(
-      widget.subtitle,
-      lead: widget.draftLabel,
-      leadColor: on ? c.onAccent : MgColors.draftRed,
-      size: MgType.body,
-      color: sub,
-      maxLines: widget.sender == null ? 2 : 1,
-      leading: thumbnail == null
-          ? null
-          : ClipRRect(
-              key: ValueKey(thumbnail),
-              borderRadius: BorderRadius.circular(3),
-              child: Image(
-                image: thumbnail,
-                width: 18,
-                height: 18,
-                fit: BoxFit.cover,
-                gaplessPlayback: true,
-              ),
-            ),
-    );
-    final sender = widget.sender;
-    if (sender == null || widget.draftLabel != null) return text;
-    final senderAvatar = widget.senderAvatar;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          height: ChatListTile._line,
-          child: Row(
-            children: [
-              if (senderAvatar != null) ...[
-                SizedBox.square(
-                  dimension: ChatListTile.senderAvatarSize,
-                  child: senderAvatar,
-                ),
-                const SizedBox(width: 5),
-              ],
-              Flexible(
-                child: Text(
-                  sender,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: mgTextStyle(
-                    c,
-                    size: MgType.body,
-                    color: on ? c.onAccent : c.fg,
-                    height: 1.2,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        text,
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final c = MgColors.of(context);
     final metrics = MgMetrics.of(context);
     final on = widget.selected;
-    final sub = on ? c.onAccentSecondary : c.fg2;
-    final activity = widget.activity;
+    final faint = on ? c.onAccentSecondary : c.muted;
     final badges = <Widget>[
       if (widget.reactions)
         GlyphBadge.reaction(key: const ValueKey('reactions'), onAccent: on),
@@ -246,11 +187,16 @@ class _ChatListTileState extends State<ChatListTile> {
         ? [
             Padding(
               key: const ValueKey('pin'),
-              padding: const EdgeInsets.only(right: 1),
-              child: MgIcon(MgIcons.pin, size: 15, color: sub),
+              padding: const EdgeInsets.only(right: 2, bottom: 3),
+              child: MgIcon(MgIcons.pin, size: 12, color: faint),
             ),
           ]
         : badges;
+    final kindIcon = switch (widget.kind) {
+      ChatRowKind.private => null,
+      ChatRowKind.group => MgIcons.group,
+      ChatRowKind.channel => MgIcons.channel,
+    };
 
     return Semantics(
       button: true,
@@ -269,13 +215,15 @@ class _ChatListTileState extends State<ChatListTile> {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 120),
             margin: const EdgeInsets.only(bottom: 1),
-            padding: EdgeInsets.symmetric(
-              horizontal: 8,
-              vertical: metrics.rowPadding,
+            padding: EdgeInsets.fromLTRB(
+              8,
+              metrics.rowPadding,
+              10,
+              metrics.rowPadding,
             ),
             decoration: BoxDecoration(
               color: on
-                  ? c.accent
+                  ? c.selected
                   : (_hover || widget.menuOpen
                         ? c.hover
                         : const Color(0x00000000)),
@@ -289,6 +237,7 @@ class _ChatListTileState extends State<ChatListTile> {
               ),
             ),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _AvatarWithDot(
                   avatar:
@@ -300,74 +249,90 @@ class _ChatListTileState extends State<ChatListTile> {
                   online: widget.online,
                   selected: on,
                 ),
-                const SizedBox(width: 11),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Row(
-                              children: [
-                                if (widget.secret) ...[
-                                  MgIcon(
-                                    MgIcons.lock,
-                                    size: 13,
-                                    stroke: 2.2,
-                                    color: on ? c.onAccent : c.fg,
+                      SizedBox(
+                        height: ChatListTile._titleLine,
+                        child: Row(
+                          children: [
+                            if (kindIcon != null) ...[
+                              MgIcon(kindIcon, size: 12, color: faint),
+                              const SizedBox(width: 4),
+                            ],
+                            if (widget.secret) ...[
+                              MgIcon(
+                                MgIcons.lock,
+                                size: 12,
+                                stroke: 2.2,
+                                color: on ? c.onAccent : c.fg,
+                              ),
+                              const SizedBox(width: 4),
+                            ],
+                            // The title and its marks take what the time
+                            // leaves; a long title ellipsizes before them.
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      widget.title,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: mgTextStyle(
+                                        c,
+                                        size: MgType.body,
+                                        weight: MgWeight.semibold,
+                                        height: 1.3,
+                                        color: on ? c.onAccent : c.fg,
+                                      ),
+                                    ),
                                   ),
-                                  const SizedBox(width: 3),
+                                  if (widget.verified)
+                                    Padding(
+                                      padding: const EdgeInsets.only(left: 4),
+                                      child: VerifiedMark(
+                                        size: 13,
+                                        onAccent: on,
+                                      ),
+                                    ),
+                                  _Appear(
+                                    visible: widget.muted,
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(left: 4),
+                                      child: MgIcon(
+                                        MgIcons.muted,
+                                        size: 11,
+                                        stroke: 2.2,
+                                        color: faint,
+                                      ),
+                                    ),
+                                  ),
                                 ],
-                                Flexible(
-                                  child: Text(
-                                    widget.title,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: mgTextStyle(
-                                      c,
-                                      size: MgType.title,
-                                      weight: MgWeight.medium,
-                                      height: 1.3,
-                                      color: on ? c.onAccent : c.fg,
-                                    ),
-                                  ),
-                                ),
-                                if (widget.verified)
-                                  Padding(
-                                    padding: const EdgeInsets.only(left: 3),
-                                    child: VerifiedMark(onAccent: on),
-                                  ),
-                                _Appear(
-                                  visible: widget.muted,
-                                  child: Padding(
-                                    padding: const EdgeInsets.only(left: 4),
-                                    child: MgIcon(
-                                      MgIcons.muted,
-                                      size: 13,
-                                      color: on ? c.onAccentSecondary : c.muted,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          if (widget.time.isNotEmpty) ...[
-                            const SizedBox(width: 6),
-                            _Ticks(status: widget.status, selected: on),
-                            Text(
-                              widget.time,
-                              style: mgTextStyle(
-                                c,
-                                size: MgType.caption,
-                                color: sub,
-                                height: 1.3,
                               ),
                             ),
+                            if (widget.time.isNotEmpty) ...[
+                              const SizedBox(width: 6),
+                              _Ticks(status: widget.status, selected: on),
+                              Padding(
+                                padding: const EdgeInsets.only(left: 2),
+                                child: Text(
+                                  widget.time,
+                                  style: mgTextStyle(
+                                    c,
+                                    size: MgType.caption,
+                                    color: on ? c.onAccentSecondary : c.muted,
+                                    height: 1.3,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
-                      const SizedBox(height: 3),
+                      const SizedBox(height: 1),
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
@@ -376,7 +341,7 @@ class _ChatListTileState extends State<ChatListTile> {
                               height: 2 * ChatListTile._line,
                               child: Align(
                                 alignment: Alignment.topLeft,
-                                child: _preview(c, sub, on, activity),
+                                child: _preview(c, on),
                               ),
                             ),
                           ),
@@ -411,6 +376,90 @@ class _ChatListTileState extends State<ChatListTile> {
       ),
     );
   }
+
+  /// The two lines under the title: what someone is doing; or who wrote
+  /// last and the message on one line each; or the message on both.
+  Widget _preview(MgColors c, bool on) {
+    const size = 12.5;
+    final activity = widget.activity;
+    if (activity != null) {
+      return MgStatusText(
+        activity,
+        accent: true,
+        activity: true,
+        size: size,
+        accentColor: on ? c.onAccent : null,
+      );
+    }
+    final sender = widget.draftLabel == null ? widget.sender : null;
+    final thumbnails = widget.thumbnails;
+    final text = MgStatusText(
+      widget.subtitle,
+      lead: widget.draftLabel,
+      leadColor: on ? c.onAccent : MgColors.draftRed,
+      size: size,
+      lineHeight: ChatListTile._line / size,
+      color: on ? c.onAccentSecondary : c.fg2,
+      maxLines: sender == null ? 2 : 1,
+      leading: thumbnails.isEmpty
+          ? null
+          : Row(
+              key: ValueKey(thumbnails.length),
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final (i, image) in thumbnails.indexed)
+                  Padding(
+                    padding: EdgeInsets.only(left: i == 0 ? 0 : 2),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(3),
+                      child: Image(
+                        image: image,
+                        width: 16,
+                        height: 16,
+                        fit: BoxFit.cover,
+                        gaplessPlayback: true,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+    );
+    if (sender == null) return text;
+    final senderAvatar = widget.senderAvatar;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          height: ChatListTile._line,
+          child: Row(
+            children: [
+              if (senderAvatar != null) ...[
+                SizedBox.square(
+                  dimension: ChatListTile.senderAvatarSize,
+                  child: senderAvatar,
+                ),
+                const SizedBox(width: 5),
+              ],
+              Flexible(
+                child: Text(
+                  sender,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: mgTextStyle(
+                    c,
+                    size: size,
+                    color: on ? c.onAccent : c.fg,
+                    height: ChatListTile._line / size,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        text,
+      ],
+    );
+  }
 }
 
 /// The delivery ticks before the time of a row whose last message is the
@@ -439,8 +488,8 @@ class _Ticks extends StatelessWidget {
     };
     if (icon == null) return const SizedBox.shrink();
     return Padding(
-      padding: const EdgeInsets.only(right: 3),
-      child: MgIcon(icon, size: 15, color: color),
+      padding: const EdgeInsets.only(right: 2),
+      child: MgIcon(icon, size: 15, stroke: 1.6, color: color),
     );
   }
 }
@@ -545,10 +594,10 @@ class _AvatarWithDot extends StatelessWidget {
                 height: _dot,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: selected ? c.onAccent : c.accent,
+                  color: ChatListTile.onlineGreen,
                   border: Border.all(
-                    color: selected ? c.accent : c.frame,
-                    width: 2.5,
+                    color: selected ? c.selected : c.frame,
+                    width: 2,
                   ),
                 ),
               ),

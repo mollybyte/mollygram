@@ -23,6 +23,7 @@ class MgStatusText extends StatelessWidget {
     this.leadColor,
     this.leading,
     this.maxLines = 1,
+    this.lineHeight,
   });
 
   final String text;
@@ -46,13 +47,21 @@ class MgStatusText extends StatelessWidget {
   /// The text wraps to this many lines before it is cut with an ellipsis.
   final int maxLines;
 
+  /// The line height as a multiple of the font size; 1.2 by default.
+  final double? lineHeight;
+
   static const Duration duration = Duration(milliseconds: 220);
 
   @override
   Widget build(BuildContext context) {
     final c = MgColors.of(context);
     final tint = accent ? (accentColor ?? c.accent) : (color ?? c.fg2);
-    final style = mgTextStyle(c, size: size, color: tint, height: 1.2);
+    final style = mgTextStyle(
+      c,
+      size: size,
+      color: tint,
+      height: lineHeight ?? 1.2,
+    );
     return AnimatedSwitcher(
       duration: duration,
       switchInCurve: Curves.easeOutCubic,

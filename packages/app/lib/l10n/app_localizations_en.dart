@@ -1833,6 +1833,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accentColor => 'Accent color';
 
   @override
+  String get accentViolet => 'Violet';
+
+  @override
   String get accentBlue => 'Blue';
 
   @override

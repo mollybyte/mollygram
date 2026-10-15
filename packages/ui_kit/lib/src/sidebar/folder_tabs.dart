@@ -31,14 +31,14 @@ class FolderSegments extends StatefulWidget {
   /// The index of the selected segment; -1 for none.
   final int selected;
 
-  static const double height = 30;
+  static const double height = 34;
 
   @override
   State<FolderSegments> createState() => _FolderSegmentsState();
 }
 
 class _FolderSegmentsState extends State<FolderSegments> {
-  static const _pad = 3.0;
+  static const _pad = 4.0;
   static const _slide = Duration(milliseconds: 260);
 
   final _scroll = ScrollController();
@@ -133,10 +133,10 @@ class _FolderSegmentsState extends State<FolderSegments> {
       height: FolderSegments.height,
       decoration: BoxDecoration(
         color: c.field,
-        borderRadius: BorderRadius.circular(FolderSegments.height / 2),
+        borderRadius: BorderRadius.circular(15),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(FolderSegments.height / 2),
+        borderRadius: BorderRadius.circular(15),
         child: SingleChildScrollView(
           controller: _scroll,
           scrollDirection: Axis.horizontal,
@@ -229,13 +229,13 @@ class _FolderTabState extends State<FolderTab> {
           onTap: widget.onTap,
           behavior: HitTestBehavior.opaque,
           child: Container(
-            height: FolderSegments.height - 6,
-            padding: const EdgeInsets.symmetric(horizontal: 11),
+            height: FolderSegments.height - 8,
+            padding: const EdgeInsets.symmetric(horizontal: 10),
             alignment: Alignment.center,
             decoration: widget.raised
                 ? BoxDecoration(
                     color: c.card,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(13),
                     boxShadow: [_thumbShadow(c)],
                   )
                 : null,
@@ -246,7 +246,7 @@ class _FolderTabState extends State<FolderTab> {
                   duration: const Duration(milliseconds: 160),
                   style: mgTextStyle(
                     c,
-                    size: MgType.tab,
+                    size: MgType.small,
                     weight: MgWeight.medium,
                     color: on || _hover ? c.fg : c.fg2,
                     height: 1.2,
@@ -277,7 +277,7 @@ class _FolderTabState extends State<FolderTab> {
 
 /// The soft shadow that lifts the selected folder off the track.
 BoxShadow _thumbShadow(MgColors c) => BoxShadow(
-  color: c.isDark ? const Color(0x40000000) : const Color(0x1A000000),
-  blurRadius: 3,
+  color: c.isDark ? const Color(0x40000000) : const Color(0x14000000),
+  blurRadius: 2,
   offset: const Offset(0, 1),
 );

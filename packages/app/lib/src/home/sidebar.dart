@@ -158,22 +158,6 @@ class _SidebarState extends ConsumerState<Sidebar> {
             ],
           );
 
-    // The open list's pinned chats sit over it as a grid of avatars; the
-    // list holds the rest. A search shows plain rows.
-    final pinned = query.isEmpty && !list.isArchive
-        ? [
-            for (final chat in shown)
-              if (chat.isPinnedIn(list)) chat,
-          ].take(PinnedChatGrid.capacity).toList()
-        : const <ChatListEntry>[];
-    final pinnedIds = {for (final chat in pinned) chat.id};
-    final rest = pinnedIds.isEmpty
-        ? shown
-        : [
-            for (final chat in shown)
-              if (!pinnedIds.contains(chat.id)) chat,
-          ];
-
     return SidebarIsland(
       titleBarFill: const WindowDragArea(),
       search: MgSearchField(hintText: l10n.searchHint, controller: _search),
@@ -236,8 +220,7 @@ class _SidebarState extends ConsumerState<Sidebar> {
                 )
               : _ChatList(
                   list: list,
-                  chats: rest,
-                  pinned: pinned,
+                  chats: shown,
                   archived: showArchive ? archived : null,
                   animate: query.isEmpty,
                   // TDLib sends the list a page at a time; the next page is
@@ -344,7 +327,6 @@ class _ChatList extends ConsumerStatefulWidget {
   const _ChatList({
     required this.list,
     required this.chats,
-    this.pinned = const [],
     this.archived,
     this.animate = true,
     this.onNearEnd,
@@ -354,7 +336,6 @@ class _ChatList extends ConsumerStatefulWidget {
   final List<ChatListEntry> chats;
 
   /// Pinned chats for the grid over the list; they are not in [chats].
-  final List<ChatListEntry> pinned;
 
   /// Archived chats, for the archive row at the top; null hides it.
   final List<ChatListEntry>? archived;
@@ -527,41 +508,9 @@ class _ChatListState extends ConsumerState<_ChatList> {
             );
           },
         );
-        final pinned = widget.pinned;
         return Stack(
           children: [
-            Positioned.fill(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  AnimatedSize(
-                    duration: const Duration(milliseconds: 240),
-                    curve: Curves.easeOutCubic,
-                    alignment: Alignment.topCenter,
-                    child: pinned.isEmpty
-                        ? const SizedBox(width: double.infinity)
-                        : PinnedChatGrid(
-                            children: [
-                              for (final chat in pinned)
-                                _PinnedTile(
-                                  key: ValueKey(chat.id),
-                                  chat: chat,
-                                  selected: chat.id == selected,
-                                  menuOpen: _menuFor == chat.id,
-                                  onTap: () => workspace.open(
-                                    chat.id,
-                                    target: _clickTarget(),
-                                  ),
-                                  onContextMenu: (position) =>
-                                      _openMenu(chat, position),
-                                ),
-                            ],
-                          ),
-                  ),
-                  Expanded(child: list),
-                ],
-              ),
-            ),
+            Positioned.fill(child: list),
             Positioned(
               left: 12,
               right: 12,
@@ -679,8 +628,12 @@ class _ChatRowState extends ConsumerState<_ChatRow>
         ref.watch(chatRowInfoProvider(chat.id)).value ??
         (sender: '', verified: false);
     // In a group, who wrote last gets a line of their own with their
-    // small avatar; elsewhere the message takes both lines.
-    final named = chat.isGroup && last != null && draft == null;
+    // small avatar, and so does "You" anywhere but a channel; otherwise
+    // the message takes both lines.
+    final named =
+        last != null &&
+        draft == null &&
+        (chat.isGroup || (last.isOutgoing && chat.type != ChatType.channel));
     final sender = !named
         ? null
         : last.isOutgoing
@@ -700,8 +653,16 @@ class _ChatRowState extends ConsumerState<_ChatRow>
           ? formatPreview(l10n, last, you: sender == null)
           : draftText(l10n, draft),
       sender: sender,
-      senderAvatar: sender == null ? null : _senderAvatar(ref, sender, last!),
-      thumbnail: thumbnail == null ? null : MemoryImage(thumbnail),
+      // "You" needs no face of its own.
+      senderAvatar: sender == null || last!.isOutgoing
+          ? null
+          : _senderAvatar(ref, sender, last),
+      thumbnails: [?thumbnail == null ? null : MemoryImage(thumbnail)],
+      kind: switch (chat.type) {
+        ChatType.basicGroup || ChatType.supergroup => ChatRowKind.group,
+        ChatType.channel => ChatRowKind.channel,
+        _ => ChatRowKind.private,
+      },
       status: switch (last) {
         _ when draft != null => MessageStatus.none,
         ChatPreview(isOutgoing: true, sendState: PreviewSendState.sending) =>
@@ -747,49 +708,6 @@ class _ChatRowState extends ConsumerState<_ChatRow>
         );
       },
       child: tile,
-    );
-  }
-}
-
-/// A pinned chat in the grid over the list.
-class _PinnedTile extends ConsumerWidget {
-  const _PinnedTile({
-    super.key,
-    required this.chat,
-    required this.selected,
-    required this.menuOpen,
-    required this.onTap,
-    required this.onContextMenu,
-  });
-
-  final ChatListEntry chat;
-  final bool selected;
-  final bool menuOpen;
-  final VoidCallback onTap;
-  final ValueChanged<Offset> onContextMenu;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final locale = Localizations.localeOf(context).toLanguageTag();
-    final online = ref.watch(chatOnlineProvider(chat.id)).value ?? false;
-    return PinnedChatTile(
-      title: chat.title,
-      avatar: PeerAvatar.chat(
-        name: chat.title,
-        size: PinnedChatTile.avatarSize,
-        photo: chat.photo,
-      ),
-      unread: chat.unreadCount,
-      unreadLabel: NumberFormat.compact(locale: locale)
-          .format(chat.unreadCount),
-      markedUnread: chat.isMarkedAsUnread,
-      mentions: chat.unreadMentionCount > 0,
-      muted: chat.isMuted,
-      online: online,
-      selected: selected,
-      menuOpen: menuOpen,
-      onTap: onTap,
-      onContextMenu: onContextMenu,
     );
   }
 }
@@ -867,15 +785,8 @@ class _ArchiveAvatar extends StatelessWidget {
       width: ChatListTile.avatarSize,
       height: ChatListTile.avatarSize,
       alignment: Alignment.center,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [c.avatarTop, c.avatarBottom],
-        ),
-      ),
-      child: const MgIcon(MgIcons.archive, size: 21, color: Color(0xFFFFFFFF)),
+      decoration: BoxDecoration(shape: BoxShape.circle, color: c.field),
+      child: MgIcon(MgIcons.archive, size: 19, color: c.fg2),
     );
   }
 }

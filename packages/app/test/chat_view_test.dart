@@ -225,7 +225,7 @@ void main() {
     );
 
     // A little way up from the bottom, so there is somewhere to return.
-    await tester.drag(find.byType(TimelineView), const Offset(0, 120));
+    await tester.drag(find.byType(TimelineView), const Offset(0, 70));
     await tester.pumpAndSettle();
     await tester.tap(find.byType(ReplyHeader));
     await tester.runAsync(() => Future<void>.delayed(_tick));

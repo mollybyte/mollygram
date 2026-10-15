@@ -9,8 +9,8 @@ import '../theme/theme.dart';
 /// From the top: the 44 px title bar row, 8 px below the window's top edge
 /// (the system window buttons sit at its left, inside [titleBarInset]; on
 /// macOS the runner puts them there, see MainFlutterWindow.swift; keep the
-/// two in sync), then the [search] field, the [folders], a [banner] and
-/// the chat list [body]. [titleBarFill] lies
+/// two in sync), then the [search] field, the [pinned] chats, the
+/// [folders], a [banner] and the chat list [body]. [titleBarFill] lies
 /// under the title bar row but the actions (the app puts its window drag
 /// area there).
 class SidebarIsland extends StatelessWidget {
@@ -18,6 +18,7 @@ class SidebarIsland extends StatelessWidget {
     super.key,
     required this.search,
     required this.body,
+    this.pinned,
     this.folders,
     this.banner,
     this.actions = const [],
@@ -28,7 +29,11 @@ class SidebarIsland extends StatelessWidget {
   /// Usually an [MgSearchField].
   final Widget search;
 
-  /// A row under the search field, such as [FolderSegments].
+  /// The pinned chats under the search field, such as a [PinnedChatGrid];
+  /// it brings its own padding.
+  final Widget? pinned;
+
+  /// A row over the list, such as [FolderSegments].
   final Widget? folders;
 
   /// A row between the folders and the list, such as the downloads bar;
@@ -50,7 +55,7 @@ class SidebarIsland extends StatelessWidget {
 
   /// The side padding of everything but the list, whose rows bring their
   /// own.
-  static const double gutter = 12;
+  static const double gutter = 10;
 
   @override
   Widget build(BuildContext context) {
@@ -77,9 +82,10 @@ class SidebarIsland extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(gutter, 0, gutter, 10),
+            padding: const EdgeInsets.fromLTRB(gutter, 0, gutter, 12),
             child: search,
           ),
+          ?pinned,
           if (folders != null)
             Padding(
               padding: const EdgeInsets.fromLTRB(gutter, 0, gutter, 8),

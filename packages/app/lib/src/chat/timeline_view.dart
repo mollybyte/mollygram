@@ -88,7 +88,7 @@ class TimelineView extends StatefulWidget {
   final void Function(DateTime day, Offset position)? onDateTap;
 
   static const double headerInset = 72;
-  static const double composerInset = 88;
+  static const double composerInset = 64;
 
   static bool _holds(TimelineItem item, int? id) =>
       id != null &&
@@ -205,7 +205,7 @@ class _TimelineViewState extends State<TimelineView> {
                 duration: Duration(milliseconds: _scrolling ? 120 : 300),
                 curve: Curves.easeOut,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  padding: const EdgeInsets.symmetric(horizontal: 28),
                   child: DatePill(
                     formatDay(l10n, day, locale),
                     key: const ValueKey('floatingDate'),
@@ -340,7 +340,7 @@ class _TimelineList extends StatelessWidget {
           }(),
       };
       final padded = Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        padding: const EdgeInsets.symmetric(horizontal: 28),
         // The text size chosen in Settings, Appearance.
         child: MessageTextSize(child: child),
       );

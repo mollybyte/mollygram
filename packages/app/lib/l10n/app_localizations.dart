@@ -3050,6 +3050,12 @@ abstract class AppLocalizations {
   /// **'Accent color'**
   String get accentColor;
 
+  /// No description provided for @accentViolet.
+  ///
+  /// In en, this message translates to:
+  /// **'Violet'**
+  String get accentViolet;
+
   /// No description provided for @accentBlue.
   ///
   /// In en, this message translates to:

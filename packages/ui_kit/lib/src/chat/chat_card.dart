@@ -36,12 +36,12 @@ class ChatCard extends StatelessWidget {
               ]
             : const [
                 BoxShadow(
-                  color: Color(0x0F141428),
+                  color: Color(0x0F281450),
                   blurRadius: 2,
                   offset: Offset(0, 1),
                 ),
                 BoxShadow(
-                  color: Color(0x1A141428),
+                  color: Color(0x1A281450),
                   blurRadius: 28,
                   offset: Offset(0, 8),
                 ),
