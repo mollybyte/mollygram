@@ -124,7 +124,7 @@ M8 calls and macOS release, M9 after release.
 | Contact sending | missing | | S | M2 |
 | Send preview: caption, send as files, albums | done | #31 | | |
 | Send preview: spoiler, self-destruct timer, compression choice | missing | `hasSpoiler`, `selfDestructType`; uncompressed default planned | S | M2 |
-| Media editor: crop, rotate, flip, aspect presets | missing | `EditImageModalController` | M | M4 |
+| Media editor: crop, rotate, flip, aspect presets | done | `packages/media_editor` | | |
 | Media editor: drawing (pen, marker, neon, eraser, colours, sizes) | missing | | M | M4 |
 | Media editor: text, stickers and emoji placed on the image | missing | | M | M4 |
 | Media editor: arrows and shapes, blur and pixelate brush | missing | | M | M4 |
