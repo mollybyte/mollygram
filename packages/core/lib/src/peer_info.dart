@@ -5,6 +5,9 @@ import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 /// What an info panel describes.
 enum PeerKind { user, bot, group, channel }
 
+/// One of a profile's photos and when it was set, for the photo gallery.
+typedef ProfilePhoto = ({td.Photo photo, int date});
+
 /// A member's place in a group.
 enum MemberRole { owner, admin, member }
 

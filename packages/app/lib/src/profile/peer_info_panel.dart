@@ -9,6 +9,7 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../chat/formatted_text.dart';
+import '../chat/media_viewer.dart';
 import '../chat/message_tile.dart' show SenderAvatar;
 import '../secret/secret_chat.dart';
 import '../session/providers.dart';
@@ -103,6 +104,57 @@ class PeerInfoPage extends StatelessWidget {
       Expanded(child: child),
     ],
   );
+}
+
+/// Opens the profile's photos in the viewer, newest first; nothing
+/// happens when there are none to show.
+Future<void> _openPhotos(
+  BuildContext context,
+  WidgetRef ref,
+  PeerInfo info,
+) async {
+  final session = ref.read(telegramSessionProvider).asData?.value;
+  if (session == null) return;
+  final List<ProfilePhoto> photos;
+  try {
+    photos = await session.conversations.profilePhotos(
+      info.chatId,
+      userId: info.userId,
+    );
+  } on td.TdException {
+    return;
+  }
+  if (photos.isEmpty || !context.mounted) return;
+  await showProfilePhotos(context, photos: photos, title: info.title);
+}
+
+/// The big photo at the top; a click opens the profile's photos, as the
+/// official app does, so the pointer turns into a hand over it.
+class _ProfilePhoto extends StatelessWidget {
+  const _ProfilePhoto({
+    required this.name,
+    required this.photo,
+    required this.onTap,
+  });
+
+  final String name;
+  final td.File? photo;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final avatar = SenderAvatar(name: name, size: 88, photo: photo);
+    final onTap = this.onTap;
+    if (onTap == null) return avatar;
+    return Semantics(
+      button: true,
+      label: name,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(onTap: onTap, child: avatar),
+      ),
+    );
+  }
 }
 
 class _TopBar extends StatelessWidget {
@@ -295,7 +347,13 @@ class _Content extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Center(
-            child: SenderAvatar(name: title, size: 88, photo: info.photo),
+            child: _ProfilePhoto(
+              name: title,
+              photo: info.photo,
+              onTap: info.photo == null
+                  ? null
+                  : () => unawaited(_openPhotos(context, ref, info)),
+            ),
           ),
           const SizedBox(height: 12),
           Text(

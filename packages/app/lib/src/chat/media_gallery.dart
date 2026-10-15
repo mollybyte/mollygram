@@ -40,10 +40,14 @@ final class AnimationItem extends MediaViewerItem {
 /// One page of the viewer, and the message it came from when it has one.
 @immutable
 final class GalleryEntry {
-  const GalleryEntry(this.item, {this.message});
+  const GalleryEntry(this.item, {this.message, this.date});
 
   final MediaViewerItem item;
   final ConversationMessage? message;
+
+  /// When the media was set, for an entry with no message, such as a
+  /// profile photo; Unix seconds.
+  final int? date;
 }
 
 /// Loads photos and videos of a chat around a message, oldest first; see
@@ -64,6 +68,15 @@ final class MediaGallery extends ChangeNotifier {
       _entries = [GalleryEntry(item, message: message)],
       _olderEnd = true,
       _newerEnd = true;
+
+  /// A fixed set of [entries], open at [index], with nothing to load.
+  MediaGallery.list(List<GalleryEntry> entries, {int index = 0})
+    : _load = null,
+      _entries = entries,
+      _olderEnd = true,
+      _newerEnd = true {
+    _index = index;
+  }
 
   /// [start]'s media and, once [load] answers, the chat's around it. A GIF
   /// stays on its own, as TDLib's photo and video search leaves GIFs out.
