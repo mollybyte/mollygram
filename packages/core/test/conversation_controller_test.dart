@@ -389,6 +389,47 @@ void main() {
     expect(controller.store.message(7, 30), isNotNull);
   });
 
+  test('sends a sticker by its file id', () async {
+    await controller.start();
+    final sticker = td.Sticker.fromJson({
+      '@type': 'sticker',
+      'id': 100,
+      'set_id': 55,
+      'width': 512,
+      'height': 480,
+      'emoji': '🐱',
+      'format': {'@type': 'stickerFormatWebp'},
+      'full_type': {'@type': 'stickerFullTypeRegular'},
+      'sticker': {
+        '@type': 'file',
+        'id': 301,
+        'size': 1000,
+        'expected_size': 1000,
+        'local': {
+          '@type': 'localFile',
+          'path': '',
+          'can_be_downloaded': true,
+          'is_downloading_completed': false,
+        },
+        'remote': {'@type': 'remoteFile', 'id': 'r301', 'unique_id': 'u301'},
+      },
+    });
+
+    await controller.sendSticker(7, sticker, replyTo: 10);
+
+    final send = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    expect(send['reply_to'], containsPair('message_id', 10));
+    final content = send['input_message_content']! as Map;
+    expect(content['@type'], 'inputMessageSticker');
+    expect(content['emoji'], '🐱');
+    expect(content['sticker'], {
+      '@type': 'inputSticker',
+      'sticker': {'@type': 'inputFileId', 'id': 301},
+      'width': 512,
+      'height': 480,
+    });
+  });
+
   test('sends a caption too long for media as its own message', () async {
     await controller.start();
 

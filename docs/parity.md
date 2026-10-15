@@ -15,17 +15,10 @@ code, so "done" means implemented, not that every edge case is covered.
 
 ## Milestones
 
-The order makes the app usable every day first, then fills in the rest.
-
-| # | Milestone | Goal |
-|---|---|---|
-| M1 | Daily driver | You can live in Mollygram for normal chatting: notifications, unread handling, statuses, stickers and emoji, voice, chat actions, basic settings. |
-| M2 | Full chat | Every message type can be sent, not only shown; search, shared media, gallery, topics and comments. |
-| M3 | Chats and account management | Create and manage groups and channels, contacts, profile, privacy, folders, multiple accounts. |
-| M4 | Settings parity | Every section of the official Settings: notifications, data and storage, appearance, language, passcode, proxy, stickers. |
-| M5 | Privacy extras | Mollygram's own features: ghost mode, saved deleted messages, edit history (already planned, see [forks-research.md](forks-research.md)). |
-| M6 | Calls and macOS release | 1:1 calls, screen sharing (see [calls.md](calls.md)), then group calls and live streams. |
-| M7 | Telegram platform | Stories, Premium, bots and mini apps, payments and Stars, Business, Instant View, statistics, boosts, gifts. |
+The milestones and their order live in [roadmap.md](roadmap.md):
+M1 daily driver, M2 full chat, M3 privacy extras, M4 media quality,
+M5 plugins, M6 chats and account management, M7 settings parity,
+M8 calls and macOS release, M9 after release.
 
 ### First items to take
 
@@ -49,12 +42,12 @@ The order makes the app usable every day first, then fills in the rest.
 | Unread mention and reaction badges in the list | missing | `unreadMentionCount`, `unreadReactionCount` | S | M1 |
 | Typing and online dot in the list | missing | `UpdateChatAction`, `UpdateUserStatus` | S | M1 |
 | Draft preview in the list ("Draft: …") | partial | `UpdateChatDraftMessage` is stored, not shown | S | M1 |
-| Pinned chats order with drag | missing | `SetPinnedChats` | S | M3 |
-| Folder editor: create, edit, delete, reorder, include/exclude, recommended | missing | TelegramSwift `ChatListFilterController` | M | M3 |
-| Folder sidebar (vertical tabs) and folder icons | missing | Official offers left-side folders | M | M4 |
-| Shared folders (chat folder invite links) | missing | `CreateChatFolderInviteLink` | M | M7 |
+| Pinned chats order with drag | missing | `SetPinnedChats` | S | M6 |
+| Folder editor: create, edit, delete, reorder, include/exclude, recommended | missing | TelegramSwift `ChatListFilterController` | M | M6 |
+| Folder sidebar (vertical tabs) and folder icons | missing | Official offers left-side folders | M | M7 |
+| Shared folders (chat folder invite links) | missing | `CreateChatFolderInviteLink` | M | M9 |
 | Saved Messages as a list of sub-chats | missing | Saved Messages tags and per-source chats | M | M2 |
-| Contacts birthdays and suggestions in the list | missing | | S | M7 |
+| Contacts birthdays and suggestions in the list | missing | | S | M9 |
 
 ### Opening and reading chats
 
@@ -79,15 +72,15 @@ The order makes the app usable every day first, then fills in the rest.
 | Forum topics: topic list, topic chat, create and close topics | missing | Service messages render only | L | M2 |
 | Channel comments (discussion thread) | missing | `GetMessageThread` | M | M2 |
 | Reply threads in groups | missing | | M | M2 |
-| Secret chats | missing | TDLib supports them; key view, TTL | L | M3 |
+| Secret chats | missing | TDLib supports them; key view, TTL | L | M6 |
 | Spoilers, custom emoji in text | partial | `concealed.dart` covers spoilers; custom emoji need sticker rendering | M | M2 |
 | Polls and quizzes: vote, results | partial | Rendered; voting unverified | M | M2 |
-| Checklists (todo messages) | missing | `ChatTodoItem` | S | M7 |
-| Dice and slot animations | partial | | S | M7 |
+| Checklists (todo messages) | missing | `ChatTodoItem` | S | M9 |
+| Dice and slot animations | partial | | S | M9 |
 | Live location view | missing | | M | M2 |
-| Auto-translate and "Translate" in the menu | missing | Built-in Translate plugin planned | M | M2 |
-| Voice message transcription | missing | `RecognizeSpeech` (Premium) | S | M7 |
-| Message effects and reaction animations | missing | | M | M7 |
+| Auto-translate and "Translate" in the menu | missing | Built-in Translate plugin planned | M | M5 |
+| Voice message transcription | missing | `RecognizeSpeech` (Premium) | S | M9 |
+| Message effects and reaction animations | missing | | M | M9 |
 | Sponsored messages in channels | missing | Required by Telegram API terms | S | M2 |
 
 ### Message actions
@@ -121,15 +114,15 @@ The order makes the app usable every day first, then fills in the rest.
 | Rich text formatting: bold, italic, code, link, spoiler, quote; Markdown shortcuts | missing | `text_edit.dart` sends plain text | M | M1 |
 | Mentions autocomplete (@) | missing | `SearchChatMembers` | S | M1 |
 | Bot command autocomplete (/) and bot keyboards | missing | `ReplyMarkupNode` | M | M2 |
-| Inline bots (@gif, @vid) | missing | `GetInlineQueryResults` | M | M7 |
+| Inline bots (@gif, @vid) | missing | `GetInlineQueryResults` | M | M9 |
 | Voice message recording | missing | Mic button is a placeholder | M | M1 |
-| Video message (circle) recording | missing | Playback done in `packages/media` | L | M2 |
+| Video message (circle) recording | missing | Playback done in `packages/media` | L | M4 |
 | Silent send and scheduled messages, scheduled list | missing | `MessageSchedulingStateSendAtDate` | M | M2 |
-| Send as (channel identity) | missing | `ChatInputSendAsView` | S | M3 |
+| Send as (channel identity) | missing | `ChatInputSendAsView` | S | M6 |
 | Polls and quizzes creation | missing | `NewPollController` | M | M2 |
 | Location and venue sending | missing | | M | M2 |
 | Contact sending | missing | | S | M2 |
-| Media editor before sending: crop, rotate, draw, compression toggle | partial | Preview exists; uncompressed default planned | L | M2 |
+| Media editor before sending: crop, rotate, draw, compression toggle | partial | Preview exists; uncompressed default planned | L | M4 |
 | Spoiler and self-destruct on media | missing | `hasSpoiler`, `selfDestructType` | S | M2 |
 | Slowmode and restriction notices | missing | | S | M2 |
 | Link preview control (remove, above/below) | missing | | S | M2 |
@@ -145,10 +138,10 @@ The order makes the app usable every day first, then fills in the rest.
 | Fullscreen media viewer | partial | Single item; no gallery navigation, zoom, thumbnails | M | M2 |
 | Gallery: swipe between chat media, zoom, rotate, save, forward | missing | `GalleryViewer` | M | M2 |
 | Global audio player with playlist and header bar | missing | `InlineAudioPlayerView` | M | M2 |
-| Picture-in-picture for video and circles | missing | `PIPVideoWindow` | M | M2 |
+| Picture-in-picture for video and circles | missing | `PIPVideoWindow` | M | M4 |
 | Voice playback speed and continuous play | missing | | S | M1 |
-| Downloads manager (list, pause, show in Finder) | missing | `DownloadsController` | M | M4 |
-| Autodownload rules | missing | Data and storage | M | M4 |
+| Downloads manager (list, pause, show in Finder) | missing | `DownloadsController` | M | M7 |
+| Autodownload rules | missing | Data and storage | M | M7 |
 | Quick Look for documents | missing | | S | M2 |
 
 ### Search
@@ -169,37 +162,37 @@ The order makes the app usable every day first, then fills in the rest.
 | User profile: photo, bio, username, phone, birthday, actions | missing | `PeerInfoController` | M | M1 |
 | Group and channel info: description, link, members count | missing | | M | M1 |
 | Shared media tabs: media, files, links, voice, music, GIFs, groups in common | missing | `PeerMediaController` | L | M2 |
-| Members list with search | missing | | M | M3 |
+| Members list with search | missing | | M | M6 |
 | Profile photo gallery | missing | | S | M2 |
 | Per-chat notifications and auto-delete timer | missing | | S | M1 |
-| Block, report, share contact | missing | | S | M3 |
+| Block, report, share contact | missing | | S | M6 |
 
 ### Groups, channels and admin tools
 
 | Feature | Status | Notes | Size | M |
 |---|---|---|---|---|
-| Create group and channel | missing | `CreateGroupViewController`, `CreateChannelController` | M | M3 |
-| Edit title, photo, description, username, public/private | missing | | M | M3 |
-| Add, remove, ban members; admin rights and titles | missing | `ChannelAdminController` | L | M3 |
-| Group permissions, slow mode | missing | `ChannelPermissionsController` | M | M3 |
-| Invite links: create, revoke, join requests | missing | `InviteLinksController` | M | M3 |
-| Linked discussion group | missing | | S | M3 |
-| Allowed reactions, chat history for new members | missing | | S | M3 |
-| Recent actions (admin log) | missing | `ChannelEventLogController` | M | M3 |
-| Enable topics in a group | missing | | S | M3 |
-| Channel and group statistics | missing | `ChannelStatsViewController` | L | M7 |
-| Boosts | missing | | M | M7 |
+| Create group and channel | missing | `CreateGroupViewController`, `CreateChannelController` | M | M6 |
+| Edit title, photo, description, username, public/private | missing | | M | M6 |
+| Add, remove, ban members; admin rights and titles | missing | `ChannelAdminController` | L | M6 |
+| Group permissions, slow mode | missing | `ChannelPermissionsController` | M | M6 |
+| Invite links: create, revoke, join requests | missing | `InviteLinksController` | M | M6 |
+| Linked discussion group | missing | | S | M6 |
+| Allowed reactions, chat history for new members | missing | | S | M6 |
+| Recent actions (admin log) | missing | `ChannelEventLogController` | M | M6 |
+| Enable topics in a group | missing | | S | M6 |
+| Channel and group statistics | missing | `ChannelStatsViewController` | L | M9 |
+| Boosts | missing | | M | M9 |
 
 ### Contacts and accounts
 
 | Feature | Status | Notes | Size | M |
 |---|---|---|---|---|
 | Sign in: QR, phone, code, 2FA password | done | #16, #24 | | |
-| Sign up (new account), email code, account reset | partial | Unsupported steps show a notice | M | M3 |
-| Contacts list, add and edit contact | missing | `ContactsController` | M | M3 |
+| Sign up (new account), email code, account reset | partial | Unsupported steps show a notice | M | M6 |
+| Contacts list, add and edit contact | missing | `ContactsController` | M | M6 |
 | New message / compose (pick a user) | missing | `ComposeViewController` | S | M1 |
-| Edit own profile: name, bio, username, photo, birthday | missing | `EditAccountInfoController` | M | M3 |
-| Multiple accounts and switching | missing | Several TDLib clients | L | M3 |
+| Edit own profile: name, bio, username, photo, birthday | missing | `EditAccountInfoController` | M | M6 |
+| Multiple accounts and switching | missing | Several TDLib clients | L | M6 |
 | Log out | missing | Core has `LogOut`, no button in the app | S | M1 |
 
 ### Settings
@@ -209,20 +202,20 @@ The order makes the app usable every day first, then fills in the rest.
 | Settings window shell in macOS System Settings style | partial | Only the Plugins page exists | M | M1 |
 | Notifications and sounds: per-type, badge, preview, sound | partial | Global switches, preview, sound and badge done (`NotificationsPage`); per-type scopes (private, groups, channels) and tones missing | S | M1 |
 | Active sessions and terminate | missing | `RecentSessionsController` | S | M1 |
-| Privacy and security: last seen, phone, photo, calls, forwards, groups, blocked list | missing | `SelectivePrivacySettingsController` | L | M3 |
-| Two-step verification setup | missing | `TwoStepVerification` | M | M3 |
-| Passcode lock and Touch ID | missing | `PasscodeSettingsViewController`, `LocalAuth` | M | M4 |
-| Data and storage: cache usage, clear, limits, network usage | missing | `StorageUsageController` | M | M4 |
-| Appearance: theme, accent, night mode schedule, chat background, text size | partial | Light/dark follow the system | M | M4 |
-| Language: UI language picker, translation settings | partial | RU and EN follow the system | S | M4 |
-| Stickers and emoji: packs, reorder, archived, suggest, large emoji | missing | `InstalledStickerPacksController` | M | M4 |
-| Quick reaction choice | missing | | S | M4 |
-| Proxy: SOCKS5, MTProto, list, share | missing | `ProxyListController` | M | M4 |
+| Privacy and security: last seen, phone, photo, calls, forwards, groups, blocked list | missing | `SelectivePrivacySettingsController` | L | M6 |
+| Two-step verification setup | missing | `TwoStepVerification` | M | M6 |
+| Passcode lock and Touch ID | missing | `PasscodeSettingsViewController`, `LocalAuth` | M | M7 |
+| Data and storage: cache usage, clear, limits, network usage | missing | `StorageUsageController` | M | M7 |
+| Appearance: theme, accent, night mode schedule, chat background, text size | partial | Light/dark follow the system | M | M7 |
+| Language: UI language picker, translation settings | partial | RU and EN follow the system | S | M7 |
+| Stickers and emoji: packs, reorder, archived, suggest, large emoji | missing | `InstalledStickerPacksController` | M | M7 |
+| Quick reaction choice | missing | | S | M7 |
+| Proxy: SOCKS5, MTProto, list, share | missing | `ProxyListController` | M | M7 |
 | Connection status in the window ("Connecting…") | missing | `UpdateConnectionState` | S | M1 |
-| Keyboard shortcuts list | partial | Shell shortcuts exist; no list | S | M4 |
-| Auto-delete messages default | missing | | S | M4 |
-| Settings search | missing | | S | M4 |
-| Ask a question, FAQ, about | missing | | S | M4 |
+| Keyboard shortcuts list | partial | Shell shortcuts exist; no list | S | M7 |
+| Auto-delete messages default | missing | | S | M7 |
+| Settings search | missing | | S | M7 |
+| Ask a question, FAQ, about | missing | | S | M7 |
 
 ### Notifications and system integration
 
@@ -231,37 +224,37 @@ The order makes the app usable every day first, then fills in the rest.
 | Desktop notifications with reply and mark read | done | `NotificationController` on TDLib notification groups; macOS only, banners hidden while the window is in front | | |
 | Dock badge with unread count | done | Unmuted chats by default; muted chats and message count are options | | |
 | Notification sounds | partial | System default sound; Telegram tones and custom sounds missing | S | M1 |
-| Menu bar and dock menu items | partial | Traffic lights done | S | M4 |
-| Share extension, Spotlight, Focus filters | missing | macOS-only niceties | M | M7 |
-| Auto update | missing | Sparkle or release-please assets | M | M6 |
+| Menu bar and dock menu items | partial | Traffic lights done | S | M7 |
+| Share extension, Spotlight, Focus filters | missing | macOS-only niceties | M | M9 |
+| Auto update | missing | Sparkle or release-please assets | M | M8 |
 
 ### Calls
 
 | Feature | Status | Notes | Size | M |
 |---|---|---|---|---|
-| 1:1 audio and video calls | missing | Research done, `packages/calls` scaffold | L | M6 |
-| Screen sharing | missing | | L | M6 |
-| Call history | missing | `RecentCallsViewController` | S | M6 |
-| Group calls and live streams | missing | | L | M6 |
-| Call settings: devices, push-to-talk | missing | | M | M6 |
+| 1:1 audio and video calls | missing | Research done, `packages/calls` scaffold | L | M8 |
+| Screen sharing | missing | | L | M8 |
+| Call history | missing | `RecentCallsViewController` | S | M8 |
+| Group calls and live streams | missing | | L | M9 |
+| Call settings: devices, push-to-talk | missing | | M | M8 |
 
 ### Telegram platform
 
 | Feature | Status | Notes | Size | M |
 |---|---|---|---|---|
-| Stories: view, react, reply, post, stealth mode | missing | `Story*` controllers | L | M7 |
-| Premium: subscribe screen, limits, emoji status, profile colour | missing | `PremiumBoardingController` | L | M7 |
+| Stories: view, react, reply, post, stealth mode | missing | `Story*` controllers | L | M9 |
+| Premium: subscribe screen, limits, emoji status, profile colour | missing | `PremiumBoardingController` | L | M9 |
 | Bots: start, menu button, inline keyboards, callback answers | missing | | M | M2 |
-| Mini apps (web apps) | missing | `WebappBrowser`, needs a webview | L | M7 |
-| Payments and invoices | missing | `PaymentsCheckoutController` | L | M7 |
-| Stars: balance, paid media, paid reactions, subscriptions | missing | | L | M7 |
-| Gifts and collectible gifts | partial | Service messages render | M | M7 |
-| Instant View | missing | `InstantPage*` | L | M7 |
-| Telegram Business: hours, location, quick replies, greeting/away, chatbots, links | missing | `Business*` | L | M7 |
-| Monoforums (channel direct messages) | missing | | M | M7 |
-| Telegram Passport | missing | | M | M7 |
-| Games | missing | | S | M7 |
-| Fact checks and verification badges | missing | | S | M7 |
+| Mini apps (web apps) | missing | `WebappBrowser`, needs a webview | L | M9 |
+| Payments and invoices | missing | `PaymentsCheckoutController` | L | M9 |
+| Stars: balance, paid media, paid reactions, subscriptions | missing | | L | M9 |
+| Gifts and collectible gifts | partial | Service messages render | M | M9 |
+| Instant View | missing | `InstantPage*` | L | M9 |
+| Telegram Business: hours, location, quick replies, greeting/away, chatbots, links | missing | `Business*` | L | M9 |
+| Monoforums (channel direct messages) | missing | | M | M9 |
+| Telegram Passport | missing | | M | M9 |
+| Games | missing | | S | M9 |
+| Fact checks and verification badges | missing | | S | M9 |
 
 ## Mollygram on top of the official client
 
@@ -270,6 +263,6 @@ These are not parity items; they are tracked in their own docs.
 | Feature | Status | Doc |
 |---|---|---|
 | Tabs, split view, ⌘K palette, layout restore | done | [packages/shell](../packages/shell) |
-| JS plugin sandbox with manifest permissions | partial | [plugins.md](plugins.md) |
-| Ghost mode, saved deleted messages, edit history | missing | [forks-research.md](forks-research.md) |
-| 640×640 circles, uncompressed media by default | partial | [packages/media](../packages/media) |
+| JS plugin sandbox with manifest permissions (M5) | partial | [plugins.md](plugins.md) |
+| Ghost mode, saved deleted messages, edit history (M3) | missing | [forks-research.md](forks-research.md) |
+| 640×640 circles, uncompressed media by default (M4) | partial | [packages/media](../packages/media) |

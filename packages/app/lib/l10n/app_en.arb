@@ -331,5 +331,22 @@
     "placeholders": { "count": { "type": "int" } }
   },
   "plugins": "Plugins",
-  "settings": "Settings"
+  "settings": "Settings",
+  "emojiTab": "Emoji",
+  "stickersTab": "Stickers",
+  "emojiSearch": "Search emoji",
+  "recentlyUsed": "Recently used",
+  "noEmojiFound": "No emoji found",
+  "emojiSmileys": "Smileys",
+  "emojiPeople": "People",
+  "emojiAnimals": "Animals and nature",
+  "emojiFood": "Food and drink",
+  "emojiTravel": "Travel and places",
+  "emojiActivities": "Activities",
+  "emojiObjects": "Objects",
+  "emojiSymbols": "Symbols",
+  "emojiFlags": "Flags",
+  "favoriteStickers": "Favorites",
+  "stickersFailed": "Couldn't load stickers",
+  "noStickerSets": "No stickers yet"
 }

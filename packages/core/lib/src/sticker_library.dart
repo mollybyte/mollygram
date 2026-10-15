@@ -1,0 +1,44 @@
+import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
+
+/// The user's stickers and Telegram's emoji keywords, for the emoji and
+/// sticker panel. TDLib keeps all of it in its database, so asking again
+/// each time the panel opens is cheap and never stale.
+final class StickerLibrary {
+  StickerLibrary(this._client);
+
+  final td.TdClient _client;
+
+  /// Installed sticker sets, in the order the user arranged them.
+  Future<List<td.StickerSetInfo>> installedSets() async {
+    final sets = await _client.send(
+      const td.GetInstalledStickerSets(stickerType: td.StickerTypeRegular()),
+    );
+    return sets.sets;
+  }
+
+  /// Every sticker of a set.
+  Future<List<td.Sticker>> setStickers(int setId) async =>
+      (await _client.send(td.GetStickerSet(setId: setId))).stickers;
+
+  /// Recently sent stickers, newest first.
+  Future<List<td.Sticker>> recent() async =>
+      (await _client.send(const td.GetRecentStickers(isAttached: false)))
+          .stickers;
+
+  Future<List<td.Sticker>> favorites() async =>
+      (await _client.send(const td.GetFavoriteStickers())).stickers;
+
+  /// Emoji whose Telegram keywords start with [query], in the given
+  /// languages (IETF codes such as `ru`), best matches first.
+  Future<List<String>> searchEmoji(
+    String query, {
+    List<String> languages = const ['en'],
+  }) async {
+    final text = query.trim();
+    if (text.isEmpty) return const [];
+    final found = await _client.send(
+      td.SearchEmojis(text: text, inputLanguageCodes: languages),
+    );
+    return {for (final keyword in found.emojiKeywords) keyword.emoji}.toList();
+  }
+}

@@ -526,4 +526,88 @@ void main() {
       expect(back, 1);
     });
   });
+
+  group('EmojiTab', () {
+    const labels = EmojiTabLabels(
+      search: 'Search emoji',
+      recent: 'Recently used',
+      noResults: 'No emoji found',
+      groups: {EmojiGroup.smileys: 'Smileys', EmojiGroup.flags: 'Flags'},
+    );
+
+    Widget tab({
+      List<String> recent = const [],
+      ValueChanged<String>? onPick,
+      Future<List<String>> Function(String)? search,
+    }) => themed(
+      Center(
+        child: EmojiPanel(
+          tabs: const ['Emoji'],
+          children: [
+            EmojiTab(
+              labels: labels,
+              recent: recent,
+              search: search,
+              onPick: onPick ?? (_) {},
+            ),
+          ],
+        ),
+      ),
+    );
+
+    testWidgets('shows recent emoji first and picks one', (tester) async {
+      final picked = <String>[];
+      await tester.pumpWidget(tab(recent: const ['🦊'], onPick: picked.add));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Recently used'), findsOneWidget);
+      await tester.tap(find.text('🦊'));
+      await tester.tap(find.text('😀'));
+      expect(picked, ['🦊', '😀']);
+    });
+
+    testWidgets('jumps to a group from the bar', (tester) async {
+      await tester.pumpWidget(tab());
+      await tester.pumpAndSettle();
+      expect(find.text('Flags'), findsNothing);
+
+      await tester.tap(find.bySemanticsLabel('Flags'));
+      await tester.pump();
+      expect(find.text('Flags'), findsOneWidget);
+      expect(find.text('😀'), findsNothing);
+    });
+
+    testWidgets('searches names and then Telegram keywords', (tester) async {
+      final asked = <String>[];
+      await tester.pumpWidget(
+        tab(
+          search: (query) async {
+            asked.add(query);
+            return ['🐈'];
+          },
+        ),
+      );
+
+      await tester.enterText(find.byType(TextField), 'cat face');
+      await tester.pump();
+      expect(asked, ['cat face']);
+      expect(find.text('🐈'), findsOneWidget);
+      expect(find.text('🐱'), findsOneWidget);
+      // Keyword matches come first.
+      expect(
+        tester.getTopLeft(find.text('🐈')).dx,
+        lessThan(tester.getTopLeft(find.text('🐱')).dx),
+      );
+
+      await tester.enterText(find.byType(TextField), 'zzzz');
+      await tester.pump();
+      expect(find.text('🐈'), findsOneWidget);
+    });
+
+    test('matches every word of the query in the English names', () {
+      expect(EmojiTab.matchNames('grinning face'), contains('😀'));
+      expect(EmojiTab.matchNames('flag ukraine'), ['🇺🇦']);
+      expect(EmojiTab.matchNames('  '), isEmpty);
+    });
+  });
 }

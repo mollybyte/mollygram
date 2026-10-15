@@ -1225,6 +1225,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Settings'**
   String get settings;
+
+  /// No description provided for @emojiTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Emoji'**
+  String get emojiTab;
+
+  /// No description provided for @stickersTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Stickers'**
+  String get stickersTab;
+
+  /// No description provided for @emojiSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search emoji'**
+  String get emojiSearch;
+
+  /// No description provided for @recentlyUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Recently used'**
+  String get recentlyUsed;
+
+  /// No description provided for @noEmojiFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No emoji found'**
+  String get noEmojiFound;
+
+  /// No description provided for @emojiSmileys.
+  ///
+  /// In en, this message translates to:
+  /// **'Smileys'**
+  String get emojiSmileys;
+
+  /// No description provided for @emojiPeople.
+  ///
+  /// In en, this message translates to:
+  /// **'People'**
+  String get emojiPeople;
+
+  /// No description provided for @emojiAnimals.
+  ///
+  /// In en, this message translates to:
+  /// **'Animals and nature'**
+  String get emojiAnimals;
+
+  /// No description provided for @emojiFood.
+  ///
+  /// In en, this message translates to:
+  /// **'Food and drink'**
+  String get emojiFood;
+
+  /// No description provided for @emojiTravel.
+  ///
+  /// In en, this message translates to:
+  /// **'Travel and places'**
+  String get emojiTravel;
+
+  /// No description provided for @emojiActivities.
+  ///
+  /// In en, this message translates to:
+  /// **'Activities'**
+  String get emojiActivities;
+
+  /// No description provided for @emojiObjects.
+  ///
+  /// In en, this message translates to:
+  /// **'Objects'**
+  String get emojiObjects;
+
+  /// No description provided for @emojiSymbols.
+  ///
+  /// In en, this message translates to:
+  /// **'Symbols'**
+  String get emojiSymbols;
+
+  /// No description provided for @emojiFlags.
+  ///
+  /// In en, this message translates to:
+  /// **'Flags'**
+  String get emojiFlags;
+
+  /// No description provided for @favoriteStickers.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorites'**
+  String get favoriteStickers;
+
+  /// No description provided for @stickersFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load stickers'**
+  String get stickersFailed;
+
+  /// No description provided for @noStickerSets.
+  ///
+  /// In en, this message translates to:
+  /// **'No stickers yet'**
+  String get noStickerSets;
 }
 
 class _AppLocalizationsDelegate
