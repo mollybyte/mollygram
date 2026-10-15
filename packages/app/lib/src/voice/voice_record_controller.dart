@@ -87,6 +87,28 @@ class VoiceRecordController extends ChangeNotifier {
   /// The camera while a video message records.
   VideoNotePreview? get preview => _preview;
 
+  /// Whether the camera of the video message going on can be changed.
+  bool get canSwitchCamera =>
+      isVideo && isRecording && (_preview?.cameras ?? 0) > 1;
+
+  bool _switching = false;
+
+  /// Goes on recording with the next camera.
+  Future<void> switchCamera() async {
+    final video = videoRecorder;
+    if (!canSwitchCamera || _switching || video == null) return;
+    _switching = true;
+    try {
+      final preview = await video.switchCamera();
+      if (preview != null && !_disposed && isRecording && isVideo) {
+        _preview = preview;
+        notifyListeners();
+      }
+    } finally {
+      _switching = false;
+    }
+  }
+
   double _lockProgress = 0;
 
   /// 0 to 1: how far the pointer is toward the lock.

@@ -56,6 +56,7 @@ void main() {
   late List<RecordedVoice> sent;
   late List<RecordedVideoNote> sentVideo;
   late List<MethodCall> videoCalls;
+  late int cameras;
 
   setUp(() {
     dir = Directory.systemTemp.createTempSync('voice');
@@ -63,6 +64,7 @@ void main() {
     sent = [];
     sentVideo = [];
     videoCalls = [];
+    cameras = 1;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
           const MethodChannel('mollygram/video_note_capture'),
@@ -70,7 +72,21 @@ void main() {
             videoCalls.add(call);
             return switch (call.method) {
               'permission' => 'granted',
-              'start' => {'textureId': 1, 'width': 1280, 'height': 720},
+              'start' => {
+                'textureId': 1,
+                'width': 1280,
+                'height': 720,
+                'camera': 'facetime',
+                'cameras': cameras,
+              },
+              'switchCamera' => {
+                'textureId': 1,
+                'width': 1920,
+                'height': 1080,
+                'camera': 'iphone',
+                'cameras': cameras,
+                'mirrored': false,
+              },
               'stop' => {'path': '${dir.path}/v.mp4', 'durationMs': 2400},
               _ => null,
             };
@@ -203,6 +219,107 @@ void main() {
     expect(sentVideo.single.duration, const Duration(milliseconds: 2400));
     expect(sent, isEmpty);
     expect(find.byType(Texture), findsNothing);
+    await tester.pump(const Duration(seconds: 3));
+  });
+
+  Finder switchCamera() => find.byWidgetPredicate(
+    (w) => w is MgIcon && w.icon == MgIcons.switchCamera,
+  );
+
+  Future<TestGesture> lockVideo(WidgetTester tester) async {
+    await tester.tap(mic());
+    await tester.pump(const Duration(milliseconds: 300));
+    final gesture = await tester.startGesture(tester.getCenter(camera()));
+    await tester.pump(const Duration(milliseconds: 200));
+    await io(tester);
+    await gesture.moveBy(const Offset(0, -90));
+    await gesture.up();
+    await io(tester);
+    await tester.pump(const Duration(milliseconds: 400));
+    return gesture;
+  }
+
+  testWidgets('a locked video message switches to the next camera', (
+    tester,
+  ) async {
+    cameras = 2;
+    await tester.pumpWidget(host());
+    await lockVideo(tester);
+    expect(
+      tester
+          .widget<Transform>(
+            find
+                .ancestor(
+                  of: find.byType(Texture),
+                  matching: find.byType(Transform),
+                )
+                .first,
+          )
+          .transform
+          .storage[0],
+      -1,
+    );
+    await tester.tap(switchCamera());
+    await io(tester);
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(videoCalls.map((c) => c.method), [
+      'permission',
+      'start',
+      'switchCamera',
+    ]);
+    // An iPhone's back camera is not mirrored.
+    expect(
+      tester
+          .widget<Transform>(
+            find
+                .ancestor(
+                  of: find.byType(Texture),
+                  matching: find.byType(Transform),
+                )
+                .first,
+          )
+          .transform
+          .storage[0],
+      1,
+    );
+
+    await tester.tap(
+      find.byWidgetPredicate((w) => w is MgIcon && w.icon == MgIcons.send),
+    );
+    await io(tester);
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(sentVideo, hasLength(1));
+
+    // The next recording starts with the camera picked last.
+    await tester.pump(const Duration(seconds: 3));
+    final gesture = await tester.startGesture(tester.getCenter(camera()));
+    await tester.pump(const Duration(milliseconds: 200));
+    await io(tester);
+    expect(videoCalls.last.method, 'start');
+    expect((videoCalls.last.arguments as Map)['camera'], 'iphone');
+    await gesture.up();
+    await io(tester);
+    await tester.pump(const Duration(seconds: 3));
+  });
+
+  testWidgets('with one camera there is nothing to switch', (tester) async {
+    await tester.pumpWidget(host());
+    await lockVideo(tester);
+    expect(
+      tester
+          .widget<IgnorePointer>(
+            find
+                .ancestor(
+                  of: switchCamera(),
+                  matching: find.byType(IgnorePointer),
+                )
+                .first,
+          )
+          .ignoring,
+      isTrue,
+    );
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await io(tester);
     await tester.pump(const Duration(seconds: 3));
   });
 

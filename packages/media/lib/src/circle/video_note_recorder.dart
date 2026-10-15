@@ -15,12 +15,29 @@ class VideoNotePreview {
     required this.textureId,
     required this.width,
     required this.height,
+    this.cameras = 1,
+    this.mirrored = true,
   });
+
+  factory VideoNotePreview._from(Map<String, Object?> info) => VideoNotePreview(
+    textureId: info['textureId']! as int,
+    width: info['width']! as int,
+    height: info['height']! as int,
+    cameras: info['cameras'] as int? ?? 1,
+    mirrored: info['mirrored'] as bool? ?? true,
+  );
 
   /// A Flutter texture with the camera frames, uncropped.
   final int textureId;
   final int width;
   final int height;
+
+  /// How many cameras there are to switch between.
+  final int cameras;
+
+  /// Whether the camera faces the user, so the preview shows it as a
+  /// mirror.
+  final bool mirrored;
 }
 
 /// A finished video message, ready to send.
@@ -54,6 +71,13 @@ class VideoNoteRecorder {
   final CircleQuality quality;
   final MethodChannel channel;
 
+  /// The camera picked last, so the next recording starts with it, in any
+  /// chat, until the app quits.
+  static String? _camera;
+
+  @visibleForTesting
+  static void debugForgetCamera() => _camera = null;
+
   /// Camera and microphone together.
   Future<MicrophonePermission> permission() async {
     try {
@@ -80,16 +104,28 @@ class VideoNoteRecorder {
       final info = await channel.invokeMapMethod<String, Object?>('start', {
         'side': quality.side,
         'path': path,
+        'camera': ?_camera,
       });
-      return VideoNotePreview(
-        textureId: info!['textureId']! as int,
-        width: info['width']! as int,
-        height: info['height']! as int,
-      );
+      return VideoNotePreview._from(info!);
     } on PlatformException catch (e) {
       throw VoiceRecorderException(VoiceRecorderError.unavailable, e.message);
     } on MissingPluginException {
       throw const VoiceRecorderException(VoiceRecorderError.unavailable);
+    }
+  }
+
+  /// Goes on recording with the next camera; null when the recording
+  /// ended meanwhile.
+  Future<VideoNotePreview?> switchCamera() async {
+    try {
+      final info = await channel.invokeMapMethod<String, Object?>(
+        'switchCamera',
+      );
+      if (info == null) return null;
+      _camera = info['camera'] as String?;
+      return VideoNotePreview._from(info);
+    } on PlatformException {
+      return null;
     }
   }
 

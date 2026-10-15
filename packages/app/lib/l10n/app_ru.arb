@@ -88,6 +88,7 @@
   "voiceSendFailed": "Не удалось отправить голосовое",
   "videoHoldToRecord": "Удерживайте, чтобы записать видеосообщение",
   "videoCameraDenied": "У Mollygram нет доступа к камере.",
+  "videoSwitchCamera": "Сменить камеру",
   "senderYou": "Вы",
   "previewYou": "Вы: {text}",
   "previewPhoto": "Фото",

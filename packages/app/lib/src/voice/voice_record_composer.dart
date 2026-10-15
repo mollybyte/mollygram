@@ -1047,66 +1047,147 @@ class _VideoCircleState extends State<_VideoCircle>
     final preview = _preview;
     final armed = widget.controller.cancelArmed;
     const side = _VideoCircle.side;
-    return IgnorePointer(
-      child: FadeTransition(
-        opacity: widget.appear,
-        child: ScaleTransition(
-          scale: Tween(begin: 0.6, end: 1.0).animate(_scale),
-          alignment: Alignment.bottomCenter,
-          child: SizedBox.square(
-            dimension: side + 16,
-            child: CustomPaint(
-              foregroundPainter: _RingPainter(
-                progress: _progress,
-                color: armed ? c.fg2 : c.accent,
-                track: c.rim,
-              ),
-              child: Center(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: c.shadow,
-                        blurRadius: 24,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
+    return FadeTransition(
+      opacity: widget.appear,
+      child: ScaleTransition(
+        scale: Tween(begin: 0.6, end: 1.0).animate(_scale),
+        alignment: Alignment.bottomCenter,
+        child: SizedBox.square(
+          dimension: side + 16,
+          child: Stack(
+            children: [
+              IgnorePointer(
+                child: CustomPaint(
+                  foregroundPainter: _RingPainter(
+                    progress: _progress,
+                    color: armed ? c.fg2 : c.accent,
+                    track: c.rim,
                   ),
-                  child: ClipOval(
-                    child: SizedBox.square(
-                      dimension: side,
-                      child: AnimatedOpacity(
-                        opacity: armed ? 0.55 : 1,
-                        duration: const Duration(milliseconds: 180),
-                        child: ColoredBox(
-                          color: c.glassSolid,
-                          child: preview == null
-                              ? Center(
-                                  child: MgIcon(
-                                    MgIcons.camera,
-                                    size: 28,
-                                    color: c.fg2,
-                                  ),
-                                )
-                              // Mirrored, like looking into a mirror; the
-                              // recording itself is not.
-                              : Transform.flip(
-                                  flipX: true,
-                                  child: FittedBox(
-                                    fit: BoxFit.cover,
-                                    child: SizedBox(
-                                      width: preview.width.toDouble(),
-                                      height: preview.height.toDouble(),
-                                      child: Texture(
-                                        textureId: preview.textureId,
+                  child: Center(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: c.shadow,
+                            blurRadius: 24,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: ClipOval(
+                        child: SizedBox.square(
+                          dimension: side,
+                          child: AnimatedOpacity(
+                            opacity: armed ? 0.55 : 1,
+                            duration: const Duration(milliseconds: 180),
+                            child: ColoredBox(
+                              color: c.glassSolid,
+                              child: preview == null
+                                  ? Center(
+                                      child: MgIcon(
+                                        MgIcons.camera,
+                                        size: 28,
+                                        color: c.fg2,
+                                      ),
+                                    )
+                                  // Mirrored, like looking into a mirror; the
+                                  // recording itself is not.
+                                  : Transform.flip(
+                                      flipX: preview.mirrored,
+                                      child: FittedBox(
+                                        fit: BoxFit.cover,
+                                        child: SizedBox(
+                                          width: preview.width.toDouble(),
+                                          height: preview.height.toDouble(),
+                                          child: Texture(
+                                            textureId: preview.textureId,
+                                          ),
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                ),
+                            ),
+                          ),
                         ),
                       ),
                     ),
+                  ),
+                ),
+              ),
+              // On the circle's edge, lower right, inside the picture.
+              Positioned(
+                left:
+                    (side + 16) / 2 +
+                    side * 0.29 -
+                    _SwitchCameraButton.size / 2,
+                top:
+                    (side + 16) / 2 +
+                    side * 0.29 -
+                    _SwitchCameraButton.size / 2,
+                child: _SwitchCameraButton(controller: widget.controller),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Changes the camera of the video message going on; shown only where
+/// there is another camera, once the recording is locked or held.
+class _SwitchCameraButton extends StatefulWidget {
+  const _SwitchCameraButton({required this.controller});
+
+  final VoiceRecordController controller;
+
+  static const double size = 34;
+
+  @override
+  State<_SwitchCameraButton> createState() => _SwitchCameraButtonState();
+}
+
+class _SwitchCameraButtonState extends State<_SwitchCameraButton> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final visible = widget.controller.canSwitchCamera;
+    return IgnorePointer(
+      ignoring: !visible,
+      child: AnimatedOpacity(
+        opacity: visible ? 1 : 0,
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        child: AnimatedScale(
+          scale: visible ? 1 : 0.8,
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          child: Semantics(
+            button: true,
+            label: l10n.videoSwitchCamera,
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              onEnter: (_) => setState(() => _hover = true),
+              onExit: (_) => setState(() => _hover = false),
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => unawaited(widget.controller.switchCamera()),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 140),
+                  width: _SwitchCameraButton.size,
+                  height: _SwitchCameraButton.size,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    // Over the camera picture, light or dark alike.
+                    color: Color.fromRGBO(0, 0, 0, _hover ? 0.5 : 0.36),
+                  ),
+                  alignment: Alignment.center,
+                  child: const MgIcon(
+                    MgIcons.switchCamera,
+                    size: 18,
+                    color: Color(0xFFFFFFFF),
                   ),
                 ),
               ),

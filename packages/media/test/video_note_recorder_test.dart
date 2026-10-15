@@ -58,4 +58,37 @@ void main() {
       ),
     );
   });
+
+  test('a switched camera is used for the next recording', () async {
+    final calls = <MethodCall>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+          calls.add(call);
+          return switch (call.method) {
+            'start' => {'textureId': 3, 'width': 1280, 'height': 720},
+            'switchCamera' => {
+              'textureId': 3,
+              'width': 1920,
+              'height': 1080,
+              'camera': 'iphone',
+              'cameras': 2,
+              'mirrored': false,
+            },
+            _ => null,
+          };
+        });
+    VideoNoteRecorder.debugForgetCamera();
+    final recorder = VideoNoteRecorder(directory: () async => '/v');
+    final first = await recorder.start();
+    expect(first.cameras, 1);
+    expect(first.mirrored, isTrue);
+    expect(calls.last.arguments, isNot(contains('camera')));
+    final switched = await recorder.switchCamera();
+    expect(switched!.width, 1920);
+    expect(switched.cameras, 2);
+    expect(switched.mirrored, isFalse);
+    // Remembered by the next recorder too, as a new chat makes one.
+    await VideoNoteRecorder(directory: () async => '/v').start();
+    expect(calls.last.arguments, containsPair('camera', 'iphone'));
+  });
 }
