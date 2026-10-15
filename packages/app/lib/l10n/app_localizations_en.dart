@@ -2711,4 +2711,10 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get pluginShowMessage => 'Show';
+
+  @override
+  String get pluginFilteredMessage => 'Filtered by a plugin';
 }

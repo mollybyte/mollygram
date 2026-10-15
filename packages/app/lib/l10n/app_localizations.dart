@@ -4609,6 +4609,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, one{{count} day} other{{count} days}}'**
   String ttlDays(int count);
+
+  /// No description provided for @pluginShowMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Show'**
+  String get pluginShowMessage;
+
+  /// No description provided for @pluginFilteredMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Filtered by a plugin'**
+  String get pluginFilteredMessage;
 }
 
 class _AppLocalizationsDelegate

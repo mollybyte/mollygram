@@ -1023,5 +1023,7 @@
   "ttlMonths": "{count, plural, one{{count} month} other{{count} months}}",
   "@ttlMonths": {"placeholders": {"count": {"type": "int"}}},
   "ttlDays": "{count, plural, one{{count} day} other{{count} days}}",
-  "@ttlDays": {"placeholders": {"count": {"type": "int"}}}
+  "@ttlDays": {"placeholders": {"count": {"type": "int"}}},
+  "pluginShowMessage": "Show",
+  "pluginFilteredMessage": "Filtered by a plugin"
 }

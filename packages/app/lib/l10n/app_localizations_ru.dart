@@ -2746,4 +2746,10 @@ class AppLocalizationsRu extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get pluginShowMessage => 'Показать';
+
+  @override
+  String get pluginFilteredMessage => 'Скрыто плагином';
 }

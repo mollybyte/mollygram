@@ -751,5 +751,7 @@
   "accountTtlQuestion": "Удалить аккаунт, если я не захожу",
   "accountTtlAbout": "Если вы ни разу не зайдёте за это время, аккаунт удалится вместе со всеми сообщениями и контактами.",
   "ttlMonths": "{count, plural, one{{count} месяц} few{{count} месяца} many{{count} месяцев} other{{count} месяца}}",
-  "ttlDays": "{count, plural, one{{count} день} few{{count} дня} many{{count} дней} other{{count} дня}}"
+  "ttlDays": "{count, plural, one{{count} день} few{{count} дня} many{{count} дней} other{{count} дня}}",
+  "pluginShowMessage": "Показать",
+  "pluginFilteredMessage": "Скрыто плагином"
 }

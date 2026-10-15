@@ -16,6 +16,10 @@ const _maxNodes = 200;
 const _maxDepth = 8;
 const _maxText = 4000;
 
+/// The text of a `text` node may be longer than other strings: a message
+/// is up to 4096 characters, and its translation can be twice that.
+const maxUiText = 16384;
+
 /// Spans in one `code` node: enough for a long block, bounded for memory.
 const maxCodeSpans = 8000;
 
@@ -38,12 +42,17 @@ const codeTokens = {
 List<Map<String, Object?>> validateUi(Object? raw) {
   var count = 0;
 
-  String text(Map<Object?, Object?> m, String key, {bool required = true}) {
+  String text(
+    Map<Object?, Object?> m,
+    String key, {
+    bool required = true,
+    int max = _maxText,
+  }) {
     final v = m[key];
     if (v == null && !required) return '';
     if (v is! String) throw UiException('"$key" must be a string');
-    if (v.length > _maxText) {
-      throw UiException('"$key" is longer than $_maxText');
+    if (v.length > max) {
+      throw UiException('"$key" is longer than $max');
     }
     return v;
   }
@@ -64,7 +73,7 @@ List<Map<String, Object?>> validateUi(Object? raw) {
     return switch (type) {
       'text' => {
         'type': 'text',
-        'text': text(n, 'text'),
+        'text': text(n, 'text', max: maxUiText),
         'style': switch (n['style']) {
           null || 'body' => 'body',
           'secondary' => 'secondary',

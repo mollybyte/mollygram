@@ -649,6 +649,37 @@ void main() {
     expect((added['reaction_type']! as Map)['emoji'], '🎉');
   });
 
+  testWidgets('shows the server draft and saves what is typed', (tester) async {
+    json.chat = [for (var id = 1; id <= 10; id++) id];
+    json.push(_chat(lastRead: 10, unread: 0, last: 10, draft: 'Unsent words'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await pump(tester);
+
+    final field = tester.widget<TextField>(find.byType(TextField));
+    expect(field.controller!.text, 'Unsent words');
+
+    await tester.enterText(find.byType(TextField), 'Unsent words, more');
+    await tester.pump(const Duration(seconds: 2));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    var saved = json.sent.lastWhere((r) => r['@type'] == 'setChatDraftMessage');
+    var content = (saved['draft_message']! as Map)['content']! as Map;
+    expect((content['text']! as Map)['text'], 'Unsent words, more');
+
+    // Leaving the chat saves at once and the next chat starts clean.
+    await tester.enterText(find.byType(TextField), 'Final');
+    _shownChat.value = 8;
+    await tester.pump();
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    saved = json.sent.lastWhere((r) => r['@type'] == 'setChatDraftMessage');
+    expect(saved['chat_id'], 7);
+    content = (saved['draft_message']! as Map)['content']! as Map;
+    expect((content['text']! as Map)['text'], 'Final');
+    expect(
+      tester.widget<TextField>(find.byType(TextField)).controller!.text,
+      isEmpty,
+    );
+  });
+
   testWidgets('reports a message with a reason and details', (tester) async {
     await pump(tester);
 
@@ -1126,6 +1157,7 @@ Map<String, Object?> _chat({
   required int last,
   Map<String, Object?> type = const {'@type': 'chatTypePrivate', 'user_id': 2},
   bool canSendText = true,
+  String? draft,
 }) => {
   '@type': 'updateNewChat',
   'chat': {
@@ -1141,6 +1173,20 @@ Map<String, Object?> _chat({
     'unread_count': unread,
     'last_read_inbox_message_id': lastRead,
     'last_read_outbox_message_id': 0,
+    if (draft != null)
+      'draft_message': {
+        '@type': 'draftMessage',
+        'date': 1700000000,
+        'content': {
+          '@type': 'draftMessageContentText',
+          'text': {
+            '@type': 'formattedText',
+            'text': draft,
+            'entities': <Object?>[],
+          },
+        },
+        'effect_id': 0,
+      },
     'permissions': {
       '@type': 'chatPermissions',
       'can_send_basic_messages': canSendText,

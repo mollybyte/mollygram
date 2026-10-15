@@ -15,6 +15,12 @@ final class FakeServices implements PluginServices {
   Object? failWith;
   bool failTranslate = false;
 
+  /// What `messages.translate` answers instead of "translated to" and the language.
+  String? translation;
+
+  /// Makes `storage.set` fail once this many values are stored.
+  int? maxValues;
+
   @override
   Future<Object?> call(
     String pluginId,
@@ -28,7 +34,12 @@ final class FakeServices implements PluginServices {
       case 'storage.get':
         return storage['$pluginId/${args['key']}'];
       case 'storage.set':
-        storage['$pluginId/${args['key']}'] = args['value'];
+        final key = '$pluginId/${args['key']}';
+        final max = maxValues;
+        if (max != null && !storage.containsKey(key) && storage.length >= max) {
+          throw const HostError('quota_exceeded', 'full');
+        }
+        storage[key] = args['value'];
         return null;
       case 'storage.delete':
         storage.remove('$pluginId/${args['key']}');
@@ -37,7 +48,7 @@ final class FakeServices implements PluginServices {
         return {'text': transcript, 'language': args['language'] ?? 'ru'};
       case 'messages.translate':
         if (failTranslate) throw const HostError('unavailable', 'offline');
-        return {'text': 'translated to ${args['to']}'};
+        return {'text': translation ?? 'translated to ${args['to']}'};
       case 'text.detectLanguage':
         return detected;
       case 'messages.get':
