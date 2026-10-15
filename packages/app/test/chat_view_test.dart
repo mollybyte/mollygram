@@ -1061,6 +1061,19 @@ void main() {
     expect(sent['marked_as_not_done_task_ids'], isEmpty);
   });
 
+  testWidgets('opens the set of a tapped sticker', (tester) async {
+    json.history = [_stickerMessage(), ..._history];
+    await pump(tester);
+    await tester.tap(find.byType(StickerContent));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+    final request = json.sent.lastWhere((r) => r['@type'] == 'getStickerSet');
+    expect('${request['set_id']}', '55');
+    expect(find.text('Cats'), findsOneWidget);
+    expect(find.text('2 stickers'), findsOneWidget);
+    expect(find.text('Add'), findsOneWidget);
+  });
+
   testWidgets('draws a dice as its result sticker and a slot machine as its '
       'parts', (tester) async {
     json.history = [_diceMessage(), _slotMachineMessage(), ..._history];
@@ -2767,6 +2780,15 @@ td.Message _pollMessage({
     description: const td.FormattedText(text: '', entities: []),
     canAddOption: false,
   ).toJson(),
+});
+
+td.Message _stickerMessage() => td.Message.fromJson({
+  ..._message(id: 21, senderId: 3, text: '').toJson(),
+  'content': {
+    '@type': 'messageSticker',
+    'sticker': _sticker(2, '😸'),
+    'is_premium': false,
+  },
 });
 
 td.Message _diceMessage() => td.Message.fromJson({

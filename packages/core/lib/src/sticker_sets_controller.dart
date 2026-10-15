@@ -247,6 +247,10 @@ final class StickerSetsController {
   Future<td.StickerSet> byName(String name) =>
       _client.send(td.SearchStickerSet(name: name, ignoreCache: false));
 
+  /// The set with [setId] and all its stickers, as a sticker names its set.
+  Future<td.StickerSet> byId(int setId) =>
+      _client.send(td.GetStickerSet(setId: setId));
+
   /// Whether single emoji play as animations, TDLib's
   /// `disable_animated_emoji` turned around.
   Future<bool> animatedEmoji() async {
