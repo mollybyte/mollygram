@@ -9,9 +9,11 @@ import 'chat_list_controller.dart';
 import 'chat_search.dart';
 import 'chat_search_controller.dart';
 import 'connection_status.dart';
+import 'contacts_controller.dart';
 import 'conversation_controller.dart';
 import 'file_controller.dart';
 import 'link_resolver.dart';
+import 'mention_search.dart';
 import 'notification_controller.dart';
 import 'peer_info.dart';
 import 'sticker_library.dart';
@@ -46,8 +48,10 @@ final class TelegramSession {
     required this.stickers,
     required this.peers,
     required this.account,
+    required this.mentions,
     required this.storage,
     required this.connection,
+    required this.contacts,
     required this.links,
     required this._initializer,
   });
@@ -68,9 +72,14 @@ final class TelegramSession {
   final AccountSettings account;
   final StorageManager storage;
 
+  /// Group members for @mentions in the composer.
+  final MentionSearch mentions;
+
   /// The connection state, for the "Connecting…" status in the window.
   final ConnectionMonitor connection;
 
+  /// Contacts and the users TDLib has sent.
+  final ContactsController contacts;
   final LinkResolver links;
   final _errors = StreamController<Object>.broadcast(sync: true);
   final _closedElsewhere = Completer<void>();
@@ -90,8 +99,10 @@ final class TelegramSession {
     final authorization = AuthorizationController(client);
     final conversations = ConversationController(client);
     final files = FileController(client);
+    final mentions = MentionSearch(client);
     final peers = PeerInfoController(client);
     final connection = ConnectionMonitor(client);
+    final contacts = ContactsController(client);
     final notifications = NotificationController(client);
     final session = TelegramSession._(
       tdlib: tdlib,
@@ -105,8 +116,10 @@ final class TelegramSession {
       stickers: StickerLibrary(client),
       peers: peers,
       account: AccountSettings(client),
+      mentions: mentions,
       storage: StorageManager(client),
       connection: connection,
+      contacts: contacts,
       links: LinkResolver(client),
       initializer: TdlibInitializer(client, parameters: parameters),
     );
@@ -120,8 +133,10 @@ final class TelegramSession {
     try {
       await conversations.start();
       await files.start();
+      await mentions.start();
       await peers.start();
       await connection.start();
+      await contacts.start();
       await notifications.start();
       await authorization.start();
       // Sending the parameters is part of starting: a wrong database key or
@@ -188,8 +203,10 @@ final class TelegramSession {
     await chatLists.dispose();
     await conversations.dispose();
     await files.dispose();
+    await mentions.dispose();
     await peers.dispose();
     await connection.dispose();
+    await contacts.dispose();
     await notifications.dispose();
     await authorization.dispose();
     await _tdlib.close();
