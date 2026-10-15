@@ -10,12 +10,15 @@ import 'poll_content.dart';
 /// The text lines of contents that have no media of their own: places,
 /// contacts, polls, calls, games, invoices. Null for anything else.
 /// [isOutgoing] tells a call the user made from one they received;
-/// [onPollVote] lets a poll be voted in.
+/// [onPollVote] lets a poll be voted in, [onPollVoters] lists who voted
+/// for an option and [recentVoters] shows the latest voters' avatars.
 Widget? otherContent(
   BuildContext context,
   td.MessageContent content, {
   bool isOutgoing = false,
   void Function(List<int> optionIds)? onPollVote,
+  void Function(int optionIndex, Offset position)? onPollVoters,
+  Widget? recentVoters,
 }) {
   final l10n = AppLocalizations.of(context);
   return switch (content) {
@@ -40,6 +43,8 @@ Widget? otherContent(
       poll: poll,
       description: description,
       onVote: onPollVote,
+      onShowVoters: onPollVoters,
+      recentVoters: recentVoters,
     ),
     td.MessageCall(:final isVideo, :final discardReason, :final duration) =>
       _Labeled(

@@ -29,6 +29,7 @@ import '../chat/media_viewer.dart';
 import '../chat/message_actions.dart';
 import '../chat/message_tile.dart';
 import '../chat/poll_composer.dart';
+import '../chat/poll_content.dart';
 import '../chat/schedule_picker.dart';
 import '../chat/slow_mode.dart';
 import '../chat/sticker_suggestions.dart';
@@ -646,6 +647,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
     onPollVote: (message, optionIds) => unawaited(
       _quiet(_conversations.votePoll(message.chatId, message.id, optionIds)),
     ),
+    onPollVoters: (message, index, position) =>
+        unawaited(_showPollVoters(message, index, position)),
     onInlineButton: (message, button) =>
         unawaited(_pressInlineButton(message, button)),
     onMenu: (row, position) => unawaited(_showMenu(row, position)),
@@ -1056,6 +1059,51 @@ class _ChatViewState extends ConsumerState<ChatView> {
 
   /// What a bot's inline button does: open its link, copy its text, or
   /// ask the bot and show what it answers.
+  /// Lists who voted for option [index] of the poll in [message], in a
+  /// popover at [position]; a click on a voter opens them.
+  Future<void> _showPollVoters(
+    ConversationMessage message,
+    int index,
+    Offset position,
+  ) async {
+    final content = message.content;
+    if (content is! td.MessagePoll) return;
+    final option = content.poll.options[index];
+    final List<MessageSenderId> voters;
+    try {
+      voters = await _conversations.pollVoters(
+        message.chatId,
+        message.id,
+        index,
+      );
+    } on td.TdException {
+      return;
+    }
+    if (!mounted) return;
+    final l10n = AppLocalizations.of(context);
+    final store = _conversations.store;
+    await showMgPopover(
+      context,
+      position: position,
+      child: PollVotersList(
+        option: option.text.text,
+        voterCount: option.voterCount,
+        voters: [
+          for (final id in voters)
+            (
+              id: id,
+              name: nameOfSender(l10n, store, id),
+              photo: store.photoOf(id),
+            ),
+        ],
+        onOpen: (id) {
+          Navigator.of(context).pop();
+          if (!id.isChat) openLinkFrom(context, 'tg://user?id=${id.id}');
+        },
+      ),
+    );
+  }
+
   Future<void> _pressInlineButton(
     ConversationMessage message,
     td.InlineKeyboardButton button,

@@ -1031,6 +1031,15 @@ void main() {
     expect(start['bot_user_id'], 77);
   });
 
+  test('lists who voted for a poll option', () async {
+    await controller.start();
+    final voters = await controller.pollVoters(7, 10, 1);
+    expect(voters, [MessageSenderId.user(3), MessageSenderId.chat(-5)]);
+    final request = json.sent.lastWhere((r) => r['@type'] == 'getPollVoters');
+    expect(request['message_id'], 10);
+    expect(request['option_id'], 1);
+  });
+
   test('sends a contact', () async {
     await controller.start();
     await controller.sendContact(
@@ -1693,6 +1702,22 @@ final class _FakeTdJson implements td.TdJson {
         ).toJson(),
         // A scheduled message comes back marked so.
         'scheduling_state': ?(decoded['options'] as Map?)?['scheduling_state'],
+      },
+      'getPollVoters' => {
+        '@type': 'pollVoters',
+        'total_count': 2,
+        'voters': [
+          {
+            '@type': 'pollVoter',
+            'voter_id': {'@type': 'messageSenderUser', 'user_id': 3},
+            'date': 0,
+          },
+          {
+            '@type': 'pollVoter',
+            'voter_id': {'@type': 'messageSenderChat', 'chat_id': -5},
+            'date': 0,
+          },
+        ],
       },
       'sendBotStartMessage' => _message(
         id: 13,

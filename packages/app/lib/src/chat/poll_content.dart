@@ -1,8 +1,10 @@
 import 'package:flutter/widgets.dart';
+import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
+import 'message_tile.dart' show SenderAvatar;
 
 const _correct = Color(0xFF34C759);
 const _wrong = Color(0xFFFF3B30);
@@ -20,6 +22,8 @@ class PollContent extends StatefulWidget {
     required this.poll,
     required this.description,
     this.onVote,
+    this.onShowVoters,
+    this.recentVoters,
   });
 
   final td.Poll poll;
@@ -28,6 +32,13 @@ class PollContent extends StatefulWidget {
   /// Votes for the options with these ids; an empty list takes the vote
   /// back. Null when the poll can't be voted in from here.
   final void Function(List<int> optionIds)? onVote;
+
+  /// A click on an option's results in a public poll, at [position] in
+  /// global coordinates, which lists who voted for it.
+  final void Function(int optionIndex, Offset position)? onShowVoters;
+
+  /// The avatars of the latest voters, shown next to the kind of poll.
+  final Widget? recentVoters;
 
   @override
   State<PollContent> createState() => _PollContentState();
@@ -111,7 +122,15 @@ class _PollContentState extends State<PollContent> {
               child: Text(widget.description.text, style: mgTextStyle(c)),
             ),
           const SizedBox(height: 2),
-          Text(_kind(l10n), style: MessageMeta.styleOf(c)),
+          Row(
+            children: [
+              Text(_kind(l10n), style: MessageMeta.styleOf(c)),
+              if (widget.recentVoters case final voters?) ...[
+                const SizedBox(width: 6),
+                voters,
+              ],
+            ],
+          ),
           const SizedBox(height: 8),
           for (final (index, option) in poll.options.indexed)
             _Option(
@@ -122,6 +141,13 @@ class _PollContentState extends State<PollContent> {
               multiple: poll.allowsMultipleAnswers,
               correct: quiz?.correctOptionIds.contains(index),
               onTap: _canVote ? () => _tap(index) : null,
+              onTapAt:
+                  showResults &&
+                      poll.canGetVoters &&
+                      option.voterCount > 0 &&
+                      widget.onShowVoters != null
+                  ? (position) => widget.onShowVoters!(index, position)
+                  : null,
             ),
           if (_canVote && poll.allowsMultipleAnswers)
             Padding(
@@ -177,6 +203,7 @@ class _Option extends StatelessWidget {
     required this.multiple,
     required this.correct,
     required this.onTap,
+    required this.onTapAt,
   });
 
   final td.PollOption option;
@@ -188,6 +215,9 @@ class _Option extends StatelessWidget {
   /// In a quiz: whether this option is a right answer. Null in a poll.
   final bool? correct;
   final VoidCallback? onTap;
+
+  /// A click on the results, with where it landed; lists the voters.
+  final void Function(Offset position)? onTapAt;
 
   static const _duration = Duration(milliseconds: 260);
   static const _curve = Cubic(0.23, 1, 0.32, 1);
@@ -276,13 +306,129 @@ class _Option extends StatelessWidget {
         ],
       ),
     );
-    if (onTap == null) return row;
+    if (onTap == null && onTapAt == null) return row;
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
+        onTapUp: onTapAt == null
+            ? null
+            : (details) => onTapAt!(details.globalPosition),
         child: row,
+      ),
+    );
+  }
+}
+
+/// Who voted for an option, in a popover: the option, how many votes it
+/// has and a row per voter. A click on a voter opens them.
+class PollVotersList extends StatelessWidget {
+  const PollVotersList({
+    super.key,
+    required this.option,
+    required this.voterCount,
+    required this.voters,
+    required this.onOpen,
+  });
+
+  final String option;
+  final int voterCount;
+  final List<({MessageSenderId id, String name, td.File? photo})> voters;
+  final void Function(MessageSenderId id) onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    final l10n = AppLocalizations.of(context);
+    return Glass(
+      radius: 12,
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 6),
+      child: SizedBox(
+        width: 240,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              option,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: mgTextStyle(c, weight: FontWeight.w600),
+            ),
+            Text(l10n.pollVotes(voterCount), style: MessageMeta.styleOf(c)),
+            const SizedBox(height: 6),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 280),
+              child: ListView(
+                shrinkWrap: true,
+                children: [
+                  for (final voter in voters)
+                    _VoterRow(
+                      name: voter.name,
+                      photo: voter.photo,
+                      onTap: () => onOpen(voter.id),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _VoterRow extends StatefulWidget {
+  const _VoterRow({
+    required this.name,
+    required this.photo,
+    required this.onTap,
+  });
+
+  final String name;
+  final td.File? photo;
+  final VoidCallback onTap;
+
+  @override
+  State<_VoterRow> createState() => _VoterRowState();
+}
+
+class _VoterRowState extends State<_VoterRow> {
+  var _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          decoration: BoxDecoration(
+            color: _hover ? c.hover : const Color(0x00000000),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Row(
+            children: [
+              SenderAvatar(name: widget.name, size: 24, photo: widget.photo),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  widget.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: mgTextStyle(c),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

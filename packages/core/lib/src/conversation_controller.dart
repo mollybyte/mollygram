@@ -837,6 +837,29 @@ final class ConversationController {
     );
   }
 
+  /// Who voted for option [optionId] (its index) of the poll in
+  /// [messageId], newest first, up to [limit] of them. Only for polls
+  /// that are not anonymous.
+  Future<List<MessageSenderId>> pollVoters(
+    int chatId,
+    int messageId,
+    int optionId, {
+    int limit = 50,
+  }) async {
+    final voters = await _client.send(
+      td.GetPollVoters(
+        chatId: chatId,
+        messageId: messageId,
+        optionId: optionId,
+        offset: 0,
+        limit: limit,
+      ),
+    );
+    return [
+      for (final voter in voters.voters) MessageSenderId.of(voter.voterId),
+    ];
+  }
+
   /// Sends [contact] as a message, as a reply to [replyTo] when given.
   Future<void> sendContact(
     int chatId,
