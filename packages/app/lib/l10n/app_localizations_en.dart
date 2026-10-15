@@ -872,6 +872,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get blockUser => 'Block user';
 
   @override
+  String get infoShareContact => 'Share contact';
+
+  @override
   String get unblockUser => 'Unblock user';
 
   @override

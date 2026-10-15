@@ -303,6 +303,7 @@
   "muteUntilEnabled": "Until I turn it back on",
   "autoDeleteTitle": "Auto-delete messages",
   "blockUser": "Block user",
+  "infoShareContact": "Share contact",
   "unblockUser": "Unblock user",
   "blockConfirmTitle": "Block {name}?",
   "@blockConfirmTitle": {

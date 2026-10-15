@@ -265,6 +265,26 @@ void main() {
       expect(find.text('Unblock user'), findsOneWidget);
     });
 
+    testWidgets('reports the chat and offers to share the contact', (
+      tester,
+    ) async {
+      await pump(tester);
+      open(10);
+      await settle(tester);
+
+      await tester.tap(find.text('Report'));
+      await settle(tester);
+      final report = json.sent.lastWhere((r) => r['@type'] == 'reportChat');
+      expect(report['chat_id'], 10);
+      expect(report['message_ids'], isEmpty);
+      expect(find.text('Thank you, the report is on its way.'), findsOneWidget);
+
+      await tester.tap(find.text('Share contact'));
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('Forward to chat'), findsOneWidget);
+    });
+
     testWidgets('closes when no pane shows the chat any more', (tester) async {
       await pump(tester);
       open(10);
@@ -636,6 +656,7 @@ final class _FakeTdJson implements td.TdJson {
         ],
         'next_from_message_id': 0,
       },
+      'reportChat' => {'@type': 'reportChatResultOk'},
       'getGroupsInCommon' => {
         '@type': 'chats',
         'total_count': 1,

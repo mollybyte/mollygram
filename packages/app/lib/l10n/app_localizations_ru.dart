@@ -885,6 +885,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get blockUser => 'Заблокировать';
 
   @override
+  String get infoShareContact => 'Поделиться контактом';
+
+  @override
   String get unblockUser => 'Разблокировать';
 
   @override

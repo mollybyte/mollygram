@@ -241,6 +241,7 @@
   "muteUntilEnabled": "Пока не включу обратно",
   "autoDeleteTitle": "Автоудаление сообщений",
   "blockUser": "Заблокировать",
+  "infoShareContact": "Поделиться контактом",
   "unblockUser": "Разблокировать",
   "blockConfirmTitle": "Заблокировать {name}?",
   "blockConfirmMessage": "Пользователь не сможет писать и звонить вам.",

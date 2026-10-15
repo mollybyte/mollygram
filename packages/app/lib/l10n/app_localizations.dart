@@ -1544,6 +1544,12 @@ abstract class AppLocalizations {
   /// **'Block user'**
   String get blockUser;
 
+  /// No description provided for @infoShareContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Share contact'**
+  String get infoShareContact;
+
   /// No description provided for @unblockUser.
   ///
   /// In en, this message translates to:
