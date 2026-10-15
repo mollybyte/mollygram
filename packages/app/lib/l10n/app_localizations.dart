@@ -1825,6 +1825,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Hide pinned messages'**
   String get hidePinned;
+
+  /// No description provided for @backToPrevious.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to where you were'**
+  String get backToPrevious;
 }
 
 class _AppLocalizationsDelegate

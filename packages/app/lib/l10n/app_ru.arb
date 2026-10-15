@@ -287,5 +287,6 @@
   "menuUnpin": "Открепить",
   "pinnedMessage": "Закреплённое сообщение",
   "pinnedMessageNumber": "Закреплённое сообщение #{number}",
-  "hidePinned": "Скрыть закреплённые"
+  "hidePinned": "Скрыть закреплённые",
+  "backToPrevious": "Вернуться назад"
 }

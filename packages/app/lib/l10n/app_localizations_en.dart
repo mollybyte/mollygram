@@ -1057,4 +1057,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get hidePinned => 'Hide pinned messages';
+
+  @override
+  String get backToPrevious => 'Back to where you were';
 }

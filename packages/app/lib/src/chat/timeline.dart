@@ -42,7 +42,8 @@ final class TimelineRow extends TimelineItem {
   Object get key => row.messages.first.id;
 }
 
-DateTime _dayOf(ConversationMessage message) {
+/// Midnight, local time, of the day [message] was sent.
+DateTime dayOf(ConversationMessage message) {
   final date = DateTime.fromMillisecondsSinceEpoch(message.date * 1000);
   return DateTime(date.year, date.month, date.day);
 }
@@ -75,7 +76,7 @@ List<TimelineItem> timelineItems(
       !a.primary.isService &&
       !b.primary.isService &&
       a.primary.sender == b.primary.sender &&
-      _dayOf(a.primary) == _dayOf(b.primary);
+      dayOf(a.primary) == dayOf(b.primary);
 
   final items = <TimelineItem>[];
   for (var i = 0; i < rows.length; i++) {
@@ -94,8 +95,8 @@ List<TimelineItem> timelineItems(
             (startsRun || older.primary.message.forwardInfo == null),
       ),
     );
-    final day = _dayOf(row.primary);
-    if (older == null ? reachedStart : _dayOf(older.primary) != day) {
+    final day = dayOf(row.primary);
+    if (older == null ? reachedStart : dayOf(older.primary) != day) {
       items.add(TimelineDate(day));
     }
   }
