@@ -267,6 +267,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           : const Duration(milliseconds: 200),
                       switchInCurve: Curves.easeOutCubic,
                       switchOutCurve: Curves.easeInCubic,
+                      // The default layout loosens the constraints, which
+                      // left the chat no room at all.
+                      layoutBuilder: (current, previous) => Stack(
+                        fit: StackFit.expand,
+                        children: [...previous, ?current],
+                      ),
                       transitionBuilder: (child, animation) => FadeTransition(
                         opacity: animation,
                         child: SlideTransition(
