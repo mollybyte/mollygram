@@ -31,6 +31,9 @@ import 'workspace.dart';
 /// The signed-in window: wallpaper, the floating sidebar and the workspace
 /// (tabs, one or two chat panes, the ⌘K palette). [GlassScope] gives all
 /// glass panels one shared backdrop read.
+/// The macOS runner sends the app menu's items here (AppDelegate.swift).
+const appMenuChannel = MethodChannel('mollygram/app_menu');
+
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -73,6 +76,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ..register('shell', _shellCommands)
       ..registerShortcuts('shell', _shellShortcuts)
       ..addListener(_keysChanged);
+    appMenuChannel.setMethodCallHandler(_appMenu);
+  }
+
+  /// The runner's menu bar: "Settings…" in the app menu.
+  Future<void> _appMenu(MethodCall call) async {
+    switch (call.method) {
+      case 'openSettings':
+        _openSettings();
+      default:
+        throw MissingPluginException();
+    }
   }
 
   /// The user changed a key: the bindings are built again.
@@ -89,6 +103,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   void dispose() {
+    appMenuChannel.setMethodCallHandler(null);
     _registry
       ..removeListener(_keysChanged)
       ..unregister('app', _commands)
@@ -187,7 +202,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   padding: const EdgeInsets.all(8),
                   child: Stack(
                     children: [
-                      const Positioned.fill(child: Sidebar()),
+                      Positioned.fill(
+                        child: Sidebar(
+                          onSettings: _openSettings,
+                          settingsShortcut: keys['app.settings']?.label,
+                        ),
+                      ),
                       // In the island's title bar, between the window
                       // buttons and the ghost.
                       const Positioned(
