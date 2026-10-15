@@ -838,6 +838,27 @@ void main() {
     expect(sent['message_id'], 16);
   });
 
+  testWidgets('lists who voted for an option of a public poll', (tester) async {
+    json.history = [_pollMessage(chosen: 1, public: true), ..._history];
+    await pump(tester);
+    expect(find.text('Poll'), findsOneWidget);
+    expect(find.text('75%'), findsOneWidget);
+
+    await tester.tap(find.text('Coffee'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    final request = json.sent.lastWhere((r) => r['@type'] == 'getPollVoters');
+    expect(request['message_id'], 16);
+    expect(request['option_id'], 1);
+    expect(find.text('3 votes'), findsOneWidget);
+    // Vera is named in the chat too; the popover adds her row.
+    expect(find.text('Vera'), findsNWidgets(2));
+
+    await tester.tapAt(const Offset(5, 5));
+    await tester.pump();
+    expect(find.text('3 votes'), findsNothing);
+  });
+
   testWidgets('collects several answers and votes on the button', (
     tester,
   ) async {
@@ -2012,6 +2033,17 @@ final class _FakeTdJson implements td.TdJson {
         'show_alert': false,
         'url': '',
       },
+      'getPollVoters' => {
+        '@type': 'pollVoters',
+        'total_count': 1,
+        'voters': [
+          {
+            '@type': 'pollVoter',
+            'voter_id': {'@type': 'messageSenderUser', 'user_id': 3},
+            'date': 0,
+          },
+        ],
+      },
       'getContacts' => {
         '@type': 'users',
         'total_count': 2,
@@ -2097,17 +2129,24 @@ td.Message _replyKeyboardMessage() => td.Message.fromJson({
   },
 });
 
-td.Message _pollMessage({required int? chosen, bool multiple = false}) =>
-    td.Message.fromJson({
-      ..._message(id: 16, senderId: 1, text: '', outgoing: true).toJson(),
-      'content': td.MessagePoll(
-        poll: _poll(chosen: chosen, multiple: multiple),
-        description: const td.FormattedText(text: '', entities: []),
-        canAddOption: false,
-      ).toJson(),
-    });
+td.Message _pollMessage({
+  required int? chosen,
+  bool multiple = false,
+  bool public = false,
+}) => td.Message.fromJson({
+  ..._message(id: 16, senderId: 1, text: '', outgoing: true).toJson(),
+  'content': td.MessagePoll(
+    poll: _poll(chosen: chosen, multiple: multiple, public: public),
+    description: const td.FormattedText(text: '', entities: []),
+    canAddOption: false,
+  ).toJson(),
+});
 
-td.Poll _poll({required int? chosen, bool multiple = false}) => td.Poll(
+td.Poll _poll({
+  required int? chosen,
+  bool multiple = false,
+  bool public = false,
+}) => td.Poll(
   id: 555,
   question: const td.FormattedText(text: 'Tea or coffee?', entities: []),
   options: [
@@ -2124,10 +2163,12 @@ td.Poll _poll({required int? chosen, bool multiple = false}) => td.Poll(
       ),
   ],
   totalVoterCount: chosen == null ? 3 : 4,
-  recentVoterIds: const [],
-  canGetVoters: false,
+  recentVoterIds: public
+      ? const [td.MessageSenderUser(userId: 3), td.MessageSenderUser(userId: 2)]
+      : const [],
+  canGetVoters: public,
   canSeeResults: chosen != null,
-  isAnonymous: true,
+  isAnonymous: !public,
   allowsMultipleAnswers: multiple,
   allowsRevoting: true,
   membersOnly: false,

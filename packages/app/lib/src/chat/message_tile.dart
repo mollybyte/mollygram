@@ -96,6 +96,7 @@ class MessageRowActions {
     this.onSelectToggle,
     this.onTextSelected,
     this.onPollVote,
+    this.onPollVoters,
     this.onInlineButton,
   });
 
@@ -135,6 +136,15 @@ class MessageRowActions {
   /// takes the vote back.
   final void Function(ConversationMessage message, List<int> optionIds)?
   onPollVote;
+
+  /// A click on an option's results in a public poll, at [position]:
+  /// lists who voted for it.
+  final void Function(
+    ConversationMessage message,
+    int optionIndex,
+    Offset position,
+  )?
+  onPollVoters;
 
   /// A press on one of a bot's buttons under [message].
   final void Function(
@@ -519,6 +529,54 @@ class _MessageBody extends StatelessWidget {
     );
   }
 
+  /// Up to three of the poll's latest voters, overlapping a little, as
+  /// Telegram shows them next to a public poll's kind.
+  Widget? _recentVoters(
+    BuildContext context,
+    AppLocalizations l10n,
+    List<td.MessageSender> ids,
+  ) {
+    if (ids.isEmpty) return null;
+    final shown = ids.take(3).toList();
+    const size = 16.0;
+    const step = 11.0;
+    return SizedBox(
+      width: size + step * (shown.length - 1),
+      height: size,
+      child: Stack(
+        children: [
+          for (final (i, sender) in shown.indexed.toList().reversed)
+            Positioned(
+              left: step * i,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: MgColors.of(context).windowBackground,
+                    width: 1.5,
+                  ),
+                ),
+                child: _senderAvatar(l10n, sender, size - 3),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _senderAvatar(
+    AppLocalizations l10n,
+    td.MessageSender sender,
+    double size,
+  ) {
+    final id = MessageSenderId.of(sender);
+    return SenderAvatar(
+      name: nameOfSender(l10n, store, id),
+      photo: store.photoOf(id),
+      size: size,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -639,6 +697,7 @@ class _MessageBody extends StatelessWidget {
       );
     }
     final onPollVote = actions.onPollVote;
+    final onPollVoters = actions.onPollVoters;
     return otherContent(
           context,
           content,
@@ -646,6 +705,12 @@ class _MessageBody extends StatelessWidget {
           onPollVote: onPollVote == null
               ? null
               : (optionIds) => onPollVote(message, optionIds),
+          onPollVoters: onPollVoters == null
+              ? null
+              : (index, position) => onPollVoters(message, index, position),
+          recentVoters: content is td.MessagePoll
+              ? _recentVoters(context, l10n, content.poll.recentVoterIds)
+              : null,
         ) ??
         Text(describeContent(l10n, content));
   }
