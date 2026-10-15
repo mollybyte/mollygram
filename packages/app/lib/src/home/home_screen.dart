@@ -12,6 +12,7 @@ import '../contacts/people_sheet.dart';
 import '../links/link_host.dart';
 import '../notifications/notification_service.dart';
 import '../privacy/ghost_mode_capsule.dart';
+import '../profile/new_chat_sheet.dart';
 import '../profile/peer_info_host.dart';
 import '../session/connection_status_capsule.dart';
 import '../settings/appearance.dart';
@@ -98,6 +99,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         shortcut: HomeScreen.newMessageShortcut,
         run: _newMessage,
       ),
+      ...newChatCommands(() => context, l10n, other),
       PaletteCommand(
         id: 'app.contacts',
         title: l10n.contacts,

@@ -1946,5 +1946,310 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get edit => 'Edit';
+
+  @override
+  String get create => 'Create';
+
+  @override
+  String get remove => 'Remove';
+
+  @override
+  String get leave => 'Leave';
+
+  @override
+  String get newGroup => 'New group';
+
+  @override
+  String get newChannel => 'New channel';
+
+  @override
+  String get groupName => 'Group name';
+
+  @override
+  String get channelName => 'Channel name';
+
+  @override
+  String get descriptionHint => 'Description (optional)';
+
+  @override
+  String get descriptionNote => 'Shown on the info panel under the name.';
+
+  @override
+  String get chatTitleRequired => 'Enter a name';
+
+  @override
+  String get addMembersHint => 'Add members';
+
+  @override
+  String get createFailed => 'Couldn\'t create it. Try again.';
+
+  @override
+  String get editGroup => 'Edit group';
+
+  @override
+  String get editChannel => 'Edit channel';
+
+  @override
+  String get setPhoto => 'Set photo';
+
+  @override
+  String get changePhoto => 'Change photo';
+
+  @override
+  String get removePhoto => 'Remove photo';
+
+  @override
+  String get inviteLinks => 'Invite links';
+
+  @override
+  String get primaryLink => 'Primary link';
+
+  @override
+  String get createPrimaryLink => 'Generate a link';
+
+  @override
+  String get additionalLinks => 'Additional links';
+
+  @override
+  String get copyLink => 'Copy link';
+
+  @override
+  String get revokeLink => 'Revoke';
+
+  @override
+  String get revokeLinkTitle => 'Revoke this link?';
+
+  @override
+  String get revokeLinkMessage =>
+      'Nobody will be able to join with it any more.';
+
+  @override
+  String get revokePrimaryMessage =>
+      'Nobody will be able to join with it any more. A new primary link replaces it.';
+
+  @override
+  String get createLink => 'Create a new link';
+
+  @override
+  String get newLink => 'New link';
+
+  @override
+  String get linkNameHint => 'Link name (only admins see it)';
+
+  @override
+  String get linkDuration => 'Works for';
+
+  @override
+  String get linkMemberLimit => 'Number of uses';
+
+  @override
+  String get linkRequestApproval => 'Approve new members';
+
+  @override
+  String get noLimit => 'No limit';
+
+  @override
+  String get oneDay => '1 day';
+
+  @override
+  String get oneWeek => '1 week';
+
+  @override
+  String get oneMonth => '1 month';
+
+  @override
+  String linkJoined(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count joined',
+      one: '1 joined',
+      zero: 'nobody joined',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String linkJoinedOf(int count, int limit) {
+    return '$count of $limit joined';
+  }
+
+  @override
+  String get linkApproval => 'with approval';
+
+  @override
+  String get linkExpired => 'expired';
+
+  @override
+  String linkExpires(String date) {
+    return 'expires $date';
+  }
+
+  @override
+  String get searchMembers => 'Search members';
+
+  @override
+  String get showMoreMembers => 'Show more';
+
+  @override
+  String get promoteToAdmin => 'Make admin';
+
+  @override
+  String get editAdminRights => 'Edit admin rights';
+
+  @override
+  String get dismissAdmin => 'Dismiss admin';
+
+  @override
+  String get restrictMember => 'Restrict';
+
+  @override
+  String get removeFromGroup => 'Remove from group';
+
+  @override
+  String get removeFromChannel => 'Remove from channel';
+
+  @override
+  String removeMemberTitle(String name) {
+    return 'Remove $name?';
+  }
+
+  @override
+  String get addAdmin => 'New admin';
+
+  @override
+  String get adminRights => 'Admin rights';
+
+  @override
+  String adminRightsOf(String name) {
+    return 'What $name can do';
+  }
+
+  @override
+  String restrictWhatCan(String name) {
+    return 'What $name can still do';
+  }
+
+  @override
+  String get rightChangeInfo => 'Change group info';
+
+  @override
+  String get rightChangeChannelInfo => 'Change channel info';
+
+  @override
+  String get rightPostMessages => 'Post messages';
+
+  @override
+  String get rightEditMessages => 'Edit others\' messages';
+
+  @override
+  String get rightDeleteMessages => 'Delete messages';
+
+  @override
+  String get rightBanUsers => 'Ban users';
+
+  @override
+  String get rightInviteUsers => 'Add members';
+
+  @override
+  String get rightAddSubscribers => 'Add subscribers';
+
+  @override
+  String get rightPinMessages => 'Pin messages';
+
+  @override
+  String get rightManageVideoChats => 'Manage video chats';
+
+  @override
+  String get rightAddAdmins => 'Add new admins';
+
+  @override
+  String get rightAnonymous => 'Remain anonymous';
+
+  @override
+  String get permSendMessages => 'Send messages';
+
+  @override
+  String get permSendMedia => 'Send media';
+
+  @override
+  String get permSendStickers => 'Send stickers and GIFs';
+
+  @override
+  String get permSendPolls => 'Send polls';
+
+  @override
+  String get permEmbedLinks => 'Embed links';
+
+  @override
+  String get leaveGroup => 'Leave group';
+
+  @override
+  String get leaveChannel => 'Leave channel';
+
+  @override
+  String get deleteGroup => 'Delete group';
+
+  @override
+  String get deleteChannel => 'Delete channel';
+
+  @override
+  String get leaveGroupTitle => 'Leave this group?';
+
+  @override
+  String get leaveChannelTitle => 'Leave this channel?';
+
+  @override
+  String get deleteGroupTitle => 'Delete this group?';
+
+  @override
+  String get deleteChannelTitle => 'Delete this channel?';
+
+  @override
+  String get membersFailed => 'Couldn\'t load the members.';
+
+  @override
+  String get memberChangeFailed =>
+      'Couldn\'t make the change. You may not have the right to.';
+
+  @override
+  String get removeRestrictions => 'Remove restrictions';
+
+  @override
+  String get rightManageTopics => 'Manage topics';
+
+  @override
+  String notAddedMembers(int count, String names) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'The group is created, but $names couldn\'t be added because of their privacy settings.',
+      one:
+          'The group is created, but $names couldn\'t be added because of their privacy settings.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get leaveOwnerNote =>
+      'You stay the owner and can come back with an invite link.';
+
+  @override
+  String get deleteGroupMessage =>
+      'Every member loses the group and all its messages. This can\'t be undone.';
+
+  @override
+  String get deleteChannelMessage =>
+      'Every subscriber loses the channel and all its posts. This can\'t be undone.';
+
+  @override
+  String get leaveFailed => 'Couldn\'t leave. Try again.';
+
+  @override
+  String get deleteFailed => 'Couldn\'t delete it. Try again.';
+
+  @override
   String get folderDeletedChat => 'Deleted chat';
 }

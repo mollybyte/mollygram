@@ -7,6 +7,7 @@ import 'authorization_controller.dart';
 import 'authorization_stage.dart';
 import 'chat_folders.dart';
 import 'chat_list_controller.dart';
+import 'chat_management.dart';
 import 'chat_search.dart';
 import 'chat_search_controller.dart';
 import 'connection_status.dart';
@@ -56,6 +57,7 @@ final class TelegramSession {
     required this.connection,
     required this.privacy,
     required this.contacts,
+    required this.management,
     required this.links,
     required this._initializer,
   });
@@ -91,6 +93,9 @@ final class TelegramSession {
 
   /// Contacts and the users TDLib has sent.
   final ContactsController contacts;
+
+  /// Group and channel administration.
+  final ChatManagement management;
   final LinkResolver links;
   final _errors = StreamController<Object>.broadcast(sync: true);
   final _closedElsewhere = Completer<void>();
@@ -121,6 +126,7 @@ final class TelegramSession {
       deliberately: guard.deliberately,
     );
     final contacts = ContactsController(client);
+    final management = ChatManagement(client);
     final folders = ChatFoldersController(client);
     final session = TelegramSession._(
       tdlib: tdlib,
@@ -140,6 +146,7 @@ final class TelegramSession {
       connection: connection,
       privacy: guard,
       contacts: contacts,
+      management: management,
       links: LinkResolver(client),
       initializer: TdlibInitializer(client, parameters: parameters),
     );
@@ -157,6 +164,7 @@ final class TelegramSession {
       await peers.start();
       await connection.start();
       await contacts.start();
+      await management.start();
       await notifications.start();
       await folders.start();
       await authorization.start();
@@ -228,6 +236,7 @@ final class TelegramSession {
     await peers.dispose();
     await connection.dispose();
     await contacts.dispose();
+    await management.dispose();
     await notifications.dispose();
     await folders.dispose();
     await authorization.dispose();
