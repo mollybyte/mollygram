@@ -542,6 +542,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get scheduleMessage => 'Запланировать сообщение…';
 
   @override
+  String get sendWhenOnline => 'Отправить, когда появится в сети';
+
+  @override
+  String get scheduledWhenOnline =>
+      'Отправится, когда собеседник появится в сети';
+
+  @override
   String get scheduleTitle => 'Запланировать сообщение';
 
   @override

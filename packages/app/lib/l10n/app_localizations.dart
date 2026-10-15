@@ -1046,6 +1046,18 @@ abstract class AppLocalizations {
   /// **'Schedule message…'**
   String get scheduleMessage;
 
+  /// No description provided for @sendWhenOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Send when online'**
+  String get sendWhenOnline;
+
+  /// No description provided for @scheduledWhenOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Will be sent when they come online'**
+  String get scheduledWhenOnline;
+
   /// No description provided for @scheduleTitle.
   ///
   /// In en, this message translates to:

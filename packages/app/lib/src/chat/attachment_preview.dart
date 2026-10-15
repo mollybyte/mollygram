@@ -34,6 +34,7 @@ Future<AttachmentChoice?> showAttachmentPreview(
   required List<String> paths,
   String caption = '',
   bool allowSelfDestruct = false,
+  bool allowSendWhenOnline = false,
 }) => showGeneralDialog<AttachmentChoice>(
   context: context,
   barrierDismissible: true,
@@ -50,6 +51,7 @@ Future<AttachmentChoice?> showAttachmentPreview(
         ],
         caption: caption,
         allowSelfDestruct: allowSelfDestruct,
+        allowSendWhenOnline: allowSendWhenOnline,
       ),
     ),
   ),
@@ -60,6 +62,7 @@ class _Preview extends StatefulWidget {
     required this.files,
     required this.caption,
     required this.allowSelfDestruct,
+    required this.allowSendWhenOnline,
   });
 
   final List<OutgoingFile> files;
@@ -67,6 +70,10 @@ class _Preview extends StatefulWidget {
 
   /// Whether a self-destruct timer is offered: in private chats only.
   final bool allowSelfDestruct;
+
+  /// Whether the send menu offers "Send when online": private chats with
+  /// a person.
+  final bool allowSendWhenOnline;
 
   @override
   State<_Preview> createState() => _PreviewState();
@@ -203,6 +210,13 @@ class _PreviewState extends State<_Preview> {
           label: l10n.scheduleMessage,
           onSelected: () => unawaited(_schedule()),
         ),
+        if (widget.allowSendWhenOnline)
+          MgMenuItem(
+            label: l10n.sendWhenOnline,
+            onSelected: () => _send(
+              schedule: const td.MessageSchedulingStateSendWhenOnline(),
+            ),
+          ),
       ],
     );
   }

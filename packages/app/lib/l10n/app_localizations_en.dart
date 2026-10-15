@@ -539,6 +539,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get scheduleMessage => 'Schedule message…';
 
   @override
+  String get sendWhenOnline => 'Send when online';
+
+  @override
+  String get scheduledWhenOnline => 'Will be sent when they come online';
+
+  @override
   String get scheduleTitle => 'Schedule message';
 
   @override

@@ -182,6 +182,8 @@
   "menuQuickLook": "Quick Look",
   "sendWithoutSound": "Send without sound",
   "scheduleMessage": "Schedule message…",
+  "sendWhenOnline": "Send when online",
+  "scheduledWhenOnline": "Will be sent when they come online",
   "scheduleTitle": "Schedule message",
   "scheduleHint": "Pick the day and the time it goes out.",
   "scheduleTimeHint": "HH:MM",
