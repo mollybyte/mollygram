@@ -2226,6 +2226,64 @@ void main() {
     );
   });
 
+  testWidgets('opens a forum as its topics and a topic as a chat', (
+    tester,
+  ) async {
+    json.push(
+      _supergroup(98, {'@type': 'chatMemberStatusMember'}, forum: true),
+    );
+    json.push(
+      _chat(
+        lastRead: 60,
+        unread: 0,
+        last: 60,
+        type: {
+          '@type': 'chatTypeSupergroup',
+          'supergroup_id': 98,
+          'is_channel': false,
+        },
+      ),
+    );
+    await pump(tester);
+    for (var i = 0; i < 3; i++) {
+      await tester.runAsync(() => Future<void>.delayed(_tick));
+      await tester.pump();
+    }
+    expect(find.text('General'), findsOneWidget);
+    expect(find.text('Bugs'), findsOneWidget);
+    expect(find.text('Message 60'), findsNothing);
+    expect(find.byType(TextField), findsNothing);
+
+    await tester.tap(find.text('Bugs'));
+    for (var i = 0; i < 3; i++) {
+      await tester.runAsync(() => Future<void>.delayed(_tick));
+      await tester.pump();
+    }
+    final history = json.sent.lastWhere(
+      (r) => r['@type'] == 'getForumTopicHistory',
+    );
+    expect(history['forum_topic_id'], 5);
+    expect(find.text('Repro steps'), findsOneWidget);
+    expect(find.text('General'), findsNothing);
+
+    await tester.enterText(find.byType(TextField), 'Fixed');
+    await tester.pump();
+    await tester.tap(find.byType(MgSendButton));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    final sent = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    expect(sent['topic_id'], {
+      '@type': 'messageTopicForum',
+      'forum_topic_id': 5,
+    });
+    expect(sent['reply_to'], isNull);
+
+    await tester.tap(find.byTooltip('Back to topics'));
+    await tester.pump();
+    expect(find.text('Bugs'), findsOneWidget);
+    expect(find.text('Repro steps'), findsNothing);
+  });
+
   testWidgets('sends a saved GIF from the panel', (tester) async {
     await pump(tester);
     await tester.tap(find.byTooltip('Emoji and stickers'));
@@ -2436,7 +2494,11 @@ Map<String, Object?> _chat({
   },
 };
 
-Map<String, Object?> _supergroup(int id, Map<String, Object?> status) => {
+Map<String, Object?> _supergroup(
+  int id,
+  Map<String, Object?> status, {
+  bool forum = false,
+}) => {
   '@type': 'updateSupergroup',
   'supergroup': {
     '@type': 'supergroup',
@@ -2455,7 +2517,7 @@ Map<String, Object?> _supergroup(int id, Map<String, Object?> status) => {
     'is_slow_mode_enabled': false,
     'is_channel': true,
     'is_broadcast_group': false,
-    'is_forum': false,
+    'is_forum': forum,
     'is_direct_messages_group': false,
     'is_administered_direct_messages_group': false,
     'has_direct_messages_group': false,
@@ -2862,6 +2924,28 @@ final class _FakeTdJson implements td.TdJson {
         '@type': 'webAppUrl',
         'url': 'https://shop.example/app',
       },
+      'getForumTopics' => {
+        '@type': 'forumTopics',
+        'total_count': 2,
+        'topics': [
+          _forumTopic(5, 'Bugs', lastId: 51, unread: 2),
+          _forumTopic(1, 'General', general: true),
+        ],
+        'next_offset_date': 0,
+        'next_offset_message_id': 0,
+        'next_offset_forum_topic_id': 0,
+      },
+      'getForumTopic' => _forumTopic(5, 'Bugs', lastId: 51, unread: 2),
+      'getForumTopicHistory' => {
+        '@type': 'messages',
+        'total_count': 1,
+        'messages': [
+          {
+            ..._message(id: 51, senderId: 2, text: 'Repro steps').toJson(),
+            'topic_id': {'@type': 'messageTopicForum', 'forum_topic_id': 5},
+          },
+        ],
+      },
       'getUser' when decoded['user_id'] == 2 => _user(2, 'Boris'),
       'getUser' when decoded['user_id'] == 50 => {
         ..._user(50, 'GIF Search'),
@@ -3184,6 +3268,48 @@ Map<String, Object?> _voiceMessage(
     'caption': {'@type': 'formattedText', 'text': '', 'entities': <Object?>[]},
     'is_listened': false,
   },
+};
+
+Map<String, Object?> _forumTopic(
+  int id,
+  String name, {
+  int? lastId,
+  int unread = 0,
+  bool general = false,
+}) => {
+  '@type': 'forumTopic',
+  'info': {
+    '@type': 'forumTopicInfo',
+    'chat_id': 7,
+    'forum_topic_id': id,
+    'name': name,
+    'icon': {
+      '@type': 'forumTopicIcon',
+      'color': 0x6FB9F0,
+      'custom_emoji_id': 0,
+    },
+    'creation_date': 1700000000,
+    'creator_id': {'@type': 'messageSenderUser', 'user_id': 2},
+    'is_general': general,
+    'is_outgoing': false,
+    'is_closed': false,
+    'is_hidden': false,
+    'is_name_implicit': false,
+  },
+  if (lastId != null)
+    'last_message': {
+      ..._message(id: lastId, senderId: 2, text: 'Repro steps').toJson(),
+      'topic_id': {'@type': 'messageTopicForum', 'forum_topic_id': id},
+    },
+  'order': '$id',
+  'is_pinned': false,
+  'unread_count': unread,
+  'last_read_inbox_message_id': 0,
+  'last_read_outbox_message_id': 0,
+  'unread_mention_count': 0,
+  'unread_reaction_count': 0,
+  'unread_poll_vote_count': 0,
+  'notification_settings': {'@type': 'chatNotificationSettings', 'mute_for': 0},
 };
 
 Map<String, Object?> _animation(int id) => {

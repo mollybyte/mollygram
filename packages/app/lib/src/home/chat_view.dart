@@ -24,6 +24,7 @@ import '../chat/contact_picker.dart';
 import '../chat/describe.dart';
 import '../chat/emoji_sticker_panel.dart';
 import '../chat/formatted_text.dart';
+import '../chat/forum_topics.dart';
 import '../chat/forward_picker.dart';
 import '../chat/inline_results.dart';
 import '../chat/link_preview_bar.dart';
@@ -168,6 +169,11 @@ class _ChatViewState extends ConsumerState<ChatView> {
 
   /// The comments of a post, shown in place of the timeline while open.
   MessageThread? _thread;
+
+  /// The topics of a forum, shown in the timeline's place until one opens.
+  ForumTopicList? _topics;
+  StreamSubscription<void>? _topicsSub;
+  var _topicsOpening = false;
   StreamSubscription<void>? _threadSub;
   final _threadScroll = TimelineScrollController();
   final _threadDraft = RichTextEditingController();
@@ -229,6 +235,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _editing = null;
     _saveDraft(old.chatId);
     _close(old.chatId);
+    _dropTopics();
     _viewed.clear();
     _toView.clear();
     _draft.clear();
@@ -278,6 +285,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _previewTimer?.cancel();
     if (_editing == null) _saveDraft(widget.chatId);
     _close(widget.chatId);
+    _dropTopics();
     _mentions.dispose();
     _emojiHints.dispose();
     _commands.dispose();
@@ -474,7 +482,88 @@ class _ChatViewState extends ConsumerState<ChatView> {
   }
 
   /// A list in place of the timeline: the pinned or the scheduled messages.
-  bool get _listOpen => _pinnedListOpen || _scheduledOpen || _thread != null;
+  bool get _listOpen =>
+      _pinnedListOpen || _scheduledOpen || _thread != null || _forum;
+
+  /// Whether this chat is a forum group, whose timeline is its topics.
+  bool get _forum => _conversations.store.isForum(widget.chatId);
+
+  /// The topic list in the timeline's place, loading it the first time.
+  Widget _topicsView(ConversationStore store) {
+    final topics = _topics;
+    if (topics == null) {
+      if (!_topicsOpening) {
+        _topicsOpening = true;
+        scheduleMicrotask(() => unawaited(_openTopics()));
+      }
+      return const SizedBox.shrink();
+    }
+    return ForumTopicListView(
+      key: const ValueKey('forumTopics'),
+      topics: topics.topics,
+      store: store,
+      topInset: _topInset,
+      onOpen: (topic) => unawaited(_openTopic(topic)),
+      onNearEnd: () => unawaited(_quiet(topics.loadMore())),
+    );
+  }
+
+  Future<void> _openTopics() async {
+    final chatId = widget.chatId;
+    final list = _conversations.openTopics(chatId);
+    try {
+      await list.load();
+    } on td.TdException {
+      list.dispose();
+      if (mounted && widget.chatId == chatId) _topicsOpening = false;
+      return;
+    }
+    if (!mounted || widget.chatId != chatId) {
+      list.dispose();
+      return;
+    }
+    setState(() => _topics = list);
+    _topicsSub = list.changes.listen((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  /// Opens [topic]: its messages take the topic list's place, with a
+  /// composer under them, until the back capsule closes it.
+  Future<void> _openTopic(td.ForumTopic topic) async {
+    final chatId = widget.chatId;
+    final MessageThread thread;
+    try {
+      thread = await _conversations.openTopic(chatId, topic.info.forumTopicId);
+      await thread.load();
+    } on td.TdException {
+      if (mounted) {
+        showMgToast(context, AppLocalizations.of(context).topicUnavailable);
+      }
+      return;
+    }
+    if (!mounted || widget.chatId != chatId) {
+      thread.dispose();
+      return;
+    }
+    _dropThread();
+    setState(() {
+      _thread = thread;
+      _selected = null;
+    });
+    _threadSub = thread.changes.listen((_) {
+      if (mounted) setState(() {});
+    });
+    _threadFocus.requestFocus();
+  }
+
+  void _dropTopics() {
+    _topicsSub?.cancel();
+    _topicsSub = null;
+    _topics?.dispose();
+    _topics = null;
+    _topicsOpening = false;
+  }
 
   /// Opens the comments under [message], a channel post: its thread in
   /// the discussion group takes the timeline's place.
@@ -688,7 +777,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
       controller: _threadDraft,
       focusNode: _threadFocus,
       labels: ComposerLabels(
-        hint: _thread?.chatId == widget.chatId
+        hint: (_thread?.isForumTopic ?? false)
+            ? l10n.messageHint
+            : _thread?.chatId == widget.chatId
             ? l10n.replyHint
             : l10n.commentHint,
         attach: l10n.attach,
@@ -2658,6 +2749,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
         children: [
           Positioned.fill(
             child: switch (messages) {
+              AsyncData() when _forum && _thread == null => _topicsView(store),
               AsyncData(value: final list)
                   when list.isEmpty && store.reachedStart(widget.chatId) =>
                 Center(child: DatePill(l10n.noMessages)),
@@ -2770,16 +2862,20 @@ class _ChatViewState extends ConsumerState<ChatView> {
                     )
                   : _thread != null
                   ? ChatTitleCapsule(
-                      title: _thread!.chatId == widget.chatId
-                          ? _thread!.replyCount == 0
-                                ? l10n.replies
-                                : l10n.replyCount(_thread!.replyCount)
-                          : _thread!.replyCount == 0
-                          ? l10n.comments
-                          : l10n.commentCount(_thread!.replyCount),
+                      title:
+                          _thread!.forumTopic?.name ??
+                          (_thread!.chatId == widget.chatId
+                              ? _thread!.replyCount == 0
+                                    ? l10n.replies
+                                    : l10n.replyCount(_thread!.replyCount)
+                              : _thread!.replyCount == 0
+                              ? l10n.comments
+                              : l10n.commentCount(_thread!.replyCount)),
                       avatar: MgIconButton(
                         icon: MgIcons.back,
-                        tooltip: l10n.backToChat,
+                        tooltip: _thread!.isForumTopic
+                            ? l10n.backToTopics
+                            : l10n.backToChat,
                         onPressed: _closeThread,
                       ),
                       onTap: _closeThread,
@@ -2903,6 +2999,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
                   ),
                 if (_thread case final thread?)
                   _threadComposer(l10n, thread)
+                else if (_forum)
+                  const SizedBox.shrink()
                 else if (_scheduledOpen)
                   _scheduledBar(l10n)
                 else if (_pinnedListOpen)

@@ -2267,6 +2267,18 @@ class AppLocalizationsRu extends AppLocalizations {
   String get backToChat => 'Назад в чат';
 
   @override
+  String get backToTopics => 'Назад к темам';
+
+  @override
+  String get noTopics => 'Тем пока нет';
+
+  @override
+  String get topicClosed => 'Тема закрыта';
+
+  @override
+  String get topicUnavailable => 'Не удалось открыть тему';
+
+  @override
   String get unpinAll => 'Открепить все';
 
   @override

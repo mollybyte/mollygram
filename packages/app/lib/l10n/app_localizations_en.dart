@@ -2243,6 +2243,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get backToChat => 'Back to the chat';
 
   @override
+  String get backToTopics => 'Back to topics';
+
+  @override
+  String get noTopics => 'No topics yet';
+
+  @override
+  String get topicClosed => 'Topic closed';
+
+  @override
+  String get topicUnavailable => 'Couldn\'t open this topic';
+
+  @override
   String get unpinAll => 'Unpin all messages';
 
   @override

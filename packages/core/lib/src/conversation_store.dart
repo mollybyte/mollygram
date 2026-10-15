@@ -163,6 +163,9 @@ final class ConversationStore {
   final _supergroupOf = <int, int>{};
   final _basicGroupOf = <int, int>{};
   final _supergroupStatus = <int, td.ChatMemberStatus>{};
+
+  /// The supergroups that are forums, whose chat shows topics.
+  final _forums = <int>{};
   final _basicGroupStatus = <int, td.ChatMemberStatus>{};
   final _muteFor = <int, int>{};
   final _permissions = <int, td.ChatPermissions>{};
@@ -552,6 +555,17 @@ final class ConversationStore {
       _botMenus[chatId] = menu;
     }
     return true;
+  }
+
+  /// Remembers whether supergroup [supergroupId] is a forum; true when
+  /// that changed.
+  bool setForum(int supergroupId, bool isForum) =>
+      isForum ? _forums.add(supergroupId) : _forums.remove(supergroupId);
+
+  /// Whether [chatId] is a forum group, shown as a list of topics.
+  bool isForum(int chatId) {
+    final supergroupId = _supergroupOf[chatId];
+    return supergroupId != null && _forums.contains(supergroupId);
   }
 
   /// Returns the chat the supergroup belongs to when its status changed.

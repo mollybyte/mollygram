@@ -877,6 +877,10 @@
     "placeholders": { "count": { "type": "int" } }
   },
   "backToChat": "Back to the chat",
+  "backToTopics": "Back to topics",
+  "noTopics": "No topics yet",
+  "topicClosed": "Topic closed",
+  "topicUnavailable": "Couldn't open this topic",
   "unpinAll": "Unpin all messages",
   "unpinAllTitle": "{count, plural, one{Unpin {count} message?} other{Unpin all {count} messages?}}",
   "@unpinAllTitle": {
