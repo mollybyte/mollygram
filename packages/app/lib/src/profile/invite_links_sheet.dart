@@ -33,6 +33,9 @@ class _InviteLinksSheetState extends ConsumerState<InviteLinksSheet> {
       .management;
   List<td.ChatInviteLink>? _links;
   var _creating = false;
+
+  /// The link being edited.
+  td.ChatInviteLink? _editing;
   var _failed = false;
 
   /// The link whose "Copied" is showing.
@@ -120,6 +123,20 @@ class _InviteLinksSheetState extends ConsumerState<InviteLinksSheet> {
         },
       );
     }
+    if (_editing case final editing?) {
+      return _NewLinkForm(
+        chatId: widget.chatId,
+        existing: editing,
+        onBack: () => setState(() => _editing = null),
+        onCreated: (link) => setState(() {
+          _editing = null;
+          _links = [
+            for (final l in _links ?? const <td.ChatInviteLink>[])
+              if (l.inviteLink == link.inviteLink) link else l,
+          ];
+        }),
+      );
+    }
     final c = MgColors.of(context);
     final links = _links;
     final primary = links?.where((l) => l.isPrimary).firstOrNull;
@@ -188,6 +205,8 @@ class _InviteLinksSheetState extends ConsumerState<InviteLinksSheet> {
                         : link.inviteLink.replaceFirst('https://', ''),
                     subtitle: describeLink(l10n, link, now),
                     onTap: () => _copy(link.inviteLink),
+                    onEdit: () => setState(() => _editing = link),
+                    editLabel: l10n.editLink,
                     onRevoke: () => unawaited(_revoke(link)),
                     revokeLabel: l10n.revokeLink,
                   ),
@@ -229,6 +248,8 @@ class _Row extends StatefulWidget {
     required this.onTap,
     this.subtitle = '',
     this.accent = false,
+    this.onEdit,
+    this.editLabel = '',
     this.onRevoke,
     this.revokeLabel = '',
   });
@@ -237,6 +258,8 @@ class _Row extends StatefulWidget {
   final String subtitle;
   final bool accent;
   final VoidCallback onTap;
+  final VoidCallback? onEdit;
+  final String editLabel;
   final VoidCallback? onRevoke;
   final String revokeLabel;
 
@@ -295,6 +318,13 @@ class _RowState extends State<_Row> {
                   ],
                 ),
               ),
+              if (widget.onEdit != null)
+                MgIconButton(
+                  icon: MgIcons.compose,
+                  tooltip: widget.editLabel,
+                  iconSize: 15,
+                  onPressed: widget.onEdit,
+                ),
               if (widget.onRevoke != null)
                 MgIconButton(
                   icon: MgIcons.trash,
@@ -310,31 +340,44 @@ class _RowState extends State<_Row> {
   }
 }
 
-/// How long a new link works, from now.
-enum _Expiry { never, day, week, month }
+/// How long a new link works, from now; [keep] leaves an edited link's
+/// expiry as it is.
+enum _Expiry { never, keep, day, week, month }
 
-/// A new additional link: a name, how long it works, how many may join
-/// by it, and whether an administrator approves them.
+/// A new additional link, or one being edited: a name, how long it
+/// works, how many may join by it, and whether an administrator
+/// approves them.
 class _NewLinkForm extends ConsumerStatefulWidget {
   const _NewLinkForm({
     required this.chatId,
     required this.onBack,
     required this.onCreated,
+    this.existing,
   });
 
   final int chatId;
   final VoidCallback onBack;
+
+  /// Gets the link made, or the edited one.
   final ValueChanged<td.ChatInviteLink> onCreated;
+
+  /// The link to edit; null for a new one.
+  final td.ChatInviteLink? existing;
 
   @override
   ConsumerState<_NewLinkForm> createState() => _NewLinkFormState();
 }
 
 class _NewLinkFormState extends ConsumerState<_NewLinkForm> {
-  final _name = TextEditingController();
-  var _expiry = _Expiry.never;
-  var _limit = 0;
-  var _requests = false;
+  late final _name = TextEditingController(text: widget.existing?.name ?? '');
+  // An edited link keeps its expiry unless a new one is picked.
+  late var _expiry = widget.existing == null
+      ? _Expiry.never
+      : widget.existing!.expirationDate == 0
+      ? _Expiry.never
+      : _Expiry.keep;
+  late var _limit = widget.existing?.memberLimit ?? 0;
+  late var _requests = widget.existing?.createsJoinRequest ?? false;
   var _busy = false;
   var _failed = false;
 
@@ -350,23 +393,37 @@ class _NewLinkFormState extends ConsumerState<_NewLinkForm> {
       _failed = false;
     });
     final now = DateTime.now();
+    final management = ref
+        .read(telegramSessionProvider)
+        .requireValue
+        .management;
+    final existing = widget.existing;
+    final expiresAt = switch (_expiry) {
+      _Expiry.never => null,
+      _Expiry.keep => DateTime.fromMillisecondsSinceEpoch(
+        existing!.expirationDate * 1000,
+      ),
+      _Expiry.day => now.add(const Duration(days: 1)),
+      _Expiry.week => now.add(const Duration(days: 7)),
+      _Expiry.month => now.add(const Duration(days: 30)),
+    };
     try {
-      final link = await ref
-          .read(telegramSessionProvider)
-          .requireValue
-          .management
-          .createLink(
-            widget.chatId,
-            name: _name.text,
-            expiresAt: switch (_expiry) {
-              _Expiry.never => null,
-              _Expiry.day => now.add(const Duration(days: 1)),
-              _Expiry.week => now.add(const Duration(days: 7)),
-              _Expiry.month => now.add(const Duration(days: 30)),
-            },
-            memberLimit: _limit,
-            joinRequests: _requests,
-          );
+      final link = existing == null
+          ? await management.createLink(
+              widget.chatId,
+              name: _name.text,
+              expiresAt: expiresAt,
+              memberLimit: _limit,
+              joinRequests: _requests,
+            )
+          : await management.editLink(
+              widget.chatId,
+              existing,
+              name: _name.text,
+              expiresAt: expiresAt,
+              memberLimit: _limit,
+              joinRequests: _requests,
+            );
       if (mounted) widget.onCreated(link);
     } on Object {
       if (mounted) {
@@ -381,10 +438,11 @@ class _NewLinkFormState extends ConsumerState<_NewLinkForm> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final existing = widget.existing;
     return ManageSheetFrame(
-      title: l10n.newLink,
+      title: existing == null ? l10n.newLink : l10n.editLink,
       onBack: widget.onBack,
-      action: l10n.create,
+      action: existing == null ? l10n.create : l10n.save,
       busy: _busy,
       error: _failed ? l10n.saveFailed : null,
       onAction: _busy ? null : _create,
@@ -407,6 +465,15 @@ class _NewLinkFormState extends ConsumerState<_NewLinkForm> {
               value: _expiry,
               onChanged: (value) => setState(() => _expiry = value),
               options: [
+                if (_expiry == _Expiry.keep)
+                  (
+                    _Expiry.keep,
+                    DateFormat.MMMd(l10n.localeName).format(
+                      DateTime.fromMillisecondsSinceEpoch(
+                        existing!.expirationDate * 1000,
+                      ),
+                    ),
+                  ),
                 (_Expiry.never, l10n.noLimit),
                 (_Expiry.day, l10n.oneDay),
                 (_Expiry.week, l10n.oneWeek),

@@ -531,6 +531,332 @@ void main() {
       ], containsAll(['leaveChat', 'deleteChat']));
     });
   });
+
+  group('settings and moderation', () {
+    Map<String, Object?> full({
+      int banned = 0,
+      int restricted = 0,
+      int linked = 0,
+      int slow = 0,
+    }) => {
+      '@type': 'supergroupFullInfo',
+      'banned_count': banned,
+      'restricted_count': restricted,
+      'linked_chat_id': linked,
+      'slow_mode_delay': slow,
+      'is_all_history_available': false,
+      'bot_commands': <Object?>[],
+    };
+
+    test('read how a private supergroup is set up', () async {
+      json.answer = (r) => switch (r['@type']) {
+        'getChat' =>
+          r['chat_id'] == 77
+              ? {..._chat(77, _superType(8, channel: true)), 'title': 'News'}
+              : _chat(1, _superType(5)),
+        'getSupergroup' => {
+          ..._supergroup(5, _creator),
+          'usernames': {
+            '@type': 'usernames',
+            'active_usernames': <Object?>[],
+            'disabled_usernames': <Object?>[],
+            'editable_username': '',
+          },
+        },
+        'getSupergroupFullInfo' => full(banned: 2, restricted: 1, slow: 30),
+        _ => null,
+      };
+      final settings = await management.settings(1);
+      expect(settings.isSupergroup, isTrue);
+      expect(settings.isPublic, isFalse);
+      expect(settings.canToggleHistory, isTrue);
+      expect(settings.slowModeDelay, 30);
+      expect(settings.bannedCount, 2);
+      expect(settings.restrictedCount, 1);
+      expect(settings.linkedChatId, 0);
+      expect(settings.canGetEventLog, isTrue);
+    });
+
+    test('a public one with a linked chat can\'t hide its history', () async {
+      json.answer = (r) => switch (r['@type']) {
+        'getChat' =>
+          r['chat_id'] == 77
+              ? {..._chat(77, _superType(8)), 'title': 'Talk'}
+              : _chat(1, _superType(5, channel: true)),
+        'getSupergroup' => {
+          ..._supergroup(5, _creator),
+          'usernames': {
+            '@type': 'usernames',
+            'active_usernames': ['news'],
+            'disabled_usernames': <Object?>[],
+            'editable_username': 'news',
+          },
+        },
+        'getSupergroupFullInfo' => full(linked: 77),
+        _ => null,
+      };
+      final settings = await management.settings(1);
+      expect(settings.isChannel, isTrue);
+      expect(settings.username, 'news');
+      expect(settings.canToggleHistory, isFalse);
+      expect(settings.linkedChatTitle, 'Talk');
+    });
+
+    test('a basic group has only permissions', () async {
+      json.answer = (r) => switch (r['@type']) {
+        'getChat' => _chat(1, {
+          '@type': 'chatTypeBasicGroup',
+          'basic_group_id': 3,
+        }),
+        _ => null,
+      };
+      final settings = await management.settings(1);
+      expect(settings.isSupergroup, isFalse);
+      expect(settings.canGetEventLog, isFalse);
+      await expectLater(
+        management.setUsername(1, 'x'),
+        throwsA(isA<StateError>()),
+      );
+    });
+
+    test(
+      'permissions, slow mode, history, topics, requests and link',
+      () async {
+        json.answer = (r) => switch (r['@type']) {
+          'getChat' => _chat(1, _superType(5)),
+          'checkChatUsername' => {
+            '@type': 'checkChatUsernameResultUsernameOccupied',
+          },
+          _ => null,
+        };
+        final changed = <int>[];
+        final sub = management.changes.listen(changed.add);
+        await management.setPermissions(1, _readOnly);
+        await management.setSlowMode(1, 60);
+        await management.setHistoryAvailable(1, available: false);
+        await management.setForum(1, forum: true);
+        await management.setJoinByRequest(1, byRequest: true);
+        await management.setUsername(1, '@team');
+        expect(
+          await management.checkUsername(1, 'team'),
+          UsernameCheck.occupied,
+        );
+        final types = [for (final r in json.sent) r['@type']];
+        expect(
+          types,
+          containsAll([
+            'setChatPermissions',
+            'setChatSlowModeDelay',
+            'toggleSupergroupIsAllHistoryAvailable',
+            'toggleSupergroupIsForum',
+            'toggleSupergroupJoinByRequest',
+            'setSupergroupUsername',
+          ]),
+        );
+        expect(
+          json.sent.lastWhere(
+            (r) => r['@type'] == 'setSupergroupUsername',
+          )['username'],
+          'team',
+        );
+        expect(changed, hasLength(6));
+        await sub.cancel();
+      },
+    );
+
+    test('list the banned and restricted, and let them back', () async {
+      json.answer = (r) => switch (r['@type']) {
+        'getChat' => _chat(1, _superType(5)),
+        'getSupergroupMembers' => switch ((r['filter']! as Map)['@type']) {
+          'supergroupMembersFilterBanned' => _members(1, [
+            _chatMember(8, {
+              '@type': 'chatMemberStatusBanned',
+              'banned_until_date': 5000,
+            }),
+          ]),
+          _ => _members(1, [
+            _chatMember(9, {
+              '@type': 'chatMemberStatusRestricted',
+              'is_member': true,
+              'restricted_until_date': 0,
+              'permissions': {'@type': 'chatPermissions'},
+            }),
+          ]),
+        },
+        'getUser' => _user(r['user_id']! as int, 'U${r['user_id']}'),
+        _ => null,
+      };
+      final removed = await management.removedMembers(1, query: 'U');
+      expect([for (final m in removed) m.userId], [8, 9]);
+      expect(removed.first.isBanned, isTrue);
+      expect(removed.first.until, isNotNull);
+      expect(removed.last.isBanned, isFalse);
+      expect(removed.last.permissions, isNotNull);
+      final filters = [
+        for (final r in json.sent)
+          if (r['@type'] == 'getSupergroupMembers')
+            (r['filter']! as Map)['query'],
+      ];
+      expect(filters, ['U', 'U']);
+
+      await management.unban(1, 8, banned: true);
+      await management.unban(1, 9, banned: false);
+      final statuses = [
+        for (final r in json.sent)
+          if (r['@type'] == 'setChatMemberStatus')
+            (r['status']! as Map)['@type'],
+      ];
+      expect(statuses, ['chatMemberStatusLeft', 'chatMemberStatusMember']);
+    });
+
+    test('join requests come with names and are processed', () async {
+      json.answer = (r) => switch (r['@type']) {
+        'getChatJoinRequests' => {
+          '@type': 'chatJoinRequests',
+          'total_count': 1,
+          'requests': [
+            {
+              '@type': 'chatJoinRequest',
+              'user_id': 10,
+              'date': 1000,
+              'bio': 'hi',
+            },
+          ],
+        },
+        'getUser' => _user(10, 'Nina'),
+        _ => null,
+      };
+      final requests = await management.joinRequests(1);
+      expect(requests.single.name, 'Nina');
+      expect(requests.single.bio, 'hi');
+      await management.processJoinRequest(1, 10, approve: false);
+      final request = json.sent.lastWhere(
+        (r) => r['@type'] == 'processChatJoinRequest',
+      );
+      expect(request['approve'], isFalse);
+    });
+
+    test('edit a link, add members and give a title', () async {
+      json.answer = (r) => switch (r['@type']) {
+        'editChatInviteLink' => _link('e'),
+        'addChatMembers' => {
+          '@type': 'failedToAddMembers',
+          'failed_to_add_members': [
+            {'@type': 'failedToAddMember', 'user_id': 3},
+          ],
+        },
+        _ => null,
+      };
+      await management.editLink(
+        1,
+        td.ChatInviteLink.fromJson(_link('e')),
+        name: 'Team',
+        memberLimit: 5,
+        joinRequests: true,
+      );
+      final edit = json.sent.lastWhere(
+        (r) => r['@type'] == 'editChatInviteLink',
+      );
+      expect(edit['invite_link'], 'https://t.me/+e');
+      expect(edit['member_limit'], 0);
+      expect(edit['creates_join_request'], isTrue);
+
+      expect(await management.addMembers(1, [2, 3]), [3]);
+      await management.setAdminTitle(1, 2, ' Chief ${'x' * 20}');
+      final tag = json.sent.lastWhere((r) => r['@type'] == 'setChatMemberTag');
+      expect(tag['tag'], 'Chief ${'x' * 10}');
+    });
+
+    test('recent actions name who did what to whom', () async {
+      json.answer = (r) => switch (r['@type']) {
+        'getChatEventLog' => {
+          '@type': 'chatEvents',
+          'events': [
+            {
+              '@type': 'chatEvent',
+              'id': 3,
+              'date': 1000,
+              'member_id': {'@type': 'messageSenderUser', 'user_id': 1},
+              'action': {
+                '@type': 'chatEventMemberPromoted',
+                'user_id': 2,
+                'old_status': _member,
+                'new_status': _admin(),
+              },
+            },
+            {
+              '@type': 'chatEvent',
+              'id': 2,
+              'date': 900,
+              'member_id': {'@type': 'messageSenderChat', 'chat_id': 1},
+              'action': {
+                '@type': 'chatEventTitleChanged',
+                'old_title': 'a',
+                'new_title': 'b',
+              },
+            },
+          ],
+        },
+        'getUser' => _user(r['user_id']! as int, 'U${r['user_id']}'),
+        'getChat' => _chat(1, _superType(5)),
+        _ => null,
+      };
+      final entries = await management.recentActions(1, userIds: [1]);
+      expect(entries, hasLength(2));
+      expect(entries.first.actorName, 'U1');
+      expect(entries.first.subjectName, 'U2');
+      expect(entries.first.action, isA<td.ChatEventMemberPromoted>());
+      // An anonymous administrator acts as the chat.
+      expect(entries.last.actorName, 'Chat');
+      expect(entries.last.subjectName, isNull);
+      final request = json.sent.firstWhere(
+        (r) => r['@type'] == 'getChatEventLog',
+      );
+      expect(request['user_ids'], [1]);
+    });
+
+    test('a channel links and unlinks a discussion group', () async {
+      json.answer = (r) => switch (r['@type']) {
+        'getSuitableDiscussionChats' => {
+          '@type': 'chats',
+          'total_count': 1,
+          'chat_ids': [4],
+        },
+        'getChat' => {..._chat(4, _superType(6)), 'title': 'Talk'},
+        _ => null,
+      };
+      expect(await management.suitableDiscussionGroups(), [(4, 'Talk')]);
+      await management.setDiscussionGroup(1, 4);
+      await management.setDiscussionGroup(1, null);
+      final ids = [
+        for (final r in json.sent)
+          if (r['@type'] == 'setChatDiscussionGroup') r['discussion_chat_id'],
+      ];
+      expect(ids, [4, 0]);
+    });
+
+    test('a new channel gets its link and photo after creation', () async {
+      json.answer = (r) => switch (r['@type']) {
+        'createNewSupergroupChat' => _chat(31, _superType(9, channel: true)),
+        'getChat' => _chat(31, _superType(9, channel: true)),
+        _ => null,
+      };
+      await management.createChannel(
+        'News',
+        username: 'news',
+        photoPath: '/tmp/a.jpg',
+      );
+      final types = [for (final r in json.sent) r['@type']];
+      expect(
+        types,
+        containsAllInOrder([
+          'createNewSupergroupChat',
+          'setSupergroupUsername',
+          'setChatPhoto',
+        ]),
+      );
+    });
+  });
 }
 
 const _creator = {

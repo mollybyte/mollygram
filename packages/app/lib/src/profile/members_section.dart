@@ -183,11 +183,17 @@ class _MembersSectionState extends ConsumerState<_MembersSection> {
         forum: rights.isForum,
         current: member.adminRights,
         granter: rights.isOwner ? null : rights.adminRights,
+        title: member.tag,
       ),
     );
     switch (choice) {
-      case SaveAdmin(:final rights):
-        await _act(() => _management.promote(chatId, member.userId, rights));
+      case SaveAdmin(:final rights, :final title):
+        await _act(() async {
+          await _management.promote(chatId, member.userId, rights);
+          if (title != member.tag) {
+            await _management.setAdminTitle(chatId, member.userId, title);
+          }
+        });
       case DismissAdmin():
         await _act(() => _management.demote(chatId, member.userId));
       case null:
@@ -260,6 +266,23 @@ class _MembersSectionState extends ConsumerState<_MembersSection> {
           ),
           const SizedBox(height: 8),
         ],
+        if (widget.rights.canInviteUsers && !info.isDeleted) ...[
+          _Group(
+            children: [
+              _ActionRow(
+                label: channel ? l10n.addSubscribers : l10n.addMembers,
+                color: c.accent,
+                onTap: () => unawaited(
+                  showManageSheet<void>(
+                    context,
+                    AddMembersSheet(chatId: info.chatId, channel: channel),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+        ],
         if (_members.isEmpty && !_loading)
           Padding(
             padding: const EdgeInsets.all(12),
@@ -287,6 +310,7 @@ class _MembersSectionState extends ConsumerState<_MembersSection> {
                       ? l10n.statusBot
                       : describeUserStatus(l10n, member.status, now: now),
                   online: isOnline(member.status, now),
+                  tag: member.tag,
                   onTap: () => widget.onMember(member.userId),
                   onMenu:
                       member.canPromote ||

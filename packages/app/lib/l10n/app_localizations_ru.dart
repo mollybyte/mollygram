@@ -3684,4 +3684,454 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get shortcutsRestoreConfirm => 'Вернуть';
+
+  @override
+  String get adminTitleHint => 'Должность (необязательно)';
+
+  @override
+  String get adminTitleNote => 'Показывается участникам вместо «админ».';
+
+  @override
+  String get permCreateTopics => 'Создавать темы';
+
+  @override
+  String get permissions => 'Разрешения';
+
+  @override
+  String get permissionsEveryone => 'Что могут участники';
+
+  @override
+  String get slowMode => 'Медленный режим';
+
+  @override
+  String get slowModeOffNote => 'Участники могут писать сколько угодно часто.';
+
+  @override
+  String slowModeNote(String interval) {
+    return 'Участники могут отправлять одно сообщение раз в $interval.';
+  }
+
+  @override
+  String get off => 'Выкл.';
+
+  @override
+  String secondsShort(int count) {
+    return '$count с';
+  }
+
+  @override
+  String minutesShort(int count) {
+    return '$count мин';
+  }
+
+  @override
+  String hoursShort(int count) {
+    return '$count ч';
+  }
+
+  @override
+  String get removedUsers => 'Удалённые пользователи';
+
+  @override
+  String get noRemovedUsers => 'Никто не заблокирован и не ограничен.';
+
+  @override
+  String get unban => 'Разблокировать';
+
+  @override
+  String get banned => 'Заблокирован';
+
+  @override
+  String bannedUntil(String until) {
+    return 'Заблокирован $until';
+  }
+
+  @override
+  String get restricted => 'Ограничен';
+
+  @override
+  String cannot(String what) {
+    return 'Не может: $what';
+  }
+
+  @override
+  String untilDate(String date) {
+    return 'до $date';
+  }
+
+  @override
+  String get joinRequests => 'Заявки на вступление';
+
+  @override
+  String get noJoinRequests => 'Никто не ждёт одобрения.';
+
+  @override
+  String requestedOn(String date) {
+    return 'Подал заявку $date';
+  }
+
+  @override
+  String get approve => 'Принять';
+
+  @override
+  String get dismiss => 'Отклонить';
+
+  @override
+  String get recentActions => 'Недавние действия';
+
+  @override
+  String get recentActionsFailed => 'Не удалось загрузить недавние действия.';
+
+  @override
+  String get noRecentActions => 'Недавних действий нет.';
+
+  @override
+  String get recentActionsNote => 'Действия за последние 48 часов.';
+
+  @override
+  String get allAdmins => 'Все админы';
+
+  @override
+  String get logMedia => 'медиа';
+
+  @override
+  String logEditedMessage(String text) {
+    return 'изменил(а) сообщение: $text';
+  }
+
+  @override
+  String logDeletedMessage(String text) {
+    return 'удалил(а) сообщение: $text';
+  }
+
+  @override
+  String logPinnedMessage(String text) {
+    return 'закрепил(а) сообщение: $text';
+  }
+
+  @override
+  String get logUnpinnedMessage => 'открепил(а) сообщение';
+
+  @override
+  String get logStoppedPoll => 'остановил(а) опрос';
+
+  @override
+  String get logJoined => 'вступил(а)';
+
+  @override
+  String logJoinedByLink(String link) {
+    return 'вступил(а) по ссылке $link';
+  }
+
+  @override
+  String logJoinedByRequest(String name) {
+    return 'вступил(а), одобрил(а) $name';
+  }
+
+  @override
+  String logInvited(String name) {
+    return 'добавил(а) $name';
+  }
+
+  @override
+  String get logLeft => 'вышел (вышла)';
+
+  @override
+  String logPromoted(String name) {
+    return 'назначил(а) $name админом или изменил(а) права';
+  }
+
+  @override
+  String logDemoted(String name) {
+    return 'снял(а) $name с админов';
+  }
+
+  @override
+  String logBanned(String name) {
+    return 'заблокировал(а) $name';
+  }
+
+  @override
+  String logRestricted(String name) {
+    return 'ограничил(а) $name';
+  }
+
+  @override
+  String logUnrestricted(String name) {
+    return 'снял(а) ограничения с $name';
+  }
+
+  @override
+  String logTitleChanged(String name, String title) {
+    return 'дал(а) $name должность $title';
+  }
+
+  @override
+  String logTitleSet(String title) {
+    return 'переименовал(а) чат в $title';
+  }
+
+  @override
+  String get logDescriptionChanged => 'изменил(а) описание';
+
+  @override
+  String get logPhotoChanged => 'изменил(а) фото';
+
+  @override
+  String get logPhotoRemoved => 'удалил(а) фото';
+
+  @override
+  String get logMadePrivate => 'сделал(а) чат частным';
+
+  @override
+  String logMadePublic(String username) {
+    return 'сделал(а) чат публичным: t.me/$username';
+  }
+
+  @override
+  String get logUsernamesChanged => 'изменил(а) ссылки';
+
+  @override
+  String get logPermissionsChanged => 'изменил(а) разрешения';
+
+  @override
+  String get logSlowModeOff => 'выключил(а) медленный режим';
+
+  @override
+  String logSlowModeOn(String interval) {
+    return 'установил(а) медленный режим: $interval';
+  }
+
+  @override
+  String get logLinked => 'привязал(а) чат';
+
+  @override
+  String get logUnlinked => 'отвязал(а) чат';
+
+  @override
+  String get logReactionsChanged => 'изменил(а) доступные реакции';
+
+  @override
+  String get logHistoryShown => 'открыл(а) историю новым участникам';
+
+  @override
+  String get logHistoryHidden => 'скрыл(а) историю от новых участников';
+
+  @override
+  String get logInvitesOn => 'разрешил(а) участникам приглашать других';
+
+  @override
+  String get logInvitesOff => 'запретил(а) участникам приглашать других';
+
+  @override
+  String get logSignaturesOn => 'включил(а) подписи';
+
+  @override
+  String get logSignaturesOff => 'выключил(а) подписи';
+
+  @override
+  String get logProtectedOn => 'запретил(а) пересылку';
+
+  @override
+  String get logProtectedOff => 'разрешил(а) пересылку';
+
+  @override
+  String logLinkEdited(String link) {
+    return 'изменил(а) ссылку $link';
+  }
+
+  @override
+  String logLinkRevoked(String link) {
+    return 'отозвал(а) ссылку $link';
+  }
+
+  @override
+  String logLinkDeleted(String link) {
+    return 'удалил(а) ссылку $link';
+  }
+
+  @override
+  String get logVideoChatStarted => 'начал(а) видеочат';
+
+  @override
+  String get logVideoChatEnded => 'завершил(а) видеочат';
+
+  @override
+  String get logTopicsOn => 'включил(а) темы';
+
+  @override
+  String get logTopicsOff => 'выключил(а) темы';
+
+  @override
+  String logTopicCreated(String name) {
+    return 'создал(а) тему $name';
+  }
+
+  @override
+  String logTopicEdited(String name) {
+    return 'изменил(а) тему $name';
+  }
+
+  @override
+  String logTopicDeleted(String name) {
+    return 'удалил(а) тему $name';
+  }
+
+  @override
+  String logTopicToggled(String name) {
+    return 'закрыл(а) или открыл(а) тему $name';
+  }
+
+  @override
+  String get logTopicPinned => 'закрепил(а) или открепил(а) тему';
+
+  @override
+  String get logStickerSetChanged => 'изменил(а) набор стикеров';
+
+  @override
+  String get logAutoDeleteChanged => 'изменил(а) таймер автоудаления';
+
+  @override
+  String get logOther => 'изменил(а) настройку';
+
+  @override
+  String get groupType => 'Тип группы';
+
+  @override
+  String get channelType => 'Тип канала';
+
+  @override
+  String get privateChat => 'Частный';
+
+  @override
+  String get publicChat => 'Публичный';
+
+  @override
+  String get privateGroupNote =>
+      'Вступить могут только те, у кого есть ссылка-приглашение.';
+
+  @override
+  String get publicGroupNote =>
+      'Группу можно найти в поиске, и вступить может любой.';
+
+  @override
+  String get privateChannelNote =>
+      'Подписаться могут только те, у кого есть ссылка-приглашение.';
+
+  @override
+  String get publicChannelNote =>
+      'Канал можно найти в поиске, и подписаться может любой.';
+
+  @override
+  String get usernameTaken => 'Ссылка уже занята.';
+
+  @override
+  String get usernameInvalid =>
+      'От 5 до 32 латинских букв, цифр и подчёркиваний, начиная с буквы.';
+
+  @override
+  String get usernameTooMany =>
+      'У вас слишком много публичных чатов. Сделайте один частным.';
+
+  @override
+  String usernameNotSet(String username) {
+    return 'Канал создан, но t.me/$username занята. Выберите другую ссылку в его профиле.';
+  }
+
+  @override
+  String get publicLinkOptional => 'публичная ссылка (необязательно)';
+
+  @override
+  String get reactions => 'Реакции';
+
+  @override
+  String get reactionsAll => 'Все';
+
+  @override
+  String get reactionsSome => 'Некоторые';
+
+  @override
+  String get reactionsNone => 'Нет';
+
+  @override
+  String get reactionsAllNote => 'Участники могут ставить любые эмодзи.';
+
+  @override
+  String get reactionsSomeNote =>
+      'Участники могут ставить только выбранные здесь эмодзи.';
+
+  @override
+  String get reactionsNoneNote => 'Реакции на сообщения отключены.';
+
+  @override
+  String get discussionGroup => 'Группа обсуждения';
+
+  @override
+  String get linkedChannel => 'Привязанный канал';
+
+  @override
+  String get discussionGroupNote => 'Комментарии к постам идут в эту группу.';
+
+  @override
+  String get linkedChannelNote => 'В этой группе хранятся комментарии канала.';
+
+  @override
+  String get pickDiscussionGroup =>
+      'Выберите свою группу для комментариев к постам.';
+
+  @override
+  String get noSuitableGroups =>
+      'Нет группы для привязки. Сначала создайте её.';
+
+  @override
+  String get unlink => 'Отвязать';
+
+  @override
+  String get unlinkTitle => 'Отвязать?';
+
+  @override
+  String get unlinkGroupMessage =>
+      'У постов не будет комментариев, пока не привязана другая группа.';
+
+  @override
+  String get unlinkChannelMessage =>
+      'Группа больше не будет хранить комментарии канала.';
+
+  @override
+  String get addMembers => 'Добавить участников';
+
+  @override
+  String get addSubscribers => 'Добавить подписчиков';
+
+  @override
+  String get add => 'Добавить';
+
+  @override
+  String get editLink => 'Изменить ссылку';
+
+  @override
+  String get manage => 'Управление';
+
+  @override
+  String get historyForNewMembers => 'Показывать историю новым участникам';
+
+  @override
+  String get topics => 'Темы';
+
+  @override
+  String get approveNewMembers => 'Одобрять новых участников';
+
+  @override
+  String get none => 'Нет';
+
+  @override
+  String ofCount(int count, int total) {
+    return '$count из $total';
+  }
+
+  @override
+  String get chatLinkHint => 'ссылка';
+
+  @override
+  String get chatLinkAvailable => 'Ссылка свободна.';
 }

@@ -10,11 +10,13 @@ sealed class AdminChoice {
   const AdminChoice();
 }
 
-/// Appoint, or keep as an administrator, with [rights].
+/// Appoint, or keep as an administrator, with [rights] and a [title]
+/// shown in place of "admin" (empty for the usual one).
 final class SaveAdmin extends AdminChoice {
-  const SaveAdmin(this.rights);
+  const SaveAdmin(this.rights, {this.title = ''});
 
   final td.ChatAdministratorRights rights;
+  final String title;
 }
 
 /// Make a plain member again.
@@ -156,11 +158,15 @@ class AdminRightsSheet extends StatefulWidget {
     this.forum = false,
     this.current,
     this.granter,
+    this.title = '',
   });
 
   final String name;
   final bool channel;
   final bool forum;
+
+  /// The administrator's title so far.
+  final String title;
 
   /// The rights of the administrator appointing, who can only give what
   /// they have; null for the owner.
@@ -190,21 +196,51 @@ class _AdminRightsSheetState extends State<AdminRightsSheet> {
         }
       : rightsOf(widget.current!);
 
+  late final _title = TextEditingController(text: widget.title);
+
+  @override
+  void dispose() {
+    _title.dispose();
+    super.dispose();
+  }
+
   bool _mayGive(AdminRight right) =>
       widget.granter == null || rightsOf(widget.granter!).contains(right);
+
+  void _save() => Navigator.of(context).pop(
+    SaveAdmin(
+      adminRights(_on, base: widget.current, shown: _shown),
+      title: _title.text.trim(),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final c = MgColors.of(context);
     return ManageSheetFrame(
       title: widget.current == null ? l10n.addAdmin : l10n.adminRights,
       action: l10n.save,
-      onAction: () => Navigator.of(
-        context,
-      ).pop(SaveAdmin(adminRights(_on, base: widget.current, shown: _shown))),
+      onAction: _save,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            child: MgUnderlineField(
+              controller: _title,
+              hintText: l10n.adminTitleHint,
+              fontSize: 14,
+              onSubmitted: (_) => _save(),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+            child: Text(
+              l10n.adminTitleNote,
+              style: mgTextStyle(c, size: MgType.caption, color: c.fg2),
+            ),
+          ),
           SheetCaption(l10n.adminRightsOf(widget.name)),
           for (final right in _shown)
             ToggleRow(
@@ -242,7 +278,15 @@ enum MemberPermission {
   embedLinks,
   inviteUsers,
   pinMessages,
-  changeInfo;
+  changeInfo,
+  createTopics;
+
+  /// The permissions that mean something in a group; topics only in a
+  /// forum.
+  static List<MemberPermission> of({bool forum = false}) => [
+    for (final permission in values)
+      if (permission != createTopics || forum) permission,
+  ];
 
   String label(AppLocalizations l10n) => switch (this) {
     sendMessages => l10n.permSendMessages,
@@ -253,6 +297,7 @@ enum MemberPermission {
     inviteUsers => l10n.rightInviteUsers,
     pinMessages => l10n.rightPinMessages,
     changeInfo => l10n.rightChangeInfo,
+    createTopics => l10n.permCreateTopics,
   };
 }
 
@@ -266,6 +311,7 @@ Set<MemberPermission> permissionsOf(td.ChatPermissions p) => {
   if (p.canInviteUsers) MemberPermission.inviteUsers,
   if (p.canPinMessages) MemberPermission.pinMessages,
   if (p.canChangeInfo) MemberPermission.changeInfo,
+  if (p.canCreateTopics) MemberPermission.createTopics,
 };
 
 /// TDLib permissions with [on] given.
@@ -287,7 +333,7 @@ td.ChatPermissions memberPermissions(Set<MemberPermission> on) {
     canChangeInfo: on.contains(MemberPermission.changeInfo),
     canInviteUsers: on.contains(MemberPermission.inviteUsers),
     canPinMessages: on.contains(MemberPermission.pinMessages),
-    canCreateTopics: false,
+    canCreateTopics: on.contains(MemberPermission.createTopics),
   );
 }
 
@@ -322,7 +368,7 @@ class _RestrictSheetState extends State<RestrictSheet> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           SheetCaption(l10n.restrictWhatCan(widget.name)),
-          for (final permission in MemberPermission.values)
+          for (final permission in MemberPermission.of())
             ToggleRow(
               label: permission.label(l10n),
               value: _on.contains(permission),
