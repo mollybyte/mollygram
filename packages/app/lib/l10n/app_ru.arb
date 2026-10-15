@@ -158,6 +158,8 @@
   "menuQuickLook": "Быстрый просмотр",
   "sendWithoutSound": "Отправить без звука",
   "scheduleMessage": "Запланировать сообщение…",
+  "sendWhenOnline": "Отправить, когда появится в сети",
+  "scheduledWhenOnline": "Отправится, когда собеседник появится в сети",
   "scheduleTitle": "Запланировать сообщение",
   "scheduleHint": "Выберите день и время отправки.",
   "scheduleTimeHint": "ЧЧ:ММ",

@@ -1856,8 +1856,32 @@ class _ChatViewState extends ConsumerState<ChatView> {
           label: l10n.scheduleMessage,
           onSelected: () => unawaited(_schedule(text)),
         ),
+        if (_canSendWhenOnline)
+          MgMenuItem(
+            label: l10n.sendWhenOnline,
+            onSelected: () => unawaited(_sendWhenOnline(text)),
+          ),
       ],
     );
+  }
+
+  /// Only a person comes online, so "Send when online" is for private
+  /// chats with one, not with a bot, and not for groups or channels.
+  bool get _canSendWhenOnline {
+    final store = _conversations.store;
+    return store.privateUserIdOf(widget.chatId) != null &&
+        store.botUserIdOf(widget.chatId) == null;
+  }
+
+  Future<void> _sendWhenOnline(String text) async {
+    final chatId = widget.chatId;
+    final l10n = AppLocalizations.of(context);
+    await _send(
+      text,
+      schedule: const td.MessageSchedulingStateSendWhenOnline(),
+    );
+    if (!mounted || widget.chatId != chatId || _failure != null) return;
+    showMgToast(context, l10n.scheduledWhenOnline);
   }
 
   Future<void> _schedule(String text) async {
@@ -2139,15 +2163,14 @@ class _ChatViewState extends ConsumerState<ChatView> {
     final useDraft = _editing == null;
     final draft = useDraft ? _draft.text : '';
     final draftFormats = useDraft ? _draft.ranges : const <FormatRange>[];
-    final store = _conversations.store;
     final choice = await showAttachmentPreview(
       context,
       paths: paths,
       caption: draft,
-      // Only a person can get self-destructing media, not a bot.
-      allowSelfDestruct:
-          store.privateUserIdOf(chatId) != null &&
-          store.botUserIdOf(chatId) == null,
+      // Only a person can get self-destructing media, not a bot, and
+      // only a person comes online.
+      allowSelfDestruct: _canSendWhenOnline,
+      allowSendWhenOnline: _canSendWhenOnline,
     );
     if (choice == null && temporary) {
       for (final path in paths) {

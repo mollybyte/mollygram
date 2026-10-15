@@ -781,6 +781,27 @@ void main() {
     );
   });
 
+  testWidgets('sends when the person comes online from the send menu', (
+    tester,
+  ) async {
+    json.push(_chat(lastRead: 60, unread: 0, last: 60));
+    await pump(tester);
+    await tester.enterText(find.byType(TextField), 'Morning');
+    await tester.pump();
+    await tester.tap(find.byType(MgSendButton), buttons: kSecondaryButton);
+    await tester.pump();
+    await tester.tap(find.text('Send when online'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    final sent = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    expect(
+      ((sent['options']! as Map)['scheduling_state']! as Map)['@type'],
+      'messageSchedulingStateSendWhenOnline',
+    );
+    expect(find.text('Will be sent when they come online'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 3));
+  });
+
   testWidgets('sends without sound or schedules from the send menu', (
     tester,
   ) async {
