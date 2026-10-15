@@ -159,7 +159,7 @@ class VoiceNoteContent extends ConsumerWidget {
         subtitle: time,
         subtitleTrailing: controls == null
             ? null
-            : _SpeedButton(rate: controls.rate, onTap: controls.nextRate),
+            : SpeedButton(rate: controls.rate, onTap: controls.nextRate),
         meta: meta,
       ),
     );
@@ -377,8 +377,9 @@ class _Scrubber extends StatelessWidget {
 }
 
 /// `1×`, `1.5×`, `2×`: a click steps the playback speed.
-class _SpeedButton extends StatelessWidget {
-  const _SpeedButton({required this.rate, required this.onTap});
+/// "1×", "1.5×", "2×": the playback speed, tinted when it is not 1×.
+class SpeedButton extends StatelessWidget {
+  const SpeedButton({super.key, required this.rate, required this.onTap});
 
   final double rate;
   final VoidCallback onTap;

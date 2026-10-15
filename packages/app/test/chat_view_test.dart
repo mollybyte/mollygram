@@ -11,6 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mollygram/l10n/app_localizations.dart';
 import 'package:mollygram/src/chat/bot_keyboard.dart';
 import 'package:mollygram/src/chat/media_content.dart';
+import 'package:mollygram/src/chat/media_providers.dart';
 import 'package:mollygram/src/chat/recent_emoji.dart';
 import 'package:mollygram/src/chat/save_file.dart';
 import 'package:mollygram/src/chat/sticker_suggestions.dart';
@@ -1594,6 +1595,56 @@ void main() {
       DateTime(2025, 10, 10).millisecondsSinceEpoch ~/ 1000 - 1,
     );
     expect(tester.widget<TimelineView>(find.byType(TimelineView)).anchor, 11);
+  });
+
+  testWidgets('shows the playing voice message in the header', (tester) async {
+    json.chat = [for (var id = 1; id <= 60; id++) id];
+    json.push(_chat(lastRead: 60, unread: 0, last: 60));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await pump(tester);
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Show in chat'), findsNothing);
+
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(ChatView)),
+    );
+    final player = container.read(audioPlayerProvider);
+    player.debugLoad(
+      (chatId: 7, messageId: 20),
+      duration: const Duration(seconds: 45),
+      position: const Duration(seconds: 12),
+    );
+    await tester.pumpAndSettle();
+    final capsule = find.byTooltip('Show in chat');
+    expect(capsule, findsOneWidget);
+    expect(
+      find.descendant(of: capsule, matching: find.text('Boris')),
+      findsOneWidget,
+    );
+    expect(find.text('0:12 / 0:45'), findsOneWidget);
+    expect(find.byTooltip('Pause'), findsOneWidget);
+
+    // The title scrolls to the message; before that only the capsule's
+    // own subtitle names it.
+    final twentieth = find.textContaining(
+      RegExp(r'Message 20(?!\d)'),
+      findRichText: true,
+    );
+    expect(twentieth, findsOneWidget);
+    await tester.tap(capsule);
+    await tester.pump();
+    expect(twentieth, findsNWidgets(2));
+    expect(tester.getRect(twentieth.first).top, inInclusiveRange(0, 800));
+
+    await tester.tap(
+      find.descendant(
+        of: find.byType(Glass),
+        matching: find.byTooltip('Close'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(player.track.value, isNull);
+    expect(find.byTooltip('Show in chat'), findsNothing);
   });
 
   testWidgets('jumps to a day from the search bar', (tester) async {
