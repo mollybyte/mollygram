@@ -7,6 +7,7 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 import '../../l10n/app_localizations.dart';
 import '../notifications/notification_service.dart';
 import '../session/connection_status_capsule.dart';
+import '../settings/appearance.dart';
 import '../settings/settings_window.dart';
 import '../window_drag_area.dart';
 import 'chat_view.dart';
@@ -73,7 +74,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       child: GlassScope(
         child: Stack(
           children: [
-            const Positioned.fill(child: Wallpaper()),
+            const Positioned.fill(child: ChatBackground()),
             Positioned.fill(
               child: WorkspaceShell(
                 controller: workspace,

@@ -462,7 +462,7 @@ class _AccountFormState extends ConsumerState<_AccountForm> {
                   setState(() => _bioLength = v.characters.length),
               onFocusChanged: (f) => setState(() => _bioFocused = f),
               trailing: AnimatedOpacity(
-                duration: settingsMotion,
+                duration: settingsMotionOf(context),
                 opacity: _bioFocused ? 1 : 0,
                 child: Text(
                   '$remaining',

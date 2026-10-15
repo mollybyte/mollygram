@@ -9,6 +9,7 @@ import 'package:mollygram/l10n/app_localizations.dart';
 import 'package:mollygram/src/session/providers.dart';
 import 'package:mollygram/src/settings/account_page.dart';
 import 'package:mollygram/src/settings/plugins_page.dart';
+import 'package:mollygram/src/settings/preferences.dart';
 import 'package:mollygram/src/settings/settings_window.dart';
 import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_plugins_ui/mollygram_plugins_ui.dart';
@@ -49,11 +50,13 @@ void main() {
 
   var closed = 0;
   var loggedOut = 0;
+  late MemoryPreferencesStorage preferences;
   var logOutFails = false;
 
   Future<void> pump(WidgetTester tester, {String section = 'account'}) async {
     closed = 0;
     loggedOut = 0;
+    preferences = MemoryPreferencesStorage();
     logOutFails = false;
     tester.view
       ..physicalSize = const Size(1200, 800)
@@ -66,6 +69,7 @@ void main() {
           pluginsControllerProvider.overrideWith(
             (ref) => PluginsController(mockPlugins()),
           ),
+          preferencesStorageProvider.overrideWithValue(preferences),
           logOutProvider.overrideWithValue(() async {
             if (logOutFails) throw StateError('offline');
             loggedOut++;
@@ -348,6 +352,77 @@ void main() {
     expect(find.text('Shop bot'), findsNothing);
   });
 
+  testWidgets('appearance choices apply and are saved', (tester) async {
+    await pump(tester, section: 'appearance');
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(SettingsWindow)),
+    );
+    await tester.tap(find.byKey(const ValueKey('theme.dark')));
+    await tester.tap(find.byKey(const ValueKey('accent.teal')));
+    await tester.tap(find.byKey(const ValueKey('wallpaper')));
+    await tester.tap(find.byKey(const ValueKey('reduceMotion')));
+    await settle(tester);
+    final p = container.read(preferencesProvider);
+    expect(p.theme, ThemeMode.dark);
+    expect(p.accent, AccentChoice.teal);
+    expect(p.wallpaper, isFalse);
+    expect(p.reduceMotion, isTrue);
+
+    // Dragging the slider to its right end picks 17 pt.
+    final slider = find.byKey(const ValueKey('textSize'));
+    await tester.tapAt(
+      tester.getCenter(slider) +
+          Offset(tester.getSize(slider).width / 2 - 2, 0),
+    );
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(container.read(preferencesProvider).textSize, 17);
+    expect((preferences.saved! as Map)['textSize'], 17);
+    expect((preferences.saved! as Map)['theme'], 'dark');
+  });
+
+  testWidgets('shows the storage by kind and clears the chosen kinds', (
+    tester,
+  ) async {
+    await pump(tester, section: 'data');
+    expect(find.text('42 MB of media and files'), findsOneWidget);
+    expect(find.text('4.2 MB'), findsOneWidget);
+    expect(find.text('38 MB'), findsOneWidget);
+    expect(find.text('12 MB'), findsOneWidget);
+
+    // Untick videos: only photos are cleared.
+    await tester.tap(find.byKey(const ValueKey('storage.videos')));
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('clearCache')));
+    await settle(tester);
+    expect(find.text('Clear 4.2 MB from this computer?'), findsOneWidget);
+    await tester.tap(find.text('Clear'));
+    await settle(tester);
+
+    final request = json.sent.lastWhere((r) => r['@type'] == 'optimizeStorage');
+    expect(request['file_types'], [
+      {'@type': 'fileTypePhoto'},
+      {'@type': 'fileTypePhotoStory'},
+    ]);
+    expect(find.text('38 MB of media and files'), findsOneWidget);
+  });
+
+  testWidgets('auto-download switches are kept per network', (tester) async {
+    await pump(tester, section: 'data');
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(SettingsWindow)),
+    );
+    await tester.tap(find.byKey(const ValueKey('autoDownload.files.wifi')));
+    await tester.pump();
+    final files = container
+        .read(preferencesProvider)
+        .autoDownloadOf(AutoDownloadKind.files);
+    expect(files, const AutoDownload(wifi: true, other: false));
+    expect(
+      container.read(autoDownloadProvider(AutoDownloadKind.files)),
+      isTrue,
+    );
+  });
+
   testWidgets('shows the plugins page edge to edge', (tester) async {
     await pump(tester);
     await tester.tap(find.text('Plugins'));
@@ -399,6 +474,9 @@ final class _FakeTdJson implements td.TdJson {
 
   /// Whether a business bot is connected.
   var bot = false;
+
+  /// Whether the photo cache was cleared.
+  var cleared = false;
   var _sessions = [
     _session(2, 'Telegram iOS', '11.2', lastActive: 1700000000),
     _session(1, 'Mollygram', '0.1.0', current: true),
@@ -426,6 +504,8 @@ final class _FakeTdJson implements td.TdJson {
         for (final s in _sessions)
           if (s['id'] != decoded['session_id']) s,
       ];
+    } else if (type == 'optimizeStorage') {
+      cleared = true;
     } else if (type == 'deleteBusinessConnectedBot') {
       bot = false;
     } else if (type == 'terminateAllOtherSessions') {
@@ -461,6 +541,32 @@ final class _FakeTdJson implements td.TdJson {
       },
       'checkChatUsername' => {'@type': 'checkChatUsernameResultOk'},
       'getOption' => {'@type': 'optionValueEmpty'},
+      'getStorageStatistics' => {
+        '@type': 'storageStatistics',
+        'by_chat': [
+          {
+            '@type': 'storageStatisticsByChat',
+            'by_file_type': [
+              if (!cleared)
+                {
+                  '@type': 'storageStatisticsByFileType',
+                  'file_type': {'@type': 'fileTypePhoto'},
+                  'size': 4200000,
+                },
+              {
+                '@type': 'storageStatisticsByFileType',
+                'file_type': {'@type': 'fileTypeVideo'},
+                'size': 38000000,
+              },
+            ],
+          },
+        ],
+      },
+      'optimizeStorage' => {'@type': 'storageStatistics'},
+      'getStorageStatisticsFast' => {
+        '@type': 'storageStatisticsFast',
+        'database_size': 12000000,
+      },
       'getBusinessConnectedBot' when bot => {
         '@type': 'businessConnectedBotInfo',
         'bot': {

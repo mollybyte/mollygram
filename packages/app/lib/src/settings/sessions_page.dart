@@ -231,7 +231,7 @@ class _ActiveSessionsPageState extends ConsumerState<ActiveSessionsPage> {
           ),
         ],
         AnimatedSize(
-          duration: settingsMotion,
+          duration: settingsMotionOf(context),
           curve: settingsCurve,
           alignment: Alignment.topCenter,
           child: others.isEmpty
@@ -302,7 +302,7 @@ class _SessionRowState extends State<_SessionRow> {
         trailing: onTerminate == null
             ? null
             : AnimatedOpacity(
-                duration: settingsMotion,
+                duration: settingsMotionOf(context),
                 opacity: _hover ? 1 : 0,
                 child: IgnorePointer(
                   ignoring: !_hover,

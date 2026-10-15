@@ -12,6 +12,7 @@ import 'conversation_controller.dart';
 import 'file_controller.dart';
 import 'notification_controller.dart';
 import 'sticker_library.dart';
+import 'storage_usage.dart';
 import 'tdlib_initializer.dart';
 
 /// Owns one TDLib instance and coordinates its initial authorization flow.
@@ -30,6 +31,7 @@ final class TelegramSession {
     required this.notifications,
     required this.stickers,
     required this.account,
+    required this.storage,
     required this.connection,
     required this._initializer,
   });
@@ -44,6 +46,7 @@ final class TelegramSession {
   final NotificationController notifications;
   final StickerLibrary stickers;
   final AccountSettings account;
+  final StorageManager storage;
 
   /// The connection state, for the "Connecting…" status in the window.
   final ConnectionMonitor connection;
@@ -76,6 +79,7 @@ final class TelegramSession {
       notifications: notifications,
       stickers: StickerLibrary(client),
       account: AccountSettings(client),
+      storage: StorageManager(client),
       connection: connection,
       initializer: TdlibInitializer(client, parameters: parameters),
     );

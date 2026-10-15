@@ -903,6 +903,175 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String get appearance => 'Оформление';
+
+  @override
+  String get themeAuto => 'Авто';
+
+  @override
+  String get themeLight => 'Светлая';
+
+  @override
+  String get themeDark => 'Тёмная';
+
+  @override
+  String get accentColor => 'Цвет акцента';
+
+  @override
+  String get accentBlue => 'Синий';
+
+  @override
+  String get accentIndigo => 'Индиго';
+
+  @override
+  String get accentTeal => 'Бирюзовый';
+
+  @override
+  String get accentGreen => 'Зелёный';
+
+  @override
+  String get accentOrange => 'Оранжевый';
+
+  @override
+  String get accentGraphite => 'Графит';
+
+  @override
+  String get chatWallpaper => 'Обои в чатах';
+
+  @override
+  String get chatWallpaperHint => 'Если выключено, у чатов будет простой фон.';
+
+  @override
+  String get messageTextSize => 'Размер текста сообщений';
+
+  @override
+  String textSizeValue(String size) {
+    return '$size пт';
+  }
+
+  @override
+  String get previewSender => 'Анна';
+
+  @override
+  String get previewMessage => 'Доброе утро! Новые настройки отлично выглядят.';
+
+  @override
+  String get reduceMotion => 'Уменьшить движение';
+
+  @override
+  String get reduceMotionHint =>
+      'Отключает анимацию. Mollygram также учитывает одноимённую настройку универсального доступа macOS.';
+
+  @override
+  String get dataAndStorage => 'Данные и память';
+
+  @override
+  String get storageUsage => 'Хранилище';
+
+  @override
+  String get storageCalculating => 'Подсчёт…';
+
+  @override
+  String storageUsed(String size) {
+    return 'Медиа и файлы: $size';
+  }
+
+  @override
+  String get storageEmpty =>
+      'На этом компьютере нет сохранённых медиа и файлов.';
+
+  @override
+  String get storagePhotos => 'Фото';
+
+  @override
+  String get storageVideos => 'Видео';
+
+  @override
+  String get storageFiles => 'Файлы';
+
+  @override
+  String get storageVoiceAndMusic => 'Голосовые и музыка';
+
+  @override
+  String get storageStickers => 'Стикеры';
+
+  @override
+  String get storageOther => 'Другое';
+
+  @override
+  String get storageDatabase => 'База сообщений';
+
+  @override
+  String get storageHint =>
+      'Удалённые медиа остаются в облаке Telegram и загружаются снова, когда нужны. Сообщения сохраняются.';
+
+  @override
+  String get storageFailed => 'Не удалось подсчитать занятое место.';
+
+  @override
+  String get clearCache => 'Очистить кэш…';
+
+  @override
+  String clearCacheTitle(String size) {
+    return 'Удалить $size с этого компьютера?';
+  }
+
+  @override
+  String get clearCacheMessage =>
+      'Медиа останутся в облаке Telegram и загрузятся снова, когда вы их откроете.';
+
+  @override
+  String get clear => 'Очистить';
+
+  @override
+  String get clearCacheFailed => 'Не удалось очистить кэш.';
+
+  @override
+  String get autoDownload => 'Автозагрузка медиа';
+
+  @override
+  String get autoDownloadWifi => 'По Wi-Fi и Ethernet';
+
+  @override
+  String get autoDownloadOther => 'В других сетях';
+
+  @override
+  String get autoDownloadHint =>
+      'Другие сети — это режим модема и прочие лимитные подключения.';
+
+  @override
+  String get downloadFolder => 'Папка загрузок';
+
+  @override
+  String get downloadFolderDefault => 'Загрузки';
+
+  @override
+  String get chooseFolder => 'Выбрать…';
+
+  @override
+  String get downloadFolderHint => 'Сюда сохраняются файлы из чатов.';
+
+  @override
+  String sizeBytes(String size) {
+    return '$size Б';
+  }
+
+  @override
+  String sizeKilobytes(String size) {
+    return '$size КБ';
+  }
+
+  @override
+  String sizeMegabytes(String size) {
+    return '$size МБ';
+  }
+
+  @override
+  String sizeGigabytes(String size) {
+    return '$size ГБ';
+  }
+
+  @override
   String get emojiTab => 'Эмодзи';
 
   @override

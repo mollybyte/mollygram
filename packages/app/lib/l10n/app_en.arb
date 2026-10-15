@@ -385,6 +385,77 @@
   "connectedBotHint": "This bot can read and answer your business chats.",
   "disconnect": "Disconnect",
   "disconnectBotTitle": "Disconnect {name}?",
+  "appearance": "Appearance",
+  "themeAuto": "Auto",
+  "themeLight": "Light",
+  "themeDark": "Dark",
+  "accentColor": "Accent color",
+  "accentBlue": "Blue",
+  "accentIndigo": "Indigo",
+  "accentTeal": "Teal",
+  "accentGreen": "Green",
+  "accentOrange": "Orange",
+  "accentGraphite": "Graphite",
+  "chatWallpaper": "Chat wallpaper",
+  "chatWallpaperHint": "When off, chats sit on a plain background.",
+  "messageTextSize": "Message text size",
+  "textSizeValue": "{size} pt",
+  "@textSizeValue": {
+    "placeholders": { "size": { "type": "String" } }
+  },
+  "previewSender": "Anna",
+  "previewMessage": "Good morning! The new settings look great.",
+  "reduceMotion": "Reduce motion",
+  "reduceMotionHint": "Turns animations off. Mollygram also follows the same setting in macOS Accessibility.",
+  "dataAndStorage": "Data and storage",
+  "storageUsage": "Storage",
+  "storageCalculating": "Calculating…",
+  "storageUsed": "{size} of media and files",
+  "@storageUsed": {
+    "placeholders": { "size": { "type": "String" } }
+  },
+  "storageEmpty": "No media or files are stored on this computer.",
+  "storagePhotos": "Photos",
+  "storageVideos": "Videos",
+  "storageFiles": "Files",
+  "storageVoiceAndMusic": "Voice and music",
+  "storageStickers": "Stickers",
+  "storageOther": "Other",
+  "storageDatabase": "Message database",
+  "storageHint": "Cleared media stays in the Telegram cloud and downloads again when needed. Messages are kept.",
+  "storageFailed": "Couldn't read the storage usage.",
+  "clearCache": "Clear cache…",
+  "clearCacheTitle": "Clear {size} from this computer?",
+  "@clearCacheTitle": {
+    "placeholders": { "size": { "type": "String" } }
+  },
+  "clearCacheMessage": "Media stays in the Telegram cloud and downloads again when you open it.",
+  "clear": "Clear",
+  "clearCacheFailed": "Couldn't clear the cache.",
+  "autoDownload": "Automatic media download",
+  "autoDownloadWifi": "On Wi-Fi and Ethernet",
+  "autoDownloadOther": "On other networks",
+  "autoDownloadHint": "Other networks are personal hotspots and other metered connections.",
+  "downloadFolder": "Download folder",
+  "downloadFolderDefault": "Downloads",
+  "chooseFolder": "Choose…",
+  "downloadFolderHint": "Files you save from chats go here.",
+  "sizeBytes": "{size} B",
+  "@sizeBytes": {
+    "placeholders": { "size": { "type": "String" } }
+  },
+  "sizeKilobytes": "{size} KB",
+  "@sizeKilobytes": {
+    "placeholders": { "size": { "type": "String" } }
+  },
+  "sizeMegabytes": "{size} MB",
+  "@sizeMegabytes": {
+    "placeholders": { "size": { "type": "String" } }
+  },
+  "sizeGigabytes": "{size} GB",
+  "@sizeGigabytes": {
+    "placeholders": { "size": { "type": "String" } }
+  },
   "@disconnectBotTitle": {
     "placeholders": { "name": { "type": "String" } }
   },
