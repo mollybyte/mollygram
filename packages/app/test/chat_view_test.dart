@@ -338,6 +338,48 @@ void main() {
     expect(unpin['message_id'], 12);
   });
 
+  testWidgets('offers to join a channel, then to mute it', (tester) async {
+    json.chat = [for (var id = 1; id <= 10; id++) id];
+    json
+      ..push(
+        _chat(
+          lastRead: 10,
+          unread: 0,
+          last: 10,
+          type: {
+            '@type': 'chatTypeSupergroup',
+            'supergroup_id': 99,
+            'is_channel': true,
+          },
+        ),
+      )
+      ..push(_supergroup(99, {'@type': 'chatMemberStatusLeft'}));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await pump(tester, group: false);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(Composer), findsNothing);
+    await tester.tap(find.text('Join channel'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    expect(json.sent.last['@type'], 'joinChat');
+
+    json.push(
+      _supergroup(99, {
+        '@type': 'chatMemberStatusMember',
+        'member_since_date': 0,
+      }),
+    );
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+    expect(find.byType(Composer), findsNothing);
+    await tester.tap(find.text('Mute'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    final mute = json.sent.lastWhere(
+      (r) => r['@type'] == 'setChatNotificationSettings',
+    );
+    expect((mute['notification_settings']! as Map)['mute_for'], greaterThan(0));
+  });
+
   testWidgets('names the sender once per run in a group', (tester) async {
     await pump(tester);
 
@@ -668,12 +710,13 @@ Map<String, Object?> _chat({
   required int lastRead,
   required int unread,
   required int last,
+  Map<String, Object?> type = const {'@type': 'chatTypePrivate', 'user_id': 2},
 }) => {
   '@type': 'updateNewChat',
   'chat': {
     '@type': 'chat',
     'id': 7,
-    'type': {'@type': 'chatTypePrivate', 'user_id': 2},
+    'type': type,
     'title': 'Boris',
     'last_message': _message(
       id: last,
@@ -692,6 +735,34 @@ Map<String, Object?> _chat({
       'max_reaction_count': 11,
     },
     'video_chat': {'@type': 'videoChat'},
+  },
+};
+
+Map<String, Object?> _supergroup(int id, Map<String, Object?> status) => {
+  '@type': 'updateSupergroup',
+  'supergroup': {
+    '@type': 'supergroup',
+    'id': id,
+    'date': 0,
+    'status': status,
+    'member_count': 10,
+    'boost_level': 0,
+    'has_automatic_translation': false,
+    'has_linked_chat': false,
+    'has_location': false,
+    'sign_messages': false,
+    'show_message_sender': false,
+    'join_to_send_messages': false,
+    'join_by_request': false,
+    'is_slow_mode_enabled': false,
+    'is_channel': true,
+    'is_broadcast_group': false,
+    'is_forum': false,
+    'is_direct_messages_group': false,
+    'is_administered_direct_messages_group': false,
+    'has_direct_messages_group': false,
+    'has_forum_tabs': false,
+    'paid_message_star_count': 0,
   },
 };
 
@@ -842,6 +913,7 @@ final class _FakeTdJson implements td.TdJson {
         'next_from_message_id': 0,
       },
       'downloadFile' => _stickerFile(decoded['file_id']! as int),
+      'joinChat' => {'@type': 'chatJoinResultSuccess'},
       'forwardMessages' => {
         '@type': 'messages',
         'total_count': 0,

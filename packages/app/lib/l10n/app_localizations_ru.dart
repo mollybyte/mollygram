@@ -1260,4 +1260,22 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get showInChat => 'Показать в чате';
+
+  @override
+  String get joinChannel => 'Подписаться';
+
+  @override
+  String get joinGroup => 'Вступить в группу';
+
+  @override
+  String get muteChat => 'Без звука';
+
+  @override
+  String get unmuteChat => 'Включить звук';
+
+  @override
+  String get chatUnavailable => 'Вы не можете участвовать в этом чате';
+
+  @override
+  String get chatActionFailed => 'Не получилось, попробуйте ещё раз';
 }

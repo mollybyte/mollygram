@@ -133,6 +133,9 @@ bool isServiceContent(td.MessageContent content) => switch (content) {
   _ => true,
 };
 
+/// Whether the user is in a group or channel.
+enum ChatMembership { member, left, banned, unknown }
+
 /// Holds the loaded timelines for chats, the messages they reply to, and
 /// the names of the people and chats that sent them.
 ///
@@ -156,6 +159,11 @@ final class ConversationStore {
   final _unreadMentions = <int, int>{};
   final _unreadReactions = <int, int>{};
   final _pinned = <int, List<int>>{};
+  final _supergroupOf = <int, int>{};
+  final _basicGroupOf = <int, int>{};
+  final _supergroupStatus = <int, td.ChatMemberStatus>{};
+  final _basicGroupStatus = <int, td.ChatMemberStatus>{};
+  final _muteFor = <int, int>{};
 
   /// Replaces the timeline of [chatId] with [messages], keeping the ones in
   /// [keep] that are still present (messages that arrived while the history
@@ -398,6 +406,92 @@ final class ConversationStore {
   /// Whether [chatId] is a channel, where posts come from the channel and
   /// events read differently.
   bool isChannel(int chatId) => _channels.contains(chatId);
+
+  /// Remembers which group or channel [chat] is, so its member status
+  /// ([setSupergroupStatus], [setBasicGroupStatus]) can be found.
+  void setChatType(int chatId, td.ChatType type) {
+    _supergroupOf.remove(chatId);
+    _basicGroupOf.remove(chatId);
+    switch (type) {
+      case td.ChatTypeSupergroup(:final supergroupId):
+        _supergroupOf[chatId] = supergroupId;
+      case td.ChatTypeBasicGroup(:final basicGroupId):
+        _basicGroupOf[chatId] = basicGroupId;
+      default:
+        break;
+    }
+  }
+
+  /// Returns the chat the supergroup belongs to when its status changed.
+  int? setSupergroupStatus(int supergroupId, td.ChatMemberStatus status) {
+    final same =
+        _supergroupStatus[supergroupId]?.toJson().toString() ==
+        status.toJson().toString();
+    _supergroupStatus[supergroupId] = status;
+    if (same) return null;
+    for (final entry in _supergroupOf.entries) {
+      if (entry.value == supergroupId) return entry.key;
+    }
+    return null;
+  }
+
+  int? setBasicGroupStatus(int basicGroupId, td.ChatMemberStatus status) {
+    final same =
+        _basicGroupStatus[basicGroupId]?.toJson().toString() ==
+        status.toJson().toString();
+    _basicGroupStatus[basicGroupId] = status;
+    if (same) return null;
+    for (final entry in _basicGroupOf.entries) {
+      if (entry.value == basicGroupId) return entry.key;
+    }
+    return null;
+  }
+
+  td.ChatMemberStatus? _statusOf(int chatId) {
+    final supergroup = _supergroupOf[chatId];
+    if (supergroup != null) return _supergroupStatus[supergroup];
+    final basic = _basicGroupOf[chatId];
+    if (basic != null) return _basicGroupStatus[basic];
+    return null;
+  }
+
+  /// Whether the user is in [chatId]; a private chat counts as a member.
+  ChatMembership membership(int chatId) {
+    if (!_supergroupOf.containsKey(chatId) &&
+        !_basicGroupOf.containsKey(chatId)) {
+      return ChatMembership.member;
+    }
+    return switch (_statusOf(chatId)) {
+      null => ChatMembership.unknown,
+      td.ChatMemberStatusLeft() => ChatMembership.left,
+      td.ChatMemberStatusBanned() => ChatMembership.banned,
+      td.ChatMemberStatusRestricted(:final isMember) =>
+        isMember ? ChatMembership.member : ChatMembership.left,
+      _ => ChatMembership.member,
+    };
+  }
+
+  /// Whether the user may post in [chatId]: in a channel only its creator
+  /// and the admins who may post can.
+  bool canPost(int chatId) {
+    if (membership(chatId) != ChatMembership.member) return false;
+    if (!isChannel(chatId)) return true;
+    return switch (_statusOf(chatId)) {
+      td.ChatMemberStatusCreator() => true,
+      td.ChatMemberStatusAdministrator(:final rights) => rights.canPostMessages,
+      _ => false,
+    };
+  }
+
+  /// Whether notifications of [chatId] are muted.
+  bool isMuted(int chatId) => (_muteFor[chatId] ?? 0) > 0;
+
+  /// Returns whether the muted state changed.
+  bool setMuteFor(int chatId, int muteFor) {
+    final was = isMuted(chatId);
+    _muteFor[chatId] = muteFor;
+    return was != isMuted(chatId);
+  }
 
   void setChannel(int chatId, bool isChannel) =>
       isChannel ? _channels.add(chatId) : _channels.remove(chatId);

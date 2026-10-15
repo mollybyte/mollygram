@@ -522,5 +522,11 @@
   "sharedVoiceEmpty": "No voice messages yet",
   "sharedMusicEmpty": "No music yet",
   "sharedLoadFailed": "Couldn't load the list",
-  "showInChat": "Show in chat"
+  "showInChat": "Show in chat",
+  "joinChannel": "Join channel",
+  "joinGroup": "Join group",
+  "muteChat": "Mute",
+  "unmuteChat": "Unmute",
+  "chatUnavailable": "You can't take part in this chat",
+  "chatActionFailed": "Couldn't do that, try again"
 }
