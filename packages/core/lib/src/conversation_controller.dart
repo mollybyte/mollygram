@@ -1217,22 +1217,48 @@ final class ConversationController {
       );
 
   /// The emoji reactions offered first for a message, at most [limit].
-  /// Custom emoji reactions are left out until the app draws them.
+  /// The emoji reactions a message menu offers first, free ones only;
+  /// custom emoji reactions come with [quickReactionTypes].
   Future<List<String>> quickReactions(
     int chatId,
     int messageId, {
     int limit = 8,
-  }) => _emojiReactions(chatId, messageId, limit: limit);
+  }) async => _emojiOf(
+    await _reactions(chatId, messageId, limit: limit, emojiOnly: true),
+  );
 
   /// Every emoji reaction the user may put on a message, the ones offered
-  /// first coming first, for the full picker.
-  Future<List<String>> allReactions(int chatId, int messageId) =>
-      _emojiReactions(chatId, messageId, limit: null);
+  /// first coming first, for the full picker; custom emoji reactions come
+  /// with [allReactionTypes].
+  Future<List<String>> allReactions(int chatId, int messageId) async =>
+      _emojiOf(
+        await _reactions(chatId, messageId, limit: null, emojiOnly: true),
+      );
 
-  Future<List<String>> _emojiReactions(
+  /// The reactions a message menu offers first: emoji and custom emoji,
+  /// free ones only, up to [limit].
+  Future<List<td.ReactionType>> quickReactionTypes(
+    int chatId,
+    int messageId, {
+    int limit = 8,
+  }) => _reactions(chatId, messageId, limit: limit);
+
+  /// Every reaction the user may put on a message, emoji and custom emoji,
+  /// the ones offered first coming first.
+  Future<List<td.ReactionType>> allReactionTypes(int chatId, int messageId) =>
+      _reactions(chatId, messageId, limit: null);
+
+  static List<String> _emojiOf(List<td.ReactionType> types) => [
+    for (final type in types)
+      if (type case td.ReactionTypeEmoji(:final emoji)) emoji,
+  ];
+
+  /// With [emojiOnly], custom emoji neither count nor show.
+  Future<List<td.ReactionType>> _reactions(
     int chatId,
     int messageId, {
     required int? limit,
+    bool emojiOnly = false,
   }) async {
     final available = await _client.send(
       td.GetMessageAvailableReactions(
@@ -1245,19 +1271,27 @@ final class ConversationController {
     // The user can't react here, for example without Premium in a chat
     // that only allows paid reactions.
     if (available.unavailabilityReason != null) return const [];
-    final emoji = <String>[];
+    final types = <td.ReactionType>[];
+    final seen = <Object>{};
     for (final reaction in [
       ...available.topReactions,
       ...available.recentReactions,
       ...available.popularReactions,
     ]) {
-      if (emoji.length == limit) break;
+      if (types.length == limit) break;
       if (reaction.needsPremium) continue;
-      if (reaction.type case td.ReactionTypeEmoji(emoji: final value)) {
-        if (!emoji.contains(value)) emoji.add(value);
+      final Object key;
+      switch (reaction.type) {
+        case td.ReactionTypeEmoji(:final emoji):
+          key = emoji;
+        case td.ReactionTypeCustomEmoji(:final customEmojiId) when !emojiOnly:
+          key = customEmojiId;
+        case _:
+          continue;
       }
+      if (seen.add(key)) types.add(reaction.type);
     }
-    return emoji;
+    return types;
   }
 
   /// A t.me link to the message, for public chats and channels.

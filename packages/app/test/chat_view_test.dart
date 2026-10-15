@@ -667,6 +667,32 @@ void main() {
     expect((added['reaction_type']! as Map)['emoji'], '🎉');
   });
 
+  testWidgets('reacts with a custom emoji from the menu', (tester) async {
+    await pump(tester);
+
+    await rightClick(tester, 'From Vera');
+    // The reaction bar asks for the custom emoji's sticker in a batch.
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    final icon = find.descendant(
+      of: find.byType(ReactionBar),
+      matching: find.byType(StickerContent),
+    );
+    expect(icon, findsOneWidget);
+
+    await tester.tap(icon);
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    final added = json.sent.lastWhere(
+      (r) => r['@type'] == 'addMessageReaction',
+    );
+    expect(added['message_id'], 12);
+    final type = added['reaction_type']! as Map;
+    expect(type['@type'], 'reactionTypeCustomEmoji');
+    // Int64 ids travel as strings.
+    expect('${type['custom_emoji_id']}', '5');
+  });
+
   testWidgets('shows the server draft and saves what is typed', (tester) async {
     json.chat = [for (var id = 1; id <= 10; id++) id];
     json.push(_chat(lastRead: 10, unread: 0, last: 10, draft: 'Unsent words'));
@@ -2300,12 +2326,12 @@ final class _FakeTdJson implements td.TdJson {
         'stickers': [
           // Int64 ids travel as strings.
           for (final id in decoded['custom_emoji_ids']! as List)
-            if ('$id' == '777')
+            if ('$id' == '777' || '$id' == '5')
               {
                 ..._sticker(7, '🔥'),
                 'full_type': {
                   '@type': 'stickerFullTypeCustomEmoji',
-                  'custom_emoji_id': 777,
+                  'custom_emoji_id': int.parse('$id'),
                   'needs_repainting': false,
                 },
               },

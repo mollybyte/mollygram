@@ -202,6 +202,10 @@ abstract final class MgDestructive {
   static const Color color = Color(0xFFE5484D);
 }
 
+/// Draws a reaction that is not an emoji, such as a custom emoji's
+/// sticker, [size] wide; null for one drawn as its text.
+typedef ReactionIconBuilder = Widget? Function(String reaction, double size);
+
 /// The quick reactions at the top of a message menu. [chosen] reactions
 /// get a filled circle; picking one again takes it back. With [onMore] a
 /// round chevron at the end closes the menu and opens the full picker.
@@ -213,13 +217,16 @@ class ReactionBar extends StatelessWidget {
     this.chosen = const {},
     this.onMore,
     this.moreTooltip,
+    this.icons,
   });
 
+  /// Emoji, or keys of reactions that [icons] draws.
   final List<String> reactions;
   final Set<String> chosen;
   final ValueChanged<String> onPick;
   final VoidCallback? onMore;
   final String? moreTooltip;
+  final ReactionIconBuilder? icons;
 
   @override
   Widget build(BuildContext context) {
@@ -241,6 +248,7 @@ class ReactionBar extends StatelessWidget {
                 Navigator.of(context).maybePop();
                 onPick(emoji);
               },
+              child: icons?.call(emoji, _ReactionButton.iconSize),
             ),
           if (onMore != null)
             _ReactionButton(
@@ -271,11 +279,14 @@ class ReactionGrid extends StatelessWidget {
     required this.reactions,
     required this.onPick,
     this.chosen = const {},
+    this.icons,
   });
 
+  /// Emoji, or keys of reactions that [icons] draws.
   final List<String> reactions;
   final Set<String> chosen;
   final ValueChanged<String> onPick;
+  final ReactionIconBuilder? icons;
 
   static const int columns = 8;
   static const double cell = 36;
@@ -310,6 +321,7 @@ class ReactionGrid extends StatelessWidget {
                   Navigator.of(context).maybePop();
                   onPick(emoji);
                 },
+                child: icons?.call(emoji, _ReactionButton.iconSize),
               );
             },
           ),
@@ -332,6 +344,10 @@ class _ReactionButton extends StatefulWidget {
   });
 
   final String emoji;
+
+  /// What an icon drawn in place of the emoji measures, matching the
+  /// emoji's glyph.
+  static const double iconSize = 22;
 
   /// What the button is for when it has no [emoji], such as "More".
   final String? label;

@@ -14,6 +14,7 @@ import '../plugins/message_hooks.dart';
 import '../settings/stickers/sticker_options.dart';
 import 'bot_keyboard.dart';
 import 'concealed.dart';
+import 'custom_emoji.dart';
 import 'describe.dart';
 import 'file_content.dart';
 import 'formatted_text.dart';
@@ -280,7 +281,11 @@ class MessageTile extends StatelessWidget {
                 children: [
                   for (final reaction in reactions)
                     ReactionChip(
-                      emoji: _reactionEmoji(reaction.type),
+                      emoji: reactionKey(reaction.type),
+                      icon: customReactionIcon(
+                        reactionKey(reaction.type),
+                        ReactionChip.iconSize,
+                      ),
                       count: reaction.totalCount,
                       chosen: reaction.isChosen,
                       onTap: reaction.type is td.ReactionTypePaid
@@ -507,13 +512,6 @@ class SenderAvatar extends StatelessWidget {
     );
   }
 }
-
-String _reactionEmoji(td.ReactionType type) => switch (type) {
-  td.ReactionTypeEmoji(:final emoji) => emoji,
-  td.ReactionTypePaid() => '⭐',
-  // Custom emoji need their stickers; a sparkle stands in until then.
-  _ => '✨',
-};
 
 /// What a message shows under its sender's name: "Forwarded from", the
 /// reply quote, then the content.

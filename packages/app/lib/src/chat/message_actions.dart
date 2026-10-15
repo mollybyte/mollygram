@@ -9,6 +9,7 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../home/format.dart';
+import 'custom_emoji.dart';
 import 'describe.dart';
 import 'formatted_text.dart';
 import 'message_tile.dart';
@@ -71,11 +72,13 @@ Future<void> showMessageMenu(
     final results = await Future.wait<Object>([
       conversations.propertiesOf(chatId, target.id),
       conversations
-          .quickReactions(chatId, row.primary.id)
-          .catchError((Object _) => const <String>[]),
+          .quickReactionTypes(chatId, row.primary.id)
+          .catchError((Object _) => const <td.ReactionType>[]),
     ]);
     properties = results[0] as td.MessageProperties;
-    reactions = results[1] as List<String>;
+    reactions = [
+      for (final type in results[1] as List<td.ReactionType>) reactionKey(type),
+    ];
   } on Object {
     // A message that is still being sent has no properties yet; only
     // copying makes sense then.
@@ -101,8 +104,7 @@ Future<void> showMessageMenu(
     for (final reaction
         in reacted.message.interactionInfo?.reactions?.reactions ??
             const <td.MessageReaction>[])
-      if (reaction.isChosen)
-        if (reaction.type case td.ReactionTypeEmoji(:final emoji)) emoji,
+      if (reaction.isChosen) reactionKey(reaction.type),
   };
   // Without properties, the message's own flag still says whether it may
   // leave the app.
@@ -259,13 +261,13 @@ Future<void> showMessageMenu(
     ),
   );
   if (items.isEmpty && reactions.isEmpty && infoRows.isEmpty) return;
-  void pick(String emoji) => unawaited(
+  void pick(String key) => unawaited(
     conversations
         .toggleReaction(
           chatId,
           reacted.id,
-          td.ReactionTypeEmoji(emoji: emoji),
-          chosen: chosen.contains(emoji),
+          reactionOfKey(key),
+          chosen: chosen.contains(key),
         )
         .catchError((Object _) {}),
   );
@@ -285,6 +287,7 @@ Future<void> showMessageMenu(
                   reactions: reactions,
                   chosen: chosen,
                   onPick: pick,
+                  icons: customReactionIcon,
                   moreTooltip: l10n.moreReactions,
                   onMore: () => unawaited(
                     _showAllReactions(
@@ -317,9 +320,9 @@ Future<void> _showAllReactions(
   required ValueChanged<String> onPick,
   required bool Function() isShown,
 }) async {
-  final List<String> all;
+  final List<td.ReactionType> all;
   try {
-    all = await conversations.allReactions(chatId, messageId);
+    all = await conversations.allReactionTypes(chatId, messageId);
   } on Object {
     return;
   }
@@ -327,7 +330,12 @@ Future<void> _showAllReactions(
   await showMgPopover(
     context,
     position: position,
-    child: ReactionGrid(reactions: all, chosen: chosen, onPick: onPick),
+    child: ReactionGrid(
+      reactions: [for (final type in all) reactionKey(type)],
+      chosen: chosen,
+      onPick: onPick,
+      icons: customReactionIcon,
+    ),
   );
 }
 
