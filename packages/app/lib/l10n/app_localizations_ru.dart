@@ -2521,6 +2521,99 @@ class AppLocalizationsRu extends AppLocalizations {
   String get folderDeletedChat => 'Удалённый чат';
 
   @override
+  String get proxy => 'Прокси';
+
+  @override
+  String get useProxy => 'Использовать прокси';
+
+  @override
+  String get proxyHint =>
+      'Telegram подключается через выбранный прокси. Пинг показывает время отклика в миллисекундах.';
+
+  @override
+  String get savedProxies => 'Сохранённые прокси';
+
+  @override
+  String get addProxy => 'Добавить прокси';
+
+  @override
+  String get editProxy => 'Изменить прокси';
+
+  @override
+  String get proxyServer => 'Сервер';
+
+  @override
+  String get proxyPort => 'Порт';
+
+  @override
+  String get proxyUsername => 'Имя пользователя';
+
+  @override
+  String get proxyPassword => 'Пароль';
+
+  @override
+  String get proxySecret => 'Ключ';
+
+  @override
+  String get proxyCheck => 'Проверить';
+
+  @override
+  String get proxyChecking => 'Проверка…';
+
+  @override
+  String proxyPing(int ms) {
+    return '$ms мс';
+  }
+
+  @override
+  String get proxyUnavailable => 'Недоступен';
+
+  @override
+  String get proxyRemove => 'Удалить прокси';
+
+  @override
+  String proxyRemoveTitle(String address) {
+    return 'Удалить $address?';
+  }
+
+  @override
+  String get proxyConnect => 'Подключиться';
+
+  @override
+  String get proxyFromLink => 'Добавить этот прокси и подключиться через него?';
+
+  @override
+  String get proxyNone => 'Прокси пока нет';
+
+  @override
+  String get language => 'Язык';
+
+  @override
+  String get languageSystem => 'Как в системе';
+
+  @override
+  String get languageHint =>
+      'Меняет язык приложения. Чаты и сообщения остаются как есть.';
+
+  @override
+  String get proxyEditButton => 'Изменить';
+
+  @override
+  String get proxyInvalidSecret => 'Неверный ключ';
+
+  @override
+  String get proxyRemoveAction => 'Удалить';
+
+  @override
+  String get proxyLoadFailed => 'Не удалось загрузить прокси.';
+
+  @override
+  String get proxyShowSecret => 'Показать ключ';
+
+  @override
+  String get proxyHideSecret => 'Скрыть ключ';
+
+  @override
   String get pluginShowMessage => 'Показать';
 
   @override

@@ -17,6 +17,7 @@ class SignInPage extends StatelessWidget {
     this.backTooltip,
     this.titleBarFill,
     this.titleBarInset = 76,
+    this.footer,
   });
 
   /// The step: usually a [SignInHeader] followed by fields and a button.
@@ -31,6 +32,10 @@ class SignInPage extends StatelessWidget {
 
   /// Room for the system window buttons on the left of the title bar.
   final double titleBarInset;
+
+  /// A quiet control centered at the bottom of the window, such as the
+  /// proxy settings.
+  final Widget? footer;
 
   /// Width of the centered column.
   static const double columnWidth = 320;
@@ -66,6 +71,13 @@ class SignInPage extends StatelessWidget {
                 ),
               ),
             ),
+            if (footer case final footer?)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 16,
+                child: Center(child: footer),
+              ),
             if (onBack != null)
               Positioned(
                 top: 52,
