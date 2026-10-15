@@ -138,6 +138,11 @@ class _ChatViewState extends ConsumerState<ChatView> {
   /// back there first, as in the official app.
   int? _returnTo;
 
+  /// Where each chat was left: the message just above the composer, so
+  /// coming back lands there, as in the official apps. A chat left at
+  /// the bottom is forgotten and opens at the newest message.
+  static final _positions = <int, int>{};
+
   /// The message the timeline grows from: the first unread one when the
   /// chat opened, or where a jump went. Null keeps the newest at the
   /// bottom.
@@ -267,6 +272,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     if (_editing != null) _draft.setFormatted(_setAside, _setAsideRanges);
     _editing = null;
     _saveDraft(old.chatId);
+    _rememberPosition(old.chatId);
     _close(old.chatId);
     _dropTopics();
     _dropSavedTopics();
@@ -320,6 +326,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _draftTimer?.cancel();
     _previewTimer?.cancel();
     if (_editing == null) _saveDraft(widget.chatId);
+    _rememberPosition(widget.chatId);
     _close(widget.chatId);
     _dropTopics();
     _dropSavedTopics();
@@ -355,6 +362,50 @@ class _ChatViewState extends ConsumerState<ChatView> {
     }
     _loadDraft(chatId);
     _watchDeleted(chatId);
+    // Unread messages come first; otherwise back to where the chat was left.
+    final left = _positions[chatId];
+    if (!_awaitingUnread && left != null) {
+      unawaited(_restorePosition(chatId, left));
+    }
+  }
+
+  /// Keeps the message above the composer for [_restorePosition], or
+  /// forgets the chat when it was left at the bottom.
+  void _rememberPosition(int chatId) {
+    if (_listOpen || !_scroll.hasClients) return;
+    if (_scroll.pinned) {
+      _positions.remove(chatId);
+      return;
+    }
+    final viewport = _scroll.position.viewportDimension;
+    final hit = TimelineView.rowAt(
+      _timelineKey,
+      viewport - TimelineView.bottomInset - 4,
+    );
+    if (hit == null) return;
+    _positions[chatId] = hit.messageId;
+  }
+
+  /// Puts message [id] back just above the composer, loading the history
+  /// around it when the chat was reopened without it.
+  Future<void> _restorePosition(int chatId, int id) async {
+    final store = _conversations.store;
+    if (!store.contains(chatId, id)) {
+      try {
+        await _conversations.loadAround(chatId, id);
+      } on Object {
+        return;
+      }
+      if (!mounted || widget.chatId != chatId) return;
+      if (!store.contains(chatId, id)) return;
+    }
+    _scroll
+      ..pinned = false
+      ..request((_) => -(TimelineView.bottomInset + 4));
+    setState(() => _anchor = id);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && widget.chatId == chatId) _followScroll();
+    });
   }
 
   /// Follows the deleted messages kept for [chatId], when any are kept.
