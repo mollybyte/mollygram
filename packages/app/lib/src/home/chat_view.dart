@@ -40,6 +40,7 @@ import '../chat/sticker_suggestions.dart';
 import '../chat/timeline.dart';
 import '../chat/timeline_scroll.dart';
 import '../chat/timeline_view.dart';
+import '../chat/topic_sheet.dart';
 import '../chat_search/chat_search_bar.dart';
 import '../chat_search/sender_picker.dart';
 import '../compose/command_suggester.dart';
@@ -505,6 +506,18 @@ class _ChatViewState extends ConsumerState<ChatView> {
       topInset: _topInset,
       onOpen: (topic) => unawaited(_openTopic(topic)),
       onNearEnd: () => unawaited(_quiet(topics.loadMore())),
+      onMenu: (topic, position) => unawaited(
+        showTopicMenu(
+          context,
+          conversations: _conversations,
+          list: topics,
+          topic: topic,
+          position: position,
+        ),
+      ),
+      onCreate: store.canCreateTopics(widget.chatId)
+          ? () => unawaited(showTopicSheet(context, widget.chatId))
+          : null,
     );
   }
 

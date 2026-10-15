@@ -562,6 +562,19 @@ final class ConversationStore {
   bool setForum(int supergroupId, bool isForum) =>
       isForum ? _forums.add(supergroupId) : _forums.remove(supergroupId);
 
+  /// Whether the user may pin, close, rename or delete topics in
+  /// [chatId]: the creator, or an admin with that right.
+  bool canManageTopics(int chatId) => switch (_statusOf(chatId)) {
+    td.ChatMemberStatusCreator() => true,
+    td.ChatMemberStatusAdministrator(:final rights) => rights.canManageTopics,
+    _ => false,
+  };
+
+  /// Whether the user may start a topic in [chatId].
+  bool canCreateTopics(int chatId) =>
+      canManageTopics(chatId) ||
+      (_permissions[chatId]?.canCreateTopics ?? false);
+
   /// Whether [chatId] is a forum group, shown as a list of topics.
   bool isForum(int chatId) {
     final supergroupId = _supergroupOf[chatId];

@@ -2255,6 +2255,41 @@ class AppLocalizationsEn extends AppLocalizations {
   String get topicUnavailable => 'Couldn\'t open this topic';
 
   @override
+  String get newTopic => 'New topic';
+
+  @override
+  String get topicName => 'Topic name';
+
+  @override
+  String get topicNameRequired => 'Give the topic a name';
+
+  @override
+  String get editTopic => 'Edit topic';
+
+  @override
+  String get closeTopic => 'Close topic';
+
+  @override
+  String get reopenTopic => 'Reopen topic';
+
+  @override
+  String get pinTopic => 'Pin';
+
+  @override
+  String get unpinTopic => 'Unpin';
+
+  @override
+  String get deleteTopic => 'Delete topic';
+
+  @override
+  String deleteTopicConfirm(String name) {
+    return 'Delete «$name» with all its messages?';
+  }
+
+  @override
+  String get topicActionFailed => 'Couldn\'t change the topic';
+
+  @override
   String get unpinAll => 'Unpin all messages';
 
   @override

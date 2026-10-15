@@ -2279,6 +2279,41 @@ class AppLocalizationsRu extends AppLocalizations {
   String get topicUnavailable => 'Не удалось открыть тему';
 
   @override
+  String get newTopic => 'Новая тема';
+
+  @override
+  String get topicName => 'Название темы';
+
+  @override
+  String get topicNameRequired => 'Дайте теме название';
+
+  @override
+  String get editTopic => 'Изменить тему';
+
+  @override
+  String get closeTopic => 'Закрыть тему';
+
+  @override
+  String get reopenTopic => 'Открыть тему снова';
+
+  @override
+  String get pinTopic => 'Закрепить';
+
+  @override
+  String get unpinTopic => 'Открепить';
+
+  @override
+  String get deleteTopic => 'Удалить тему';
+
+  @override
+  String deleteTopicConfirm(String name) {
+    return 'Удалить «$name» со всеми сообщениями?';
+  }
+
+  @override
+  String get topicActionFailed => 'Не удалось изменить тему';
+
+  @override
   String get unpinAll => 'Открепить все';
 
   @override

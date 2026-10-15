@@ -1039,6 +1039,68 @@ final class ConversationController {
     return list;
   }
 
+  /// The colours Telegram gives topics without a custom emoji.
+  static const topicColors = [
+    0x6FB9F0,
+    0xFFD67E,
+    0xCB86DB,
+    0x8EEE98,
+    0xFF93B2,
+    0xFB6F5F,
+  ];
+
+  /// Starts a topic called [name] in forum [chatId], in one of Telegram's
+  /// topic colours.
+  Future<td.ForumTopicInfo> createTopic(int chatId, String name) =>
+      _client.send(
+        td.CreateForumTopic(
+          chatId: chatId,
+          name: name,
+          isNameImplicit: false,
+          icon: td.ForumTopicIcon(
+            color: topicColors[name.hashCode.abs() % topicColors.length],
+            customEmojiId: 0,
+          ),
+        ),
+      );
+
+  /// Renames topic [forumTopicId] of forum [chatId].
+  Future<void> editTopicName(int chatId, int forumTopicId, String name) =>
+      _client.send(
+        td.EditForumTopic(
+          chatId: chatId,
+          forumTopicId: forumTopicId,
+          name: name,
+          editIconCustomEmoji: false,
+          iconCustomEmojiId: 0,
+        ),
+      );
+
+  /// Closes or reopens topic [forumTopicId] of forum [chatId].
+  Future<void> setTopicClosed(int chatId, int forumTopicId, bool closed) =>
+      _client.send(
+        td.ToggleForumTopicIsClosed(
+          chatId: chatId,
+          forumTopicId: forumTopicId,
+          isClosed: closed,
+        ),
+      );
+
+  /// Pins or unpins topic [forumTopicId] of forum [chatId].
+  Future<void> setTopicPinned(int chatId, int forumTopicId, bool pinned) =>
+      _client.send(
+        td.ToggleForumTopicIsPinned(
+          chatId: chatId,
+          forumTopicId: forumTopicId,
+          isPinned: pinned,
+        ),
+      );
+
+  /// Deletes topic [forumTopicId] of forum [chatId] with its messages.
+  Future<void> deleteTopic(int chatId, int forumTopicId) => _client.send(
+    td.DeleteForumTopic(chatId: chatId, forumTopicId: forumTopicId),
+  );
+
   /// Topic [forumTopicId] of forum [chatId] as a thread: its messages,
   /// kept current until it is disposed; its first page still has to be
   /// loaded.

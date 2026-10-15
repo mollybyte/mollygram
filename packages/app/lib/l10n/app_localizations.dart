@@ -3842,6 +3842,72 @@ abstract class AppLocalizations {
   /// **'Couldn\'t open this topic'**
   String get topicUnavailable;
 
+  /// No description provided for @newTopic.
+  ///
+  /// In en, this message translates to:
+  /// **'New topic'**
+  String get newTopic;
+
+  /// No description provided for @topicName.
+  ///
+  /// In en, this message translates to:
+  /// **'Topic name'**
+  String get topicName;
+
+  /// No description provided for @topicNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Give the topic a name'**
+  String get topicNameRequired;
+
+  /// No description provided for @editTopic.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit topic'**
+  String get editTopic;
+
+  /// No description provided for @closeTopic.
+  ///
+  /// In en, this message translates to:
+  /// **'Close topic'**
+  String get closeTopic;
+
+  /// No description provided for @reopenTopic.
+  ///
+  /// In en, this message translates to:
+  /// **'Reopen topic'**
+  String get reopenTopic;
+
+  /// No description provided for @pinTopic.
+  ///
+  /// In en, this message translates to:
+  /// **'Pin'**
+  String get pinTopic;
+
+  /// No description provided for @unpinTopic.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpin'**
+  String get unpinTopic;
+
+  /// No description provided for @deleteTopic.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete topic'**
+  String get deleteTopic;
+
+  /// No description provided for @deleteTopicConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete «{name}» with all its messages?'**
+  String deleteTopicConfirm(String name);
+
+  /// No description provided for @topicActionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t change the topic'**
+  String get topicActionFailed;
+
   /// No description provided for @unpinAll.
   ///
   /// In en, this message translates to:

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 import 'package:mollygram_core/mollygram_core.dart';
@@ -7,6 +9,7 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 import '../../l10n/app_localizations.dart';
 import 'custom_emoji.dart';
 import 'describe.dart';
+import 'topic_sheet.dart';
 
 /// A forum's topics in the timeline's place: pinned first, each with its
 /// icon, name, last message, time and unread count; a click opens one.
@@ -17,6 +20,8 @@ class ForumTopicListView extends StatelessWidget {
     required this.store,
     required this.onOpen,
     required this.onNearEnd,
+    this.onMenu,
+    this.onCreate,
     this.topInset = 0,
   });
 
@@ -24,12 +29,21 @@ class ForumTopicListView extends StatelessWidget {
   final ConversationStore store;
   final void Function(td.ForumTopic topic) onOpen;
   final VoidCallback onNearEnd;
+
+  /// A right click on a topic, with where it happened.
+  final void Function(td.ForumTopic topic, Offset position)? onMenu;
+
+  /// Set when the user may start a topic: a "New topic" row leads the list.
+  final VoidCallback? onCreate;
   final double topInset;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    if (topics.isEmpty) return Center(child: DatePill(l10n.noTopics));
+    if (topics.isEmpty && onCreate == null) {
+      return Center(child: DatePill(l10n.noTopics));
+    }
+    final lead = onCreate == null ? 0 : 1;
     return NotificationListener<ScrollNotification>(
       onNotification: (notification) {
         if (notification is ScrollUpdateNotification &&
@@ -40,11 +54,169 @@ class ForumTopicListView extends StatelessWidget {
       },
       child: ListView.builder(
         padding: EdgeInsets.fromLTRB(8, topInset + 8, 8, 8),
-        itemCount: topics.length,
-        itemBuilder: (context, index) => _TopicRow(
-          topic: topics[index],
-          store: store,
-          onTap: () => onOpen(topics[index]),
+        itemCount: topics.length + lead,
+        itemBuilder: (context, index) {
+          if (index < lead) return _NewTopicRow(onTap: onCreate!);
+          final topic = topics[index - lead];
+          return _TopicRow(
+            topic: topic,
+            store: store,
+            onTap: () => onOpen(topic),
+            onMenu: onMenu == null
+                ? null
+                : (position) => onMenu!(topic, position),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Shows the actions on [topic] at [position]: pin, close, rename and
+/// delete for those who may, each failing with a quiet toast.
+Future<void> showTopicMenu(
+  BuildContext context, {
+  required ConversationController conversations,
+  required ForumTopicList list,
+  required td.ForumTopic topic,
+  required Offset position,
+}) async {
+  final l10n = AppLocalizations.of(context);
+  final store = conversations.store;
+  final chatId = topic.info.chatId;
+  final id = topic.info.forumTopicId;
+  final manage = store.canManageTopics(chatId);
+  final own = manage || topic.info.isOutgoing;
+  if (!own) return;
+  Future<void> run(Future<void> Function() action) async {
+    try {
+      await action();
+    } on Object {
+      if (context.mounted) showMgToast(context, l10n.topicActionFailed);
+    }
+  }
+
+  await showMgMenu(
+    context,
+    position: position,
+    items: [
+      if (manage)
+        MgMenuItem(
+          label: topic.isPinned ? l10n.unpinTopic : l10n.pinTopic,
+          onSelected: () => unawaited(
+            run(
+              () => conversations.setTopicPinned(chatId, id, !topic.isPinned),
+            ),
+          ),
+        ),
+      if (!topic.info.isGeneral)
+        MgMenuItem(
+          label: topic.info.isClosed ? l10n.reopenTopic : l10n.closeTopic,
+          onSelected: () => unawaited(
+            run(
+              () => conversations.setTopicClosed(
+                chatId,
+                id,
+                !topic.info.isClosed,
+              ),
+            ),
+          ),
+        ),
+      MgMenuItem(
+        label: l10n.editTopic,
+        onSelected: () =>
+            unawaited(showTopicSheet(context, chatId, topic: topic.info)),
+      ),
+      if (manage && !topic.info.isGeneral)
+        MgMenuItem(
+          label: l10n.deleteTopic,
+          destructive: true,
+          onSelected: () => unawaited(() async {
+            final confirmed = await showMgConfirm(
+              context,
+              title: l10n.deleteTopic,
+              message: l10n.deleteTopicConfirm(topic.info.name),
+              confirmLabel: l10n.delete,
+              cancelLabel: l10n.cancel,
+              destructive: true,
+            );
+            if (confirmed != true) return;
+            await run(() async {
+              await conversations.deleteTopic(chatId, id);
+              list.remove(id);
+            });
+          }()),
+        ),
+    ],
+  );
+}
+
+/// The row that starts a topic, leading the list for those who may.
+class _NewTopicRow extends StatefulWidget {
+  const _NewTopicRow({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  State<_NewTopicRow> createState() => _NewTopicRowState();
+}
+
+class _NewTopicRowState extends State<_NewTopicRow> {
+  var _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    final l10n = AppLocalizations.of(context);
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onTap,
+        child: Semantics(
+          button: true,
+          label: l10n.newTopic,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 120),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            decoration: BoxDecoration(
+              color: _hover ? c.fg.withValues(alpha: 0.06) : null,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: _TopicIcon.size,
+                  height: _TopicIcon.size,
+                  decoration: BoxDecoration(
+                    color: c.accent.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    '+',
+                    style: mgTextStyle(
+                      c,
+                      size: MgType.title,
+                      weight: FontWeight.w500,
+                      color: c.accent,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  l10n.newTopic,
+                  style: mgTextStyle(
+                    c,
+                    weight: FontWeight.w600,
+                    color: c.accent,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -56,11 +228,13 @@ class _TopicRow extends StatefulWidget {
     required this.topic,
     required this.store,
     required this.onTap,
+    this.onMenu,
   });
 
   final td.ForumTopic topic;
   final ConversationStore store;
   final VoidCallback onTap;
+  final void Function(Offset position)? onMenu;
 
   @override
   State<_TopicRow> createState() => _TopicRowState();
@@ -89,6 +263,9 @@ class _TopicRowState extends State<_TopicRow> {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: widget.onTap,
+        onSecondaryTapUp: widget.onMenu == null
+            ? null
+            : (details) => widget.onMenu!(details.globalPosition),
         child: Semantics(
           button: true,
           label: info.name,
