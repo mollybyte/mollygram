@@ -13,6 +13,16 @@ import 'notification_controller.dart';
 import 'sticker_library.dart';
 import 'tdlib_initializer.dart';
 
+/// Thrown by [TelegramSession.attach] when TDLib closes the client while
+/// the session starts, without the app asking. Like
+/// [TelegramSession.closedElsewhere], it means: start a new session.
+final class SessionClosedElsewhere implements Exception {
+  const SessionClosedElsewhere();
+
+  @override
+  String toString() => 'SessionClosedElsewhere';
+}
+
 /// Owns one TDLib instance and coordinates its initial authorization flow.
 ///
 /// A session has a single account client. It sends parameters only when TDLib
@@ -95,8 +105,14 @@ final class TelegramSession {
           AuthorizationStageKind.tdlibParameters) {
         await session._firstReconcile;
       }
-    } catch (_) {
+    } catch (error) {
+      // TDLib closed the client while the session was starting, such as
+      // when the session was terminated elsewhere just before launch.
+      final closed =
+          !authorization.logOutRequested &&
+          (error is td.TdClientClosed || session._closedElsewhere.isCompleted);
       await session.dispose();
+      if (closed) throw const SessionClosedElsewhere();
       rethrow;
     }
     return session;

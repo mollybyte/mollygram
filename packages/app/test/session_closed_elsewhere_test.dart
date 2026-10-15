@@ -4,14 +4,21 @@ import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mollygram/src/home/workspace_storage.dart';
 import 'package:mollygram/src/session/providers.dart';
 import 'package:mollygram/src/session/telegram_session_launcher.dart';
 import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 
 void main() {
-  test('a session terminated elsewhere is replaced by a new one', () async {
-    final clients = <_FakeTdJson>[];
+  late List<_FakeTdJson> clients;
+  late MemoryWorkspaceStorage storage;
+
+  /// A container whose launcher creates a fake TDLib per session; the
+  /// first one closes as it starts when [closeWhileStarting].
+  ProviderContainer create({bool closeWhileStarting = false}) {
+    clients = [];
+    storage = MemoryWorkspaceStorage({'tabs': <Object?>[]});
     final container = ProviderContainer(
       overrides: [
         telegramApiConfigProvider.overrideWithValue(
@@ -20,10 +27,13 @@ void main() {
             apiHash: '0123456789abcdef0123456789abcdef',
           ),
         ),
+        workspaceStorageProvider.overrideWithValue(storage),
         telegramSessionLauncherProvider.overrideWithValue(
           TelegramSessionLauncher(
             startTdlib: (_) async {
-              final json = _FakeTdJson();
+              final json = _FakeTdJson(
+                closeWhileStarting: closeWhileStarting && clients.isEmpty,
+              );
               clients.add(json);
               return td.Td.custom(json, td.InlineTdEventSource(json));
             },
@@ -43,8 +53,15 @@ void main() {
     addTearDown(container.dispose);
     final subscription = container.listen(telegramSessionProvider, (_, _) {});
     addTearDown(subscription.close);
+    return container;
+  }
 
+  test('a session terminated elsewhere is replaced by a new one', () async {
+    final container = create();
     final first = await container.read(telegramSessionProvider.future);
+    container
+        .read(selectedChatListProvider.notifier)
+        .select(const ChatListLocation.folder(3));
     for (final state in [
       'authorizationStateReady',
       'authorizationStateLoggingOut',
@@ -61,10 +78,25 @@ void main() {
     final second = await container.read(telegramSessionProvider.future);
     expect(second, isNot(same(first)));
     expect(clients, hasLength(2));
+    // What belonged to the account is forgotten.
+    expect(storage.saved, isNull);
+    expect(container.read(selectedChatListProvider).isMain, isTrue);
+  });
+
+  test('a session closed while starting is replaced too', () async {
+    final container = create(closeWhileStarting: true);
+    await container.read(telegramSessionProvider.future);
+
+    expect(clients, hasLength(2));
+    expect(storage.saved, isNull);
   });
 }
 
 final class _FakeTdJson implements td.TdJson {
+  _FakeTdJson({this.closeWhileStarting = false});
+
+  /// Asks for parameters and closes when they arrive.
+  final bool closeWhileStarting;
   final _queue = Queue<String>();
   final sent = <Map<String, Object?>>[];
 
@@ -82,8 +114,19 @@ final class _FakeTdJson implements td.TdJson {
   void send(int clientId, String request) {
     final decoded = jsonDecode(request) as Map<String, Object?>;
     sent.add(decoded);
+    if (closeWhileStarting && decoded['@type'] == 'setTdlibParameters') {
+      push({
+        '@type': 'updateAuthorizationState',
+        'authorization_state': {'@type': 'authorizationStateClosed'},
+      });
+      return;
+    }
     final response = decoded['@type'] == 'getAuthorizationState'
-        ? {'@type': 'authorizationStateWaitPhoneNumber'}
+        ? {
+            '@type': closeWhileStarting
+                ? 'authorizationStateWaitTdlibParameters'
+                : 'authorizationStateWaitPhoneNumber',
+          }
         : {'@type': 'ok'};
     _queue.add(
       jsonEncode({

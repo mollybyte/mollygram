@@ -65,6 +65,10 @@ final class AuthorizationController {
       await _client.send(const td.LogOut());
     } on td.TdClientClosed {
       return;
+    } on td.TdException {
+      // Still signed in: a close from now on was not asked for here.
+      _logOutRequested = false;
+      rethrow;
     }
     await _closed.future.timeout(timeout, onTimeout: () {});
   }

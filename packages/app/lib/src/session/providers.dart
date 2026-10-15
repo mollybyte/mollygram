@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' show TdClientClosed;
 
+import '../home/workspace_storage.dart';
 import 'sign_in_actions.dart';
 import 'telegram_session_launcher.dart';
 
@@ -25,9 +26,18 @@ final class MissingApiKeys implements Exception {
 final telegramSessionProvider = FutureProvider<TelegramSession>((ref) async {
   final config = ref.watch(telegramApiConfigProvider);
   if (!config.isConfigured) throw const MissingApiKeys();
-  final session = await ref
-      .watch(telegramSessionLauncherProvider)
-      .start(config);
+  final launcher = ref.watch(telegramSessionLauncherProvider);
+  TelegramSession session;
+  for (var attempt = 1; ; attempt++) {
+    try {
+      session = await launcher.start(config);
+      break;
+    } on SessionClosedElsewhere {
+      // Closed as it started; the next client starts signed out.
+      if (attempt == 3) rethrow;
+      await _forgetAccount(ref);
+    }
+  }
   var disposed = false;
   ref.onDispose(() {
     disposed = true;
@@ -38,11 +48,22 @@ final telegramSessionProvider = FutureProvider<TelegramSession>((ref) async {
   unawaited(
     session.closedElsewhere.then((_) async {
       await session.dispose();
+      if (disposed) return;
+      await _forgetAccount(ref);
       if (!disposed) ref.invalidateSelf();
     }),
   );
   return session;
 });
+
+/// Forgets what belonged to an account that was signed out elsewhere: the
+/// saved window layout and the selected folder. The sign-in screen never
+/// sees the old session reach the phone number step, which is where a
+/// sign-out normally clears them.
+Future<void> _forgetAccount(Ref ref) async {
+  await ref.read(workspaceSaverProvider).clear();
+  ref.invalidate(selectedChatListProvider);
+}
 
 /// TDLib's current sign-in step.
 final authorizationStageProvider = StreamProvider<AuthorizationStage>((ref) {

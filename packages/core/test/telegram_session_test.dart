@@ -114,6 +114,11 @@ void main() {
       await session.dispose();
     });
 
+    test('a close while starting asks for a new session', () async {
+      json.closeOnParameters = true;
+      await expectLater(attach(), throwsA(isA<SessionClosedElsewhere>()));
+    });
+
     test('stays pending when the session is disposed', () async {
       final session = await attach();
       var closed = false;
@@ -179,6 +184,10 @@ final class _FakeTdJson implements td.TdJson {
   final _queue = Queue<String>();
   final sent = <Map<String, Object?>>[];
   var failParameters = false;
+
+  /// Answers setTdlibParameters by closing, as TDLib does when the
+  /// session ended elsewhere while starting.
+  var closeOnParameters = false;
   var _nextClientId = 0;
 
   @override
@@ -203,6 +212,13 @@ final class _FakeTdJson implements td.TdJson {
           '@extra': decoded['@extra'],
         }),
       );
+      return;
+    }
+    if (closeOnParameters && decoded['@type'] == 'setTdlibParameters') {
+      push({
+        '@type': 'updateAuthorizationState',
+        'authorization_state': {'@type': 'authorizationStateClosed'},
+      });
       return;
     }
     if (failParameters && decoded['@type'] == 'setTdlibParameters') {
