@@ -20,6 +20,7 @@ export 'src/notification_controller.dart';
 export 'src/outgoing_file.dart';
 export 'src/peer_info.dart';
 export 'src/phone_country.dart';
+export 'src/privacy_guard.dart';
 export 'src/sticker_library.dart';
 export 'src/storage_usage.dart';
 export 'src/tdlib_initializer.dart';

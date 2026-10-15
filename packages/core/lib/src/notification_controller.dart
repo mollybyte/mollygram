@@ -144,10 +144,18 @@ final class UnreadCounts {
 /// TDLib keeps notifications off until [setEnabled] raises
 /// `notification_group_count_max` above zero.
 final class NotificationController {
-  NotificationController(this._client, {Duration? photoTimeout})
-    : _photoTimeout = photoTimeout ?? const Duration(seconds: 2);
+  NotificationController(
+    this._client, {
+    Duration? photoTimeout,
+    Future<void> Function(Future<void> Function() send)? deliberately,
+  }) : _photoTimeout = photoTimeout ?? const Duration(seconds: 2),
+       _deliberately = deliberately ?? ((send) => send());
 
   final td.TdClient _client;
+
+  /// Sends what the user asked for on purpose past the privacy extras
+  /// (see [PrivacyGuard.deliberately]).
+  final Future<void> Function(Future<void> Function() send) _deliberately;
   final Duration _photoTimeout;
   final _events = StreamController<NotificationEvent>.broadcast(sync: true);
   final _unread = StreamController<UnreadCounts>.broadcast(sync: true);
@@ -204,16 +212,19 @@ final class NotificationController {
 
   /// Marks the chat read up to [messageId], or to the newest notified
   /// message of the chat when that is later.
-  Future<void> markRead(int chatId, int messageId) async {
-    await _client.send(
+  ///
+  /// The user asked for this, so it is sent even while read receipts are
+  /// hidden.
+  Future<void> markRead(int chatId, int messageId) => _deliberately(
+    () => _client.send(
       td.ViewMessages(
         chatId: chatId,
         messageIds: [_newestNotified(chatId, messageId)],
         source: const td.MessageSourceNotification(),
         forceRead: true,
       ),
-    );
-  }
+    ),
+  );
 
   /// Sends [text] from a notification's reply field. In groups it replies
   /// to the message, as the official client does; in private chats it is a

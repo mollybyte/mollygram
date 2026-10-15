@@ -1675,6 +1675,57 @@ class AppLocalizationsRu extends AppLocalizations {
   String get chatActionFailed => 'Не получилось, попробуйте ещё раз';
 
   @override
+  String get privacyExtras => 'Дополнительная приватность';
+
+  @override
+  String get privacyExtrasAbout =>
+      'Эти переключатели определяют, что видят другие, пока вы пользуетесь Mollygram на этом Mac. Читать и отправлять сообщения можно как обычно.';
+
+  @override
+  String get privacyExtrasOnlineNote =>
+      'Кое-что всё равно видно: отправка сообщения ненадолго показывает вас в сети и отмечает чат прочитанным, при отправке файлов видна загрузка, а реакция показывает, что вы видели сообщение.';
+
+  @override
+  String get ghostMode => 'Режим призрака';
+
+  @override
+  String get ghostModeHint => 'Включает всё, что ниже, разом';
+
+  @override
+  String get ghostModeIsOn => 'Режим призрака включён';
+
+  @override
+  String get privacyExtrasAreOn => 'Включена часть дополнительной приватности';
+
+  @override
+  String get hideReadReceipts => 'Не отправлять отметки о прочтении';
+
+  @override
+  String get hideReadReceiptsHint =>
+      'Отправители не увидят, что вы прочитали их сообщения';
+
+  @override
+  String get hideTyping => 'Не показывать набор текста';
+
+  @override
+  String get hideTypingHint => 'И запись голосовых и видеосообщений тоже';
+
+  @override
+  String get stayOffline => 'Оставаться не в сети';
+
+  @override
+  String get stayOfflineHint =>
+      'Пока приложение открыто, другие не увидят вас в сети';
+
+  @override
+  String get hideContentOpened =>
+      'Не отмечать голосовые и видеосообщения прослушанными';
+
+  @override
+  String get hideContentOpenedHint =>
+      'Отправители не увидят, что вы их прослушали';
+
+  @override
   String get menuSelect => 'Выбрать';
 
   @override
