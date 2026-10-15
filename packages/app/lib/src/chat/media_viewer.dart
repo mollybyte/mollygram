@@ -28,12 +28,16 @@ Future<void> showMediaViewer(BuildContext context, MediaViewerItem item) =>
 
 /// Opens the media of [message] in the viewer, which pages through the
 /// rest of the chat's photos and videos with the arrows. [onForward]
-/// forwards the one on screen once the viewer has closed.
+/// forwards the one on screen and [onShowInChat] scrolls to it, both once
+/// the viewer has closed; [onDelete] asks over the viewer and returns
+/// whether the deletion was requested, which closes the viewer.
 Future<void> showChatMediaViewer(
   BuildContext context, {
   required ConversationMessage message,
   required ConversationController conversations,
   void Function(ConversationMessage message)? onForward,
+  void Function(ConversationMessage message)? onShowInChat,
+  MediaDeleteHandler? onDelete,
 }) {
   final gallery = MediaGallery.chat(
     message,
@@ -50,16 +54,28 @@ Future<void> showChatMediaViewer(
     gallery,
     store: conversations.store,
     onForward: onForward,
+    onShowInChat: onShowInChat,
+    onDelete: onDelete,
   );
 }
+
+/// Asks whether to delete [message], over the viewer whose [context] is
+/// given, and returns whether the deletion was requested.
+typedef MediaDeleteHandler = Future<bool> Function(
+  BuildContext context,
+  ConversationMessage message,
+);
 
 Future<void> _open(
   BuildContext context,
   MediaGallery gallery, {
   required ConversationStore? store,
   void Function(ConversationMessage message)? onForward,
+  void Function(ConversationMessage message)? onShowInChat,
+  MediaDeleteHandler? onDelete,
 }) async {
   ConversationMessage? forward;
+  ConversationMessage? show;
   await Navigator.of(context).push(
     PageRouteBuilder<void>(
       opaque: false,
@@ -76,11 +92,19 @@ Future<void> _open(
                 forward = message;
                 Navigator.of(context).maybePop();
               },
+        onShowInChat: onShowInChat == null
+            ? null
+            : (message) {
+                show = message;
+                Navigator.of(context).maybePop();
+              },
+        onDelete: onDelete,
       ),
     ),
   );
   gallery.dispose();
   if (forward case final message?) onForward?.call(message);
+  if (show case final message?) onShowInChat?.call(message);
 }
 
 /// The dark full-window viewer: the media in the middle, who sent it and
@@ -92,12 +116,16 @@ class _MediaViewer extends StatefulWidget {
     required this.store,
     required this.animation,
     this.onForward,
+    this.onShowInChat,
+    this.onDelete,
   });
 
   final MediaGallery gallery;
   final ConversationStore? store;
   final Animation<double> animation;
   final void Function(ConversationMessage message)? onForward;
+  final void Function(ConversationMessage message)? onShowInChat;
+  final MediaDeleteHandler? onDelete;
 
   @override
   State<_MediaViewer> createState() => _MediaViewerState();
@@ -149,6 +177,15 @@ class _MediaViewerState extends State<_MediaViewer> {
   }
 
   void _close() => Navigator.of(context).maybePop();
+
+  /// Asks over the viewer; a requested deletion closes it.
+  Future<void> _delete() async {
+    final message = _gallery.current.message;
+    final onDelete = widget.onDelete;
+    if (message == null || onDelete == null) return;
+    final deleted = await onDelete(context, message);
+    if (deleted && mounted) _close();
+  }
 
   /// The pointer moved: show the chrome, and hide it again later while a
   /// video plays.
@@ -229,6 +266,9 @@ class _MediaViewerState extends State<_MediaViewer> {
       unawaited(_save());
     } else if (command && key == LogicalKeyboardKey.keyC) {
       unawaited(_copy());
+    } else if (key == LogicalKeyboardKey.delete ||
+        key == LogicalKeyboardKey.backspace) {
+      unawaited(_delete());
     } else {
       return KeyEventResult.ignored;
     }
@@ -355,6 +395,18 @@ class _MediaViewerState extends State<_MediaViewer> {
                             icon: MgIcons.forward,
                             label: l10n.menuForward,
                             onTap: () => widget.onForward!(message),
+                          ),
+                        if (message != null && widget.onShowInChat != null)
+                          _BarButton(
+                            icon: MgIcons.chat,
+                            label: l10n.showInChat,
+                            onTap: () => widget.onShowInChat!(message),
+                          ),
+                        if (message != null && widget.onDelete != null)
+                          _BarButton(
+                            icon: MgIcons.trash,
+                            label: l10n.menuDelete,
+                            onTap: () => unawaited(_delete()),
                           ),
                         _BarButton(
                           icon: MgIcons.close,

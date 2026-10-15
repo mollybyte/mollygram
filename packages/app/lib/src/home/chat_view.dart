@@ -900,6 +900,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
         message: message,
         conversations: _conversations,
         onForward: (message) => unawaited(_forward([message])),
+        onShowInChat: (message) => unawaited(_jumpTo(message.id)),
+        onDelete: _deleteFromViewer,
       ),
     ),
     onJump: (messageId) => unawaited(_jumpTo(messageId)),
@@ -1170,6 +1172,36 @@ class _ChatViewState extends ConsumerState<ChatView> {
     final messages = _selectedMessages();
     _clearSelection();
     await _forward(messages);
+  }
+
+  /// Delete from the media viewer: asks over it, with [viewer] as the
+  /// dialog's context, and tells whether the deletion was requested.
+  Future<bool> _deleteFromViewer(
+    BuildContext viewer,
+    ConversationMessage message,
+  ) async {
+    final chatId = widget.chatId;
+    final td.MessageProperties properties;
+    try {
+      properties = await _conversations.propertiesOf(
+        message.chatId,
+        message.id,
+      );
+    } on Object {
+      return false;
+    }
+    if (!mounted || !viewer.mounted || widget.chatId != chatId) return false;
+    final store = _conversations.store;
+    final chat = ref.read(chatEntryProvider(chatId)).value;
+    final isPrivate = chat != null && !chat.isGroup && !store.isChannel(chatId);
+    return confirmDeleteMessages(
+      viewer,
+      conversations: _conversations,
+      messages: [message],
+      properties: [properties],
+      peerName: isPrivate ? chat.title : null,
+      isShown: () => mounted && widget.chatId == chatId,
+    );
   }
 
   Future<void> _deleteSelected() async {

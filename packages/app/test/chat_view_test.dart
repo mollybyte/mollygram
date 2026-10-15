@@ -1699,6 +1699,40 @@ void main() {
     expect(find.text('1 of 2'), findsNothing);
   });
 
+  testWidgets('deletes the photo on screen from the viewer', (tester) async {
+    json.history = [td.Message.fromJson(_photo(15)), ..._history];
+    await pump(tester);
+    await tester.tap(find.byType(PhotoContent));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+    expect(find.text('2 of 2'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Delete'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+    expect(find.text('Delete message?'), findsOneWidget);
+    await tester.tap(find.text('Delete').last);
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+
+    final delete = json.sent.lastWhere((r) => r['@type'] == 'deleteMessages');
+    expect(delete['message_ids'], [15]);
+    expect(find.text('2 of 2'), findsNothing);
+  });
+
+  testWidgets('leaves the viewer for the message in the chat', (tester) async {
+    json.history = [td.Message.fromJson(_photo(15)), ..._history];
+    await pump(tester);
+    await tester.tap(find.byType(PhotoContent));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Show in chat'));
+    await tester.pumpAndSettle();
+    expect(find.text('2 of 2'), findsNothing);
+    expect(find.byType(PhotoContent), findsOneWidget);
+  });
+
   testWidgets('saves a file to the download folder and shows it', (
     tester,
   ) async {
