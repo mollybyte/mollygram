@@ -860,4 +860,76 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get mediaMute => 'Выключить звук';
+
+  @override
+  String get linkJoinChannel => 'Подписаться на канал';
+
+  @override
+  String get linkJoinGroup => 'Вступить в группу';
+
+  @override
+  String get linkRequestToJoin => 'Подать заявку';
+
+  @override
+  String get linkViewChannel => 'Открыть канал';
+
+  @override
+  String get linkViewGroup => 'Открыть группу';
+
+  @override
+  String linkSubscribers(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString подписчиков',
+      few: '$countString подписчика',
+      one: '$countString подписчик',
+      zero: 'Нет подписчиков',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String linkMembers(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString участников',
+      few: '$countString участника',
+      one: '$countString участник',
+      zero: 'Нет участников',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get linkApprovalHint => 'Заявку должен одобрить администратор.';
+
+  @override
+  String get linkRequestSent => 'Заявка отправлена';
+
+  @override
+  String get linkRequestSentHint =>
+      'Вы вступите, когда администратор её одобрит.';
+
+  @override
+  String get linkJoinFailed => 'Не удалось вступить. Попробуйте позже.';
+
+  @override
+  String get linkMissing => 'Ссылка недействительна или устарела.';
+
+  @override
+  String get linkUnsupported =>
+      'Mollygram пока не умеет открывать такие ссылки.';
+
+  @override
+  String get done => 'Готово';
 }

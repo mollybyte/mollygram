@@ -5,6 +5,8 @@ import 'package:mollygram_shell/mollygram_shell.dart';
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../commands/command_registry.dart';
+import '../links/link_host.dart';
 import '../notifications/notification_service.dart';
 import '../notifications/notifications_page.dart';
 import '../session/connection_status_capsule.dart';
@@ -33,6 +35,9 @@ enum _Page { plugins, notifications }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   _Page? _page;
+  late final CommandRegistry _registry = ref.read(commandRegistryProvider);
+  late AppLocalizations _l10n;
+  late ShellStrings _shellStrings;
 
   void _openPlugins() => setState(() => _page = _Page.plugins);
 
@@ -40,7 +45,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   void _closePage() => setState(() => _page = null);
 
-  List<PaletteCommand> _commands(AppLocalizations l10n) {
+  @override
+  void initState() {
+    super.initState();
+    _registry
+      ..register('app', _commands)
+      ..register('shell', _shellCommands);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _l10n = AppLocalizations.of(context);
+    _shellStrings = ShellStrings.forLocale(
+      Localizations.maybeLocaleOf(context),
+    );
+  }
+
+  @override
+  void dispose() {
+    _registry
+      ..unregister('app', _commands)
+      ..unregister('shell', _shellCommands);
+    super.dispose();
+  }
+
+  List<PaletteCommand> _commands() {
+    final l10n = _l10n;
     final other = lookupAppLocalizations(
       Locale(l10n.localeName == 'ru' ? 'en' : 'ru'),
     );
@@ -61,13 +92,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ];
   }
 
+  List<PaletteCommand> _shellCommands() =>
+      shellCommands(ref.read(workspaceControllerProvider), _shellStrings);
+
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
     final workspace = ref.watch(workspaceControllerProvider);
     final directory = ref.watch(chatDirectoryProvider);
     final home = CallbackShortcuts(
-      bindings: {HomeScreen.pluginsShortcut: _openPlugins},
+      // The shell binds its own shortcuts.
+      bindings: _registry.shortcutsOf('app'),
       child: GlassScope(
         child: Stack(
           children: [
@@ -76,7 +110,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: WorkspaceShell(
                 controller: workspace,
                 directory: directory,
-                commands: _commands(l10n),
+                commandSource: () => _registry.commands,
                 sidebar: const Padding(
                   padding: EdgeInsets.all(8),
                   child: Stack(
@@ -109,25 +143,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
     );
     final covered = _page != null;
-    return NotificationsHost(
-      child: Stack(
-        children: [
-          // The chats stay mounted under a settings screen, so drafts and
-          // scroll positions survive opening it.
-          Positioned.fill(
-            child: ExcludeFocus(
-              excluding: covered,
-              child: TickerMode(enabled: !covered, child: home),
-            ),
-          ),
-          if (_page case final page?)
+    return LinkHost(
+      child: NotificationsHost(
+        child: Stack(
+          children: [
+            // The chats stay mounted under a settings screen, so drafts and
+            // scroll positions survive opening it.
             Positioned.fill(
-              child: switch (page) {
-                _Page.plugins => PluginsPage(onClose: _closePage),
-                _Page.notifications => NotificationsPage(onClose: _closePage),
-              },
+              child: ExcludeFocus(
+                excluding: covered,
+                child: TickerMode(enabled: !covered, child: home),
+              ),
             ),
-        ],
+            if (_page case final page?)
+              Positioned.fill(
+                child: switch (page) {
+                  _Page.plugins => PluginsPage(onClose: _closePage),
+                  _Page.notifications => NotificationsPage(onClose: _closePage),
+                },
+              ),
+          ],
+        ),
       ),
     );
   }

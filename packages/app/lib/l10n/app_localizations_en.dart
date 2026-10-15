@@ -856,4 +856,72 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mediaMute => 'Mute';
+
+  @override
+  String get linkJoinChannel => 'Join channel';
+
+  @override
+  String get linkJoinGroup => 'Join group';
+
+  @override
+  String get linkRequestToJoin => 'Request to join';
+
+  @override
+  String get linkViewChannel => 'View channel';
+
+  @override
+  String get linkViewGroup => 'View group';
+
+  @override
+  String linkSubscribers(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString subscribers',
+      one: '$countString subscriber',
+      zero: 'No subscribers',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String linkMembers(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString members',
+      one: '$countString member',
+      zero: 'No members',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get linkApprovalHint => 'An admin has to approve your request.';
+
+  @override
+  String get linkRequestSent => 'Request sent';
+
+  @override
+  String get linkRequestSentHint => 'You\'ll join once an admin approves it.';
+
+  @override
+  String get linkJoinFailed => 'Couldn\'t join. Try again later.';
+
+  @override
+  String get linkMissing => 'This link is invalid or has expired.';
+
+  @override
+  String get linkUnsupported => 'Mollygram can\'t open this kind of link yet.';
+
+  @override
+  String get done => 'Done';
 }

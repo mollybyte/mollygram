@@ -225,5 +225,19 @@
   "mediaSpeed": "Скорость",
   "mediaLoop": "Повтор",
   "mediaUnmute": "Включить звук",
-  "mediaMute": "Выключить звук"
+  "mediaMute": "Выключить звук",
+  "linkJoinChannel": "Подписаться на канал",
+  "linkJoinGroup": "Вступить в группу",
+  "linkRequestToJoin": "Подать заявку",
+  "linkViewChannel": "Открыть канал",
+  "linkViewGroup": "Открыть группу",
+  "linkSubscribers": "{count, plural, =0{Нет подписчиков} one{{count} подписчик} few{{count} подписчика} other{{count} подписчиков}}",
+  "linkMembers": "{count, plural, =0{Нет участников} one{{count} участник} few{{count} участника} other{{count} участников}}",
+  "linkApprovalHint": "Заявку должен одобрить администратор.",
+  "linkRequestSent": "Заявка отправлена",
+  "linkRequestSentHint": "Вы вступите, когда администратор её одобрит.",
+  "linkJoinFailed": "Не удалось вступить. Попробуйте позже.",
+  "linkMissing": "Ссылка недействительна или устарела.",
+  "linkUnsupported": "Mollygram пока не умеет открывать такие ссылки.",
+  "done": "Готово"
 }
