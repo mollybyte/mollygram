@@ -151,7 +151,7 @@ void main() {
       },
       'positions': positions,
     });
-    await pumpEventQueue();
+    await Future<void>.delayed(const Duration(milliseconds: 50));
     final draft = controller.store.chat(5)!.draft;
     expect(draft?.text, 'hello');
     expect(draft?.date, 1700000000);
@@ -161,7 +161,7 @@ void main() {
       'chat_id': 5,
       'positions': positions,
     });
-    await pumpEventQueue();
+    await Future<void>.delayed(const Duration(milliseconds: 50));
     expect(controller.store.chat(5)!.draft, isNull);
   });
 
