@@ -171,6 +171,7 @@ final class ConversationStore {
   final _privateUserOf = <int, int>{};
   final _bots = <int>{};
   final _botCommands = <int, List<BotCommand>>{};
+  final _botMenus = <int, BotMenu>{};
   final _hasScheduled = <int>{};
   final _scheduledVersion = <int, int>{};
 
@@ -520,6 +521,20 @@ final class ConversationStore {
     return true;
   }
 
+  /// The menu button of the bot in [chatId]; null for other chats.
+  BotMenu? botMenu(int chatId) => _botMenus[chatId];
+
+  /// Remembers the bot's menu button; true when it changed.
+  bool setBotMenu(int chatId, BotMenu? menu) {
+    if (_botMenus[chatId] == menu) return false;
+    if (menu == null) {
+      _botMenus.remove(chatId);
+    } else {
+      _botMenus[chatId] = menu;
+    }
+    return true;
+  }
+
   /// Returns the chat the supergroup belongs to when its status changed.
   int? setSupergroupStatus(int supergroupId, td.ChatMemberStatus status) {
     final same =
@@ -723,6 +738,27 @@ final class ConversationStore {
 
   void setChannel(int chatId, bool isChannel) =>
       isChannel ? _channels.add(chatId) : _channels.remove(chatId);
+}
+
+/// The button at the left of the composer in a chat with a bot: its
+/// commands by default, or a Web App the bot names.
+final class BotMenu {
+  const BotMenu({required this.text, required this.url});
+
+  /// The button's label; empty for the plain commands menu.
+  final String text;
+
+  /// The Web App to open; empty for the commands menu.
+  final String url;
+
+  bool get isCommands => url.isEmpty;
+
+  @override
+  bool operator ==(Object other) =>
+      other is BotMenu && other.text == text && other.url == url;
+
+  @override
+  int get hashCode => Object.hash(text, url);
 }
 
 /// A command a bot offers, with the bot it belongs to.

@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mollygram/l10n/app_localizations.dart';
+import 'package:mollygram/src/chat/bot_keyboard.dart';
 import 'package:mollygram/src/chat/media_content.dart';
 import 'package:mollygram/src/chat/recent_emoji.dart';
 import 'package:mollygram/src/chat/save_file.dart';
@@ -1145,6 +1146,7 @@ void main() {
   ) async {
     session.conversations.store
       ..setBot(2, true)
+      ..setBotMenu(7, const BotMenu(text: '', url: ''))
       ..setBotCommands(7, const [
         BotCommand(botUserId: 2, command: 'start', description: 'Begin'),
         BotCommand(botUserId: 2, command: 'settings', description: 'Set up'),
@@ -1189,6 +1191,38 @@ void main() {
     expect(
       tester.widget<TextField>(find.byType(TextField)).controller!.text,
       isEmpty,
+    );
+
+    // The menu button lists every command.
+    await tester.tap(find.text('Menu'));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<TextField>(find.byType(TextField)).controller!.text,
+      '/',
+    );
+    expect(find.text('/settings'), findsOneWidget);
+    expect(find.text('/start'), findsOneWidget);
+  });
+
+  testWidgets("opens a bot's Web App from its menu button", (tester) async {
+    session.conversations.store
+      ..setBot(2, true)
+      ..setBotMenu(7, const BotMenu(text: 'Shop', url: 'https://shop.example'));
+    json.push(_chat(lastRead: 13, unread: 0, last: 13));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await pump(tester, group: false);
+    expect(find.text('Menu'), findsNothing);
+    expect(find.byType(BotMenuPill), findsOneWidget);
+
+    await tester.tap(find.text('Shop'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    final request = json.sent.lastWhere((r) => r['@type'] == 'getWebAppUrl');
+    expect(request['bot_user_id'], 2);
+    expect(request['url'], 'https://shop.example');
+    expect(
+      ((request['parameters']! as Map)['theme']! as Map)['button_color'],
+      isA<int>(),
     );
   });
 
@@ -2186,6 +2220,10 @@ final class _FakeTdJson implements td.TdJson {
         '@type': 'users',
         'total_count': 2,
         'user_ids': [2, 3],
+      },
+      'getWebAppUrl' => {
+        '@type': 'webAppUrl',
+        'url': 'https://shop.example/app',
       },
       'getUser' when decoded['user_id'] == 2 => _user(2, 'Boris'),
       'getUser' when decoded['user_id'] == 3 => _user(3, 'Vera', '79990001122'),

@@ -1015,6 +1015,7 @@ void main() {
       'start',
       'help',
     ]);
+    expect(controller.store.botMenu(7), const BotMenu(text: '', url: ''));
 
     json.push({
       '@type': 'updateUserFullInfo',
@@ -1023,6 +1024,24 @@ void main() {
     });
     await Future<void>.delayed(const Duration(milliseconds: 5));
     expect(controller.store.botCommands(7).map((c) => c.command), ['start']);
+
+    // The bot switched its menu button to a Web App.
+    json.push({
+      '@type': 'updateUserFullInfo',
+      'user_id': 77,
+      'user_full_info': _botFull(['start'], webApp: 'https://shop.example'),
+    });
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    expect(
+      controller.store.botMenu(7),
+      const BotMenu(text: 'Shop', url: 'https://shop.example'),
+    );
+    expect(
+      await controller.webAppUrl(77, 'https://shop.example'),
+      'https://shop.example/app',
+    );
+    final request = json.sent.lastWhere((r) => r['@type'] == 'getWebAppUrl');
+    expect(request['bot_user_id'], 77);
 
     await controller.sendBotStart(7, 77);
     final start = json.sent.lastWhere(
@@ -1433,7 +1452,7 @@ Map<String, Object?> _supergroup(int id, Map<String, Object?> status) => {
 };
 
 /// The full info of bot 77 with [commands], as far as the store reads it.
-Map<String, Object?> _botFull(List<String> commands) => {
+Map<String, Object?> _botFull(List<String> commands, {String? webApp}) => {
   '@type': 'userFullInfo',
   'gift_settings': {
     '@type': 'giftSettings',
@@ -1444,6 +1463,8 @@ Map<String, Object?> _botFull(List<String> commands) => {
     'short_description': '',
     'description': '',
     'manager_bot_user_id': 0,
+    if (webApp != null)
+      'menu_button': {'@type': 'botMenuButton', 'text': 'Shop', 'url': webApp},
     'commands': [
       for (final command in commands)
         {
@@ -1907,6 +1928,10 @@ final class _FakeTdJson implements td.TdJson {
         'start',
         'help',
       ]),
+      'getWebAppUrl' => {
+        '@type': 'webAppUrl',
+        'url': 'https://shop.example/app',
+      },
       'getCallbackQueryAnswer' => {
         '@type': 'callbackQueryAnswer',
         'text': '',

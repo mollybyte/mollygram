@@ -935,6 +935,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get stopPollMessage => 'Nobody will be able to vote in it any more.';
 
   @override
+  String get botMenu => 'Menu';
+
+  @override
+  String get webAppUnavailable => 'Couldn\'t open the bot\'s app';
+
+  @override
   String get botKeyboard => 'Bot keyboard';
 
   @override

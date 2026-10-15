@@ -1640,6 +1640,18 @@ abstract class AppLocalizations {
   /// **'Nobody will be able to vote in it any more.'**
   String get stopPollMessage;
 
+  /// No description provided for @botMenu.
+  ///
+  /// In en, this message translates to:
+  /// **'Menu'**
+  String get botMenu;
+
+  /// No description provided for @webAppUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open the bot\'s app'**
+  String get webAppUnavailable;
+
   /// No description provided for @botKeyboard.
   ///
   /// In en, this message translates to:
