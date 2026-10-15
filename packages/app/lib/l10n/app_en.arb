@@ -730,6 +730,7 @@
   "backToPrevious": "Back to where you were",
   "searchInChat": "Search in chat",
   "searchByDate": "Jump to date",
+  "searchBySender": "Search by sender",
   "searchCounter": "{index} of {count}",
   "@searchCounter": {
     "placeholders": { "index": { "type": "int" }, "count": { "type": "int" } }

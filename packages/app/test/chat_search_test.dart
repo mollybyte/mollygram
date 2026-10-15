@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mollygram/l10n/app_localizations.dart';
 import 'package:mollygram/src/chat/media_content.dart';
 import 'package:mollygram/src/chat_search/chat_search_bar.dart';
+import 'package:mollygram/src/chat_search/sender_picker.dart';
 import 'package:mollygram/src/session/providers.dart';
 import 'package:mollygram/src/shared_media/shared_link.dart';
 import 'package:mollygram/src/shared_media/shared_media_view.dart';
@@ -82,9 +83,15 @@ void main() {
           child: SizedBox(
             width: 480,
             child: ChatSearchBar(
-              find: (query) => session.chatSearch.find(7, query),
+              find: (query, sender) =>
+                  session.chatSearch.find(7, query, senderUserId: sender),
               onResult: shown.add,
               onClose: () => closed++,
+              onPickSender: (position) => pickSearchSender(
+                tester.element(find.byType(ChatSearchBar)),
+                position: position,
+                search: (query) => session.mentions.search(7, query),
+              ),
             ),
           ),
         ),
@@ -128,6 +135,37 @@ void main() {
 
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       expect(closed, 1);
+    });
+
+    testWidgets('narrows the search to one member', (tester) async {
+      await open(tester);
+      await tester.tap(find.byTooltip('Search by sender'));
+      await settle(tester);
+      expect(find.text('Boris'), findsOneWidget);
+
+      await tester.tap(find.text('Boris'));
+      await settle(tester);
+      // The chip names the member and their messages are the results.
+      expect(find.text('Boris'), findsOneWidget);
+      var request = json.sent.lastWhere(
+        (r) => r['@type'] == 'searchChatMessages',
+      );
+      expect((request['sender_id']! as Map)['user_id'], 2);
+      expect(request['query'], '');
+      expect(shown, [22]);
+      expect(find.text('1 of 1'), findsOneWidget);
+
+      await type(tester, 'lease');
+      request = json.sent.lastWhere((r) => r['@type'] == 'searchChatMessages');
+      expect((request['sender_id']! as Map)['user_id'], 2);
+      expect(request['query'], 'lease');
+
+      // Clearing the chip searches the whole chat again.
+      await tester.tap(find.byTooltip('Close').first);
+      await settle(tester);
+      expect(find.text('Boris'), findsNothing);
+      request = json.sent.lastWhere((r) => r['@type'] == 'searchChatMessages');
+      expect(request['sender_id'], isNull);
     });
 
     testWidgets('says when nothing matches', (tester) async {
@@ -395,6 +433,9 @@ final class _FakeTdJson implements td.TdJson {
     final filter = (request['filter'] as Map?)?['@type'];
     final from = request['from_message_id']! as int;
     final List<Map<String, Object?>> all = switch (filter) {
+      null when request['sender_id'] != null => [
+        _message(22, 'from boris').toJson(),
+      ],
       'searchMessagesFilterPhotoAndVideo' => [_photo(15), _photo(14)],
       'searchMessagesFilterUrl' => [_link(40)],
       null when request['query'] == 'lease' => [
@@ -431,6 +472,32 @@ final class _FakeTdJson implements td.TdJson {
         'message': 'Failed',
       },
       'searchChatMessages' => _search(decoded),
+      'searchChatMembers' => {
+        '@type': 'chatMembers',
+        'total_count': 1,
+        'members': [
+          {
+            '@type': 'chatMember',
+            'member_id': {'@type': 'messageSenderUser', 'user_id': 2},
+            'inviter_user_id': 0,
+            'joined_chat_date': 0,
+            'status': {
+              '@type': 'chatMemberStatusMember',
+              'member_until_date': 0,
+            },
+          },
+        ],
+      },
+      'getUser' => {
+        '@type': 'user',
+        'id': 2,
+        'first_name': 'Boris',
+        'last_name': '',
+        'phone_number': '',
+        'status': {'@type': 'userStatusRecently'},
+        'type': {'@type': 'userTypeRegular'},
+        'is_contact': true,
+      },
       'getChat' => {
         '@type': 'chat',
         'id': decoded['chat_id'],

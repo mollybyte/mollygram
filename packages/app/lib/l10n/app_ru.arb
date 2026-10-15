@@ -502,6 +502,7 @@
   "backToPrevious": "Вернуться назад",
   "searchInChat": "Поиск в чате",
   "searchByDate": "Перейти к дате",
+  "searchBySender": "Поиск по отправителю",
   "searchCounter": "{index} из {count}",
   "searchNoResults": "Ничего не найдено",
   "searchOlder": "Предыдущий результат",

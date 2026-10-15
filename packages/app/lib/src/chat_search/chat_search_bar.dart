@@ -19,12 +19,18 @@ class ChatSearchBar extends StatefulWidget {
     required this.onResult,
     required this.onClose,
     this.onCalendar,
+    this.onPickSender,
   });
 
-  /// Starts a search for a query.
-  final ChatSearchResults Function(String query) find;
+  /// Starts a search for a query, among one member's messages when
+  /// [senderUserId] is set.
+  final ChatSearchResults Function(String query, int? senderUserId) find;
   final ValueChanged<int> onResult;
   final VoidCallback onClose;
+
+  /// Asks whose messages to search, from a popover under the button's
+  /// position; null when the chat has no members to pick from.
+  final Future<MentionCandidate?> Function(Offset position)? onPickSender;
 
   /// A click on the calendar button, with the point under it where a
   /// calendar for jumping to a day goes. Absent, there is no button.
@@ -43,6 +49,7 @@ class _ChatSearchBarState extends State<ChatSearchBar> {
   Timer? _debounce;
   ChatSearchResults? _results;
   var _searching = false;
+  MentionCandidate? _sender;
 
   @override
   void initState() {
@@ -71,17 +78,32 @@ class _ChatSearchBarState extends State<ChatSearchBar> {
     _debounce = Timer(ChatSearchBar.debounce, () => unawaited(_run()));
   }
 
+  Future<void> _pickSender(Offset position) async {
+    final picked = await widget.onPickSender!(position);
+    if (picked == null || !mounted) return;
+    setState(() => _sender = picked);
+    _focus.requestFocus();
+    await _run();
+  }
+
+  void _clearSender() {
+    setState(() => _sender = null);
+    _focus.requestFocus();
+    unawaited(_run());
+  }
+
   Future<void> _run() async {
     _debounce?.cancel();
     final query = _text.text.trim();
-    if (query.isEmpty) {
+    // A member alone is a search too: everything they wrote.
+    if (query.isEmpty && _sender == null) {
       setState(() {
         _results = null;
         _searching = false;
       });
       return;
     }
-    final results = widget.find(query);
+    final results = widget.find(query, _sender?.userId);
     setState(() {
       _results = results;
       _searching = true;
@@ -160,6 +182,11 @@ class _ChatSearchBarState extends State<ChatSearchBar> {
         padding: const EdgeInsets.fromLTRB(7, 7, 4, 7),
         child: Row(
           children: [
+            if (_sender case final sender?)
+              Padding(
+                padding: const EdgeInsets.only(right: 6),
+                child: _SenderChip(name: sender.name, onClear: _clearSender),
+              ),
             Expanded(
               child: MgSearchField(
                 hintText: l10n.searchInChat,
@@ -198,6 +225,24 @@ class _ChatSearchBarState extends State<ChatSearchBar> {
               tooltip: l10n.searchNewer,
               onPressed: results?.hasNewer ?? false ? newer : null,
             ),
+            if (widget.onPickSender != null)
+              Builder(
+                builder: (context) => MgIconButton(
+                  icon: MgIcons.profile,
+                  tooltip: l10n.searchBySender,
+                  selected: _sender != null,
+                  onPressed: () {
+                    final box = context.findRenderObject()! as RenderBox;
+                    unawaited(
+                      _pickSender(
+                        box.localToGlobal(
+                          Offset(box.size.width / 2, box.size.height),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
             if (widget.onCalendar case final onCalendar?)
               Builder(
                 builder: (context) => MgIconButton(
@@ -220,6 +265,54 @@ class _ChatSearchBarState extends State<ChatSearchBar> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// The member whose messages are searched, shown before the field.
+class _SenderChip extends StatelessWidget {
+  const _SenderChip({required this.name, required this.onClear});
+
+  final String name;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    final l10n = AppLocalizations.of(context);
+    return Container(
+      height: 24,
+      constraints: const BoxConstraints(maxWidth: 160),
+      padding: const EdgeInsets.only(left: 9, right: 2),
+      decoration: BoxDecoration(
+        color: c.accent,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: Text(
+              name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: mgTextStyle(
+                c,
+                size: MgType.small,
+                weight: FontWeight.w500,
+                color: c.onAccent,
+                height: 1.2,
+              ),
+            ),
+          ),
+          MgIconButton(
+            icon: MgIcons.close,
+            tooltip: l10n.close,
+            iconSize: 12,
+            onPressed: onClear,
+          ),
+        ],
       ),
     );
   }
