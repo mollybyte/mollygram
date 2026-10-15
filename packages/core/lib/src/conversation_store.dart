@@ -409,6 +409,13 @@ final class ConversationStore {
   /// events read differently.
   bool isChannel(int chatId) => _channels.contains(chatId);
 
+  /// Whether [chatId] is a basic group or a supergroup that is not a
+  /// channel, as far as the store has seen it.
+  bool isGroup(int chatId) =>
+      (_supergroupOf.containsKey(chatId) ||
+          _basicGroupOf.containsKey(chatId)) &&
+      !isChannel(chatId);
+
   /// Remembers which group or channel [chat] is, so its member status
   /// ([setSupergroupStatus], [setBasicGroupStatus]) can be found.
   void setChatType(int chatId, td.ChatType type) {

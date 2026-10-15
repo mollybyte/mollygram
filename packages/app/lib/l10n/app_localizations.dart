@@ -2732,6 +2732,12 @@ abstract class AppLocalizations {
   /// **'You can\'t view this chat.'**
   String get linkForbidden;
 
+  /// No description provided for @linkCannotSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t send the command.'**
+  String get linkCannotSend;
+
   /// No description provided for @menuPin.
   ///
   /// In en, this message translates to:
@@ -3331,6 +3337,282 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, one{Unpin {count} message?} other{Unpin all {count} messages?}}'**
   String unpinAllTitle(int count);
+
+  /// No description provided for @privacyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy'**
+  String get privacyTitle;
+
+  /// No description provided for @privacyLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the privacy settings.'**
+  String get privacyLoadFailed;
+
+  /// No description provided for @privacyPhoneNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone number'**
+  String get privacyPhoneNumber;
+
+  /// No description provided for @privacyFindByPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Finding by phone number'**
+  String get privacyFindByPhone;
+
+  /// No description provided for @privacyLastSeen.
+  ///
+  /// In en, this message translates to:
+  /// **'Last seen and online'**
+  String get privacyLastSeen;
+
+  /// No description provided for @privacyProfilePhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile photos'**
+  String get privacyProfilePhotos;
+
+  /// No description provided for @privacyForwards.
+  ///
+  /// In en, this message translates to:
+  /// **'Forwarded messages'**
+  String get privacyForwards;
+
+  /// No description provided for @privacyCalls.
+  ///
+  /// In en, this message translates to:
+  /// **'Calls'**
+  String get privacyCalls;
+
+  /// No description provided for @privacyVoiceMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice messages'**
+  String get privacyVoiceMessages;
+
+  /// No description provided for @privacyInvites.
+  ///
+  /// In en, this message translates to:
+  /// **'Groups and channels'**
+  String get privacyInvites;
+
+  /// No description provided for @privacyBio.
+  ///
+  /// In en, this message translates to:
+  /// **'Bio'**
+  String get privacyBio;
+
+  /// No description provided for @privacyBirthday.
+  ///
+  /// In en, this message translates to:
+  /// **'Date of birth'**
+  String get privacyBirthday;
+
+  /// No description provided for @privacyPhoneNumberQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Who can see my phone number?'**
+  String get privacyPhoneNumberQuestion;
+
+  /// No description provided for @privacyFindByPhoneQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Who can find me by my number?'**
+  String get privacyFindByPhoneQuestion;
+
+  /// No description provided for @privacyLastSeenQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Who can see my last seen time?'**
+  String get privacyLastSeenQuestion;
+
+  /// No description provided for @privacyProfilePhotosQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Who can see my profile photos?'**
+  String get privacyProfilePhotosQuestion;
+
+  /// No description provided for @privacyForwardsQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Who can link to my account when forwarding my messages?'**
+  String get privacyForwardsQuestion;
+
+  /// No description provided for @privacyCallsQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Who can call me?'**
+  String get privacyCallsQuestion;
+
+  /// No description provided for @privacyVoiceMessagesQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Who can send me voice and video messages?'**
+  String get privacyVoiceMessagesQuestion;
+
+  /// No description provided for @privacyInvitesQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Who can add me to groups and channels?'**
+  String get privacyInvitesQuestion;
+
+  /// No description provided for @privacyBioQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Who can see my bio?'**
+  String get privacyBioQuestion;
+
+  /// No description provided for @privacyBirthdayQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Who can see my date of birth?'**
+  String get privacyBirthdayQuestion;
+
+  /// No description provided for @privacyPhoneNumberAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'People who have your number saved in their contacts will also see it on Telegram.'**
+  String get privacyPhoneNumberAbout;
+
+  /// No description provided for @privacyFindByPhoneAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'People who add your number to their contacts will see it as your Telegram account only if they\'re in this audience.'**
+  String get privacyFindByPhoneAbout;
+
+  /// No description provided for @privacyLastSeenAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'You won\'t see the last seen time of people you don\'t show yours to. An approximate time, such as recently or within a week, shows instead.'**
+  String get privacyLastSeenAbout;
+
+  /// No description provided for @privacyForwardsAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages you send won\'t link back to your account when forwarded by people outside this audience.'**
+  String get privacyForwardsAbout;
+
+  /// No description provided for @privacyVoiceMessagesAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'Only Telegram Premium subscribers can limit who sends them voice and video messages.'**
+  String get privacyVoiceMessagesAbout;
+
+  /// No description provided for @privacyEverybody.
+  ///
+  /// In en, this message translates to:
+  /// **'Everybody'**
+  String get privacyEverybody;
+
+  /// No description provided for @privacyMyContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'My contacts'**
+  String get privacyMyContacts;
+
+  /// No description provided for @privacyNobody.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody'**
+  String get privacyNobody;
+
+  /// No description provided for @privacyExceptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Exceptions'**
+  String get privacyExceptions;
+
+  /// No description provided for @privacyExceptionsAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'Exceptions come before the choice above.'**
+  String get privacyExceptionsAbout;
+
+  /// No description provided for @privacyAlwaysAllow.
+  ///
+  /// In en, this message translates to:
+  /// **'Always allow'**
+  String get privacyAlwaysAllow;
+
+  /// No description provided for @privacyNeverAllow.
+  ///
+  /// In en, this message translates to:
+  /// **'Never allow'**
+  String get privacyNeverAllow;
+
+  /// No description provided for @privacyAlwaysAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'These people are allowed, whatever the choice above.'**
+  String get privacyAlwaysAbout;
+
+  /// No description provided for @privacyNeverAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'These people are never allowed, whatever the choice above.'**
+  String get privacyNeverAbout;
+
+  /// No description provided for @privacyAddPeople.
+  ///
+  /// In en, this message translates to:
+  /// **'Add people'**
+  String get privacyAddPeople;
+
+  /// No description provided for @privacyGroupMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Group members'**
+  String get privacyGroupMembers;
+
+  /// No description provided for @privacyPeopleCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} person} other{{count} people}}'**
+  String privacyPeopleCount(int count);
+
+  /// No description provided for @blockedUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked users'**
+  String get blockedUsers;
+
+  /// No description provided for @blockedUsersAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked people can\'t message you, call you or add you to groups, and don\'t see your profile photos, online status or last seen time.'**
+  String get blockedUsersAbout;
+
+  /// No description provided for @blockedUsersEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No one is blocked.'**
+  String get blockedUsersEmpty;
+
+  /// No description provided for @blockSomeone.
+  ///
+  /// In en, this message translates to:
+  /// **'Block someone'**
+  String get blockSomeone;
+
+  /// No description provided for @privacyNotLoaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Not loaded'**
+  String get privacyNotLoaded;
+
+  /// No description provided for @unblock.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock'**
+  String get unblock;
+
+  /// No description provided for @blockedShowMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Show more'**
+  String get blockedShowMore;
 
   /// No description provided for @keepDeletedMessages.
   ///

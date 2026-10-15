@@ -65,7 +65,7 @@ M8 calls and macOS release, M9 after release.
 | Jump to date (calendar) | done | Click a date pill: calendar, `getChatMessageByDate`; no media calendar | M | M2 |
 | Header status: online, last seen, members, typing | done (#40) | | S | M1 |
 | Join and mute buttons for channels and groups you are not in | done | Join in place of the composer; Mute and Unmute in channels you only read | | |
-| Open `t.me` and `tg://` links, usernames, hashtags, bot commands | partial | Links, mentions, invites and `tg://` work (`links/`); hashtags, bot commands, mention names and the jump to a linked message are missing | S | M1 |
+| Open `t.me` and `tg://` links, usernames, hashtags, bot commands | done | `links/`: links, mentions and mentions by name, invites, `tg://user?id=`, `t.me/s/` previews, message links jump to the message; hashtags open the ⌘K message search, bot commands are sent to the chat | | |
 | Link previews in messages | partial | Check `MessageText.linkPreview` rendering | M | M1 |
 | Text selection across messages | done | Mouse selection over the timeline, copy with the shortcut | M | M2 |
 | Multi-select mode: forward, delete, copy several | done | Select from the menu, click rows, bar in place of the composer; no shift-click range yet | M | M2 |
@@ -161,7 +161,7 @@ M8 calls and macOS release, M9 after release.
 | Chat search in the sidebar and ⌘K palette | done | `chat_search.dart`, #27 | | |
 | Global message search | partial | `SearchMessages` used by the palette; no jump to the message | M | M2 |
 | Search inside a chat, by sender, by date | partial | ⌘F capsule with result arrows (`chat_search/`); sender filter in core only, no date jump | S | M2 |
-| Hashtag and cashtag search | missing | | S | M2 |
+| Hashtag and cashtag search | partial | A tapped hashtag or cashtag opens the ⌘K message search with it; no dedicated hashtag results view | S | M2 |
 | Search filters (media, links, files, voice) | partial | `ChatSearchController` filters back the shared media tabs; not offered in ⌘F yet | S | M2 |
 | Recent searches and top peers | missing | | S | M2 |
 
@@ -213,7 +213,7 @@ M8 calls and macOS release, M9 after release.
 | Settings window shell in macOS System Settings style | done | Pages are descriptors in `settingsSections` | | |
 | Notifications and sounds: per-type, badge, preview, sound | partial | Global switches, preview, sound and badge done (`NotificationsPage`); per-type scopes (private, groups, channels) and tones missing | S | M1 |
 | Active sessions and terminate | partial | List, terminate one or all others; no auto-terminate period | S | M1 |
-| Privacy and security: last seen, phone, photo, calls, forwards, groups, blocked list | missing | `SelectivePrivacySettingsController` | L | M6 |
+| Privacy and security: last seen, phone, photo, calls, forwards, groups, blocked list | done | Nine settings with Everybody / My contacts / Nobody and always / never lists, finding by phone, blocked list with block and unblock ([privacy_settings_controller.dart](../packages/core/lib/src/privacy_settings_controller.dart)); exceptions add people from the contacts only, groups already in a list are kept and can be removed | | |
 | Two-step verification setup | missing | `TwoStepVerification` | M | M6 |
 | Passcode lock and Touch ID | missing | `PasscodeSettingsViewController`, `LocalAuth` | M | M7 |
 | Data and storage: cache usage, clear, limits, network usage | partial | Usage by kind, clear by kind, download folder; auto-download switches are stored but not yet applied; no limits or network usage | M | M7 |

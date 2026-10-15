@@ -241,16 +241,26 @@ class _Content extends ConsumerWidget {
     final title = info.isDeleted ? l10n.deletedAccount : info.title;
     final status = describePeerStatus(l10n, info, now: now);
 
+    // A bot's commands in its own info go to the chat with it.
+    final commandChat = info.kind == PeerKind.bot ? info.chatId : null;
     final details = <Widget>[
       if (info.bio case final bio? when bio.text.isNotEmpty)
         _InfoRow(
           label: l10n.infoBio,
-          child: FormattedTextView(text: bio, style: mgTextStyle(c)),
+          child: FormattedTextView(
+            text: bio,
+            style: mgTextStyle(c),
+            chatId: commandChat,
+          ),
         ),
       if (info.description case final description?)
         _InfoRow(
           label: l10n.infoDescription,
-          child: FormattedTextView(text: description, style: mgTextStyle(c)),
+          child: FormattedTextView(
+            text: description,
+            style: mgTextStyle(c),
+            chatId: commandChat,
+          ),
         ),
       if (info.isUser && info.usernames.isNotEmpty)
         _InfoRow(

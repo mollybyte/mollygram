@@ -54,4 +54,28 @@ abstract final class TelegramLinks {
     'mailto',
     'tel',
   }.contains(uri.scheme.toLowerCase());
+
+  /// The link that opens the private chat with user [userId], as a
+  /// mention by name in a message points to it.
+  static Uri userLink(int userId) =>
+      Uri(scheme: 'tg', host: 'user', queryParameters: {'id': '$userId'});
+
+  /// The user a `tg://user?id=` link points to; null for other links.
+  static int? userIdOf(Uri uri) {
+    if (uri.scheme.toLowerCase() != 'tg' || uri.host.toLowerCase() != 'user') {
+      return null;
+    }
+    final id = int.tryParse(uri.queryParameters['id'] ?? '');
+    return id != null && id > 0 ? id : null;
+  }
+
+  /// `t.me/s/name` and `t.me/s/name/123`, the web preview of a channel, as
+  /// the link to the channel itself; other links stay as they are.
+  static Uri withoutWebPreview(Uri uri) {
+    if (!isTelegram(uri) || uri.scheme.toLowerCase() == 'tg') return uri;
+    final segments = uri.pathSegments;
+    if (segments.length < 2 || segments.first != 's') return uri;
+    if (!_username.hasMatch(segments[1])) return uri;
+    return uri.replace(pathSegments: segments.skip(1).toList());
+  }
 }

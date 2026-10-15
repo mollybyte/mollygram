@@ -470,8 +470,11 @@ class _MessageBody extends StatelessWidget {
   FormattedTextView _text(td.FormattedText text, {ConversationMessage? of}) {
     final onTextSelected = actions.onTextSelected;
     final owner = of ?? message;
+    // Bot commands in it go to this chat, meant for the bot that sent it.
     return FormattedTextView(
       text: text,
+      chatId: owner.chatId,
+      senderUserId: owner.sender.isChat ? null : owner.sender.id,
       onSelection: onTextSelected == null
           ? null
           : (quote) => onTextSelected(owner, quote),

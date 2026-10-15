@@ -1627,6 +1627,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get linkForbidden => 'You can\'t view this chat.';
 
   @override
+  String get linkCannotSend => 'Couldn\'t send the command.';
+
+  @override
   String get menuPin => 'Pin';
 
   @override
@@ -1976,6 +1979,163 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get privacyTitle => 'Privacy';
+
+  @override
+  String get privacyLoadFailed => 'Couldn\'t load the privacy settings.';
+
+  @override
+  String get privacyPhoneNumber => 'Phone number';
+
+  @override
+  String get privacyFindByPhone => 'Finding by phone number';
+
+  @override
+  String get privacyLastSeen => 'Last seen and online';
+
+  @override
+  String get privacyProfilePhotos => 'Profile photos';
+
+  @override
+  String get privacyForwards => 'Forwarded messages';
+
+  @override
+  String get privacyCalls => 'Calls';
+
+  @override
+  String get privacyVoiceMessages => 'Voice messages';
+
+  @override
+  String get privacyInvites => 'Groups and channels';
+
+  @override
+  String get privacyBio => 'Bio';
+
+  @override
+  String get privacyBirthday => 'Date of birth';
+
+  @override
+  String get privacyPhoneNumberQuestion => 'Who can see my phone number?';
+
+  @override
+  String get privacyFindByPhoneQuestion => 'Who can find me by my number?';
+
+  @override
+  String get privacyLastSeenQuestion => 'Who can see my last seen time?';
+
+  @override
+  String get privacyProfilePhotosQuestion => 'Who can see my profile photos?';
+
+  @override
+  String get privacyForwardsQuestion =>
+      'Who can link to my account when forwarding my messages?';
+
+  @override
+  String get privacyCallsQuestion => 'Who can call me?';
+
+  @override
+  String get privacyVoiceMessagesQuestion =>
+      'Who can send me voice and video messages?';
+
+  @override
+  String get privacyInvitesQuestion => 'Who can add me to groups and channels?';
+
+  @override
+  String get privacyBioQuestion => 'Who can see my bio?';
+
+  @override
+  String get privacyBirthdayQuestion => 'Who can see my date of birth?';
+
+  @override
+  String get privacyPhoneNumberAbout =>
+      'People who have your number saved in their contacts will also see it on Telegram.';
+
+  @override
+  String get privacyFindByPhoneAbout =>
+      'People who add your number to their contacts will see it as your Telegram account only if they\'re in this audience.';
+
+  @override
+  String get privacyLastSeenAbout =>
+      'You won\'t see the last seen time of people you don\'t show yours to. An approximate time, such as recently or within a week, shows instead.';
+
+  @override
+  String get privacyForwardsAbout =>
+      'Messages you send won\'t link back to your account when forwarded by people outside this audience.';
+
+  @override
+  String get privacyVoiceMessagesAbout =>
+      'Only Telegram Premium subscribers can limit who sends them voice and video messages.';
+
+  @override
+  String get privacyEverybody => 'Everybody';
+
+  @override
+  String get privacyMyContacts => 'My contacts';
+
+  @override
+  String get privacyNobody => 'Nobody';
+
+  @override
+  String get privacyExceptions => 'Exceptions';
+
+  @override
+  String get privacyExceptionsAbout =>
+      'Exceptions come before the choice above.';
+
+  @override
+  String get privacyAlwaysAllow => 'Always allow';
+
+  @override
+  String get privacyNeverAllow => 'Never allow';
+
+  @override
+  String get privacyAlwaysAbout =>
+      'These people are allowed, whatever the choice above.';
+
+  @override
+  String get privacyNeverAbout =>
+      'These people are never allowed, whatever the choice above.';
+
+  @override
+  String get privacyAddPeople => 'Add people';
+
+  @override
+  String get privacyGroupMembers => 'Group members';
+
+  @override
+  String privacyPeopleCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count people',
+      one: '$count person',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get blockedUsers => 'Blocked users';
+
+  @override
+  String get blockedUsersAbout =>
+      'Blocked people can\'t message you, call you or add you to groups, and don\'t see your profile photos, online status or last seen time.';
+
+  @override
+  String get blockedUsersEmpty => 'No one is blocked.';
+
+  @override
+  String get blockSomeone => 'Block someone';
+
+  @override
+  String get privacyNotLoaded => 'Not loaded';
+
+  @override
+  String get unblock => 'Unblock';
+
+  @override
+  String get blockedShowMore => 'Show more';
 
   @override
   String get keepDeletedMessages => 'Keep deleted messages';
