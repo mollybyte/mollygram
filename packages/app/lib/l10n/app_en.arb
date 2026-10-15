@@ -501,5 +501,11 @@
     "placeholders": { "number": { "type": "int" } }
   },
   "hidePinned": "Hide pinned messages",
-  "backToPrevious": "Back to where you were"
+  "backToPrevious": "Back to where you were",
+  "joinChannel": "Join channel",
+  "joinGroup": "Join group",
+  "muteChat": "Mute",
+  "unmuteChat": "Unmute",
+  "chatUnavailable": "You can't take part in this chat",
+  "chatActionFailed": "Couldn't do that, try again"
 }

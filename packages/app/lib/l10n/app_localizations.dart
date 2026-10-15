@@ -2029,6 +2029,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Back to where you were'**
   String get backToPrevious;
+
+  /// No description provided for @joinChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Join channel'**
+  String get joinChannel;
+
+  /// No description provided for @joinGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Join group'**
+  String get joinGroup;
+
+  /// No description provided for @muteChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute'**
+  String get muteChat;
+
+  /// No description provided for @unmuteChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute'**
+  String get unmuteChat;
+
+  /// No description provided for @chatUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'You can\'t take part in this chat'**
+  String get chatUnavailable;
+
+  /// No description provided for @chatActionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t do that, try again'**
+  String get chatActionFailed;
 }
 
 class _AppLocalizationsDelegate

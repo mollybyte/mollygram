@@ -321,5 +321,11 @@
   "pinnedMessage": "Закреплённое сообщение",
   "pinnedMessageNumber": "Закреплённое сообщение #{number}",
   "hidePinned": "Скрыть закреплённые",
-  "backToPrevious": "Вернуться назад"
+  "backToPrevious": "Вернуться назад",
+  "joinChannel": "Подписаться",
+  "joinGroup": "Вступить в группу",
+  "muteChat": "Без звука",
+  "unmuteChat": "Включить звук",
+  "chatUnavailable": "Вы не можете участвовать в этом чате",
+  "chatActionFailed": "Не получилось, попробуйте ещё раз"
 }
