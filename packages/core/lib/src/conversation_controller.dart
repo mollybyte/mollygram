@@ -203,6 +203,37 @@ final class ConversationController {
     _add(message);
   }
 
+  /// Sends [sticker] on its own, as a reply to [replyTo] when given.
+  /// TDLib moves it to the front of the recent stickers.
+  Future<void> sendSticker(
+    int chatId,
+    td.Sticker sticker, {
+    int? replyTo,
+  }) async {
+    _add(
+      await _client.send(
+        td.SendMessage(
+          chatId: chatId,
+          replyTo: replyTo == null
+              ? null
+              : td.InputMessageReplyToMessage(
+                  messageId: replyTo,
+                  checklistTaskId: 0,
+                  pollOptionId: '',
+                ),
+          inputMessageContent: td.InputMessageSticker(
+            sticker: td.InputSticker(
+              sticker: td.InputFileId(id: sticker.sticker.id),
+              width: sticker.width,
+              height: sticker.height,
+            ),
+            emoji: sticker.emoji,
+          ),
+        ),
+      ),
+    );
+  }
+
   int? _captionMax;
 
   /// The longest caption the server takes, 1024 when TDLib can't say.

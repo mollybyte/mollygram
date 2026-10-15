@@ -10,6 +10,7 @@ export 'src/badge.dart';
 export 'src/chat/bubbles.dart';
 export 'src/chat/chat_header.dart';
 export 'src/chat/composer.dart';
+export 'src/chat/emoji_panel.dart';
 export 'src/chat/message_menu.dart';
 export 'src/chat/message_parts.dart';
 export 'src/forms/buttons.dart';

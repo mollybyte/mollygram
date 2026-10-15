@@ -7,6 +7,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mollygram/l10n/app_localizations.dart';
+import 'package:mollygram/src/chat/media_content.dart';
+import 'package:mollygram/src/chat/recent_emoji.dart';
 import 'package:mollygram/src/home/chat_view.dart';
 import 'package:mollygram/src/session/providers.dart';
 import 'package:mollygram_core/mollygram_core.dart';
@@ -51,6 +53,9 @@ void main() {
       ProviderScope(
         overrides: [
           telegramSessionProvider.overrideWith((ref) async => session),
+          recentEmojiStorageProvider.overrideWithValue(
+            MemoryRecentEmojiStorage(),
+          ),
           chatListProvider.overrideWith(
             (ref, list) => Stream.value([
               ChatListEntry(
@@ -304,6 +309,58 @@ void main() {
     final field = tester.widget<TextField>(find.byType(TextField));
     expect(field.controller!.text, 'Hello there');
   });
+
+  testWidgets('puts an emoji at the caret and keeps the panel open', (
+    tester,
+  ) async {
+    await pump(tester);
+    final field = find.byType(TextField);
+    await tester.enterText(field, 'hi there');
+    final controller = tester.widget<TextField>(field).controller!;
+    controller.selection = const TextSelection.collapsed(offset: 2);
+    await tester.tap(find.byTooltip('Emoji and stickers'));
+    await tester.pump();
+
+    await tester.tap(find.text('😀'));
+    await tester.pump();
+    expect(controller.text, 'hi😀 there');
+    expect(controller.selection, const TextSelection.collapsed(offset: 4));
+    // The panel stays, and the emoji now leads its recent row.
+    expect(find.text('Recently used'), findsOneWidget);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pump();
+    expect(find.byType(EmojiPanel), findsNothing);
+  });
+
+  testWidgets('sends a sticker from the panel and closes it', (tester) async {
+    await pump(tester);
+    await tester.tap(find.byTooltip('Emoji and stickers'));
+    await tester.pump();
+    await tester.tap(find.text('Stickers'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+
+    expect(find.text('Recently used'), findsWidgets);
+    expect(find.text('Cats'), findsWidgets);
+    // The recent sticker, then the set's two.
+    expect(find.byType(StickerContent), findsAtLeastNWidgets(3));
+
+    await tester.tap(find.bySemanticsLabel('😺').last);
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+
+    final send = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    final content = send['input_message_content']! as Map;
+    expect(content['@type'], 'inputMessageSticker');
+    expect((content['sticker']! as Map)['sticker'], {
+      '@type': 'inputFileId',
+      'id': 303,
+    });
+    expect(find.byType(EmojiPanel), findsNothing);
+  });
 }
 
 const _tick = Duration(milliseconds: 20);
@@ -427,6 +484,36 @@ final class _FakeTdJson implements td.TdJson {
         text: 'Edited',
         outgoing: true,
       ).toJson(),
+      'getRecentStickers' => {
+        '@type': 'stickers',
+        'stickers': [_sticker(1, '🐱')],
+      },
+      'getFavoriteStickers' => {'@type': 'stickers', 'stickers': <Object?>[]},
+      'getInstalledStickerSets' => {
+        '@type': 'stickerSets',
+        'total_count': 1,
+        'sets': [
+          {
+            '@type': 'stickerSetInfo',
+            'id': 55,
+            'title': 'Cats',
+            'name': 'cats',
+            'sticker_type': {'@type': 'stickerTypeRegular'},
+            'size': 2,
+            'covers': [_sticker(2, '😸')],
+          },
+        ],
+      },
+      'getStickerSet' => {
+        '@type': 'stickerSet',
+        'id': 55,
+        'title': 'Cats',
+        'name': 'cats',
+        'sticker_type': {'@type': 'stickerTypeRegular'},
+        'stickers': [_sticker(2, '😸'), _sticker(3, '😺')],
+        'emojis': <Object?>[],
+      },
+      'downloadFile' => _stickerFile(decoded['file_id']! as int),
       'forwardMessages' => {
         '@type': 'messages',
         'total_count': 0,
@@ -480,3 +567,30 @@ final class _FakeTdJson implements td.TdJson {
     }
   }
 }
+
+Map<String, Object?> _sticker(int id, String emoji) => {
+  '@type': 'sticker',
+  'id': 100 + id,
+  'set_id': 55,
+  'width': 512,
+  'height': 512,
+  'emoji': emoji,
+  'format': {'@type': 'stickerFormatWebp'},
+  'full_type': {'@type': 'stickerFullTypeRegular'},
+  'sticker': _stickerFile(300 + id),
+};
+
+Map<String, Object?> _stickerFile(int id) => {
+  '@type': 'file',
+  'id': id,
+  'size': 1000,
+  'expected_size': 1000,
+  'local': {
+    '@type': 'localFile',
+    'path': '',
+    'can_be_downloaded': true,
+    'is_downloading_active': true,
+    'is_downloading_completed': false,
+  },
+  'remote': {'@type': 'remoteFile', 'id': 'r$id', 'unique_id': 'u$id'},
+};

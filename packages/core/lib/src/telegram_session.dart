@@ -8,6 +8,7 @@ import 'chat_list_controller.dart';
 import 'chat_search.dart';
 import 'conversation_controller.dart';
 import 'file_controller.dart';
+import 'sticker_library.dart';
 import 'tdlib_initializer.dart';
 
 /// Owns one TDLib instance and coordinates its initial authorization flow.
@@ -23,6 +24,7 @@ final class TelegramSession {
     required this.conversations,
     required this.search,
     required this.files,
+    required this.stickers,
     required this._initializer,
   });
 
@@ -33,6 +35,7 @@ final class TelegramSession {
   final ConversationController conversations;
   final ChatSearch search;
   final FileController files;
+  final StickerLibrary stickers;
   final _errors = StreamController<Object>.broadcast(sync: true);
   StreamSubscription<AuthorizationStage>? _stageSubscription;
   Future<void>? _firstReconcile;
@@ -57,6 +60,7 @@ final class TelegramSession {
       conversations: conversations,
       search: ChatSearch(client),
       files: files,
+      stickers: StickerLibrary(client),
       initializer: TdlibInitializer(client, parameters: parameters),
     );
     session._stageSubscription = authorization.stages.listen(session._onStage);

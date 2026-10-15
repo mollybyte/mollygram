@@ -156,12 +156,21 @@ class AnimationContent extends StatelessWidget {
 }
 
 /// A sticker without a bubble: WebP, animated (TGS) or video (WebM).
+/// With [animate] off, as in the sticker panel until the pointer is over
+/// it, an animated sticker shows its still thumbnail.
 class StickerContent extends StatelessWidget {
-  const StickerContent({super.key, required this.sticker});
+  const StickerContent({
+    super.key,
+    required this.sticker,
+    this.side = defaultSide,
+    this.animate = true,
+  });
 
   final td.Sticker sticker;
+  final double side;
+  final bool animate;
 
-  static const double side = 180;
+  static const double defaultSide = 180;
 
   @override
   Widget build(BuildContext context) {
@@ -170,7 +179,7 @@ class StickerContent extends StatelessWidget {
       sticker.height,
       maxWidth: side,
       maxHeight: side,
-      minSide: 60,
+      minSide: math.min(60, side),
     );
     final thumbnail = sticker.thumbnail;
     final still = thumbnail != null && _isStill(thumbnail.format)
@@ -181,6 +190,10 @@ class StickerContent extends StatelessWidget {
           )
         : const SizedBox.shrink();
     final Widget body = switch (sticker.format) {
+      td.StickerFormatTgs() || td.StickerFormatWebm()
+          when !animate && thumbnail != null && _isStill(thumbnail.format) =>
+        still,
+      td.StickerFormatWebm() when !animate => still,
       td.StickerFormatWebp() => TdImage(
         file: sticker.sticker,
         thumbnail: thumbnail?.file,
@@ -197,6 +210,7 @@ class StickerContent extends StatelessWidget {
           if (path == null) return still;
           return Lottie.file(
             File(path),
+            animate: animate,
             decoder: LottieComposition.decodeGZip,
             fit: BoxFit.contain,
             frameRate: FrameRate.max,

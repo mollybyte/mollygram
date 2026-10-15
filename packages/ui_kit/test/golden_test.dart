@@ -382,7 +382,47 @@ void main() {
         ),
         colors,
         'icons_$theme',
-        size: const Size(380, 120),
+        size: const Size(380, 200),
+      );
+    });
+
+    testWidgets('emoji panel $theme', skip: _skip, (tester) async {
+      tester.view.physicalSize = const Size(480, 460);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        themed(
+          Stack(
+            children: [
+              const Positioned.fill(child: Wallpaper()),
+              Positioned(
+                right: 24,
+                bottom: 24,
+                child: EmojiPanel(
+                  tabs: const ['Emoji', 'Stickers'],
+                  children: [
+                    EmojiTab(
+                      labels: const EmojiTabLabels(
+                        search: 'Search emoji',
+                        recent: 'Recently used',
+                        noResults: 'No emoji found',
+                        groups: {EmojiGroup.smileys: 'Smileys'},
+                      ),
+                      recent: const ['a', 'b', 'c'],
+                      onPick: (_) {},
+                    ),
+                    const SizedBox.shrink(),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          colors: colors,
+        ),
+      );
+      await expectLater(
+        find.byType(EmojiPanel),
+        matchesGoldenFile('goldens/emoji_panel_$theme.png'),
       );
     });
 
