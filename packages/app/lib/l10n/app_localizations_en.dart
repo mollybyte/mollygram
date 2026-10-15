@@ -1656,6 +1656,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get leaveComment => 'Leave a comment';
 
   @override
+  String get comments => 'Comments';
+
+  @override
+  String get commentHint => 'Comment';
+
+  @override
+  String get commentsUnavailable => 'Couldn\'t open the comments';
+
+  @override
   String commentCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

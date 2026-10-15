@@ -1031,6 +1031,57 @@ void main() {
     expect(start['bot_user_id'], 77);
   });
 
+  test('opens the comments of a post and follows them', () async {
+    await controller.start();
+    final thread = await controller.openThread(7, 10);
+    expect(thread.chatId, -100);
+    expect(thread.threadId, 40);
+    expect(thread.replyCount, 2);
+    await thread.load();
+    expect(thread.messages.map((m) => m.id), [42, 41, 40]);
+    expect(thread.reachedStart, isTrue);
+
+    json.push({
+      '@type': 'updateNewMessage',
+      'message': {
+        ..._message(id: 43, chatId: -100, text: 'Third').toJson(),
+        'topic_id': {'@type': 'messageTopicThread', 'message_thread_id': 40},
+      },
+    });
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    expect(thread.messages.first.id, 43);
+    expect(thread.replyCount, 3);
+
+    await thread.send('Fourth');
+    final sent = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    expect(sent['chat_id'], -100);
+    expect((sent['topic_id']! as Map)['message_thread_id'], 40);
+    expect((sent['reply_to']! as Map)['message_id'], 40);
+    expect(thread.messages.first.id, 44);
+
+    json.push({
+      '@type': 'updateDeleteMessages',
+      'chat_id': -100,
+      'message_ids': [41],
+      'is_permanent': true,
+      'from_cache': false,
+    });
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    expect(thread.messages.map((m) => m.id), [44, 43, 42, 40]);
+    expect(thread.replyCount, 2);
+
+    thread.dispose();
+    json.push({
+      '@type': 'updateNewMessage',
+      'message': {
+        ..._message(id: 45, chatId: -100, text: 'Late').toJson(),
+        'topic_id': {'@type': 'messageTopicThread', 'message_thread_id': 40},
+      },
+    });
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    expect(thread.messages.first.id, 44);
+  });
+
   test('lists who voted for a poll option', () async {
     await controller.start();
     final voters = await controller.pollVoters(7, 10, 1);
@@ -1693,6 +1744,35 @@ final class _FakeTdJson implements td.TdJson {
         chatId: 7,
         text: 'Quoted',
       ).toJson(),
+      'sendMessage' when decoded['chat_id'] == -100 => _message(
+        id: 44,
+        chatId: -100,
+        text: 'Fourth',
+        sendingState: const td.MessageSendingStatePending(sendingId: 1),
+      ).toJson(),
+      'getMessageThread' => {
+        '@type': 'messageThreadInfo',
+        'chat_id': -100,
+        'message_thread_id': 40,
+        'reply_info': {
+          '@type': 'messageReplyInfo',
+          'reply_count': 2,
+          'recent_replier_ids': <Object?>[],
+          'last_read_inbox_message_id': 0,
+          'last_read_outbox_message_id': 0,
+          'last_message_id': 42,
+        },
+        'unread_message_count': 0,
+        'messages': [_message(id: 40, chatId: -100, text: 'Post').toJson()],
+      },
+      'getMessageThreadHistory' => {
+        '@type': 'messages',
+        'total_count': 2,
+        'messages': [
+          _message(id: 42, chatId: -100, text: 'Second').toJson(),
+          _message(id: 41, chatId: -100, text: 'First').toJson(),
+        ],
+      },
       'sendMessage' => {
         ..._message(
           id: 12,

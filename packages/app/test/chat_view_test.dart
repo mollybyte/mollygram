@@ -838,6 +838,41 @@ void main() {
     expect(sent['message_id'], 16);
   });
 
+  testWidgets('opens the comments of a post and writes one', (tester) async {
+    json.history = [
+      _message(id: 14, senderId: 2, text: 'Post', comments: 2),
+      ..._history,
+    ];
+    await pump(tester, group: false);
+    expect(find.text('2 comments'), findsOneWidget);
+
+    await tester.tap(find.text('2 comments'));
+    // The thread, then its first page.
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    expect(find.text('First comment'), findsOneWidget);
+    expect(find.text('Second comment'), findsOneWidget);
+    expect(find.text('Mine'), findsNothing);
+    // The capsule now counts the comments.
+    expect(find.text('2 comments'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), 'My comment');
+    await tester.pump();
+    await tester.tap(find.byType(MgSendButton));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    final send = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    expect(send['chat_id'], -100);
+    expect((send['topic_id']! as Map)['message_thread_id'], 40);
+    expect(find.text('My comment'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Back to the chat'));
+    await tester.pump();
+    expect(find.text('First comment'), findsNothing);
+    expect(find.text('Mine'), findsOneWidget);
+  });
+
   testWidgets('lists who voted for an option of a public poll', (tester) async {
     json.history = [_pollMessage(chosen: 1, public: true), ..._history];
     await pump(tester);
@@ -1620,16 +1655,31 @@ td.Message _message({
   required int senderId,
   required String text,
   bool outgoing = false,
+  int chatId = 7,
+  int? comments,
 }) => td.Message(
   id: id,
   senderId: td.MessageSenderUser(userId: senderId),
-  chatId: 7,
+  chatId: chatId,
   isOutgoing: outgoing,
   isPinned: false,
   isFromOffline: false,
   canBeSaved: true,
   hasTimestampedMedia: false,
-  isChannelPost: false,
+  isChannelPost: comments != null,
+  interactionInfo: comments == null
+      ? null
+      : td.MessageInteractionInfo(
+          viewCount: 0,
+          forwardCount: 0,
+          replyInfo: td.MessageReplyInfo(
+            replyCount: comments,
+            recentReplierIds: const [],
+            lastReadInboxMessageId: 0,
+            lastReadOutboxMessageId: 0,
+            lastMessageId: 0,
+          ),
+        ),
   isPaidStarSuggestedPost: false,
   isPaidGramSuggestedPost: false,
   containsUnreadMention: false,
@@ -1834,6 +1884,13 @@ final class _FakeTdJson implements td.TdJson {
         'code': 403,
         'message': 'CHAT_WRITE_FORBIDDEN',
       },
+      'sendMessage' when decoded['chat_id'] == -100 => _message(
+        id: 44,
+        senderId: 1,
+        text: 'My comment',
+        chatId: -100,
+        outgoing: true,
+      ).toJson(),
       'sendMessage' => {
         ..._message(id: 20, senderId: 1, text: 'Sent', outgoing: true).toJson(),
         'scheduling_state': ?(decoded['options'] as Map?)?['scheduling_state'],
@@ -2032,6 +2089,41 @@ final class _FakeTdJson implements td.TdJson {
         'text': 'Pong',
         'show_alert': false,
         'url': '',
+      },
+      'getMessageThread' => {
+        '@type': 'messageThreadInfo',
+        'chat_id': -100,
+        'message_thread_id': 40,
+        'reply_info': {
+          '@type': 'messageReplyInfo',
+          'reply_count': 2,
+          'recent_replier_ids': <Object?>[],
+          'last_read_inbox_message_id': 0,
+          'last_read_outbox_message_id': 0,
+          'last_message_id': 42,
+        },
+        'unread_message_count': 0,
+        'messages': [
+          _message(id: 40, senderId: 2, text: 'Post', chatId: -100).toJson(),
+        ],
+      },
+      'getMessageThreadHistory' => {
+        '@type': 'messages',
+        'total_count': 2,
+        'messages': [
+          _message(
+            id: 42,
+            senderId: 3,
+            text: 'Second comment',
+            chatId: -100,
+          ).toJson(),
+          _message(
+            id: 41,
+            senderId: 2,
+            text: 'First comment',
+            chatId: -100,
+          ).toJson(),
+        ],
       },
       'getPollVoters' => {
         '@type': 'pollVoters',

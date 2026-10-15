@@ -1671,6 +1671,15 @@ class AppLocalizationsRu extends AppLocalizations {
   String get leaveComment => 'Оставить комментарий';
 
   @override
+  String get comments => 'Комментарии';
+
+  @override
+  String get commentHint => 'Комментарий';
+
+  @override
+  String get commentsUnavailable => 'Не удалось открыть комментарии';
+
+  @override
   String commentCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

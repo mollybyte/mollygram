@@ -2822,6 +2822,24 @@ abstract class AppLocalizations {
   /// **'Leave a comment'**
   String get leaveComment;
 
+  /// No description provided for @comments.
+  ///
+  /// In en, this message translates to:
+  /// **'Comments'**
+  String get comments;
+
+  /// No description provided for @commentHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Comment'**
+  String get commentHint;
+
+  /// No description provided for @commentsUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open the comments'**
+  String get commentsUnavailable;
+
   /// No description provided for @commentCount.
   ///
   /// In en, this message translates to:

@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 
 import 'conversation_store.dart';
+import 'message_thread.dart';
 import 'outgoing_file.dart';
 import 'text_edit.dart';
 
@@ -28,6 +29,9 @@ final class ConversationController {
 
   /// Replied-to messages requested from TDLib, by chat and message id.
   final _requested = <(int, int)>{};
+
+  /// The comment threads open on screen, fed every update.
+  final _threads = <MessageThread>{};
   StreamSubscription<td.TdObject>? _subscription;
 
   Stream<void> get changes => _changes.stream;
@@ -837,6 +841,26 @@ final class ConversationController {
     );
   }
 
+  /// Opens the comments of [messageId] in [chatId]: for a channel post,
+  /// the thread in its discussion group. The thread follows updates until
+  /// it is disposed; its first page still has to be loaded.
+  Future<MessageThread> openThread(int chatId, int messageId) async {
+    final info = await _client.send(
+      td.GetMessageThread(chatId: chatId, messageId: messageId),
+    );
+    final thread = MessageThread(
+      _client,
+      store,
+      chatId: info.chatId,
+      threadId: info.messageThreadId,
+      roots: info.messages,
+      replyCount: info.replyInfo?.replyCount ?? 0,
+      onDispose: _threads.remove,
+    );
+    _threads.add(thread);
+    return thread;
+  }
+
   /// Who voted for option [optionId] (its index) of the poll in
   /// [messageId], newest first, up to [limit] of them. Only for polls
   /// that are not anonymous.
@@ -1212,6 +1236,9 @@ final class ConversationController {
   }
 
   void _onUpdate(td.TdObject object) {
+    for (final thread in _threads.toList()) {
+      thread.handle(object);
+    }
     switch (object) {
       // Sender names and avatars on screen follow their changes.
       case td.UpdateUser(:final user):
