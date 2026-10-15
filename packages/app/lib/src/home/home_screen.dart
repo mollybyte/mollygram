@@ -14,7 +14,6 @@ import '../links/link_host.dart';
 import '../links/link_router.dart' show workspaceShellKey;
 import '../notifications/notification_service.dart';
 import '../plugins/plugin_commands.dart';
-import '../privacy/ghost_mode_capsule.dart';
 import '../profile/new_chat_sheet.dart';
 import '../profile/peer_info_host.dart';
 import '../secret/secret_chat.dart';
@@ -187,25 +186,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   padding: const EdgeInsets.all(8),
                   child: Stack(
                     children: [
-                      const Positioned.fill(child: Sidebar()),
-                      // In the island's title bar, between the window
-                      // buttons and the ghost.
+                      Positioned.fill(
+                        child: Sidebar(
+                          onSettings: _openSettings,
+                          onPrivacy: () =>
+                              _openSettings(privacyExtrasSectionId),
+                          onNewMessage: _newMessage,
+                        ),
+                      ),
+                      // Over the search field in the list column's title
+                      // bar while the app is not connected; it takes no
+                      // clicks.
                       const Positioned(
                         top: 0,
-                        left: 76,
-                        right: 48,
+                        left: FolderRail.width + 12,
+                        right: 84,
                         height: SidebarIsland.titleBarHeight,
                         child: ConnectionStatusCapsule(),
-                      ),
-                      // At the title bar's right end, clear of the
-                      // centered connection status.
-                      Positioned(
-                        top: 0,
-                        right: 12,
-                        height: SidebarIsland.titleBarHeight,
-                        child: GhostModeCapsule(
-                          onTap: () => _openSettings(privacyExtrasSectionId),
-                        ),
                       ),
                     ],
                   ),
