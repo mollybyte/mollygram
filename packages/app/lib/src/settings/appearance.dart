@@ -47,17 +47,92 @@ import 'preferences.dart';
     mediaRadius: preferences.mediaCorner.radius,
     compact: preferences.compactLayout,
   );
+  // Only a gradient tints the surfaces; a plain colour or a picture keeps
+  // the classic tokens.
+  final tint = preferences.wallpaperKind == WallpaperKind.gradient
+      ? surfaceTint(preferences.wallpaperPreset)
+      : null;
+  final light = tint?.light(MgColors.light) ?? MgColors.light;
+  final dark = tint?.dark(MgColors.dark) ?? MgColors.dark;
   return (
-    light: buildMgTheme(
-      MgColors.light.copyWith(accent: accent.light),
-      metrics: metrics,
-    ),
-    dark: buildMgTheme(
-      MgColors.dark.copyWith(accent: accent.dark),
-      metrics: metrics,
-    ),
+    light: buildMgTheme(light.copyWith(accent: accent.light), metrics: metrics),
+    dark: buildMgTheme(dark.copyWith(accent: accent.dark), metrics: metrics),
   );
 }
+
+/// One wallpaper's tint of the floating layer and the text: the glass fill
+/// and rim, the secondary and muted text, so they sit on that wallpaper
+/// instead of on the classic one.
+typedef SurfaceTint = ({
+  MgColors Function(MgColors) light,
+  MgColors Function(MgColors) dark,
+});
+
+/// How [preset] tints the surfaces, or null for the gradients that keep
+/// the classic tokens.
+///
+/// The three tinted presets come from the colours canvas: Mist is a cool
+/// grey-blue with whitish glass, Sage the Telegram gradient at about half
+/// its saturation, Linen a warm paper neutral.
+SurfaceTint? surfaceTint(WallpaperPreset preset) => switch (preset) {
+  WallpaperPreset.mist => (
+    light: (c) => c.copyWith(
+      fg2: const Color(0xFF5F6B7A),
+      muted: const Color(0xFF8E99A8),
+      glass: const Color(0x80FAFCFF),
+      glassSolid: const Color(0xF0F4F7FA),
+      rim: const Color(0xD9FFFFFF),
+      field: const Color(0x0F142846),
+      shadow: const Color(0x261E2A3A),
+    ),
+    dark: (c) => c.copyWith(
+      fg2: const Color(0xFF97A3B0),
+      muted: const Color(0xFF687482),
+      glass: const Color(0x801E242C),
+      glassSolid: const Color(0xF0222830),
+      rim: const Color(0x1AFFFFFF),
+      highlight: const Color(0x24FFFFFF),
+    ),
+  ),
+  WallpaperPreset.sage => (
+    light: (c) => c.copyWith(
+      fg2: const Color(0xFF5E645C),
+      muted: const Color(0xFF86897F),
+      glass: const Color(0x80FFFFFF),
+      glassSolid: const Color(0xF0F5F7F2),
+      rim: const Color(0xCCFFFFFF),
+      shadow: const Color(0x26202A1A),
+    ),
+    dark: (c) => c.copyWith(
+      fg2: const Color(0xFF9AA6A8),
+      muted: const Color(0xFF6A767A),
+      glass: const Color(0x801C2226),
+      glassSolid: const Color(0xF0222A2E),
+      rim: const Color(0x1CFFFFFF),
+      highlight: const Color(0x26FFFFFF),
+    ),
+  ),
+  WallpaperPreset.linen => (
+    light: (c) => c.copyWith(
+      fg2: const Color(0xFF6F685E),
+      muted: const Color(0xFF9B948A),
+      glass: const Color(0x85FFFDF8),
+      glassSolid: const Color(0xF0F8F5EF),
+      rim: const Color(0xD9FFFFFF),
+      field: const Color(0x0F3C2D14),
+      shadow: const Color(0x262A2014),
+    ),
+    dark: (c) => c.copyWith(
+      fg2: const Color(0xFFA39C92),
+      muted: const Color(0xFF726B62),
+      glass: const Color(0x802C2824),
+      glassSolid: const Color(0xF02A2622),
+      rim: const Color(0x1AFFFFFF),
+      highlight: const Color(0x21FFFFFF),
+    ),
+  ),
+  _ => null,
+};
 
 /// The theme to show right now: the chosen one, or dark while the night
 /// schedule says so. Re-evaluated when the schedule's next boundary passes.
@@ -83,10 +158,71 @@ final clockProvider = Provider<DateTime Function()>((ref) => DateTime.now);
 typedef WallpaperColors = ({Color base, List<Color> colors});
 
 /// The gradient of [preset] in each theme. Classic is the one from the
-/// design tokens; the others keep its softness with another hue.
+/// design tokens; the others keep its softness with another hue, and the
+/// first three also tint the surfaces (see [surfaceTint]).
 ({WallpaperColors light, WallpaperColors dark}) wallpaperColors(
   WallpaperPreset preset,
 ) => switch (preset) {
+  WallpaperPreset.mist => (
+    light: (
+      base: const Color(0xFFE1E7ED),
+      colors: const [
+        Color(0xFFEEF2F6),
+        Color(0xFFDCE3EA),
+        Color(0xFFD3DCE5),
+        Color(0xFFE6EBF0),
+      ],
+    ),
+    dark: (
+      base: const Color(0xFF191F26),
+      colors: const [
+        Color(0xFF222A33),
+        Color(0xFF1C232B),
+        Color(0xFF1A2129),
+        Color(0xFF1E252D),
+      ],
+    ),
+  ),
+  WallpaperPreset.sage => (
+    light: (
+      base: const Color(0xFFD0DAC8),
+      colors: const [
+        Color(0xFFE3E5D2),
+        Color(0xFFAFC6BB),
+        Color(0xFFE2E3C6),
+        Color(0xFFBFD0BB),
+      ],
+    ),
+    dark: (
+      base: const Color(0xFF192329),
+      colors: const [
+        Color(0xFF24333D),
+        Color(0xFF1A262E),
+        Color(0xFF2C3A43),
+        Color(0xFF1D2A32),
+      ],
+    ),
+  ),
+  WallpaperPreset.linen => (
+    light: (
+      base: const Color(0xFFECE7DD),
+      colors: const [
+        Color(0xFFF8F5EE),
+        Color(0xFFEFEBE2),
+        Color(0xFFE6E0D4),
+        Color(0xFFF1EDE4),
+      ],
+    ),
+    dark: (
+      base: const Color(0xFF1C1815),
+      colors: const [
+        Color(0xFF26221E),
+        Color(0xFF201C18),
+        Color(0xFF1A1714),
+        Color(0xFF221E1A),
+      ],
+    ),
+  ),
   WallpaperPreset.classic => (
     light: (
       base: MgColors.light.wallpaperBase,

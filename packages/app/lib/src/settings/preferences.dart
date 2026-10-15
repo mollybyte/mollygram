@@ -48,7 +48,19 @@ final class AutoDownload {
 enum WallpaperKind { gradient, plain, image }
 
 /// The built-in four-point gradients. Classic is Telegram's own.
-enum WallpaperPreset { classic, ocean, lavender, sand, graphite }
+/// The gradient behind the chats. The first three also tint the glass
+/// and the secondary text to match (see `surfaceTint`); the rest keep the
+/// classic tokens and only swap the gradient.
+enum WallpaperPreset {
+  mist,
+  sage,
+  linen,
+  classic,
+  ocean,
+  lavender,
+  sand,
+  graphite,
+}
 
 /// How round photos, videos and cards are in messages.
 enum MediaCorner {
@@ -148,7 +160,7 @@ final class Preferences {
     this.theme = ThemeMode.system,
     this.accent = AccentChoice.blue,
     this.wallpaperKind = WallpaperKind.gradient,
-    this.wallpaperPreset = WallpaperPreset.classic,
+    this.wallpaperPreset = WallpaperPreset.mist,
     this.wallpaperImage,
     this.wallpaperBlur = false,
     this.nightSchedule = const NightSchedule(),
