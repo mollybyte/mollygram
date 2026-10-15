@@ -80,7 +80,7 @@ class _ChatListTileState extends State<ChatListTile> {
                       name: widget.title,
                       size: ChatListTile.avatarSize,
                     ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 11),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -95,8 +95,9 @@ class _ChatListTileState extends State<ChatListTile> {
                               style: mgTextStyle(
                                 c,
                                 size: MgType.title,
-                                weight: FontWeight.w600,
+                                weight: MgWeight.medium,
                                 color: on ? c.onAccent : c.fg,
+                                height: 1.3,
                               ),
                             ),
                           ),
@@ -108,12 +109,13 @@ class _ChatListTileState extends State<ChatListTile> {
                                 c,
                                 size: MgType.caption,
                                 color: sub,
+                                height: 1.3,
                               ),
                             ),
                           ],
                         ],
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 3),
                       Row(
                         children: [
                           Expanded(
@@ -121,7 +123,7 @@ class _ChatListTileState extends State<ChatListTile> {
                               widget.subtitle,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: mgTextStyle(c, color: sub),
+                              style: mgTextStyle(c, color: sub, height: 1.3),
                             ),
                           ),
                           if (widget.unread > 0) ...[
