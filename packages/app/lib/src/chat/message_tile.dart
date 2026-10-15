@@ -240,7 +240,12 @@ class MessageTile extends StatelessWidget {
       ].join('\n'),
     );
     final reactions = info?.reactions?.reactions;
-    final comments = isPost ? info?.replyInfo : null;
+    // A channel post carries its comments; a group message with replies,
+    // the thread of those replies.
+    final replyInfo = info?.replyInfo;
+    final comments = isPost || (replyInfo?.replyCount ?? 0) > 0
+        ? replyInfo
+        : null;
     final forward = message.message.forwardInfo;
     Widget content = Column(
       mainAxisSize: MainAxisSize.min,
@@ -297,7 +302,9 @@ class MessageTile extends StatelessWidget {
               child: CommentsRow(
                 label: comments.replyCount == 0
                     ? l10n.leaveComment
-                    : l10n.commentCount(comments.replyCount),
+                    : isPost
+                    ? l10n.commentCount(comments.replyCount)
+                    : l10n.replyCount(comments.replyCount),
                 avatars: [
                   for (final sender in comments.recentReplierIds.take(3))
                     _replierAvatar(l10n, sender),

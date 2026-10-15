@@ -988,6 +988,32 @@ void main() {
     expect(find.byKey(const ValueKey('unreadComments')), findsOneWidget);
   });
 
+  testWidgets('opens the replies to a group message as a thread', (
+    tester,
+  ) async {
+    json.history = [
+      _message(id: 17, senderId: 2, text: 'Question', comments: 3, post: false),
+      _message(id: 15, senderId: 2, text: 'Aside', comments: 0, post: false),
+      ..._history,
+    ];
+    await pump(tester);
+    expect(find.text('3 replies'), findsWidgets);
+    // A group message nobody answered has no row.
+    expect(find.text('Leave a comment'), findsNothing);
+
+    await tester.tap(find.text('3 replies'));
+    // The thread, then its first page.
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    expect(find.text('An answer'), findsOneWidget);
+    expect(find.text('Mine'), findsNothing);
+    // The capsule counts the replies and the composer offers a reply.
+    expect(find.text('3 replies'), findsWidgets);
+    expect(find.text('Reply'), findsOneWidget);
+    expect(find.byTooltip('Back to the chat'), findsOneWidget);
+  });
+
   testWidgets('lists who voted for an option of a public poll', (tester) async {
     json.history = [_pollMessage(chosen: 1, public: true), ..._history];
     await pump(tester);
@@ -1927,6 +1953,7 @@ td.Message _message({
   int chatId = 7,
   int? comments,
   bool unread = false,
+  bool post = true,
 }) => td.Message(
   id: id,
   senderId: td.MessageSenderUser(userId: senderId),
@@ -1936,7 +1963,7 @@ td.Message _message({
   isFromOffline: false,
   canBeSaved: true,
   hasTimestampedMedia: false,
-  isChannelPost: comments != null,
+  isChannelPost: comments != null && post,
   interactionInfo: comments == null
       ? null
       : td.MessageInteractionInfo(
@@ -2359,6 +2386,35 @@ final class _FakeTdJson implements td.TdJson {
         'text': 'Pong',
         'show_alert': false,
         'url': '',
+      },
+      // The replies to message 17 of the group itself.
+      'getMessageThread' when decoded['message_id'] == 17 => {
+        '@type': 'messageThreadInfo',
+        'chat_id': 7,
+        'message_thread_id': 17,
+        'reply_info': {
+          '@type': 'messageReplyInfo',
+          'reply_count': 3,
+          'recent_replier_ids': <Object?>[],
+          'last_read_inbox_message_id': 0,
+          'last_read_outbox_message_id': 0,
+          'last_message_id': 19,
+        },
+        'unread_message_count': 0,
+        'messages': [
+          _message(
+            id: 17,
+            senderId: 2,
+            text: 'Question',
+            comments: 3,
+            post: false,
+          ).toJson(),
+        ],
+      },
+      'getMessageThreadHistory' when decoded['message_id'] == 17 => {
+        '@type': 'messages',
+        'total_count': 1,
+        'messages': [_message(id: 19, senderId: 3, text: 'An answer').toJson()],
       },
       'getMessageThread' => {
         '@type': 'messageThreadInfo',

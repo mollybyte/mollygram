@@ -2864,6 +2864,24 @@ abstract class AppLocalizations {
   /// **'{count, plural, one{{count} comment} other{{count} comments}}'**
   String commentCount(int count);
 
+  /// No description provided for @replies.
+  ///
+  /// In en, this message translates to:
+  /// **'Replies'**
+  String get replies;
+
+  /// No description provided for @replyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply'**
+  String get replyHint;
+
+  /// No description provided for @replyCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} reply} other{{count} replies}}'**
+  String replyCount(int count);
+
   /// No description provided for @mediaSaved.
   ///
   /// In en, this message translates to:

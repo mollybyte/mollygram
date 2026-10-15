@@ -1701,6 +1701,24 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String get replies => 'Ответы';
+
+  @override
+  String get replyHint => 'Ответить';
+
+  @override
+  String replyCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ответов',
+      few: '$count ответа',
+      one: '$count ответ',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get mediaSaved => 'Сохранено';
 
   @override

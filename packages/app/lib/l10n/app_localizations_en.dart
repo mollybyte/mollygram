@@ -1685,6 +1685,23 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get replies => 'Replies';
+
+  @override
+  String get replyHint => 'Reply';
+
+  @override
+  String replyCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count replies',
+      one: '$count reply',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get mediaSaved => 'Saved';
 
   @override
