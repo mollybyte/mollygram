@@ -339,10 +339,23 @@ class _TimelineList extends StatelessWidget {
             );
           }(),
       };
-      final padded = Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 28),
-        // The text size chosen in Settings, Appearance.
-        child: MessageTextSize(child: child),
+      // Only the newest message, just sent or received, slides in; rows
+      // that load or scroll into view later never move.
+      final age = item is TimelineRow
+          ? DateTime.now().millisecondsSinceEpoch - item.row.primary.date * 1000
+          : -1;
+      final fresh =
+          item is TimelineRow &&
+          identical(item, items.first) &&
+          age >= 0 &&
+          age < _Appear.window.inMilliseconds;
+      final padded = _Appear(
+        animate: fresh,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 28),
+          // The text size chosen in Settings, Appearance.
+          child: MessageTextSize(child: child),
+        ),
       );
       return KeyedSubtree(
         key: ValueKey<Object>(item.key),
@@ -414,4 +427,67 @@ class _TimelineList extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Fades a new message in while it rises a few pixels, as a quick settle:
+/// no bounce, over before the eye waits for it. Decided once, when the
+/// row is first built; with reduced motion the row simply appears.
+class _Appear extends StatefulWidget {
+  const _Appear({required this.animate, required this.child});
+
+  final bool animate;
+  final Widget child;
+
+  /// How recent a message must be to count as new.
+  static const window = Duration(seconds: 4);
+
+  @override
+  State<_Appear> createState() => _AppearState();
+}
+
+class _AppearState extends State<_Appear> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 320),
+  );
+  late final Animation<double> _curve = CurvedAnimation(
+    parent: _controller,
+    curve: const Cubic(0.23, 1, 0.32, 1),
+  );
+  var _started = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+    if (widget.animate && !MediaQuery.disableAnimationsOf(context)) {
+      unawaited(_controller.forward());
+    } else {
+      _controller.value = 1;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: _curve,
+    child: widget.child,
+    builder: (context, child) {
+      final t = _curve.value;
+      if (t >= 1) return child!;
+      return Opacity(
+        opacity: t.clamp(0.0, 1.0),
+        child: Transform.translate(
+          offset: Offset(0, 12 * (1 - t)),
+          child: child,
+        ),
+      );
+    },
+  );
 }
