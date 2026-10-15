@@ -688,6 +688,8 @@
   "noStickerSets": "No stickers yet",
   "noGifs": "No saved GIFs yet",
   "gifsFailed": "Couldn't load GIFs",
+  "inlineSearching": "Searching…",
+  "inlineNoResults": "No results",
   "forwardedMessages": "Forwarded messages",
   "leaveComment": "Leave a comment",
   "comments": "Comments",

@@ -25,6 +25,7 @@ import '../chat/describe.dart';
 import '../chat/emoji_sticker_panel.dart';
 import '../chat/formatted_text.dart';
 import '../chat/forward_picker.dart';
+import '../chat/inline_results.dart';
 import '../chat/link_preview_bar.dart';
 import '../chat/media_viewer.dart';
 import '../chat/message_actions.dart';
@@ -42,6 +43,7 @@ import '../chat_search/chat_search_bar.dart';
 import '../chat_search/sender_picker.dart';
 import '../compose/command_suggester.dart';
 import '../compose/emoji_suggester.dart';
+import '../compose/inline_suggester.dart';
 import '../compose/mention_suggester.dart';
 import '../compose/rich_text_bridge.dart';
 import '../compose/sticker_suggester.dart';
@@ -74,6 +76,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     onSend: (command) => unawaited(_send(command)),
   );
   late final _stickerHints = StickerSuggester(controller: _draft);
+  late final _inline = InlineQuerySuggester(controller: _draft);
   final _focus = FocusNode();
   late final ConversationController _conversations;
 
@@ -201,6 +204,10 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _commands.addListener(_mentionsChanged);
     _stickerHints.search = _stickerSearch();
     _stickerHints.addListener(_mentionsChanged);
+    _inline
+      ..resolveBot = _conversations.inlineBot
+      ..search = _inlineSearch()
+      ..addListener(_mentionsChanged);
     _scroll.addListener(_followScroll);
     _open(widget.chatId);
     WidgetsBinding.instance.addPostFrameCallback((_) => _takeJump());
@@ -234,6 +241,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
       ..reset();
     _stickerHints.search = _stickerSearch();
     _stickerHints.reset();
+    _inline
+      ..search = _inlineSearch()
+      ..reset();
     _failure = null;
     _replyTo = null;
     _replyQuote = null;
@@ -272,6 +282,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _emojiHints.dispose();
     _commands.dispose();
     _stickerHints.dispose();
+    _inline.dispose();
     _dropThread();
     _threadScroll.dispose();
     _threadDraft.dispose();
@@ -1829,6 +1840,43 @@ class _ChatViewState extends ConsumerState<ChatView> {
     await _sendSticker(sticker);
   }
 
+  /// An inline bot's results for this chat.
+  Future<td.InlineQueryResults> Function(int, String, String) _inlineSearch() {
+    final chatId = widget.chatId;
+    return (botUserId, query, offset) =>
+        _conversations.inlineResults(chatId, botUserId, query, offset: offset);
+  }
+
+  /// Sends an inline result picked from the panel, via its bot, and
+  /// empties the draft that asked for it.
+  Future<void> _sendInlineResult(td.InlineQueryResult result) async {
+    final chatId = widget.chatId;
+    final queryId = _inline.queryId;
+    final replyTo = _replyTo;
+    _draft.clear();
+    setState(() {
+      _failure = null;
+      _replyTo = null;
+      _replyQuote = null;
+    });
+    _focus.requestFocus();
+    unawaited(_toLatestForSend());
+    try {
+      await _conversations.sendInlineResult(
+        chatId,
+        queryId: queryId,
+        resultId: inlineResultId(result),
+        replyTo: replyTo?.id,
+      );
+    } catch (_) {
+      if (!mounted || widget.chatId != chatId) return;
+      setState(() {
+        _failure = _Failure.send;
+        _replyTo ??= replyTo;
+      });
+    }
+  }
+
   /// Members to offer for an @ in this chat, while it is a group.
   Future<List<MentionCandidate>> Function(String) _mentionSearch() {
     final chatId = widget.chatId;
@@ -2817,6 +2865,19 @@ class _ChatViewState extends ConsumerState<ChatView> {
                     stickers: _stickerHints.stickers,
                     onPick: (sticker) =>
                         unawaited(_sendSuggestedSticker(sticker)),
+                  ),
+                if (_selected == null &&
+                    !_listOpen &&
+                    !_panelOpen &&
+                    _editing == null &&
+                    _inline.active)
+                  InlineResultsPanel(
+                    results: _inline.results,
+                    loading: _inline.loading,
+                    onPick: (result) => unawaited(_sendInlineResult(result)),
+                    onMore: _inline.hasMore
+                        ? () => unawaited(_inline.loadMore())
+                        : null,
                   ),
                 if (_selected == null && !_listOpen)
                   ?_replyKeyboardPanel(store),

@@ -1728,6 +1728,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get gifsFailed => 'Не удалось загрузить GIF';
 
   @override
+  String get inlineSearching => 'Поиск…';
+
+  @override
+  String get inlineNoResults => 'Ничего не найдено';
+
+  @override
   String get forwardedMessages => 'Пересланные сообщения';
 
   @override

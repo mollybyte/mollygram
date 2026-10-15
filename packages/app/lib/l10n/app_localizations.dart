@@ -2930,6 +2930,18 @@ abstract class AppLocalizations {
   /// **'Couldn\'t load GIFs'**
   String get gifsFailed;
 
+  /// No description provided for @inlineSearching.
+  ///
+  /// In en, this message translates to:
+  /// **'Searching…'**
+  String get inlineSearching;
+
+  /// No description provided for @inlineNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No results'**
+  String get inlineNoResults;
+
   /// No description provided for @forwardedMessages.
   ///
   /// In en, this message translates to:
