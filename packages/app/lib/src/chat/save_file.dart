@@ -67,25 +67,34 @@ import '../settings/storage_page.dart' show downloadFolderOf;
 
 /// Saves [file] as [name]: into the download folder when [toDownloads],
 /// otherwise where a save panel says. A file not yet downloaded is fetched
-/// first. Says how it went in a toast, unless the chat is gone
+/// first, as a download of the message in the downloads manager. Says how it went in a toast, unless the chat is gone
 /// ([isShown]).
 Future<void> saveMessageFile(
   BuildContext context, {
   required td.File file,
   required String name,
+  required int chatId,
+  required int messageId,
   required bool toDownloads,
   required bool Function() isShown,
 }) async {
   final l10n = AppLocalizations.of(context);
-  final files = ProviderScope.containerOf(
+  final session = ProviderScope.containerOf(
     context,
     listen: false,
-  ).read(telegramSessionProvider).requireValue.files;
+  ).read(telegramSessionProvider).requireValue;
   final folder = await downloadFolderOf(context);
   String? path = downloadedPath(file);
   if (path == null) {
     try {
-      path = downloadedPath(await files.downloadNow(file.id));
+      // Through the downloads list, so the manager shows it, then wait for
+      // the whole file.
+      await session.downloads.add(
+        file.id,
+        chatId: chatId,
+        messageId: messageId,
+      );
+      path = downloadedPath(await session.files.downloadNow(file.id));
     } on td.TdException {
       path = null;
     }
