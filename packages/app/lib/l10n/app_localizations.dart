@@ -3818,6 +3818,30 @@ abstract class AppLocalizations {
   /// **'Back to the chat'**
   String get backToChat;
 
+  /// No description provided for @backToTopics.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to topics'**
+  String get backToTopics;
+
+  /// No description provided for @noTopics.
+  ///
+  /// In en, this message translates to:
+  /// **'No topics yet'**
+  String get noTopics;
+
+  /// No description provided for @topicClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'Topic closed'**
+  String get topicClosed;
+
+  /// No description provided for @topicUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open this topic'**
+  String get topicUnavailable;
+
   /// No description provided for @unpinAll.
   ///
   /// In en, this message translates to:

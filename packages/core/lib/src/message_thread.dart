@@ -14,6 +14,7 @@ typedef FileSender = Future<List<td.Message>> Function(
   List<td.TextEntity> captionEntities,
   int? replyTo,
   int? threadId,
+  bool forumTopic,
   bool silent,
   td.MessageSchedulingState? schedule,
 });
@@ -30,6 +31,7 @@ final class MessageThread {
     this._store, {
     required this.chatId,
     required this.threadId,
+    this.forumTopic,
     required List<td.Message> roots,
     required this._replyCount,
     required this._onDispose,
@@ -49,8 +51,37 @@ final class MessageThread {
   /// post, the group itself for a reply thread.
   final int chatId;
 
-  /// The id of the thread's root in [chatId].
+  /// The id of the thread's root in [chatId]; for a forum topic, the
+  /// topic's id.
   final int threadId;
+
+  /// Set when the thread is a forum topic: its name and icon, and the
+  /// history, sending and reading go through TDLib's topic functions.
+  final td.ForumTopicInfo? forumTopic;
+
+  bool get isForumTopic => forumTopic != null;
+
+  td.MessageTopic get _topic => forumTopic == null
+      ? td.MessageTopicThread(messageThreadId: threadId)
+      : td.MessageTopicForum(forumTopicId: threadId);
+
+  Future<td.Messages> _history(int fromMessageId) => _client.send(
+    forumTopic == null
+        ? td.GetMessageThreadHistory(
+            chatId: chatId,
+            messageId: threadId,
+            fromMessageId: fromMessageId,
+            offset: 0,
+            limit: 50,
+          )
+        : td.GetForumTopicHistory(
+            chatId: chatId,
+            forumTopicId: threadId,
+            fromMessageId: fromMessageId,
+            offset: 0,
+            limit: 50,
+          ),
+  );
 
   final void Function(MessageThread) _onDispose;
   final FileSender _sendFiles;
@@ -77,15 +108,7 @@ final class MessageThread {
 
   /// Loads the newest page of comments.
   Future<void> load() async {
-    final page = await _client.send(
-      td.GetMessageThreadHistory(
-        chatId: chatId,
-        messageId: threadId,
-        fromMessageId: 0,
-        offset: 0,
-        limit: 50,
-      ),
-    );
+    final page = await _history(0);
     if (_disposed) return;
     _addAll(page.messages);
     if (page.messages.length < 50) _reachedStart = true;
@@ -99,15 +122,7 @@ final class MessageThread {
     if (oldest == null) return;
     _loadingOlder = true;
     try {
-      final page = await _client.send(
-        td.GetMessageThreadHistory(
-          chatId: chatId,
-          messageId: threadId,
-          fromMessageId: oldest,
-          offset: 0,
-          limit: 50,
-        ),
-      );
+      final page = await _history(oldest);
       if (_disposed) return;
       _addAll(page.messages);
       if (page.messages.isEmpty) _reachedStart = true;
@@ -130,18 +145,21 @@ final class MessageThread {
     final message = await _client.send(
       td.SendMessage(
         chatId: chatId,
-        topicId: td.MessageTopicThread(messageThreadId: threadId),
-        replyTo: td.InputMessageReplyToMessage(
-          messageId: replyTo ?? threadId,
-          quote: quote == null || quote.isEmpty
-              ? null
-              : td.InputTextQuote(
-                  text: td.FormattedText(text: quote, entities: const []),
-                  position: quotePosition,
-                ),
-          checklistTaskId: 0,
-          pollOptionId: '',
-        ),
+        topicId: _topic,
+        // A comment answers the root; a topic message stands on its own.
+        replyTo: replyTo == null && isForumTopic
+            ? null
+            : td.InputMessageReplyToMessage(
+                messageId: replyTo ?? threadId,
+                quote: quote == null || quote.isEmpty
+                    ? null
+                    : td.InputTextQuote(
+                        text: td.FormattedText(text: quote, entities: const []),
+                        position: quotePosition,
+                      ),
+                checklistTaskId: 0,
+                pollOptionId: '',
+              ),
         inputMessageContent: td.InputMessageText(
           text: td.FormattedText(text: text, entities: entities),
           clearDraft: false,
@@ -168,8 +186,9 @@ final class MessageThread {
       files,
       caption: caption,
       captionEntities: captionEntities,
-      replyTo: replyTo ?? threadId,
+      replyTo: replyTo ?? (isForumTopic ? null : threadId),
       threadId: threadId,
+      forumTopic: isForumTopic,
       silent: silent,
       schedule: schedule,
     );
@@ -183,7 +202,9 @@ final class MessageThread {
     td.ViewMessages(
       chatId: chatId,
       messageIds: ids,
-      source: const td.MessageSourceMessageThreadHistory(),
+      source: isForumTopic
+          ? const td.MessageSourceForumTopicHistory()
+          : const td.MessageSourceMessageThreadHistory(),
       forceRead: false,
     ),
   );
@@ -248,7 +269,9 @@ final class MessageThread {
       message.id != threadId &&
       switch (message.topicId) {
         td.MessageTopicThread(:final messageThreadId) =>
-          messageThreadId == threadId,
+          !isForumTopic && messageThreadId == threadId,
+        td.MessageTopicForum(:final forumTopicId) =>
+          isForumTopic && forumTopicId == threadId,
         _ => false,
       };
 

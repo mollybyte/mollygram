@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 
 import 'conversation_store.dart';
+import 'forum_topics.dart';
 import 'message_thread.dart';
 import 'outgoing_file.dart';
 import 'text_edit.dart';
@@ -32,6 +33,9 @@ final class ConversationController {
 
   /// The comment threads open on screen, fed every update.
   final _threads = <MessageThread>{};
+
+  /// The forum topic lists open on screen, fed every update.
+  final _topicLists = <ForumTopicList>{};
   StreamSubscription<td.TdObject>? _subscription;
 
   Stream<void> get changes => _changes.stream;
@@ -1023,6 +1027,40 @@ final class ConversationController {
     return thread;
   }
 
+  /// The topics of forum [chatId], kept current until disposed; the
+  /// first page still has to be loaded.
+  ForumTopicList openTopics(int chatId) {
+    final list = ForumTopicList(
+      _client,
+      chatId: chatId,
+      onDispose: _topicLists.remove,
+    );
+    _topicLists.add(list);
+    return list;
+  }
+
+  /// Topic [forumTopicId] of forum [chatId] as a thread: its messages,
+  /// kept current until it is disposed; its first page still has to be
+  /// loaded.
+  Future<MessageThread> openTopic(int chatId, int forumTopicId) async {
+    final topic = await _client.send(
+      td.GetForumTopic(chatId: chatId, forumTopicId: forumTopicId),
+    );
+    final thread = MessageThread(
+      _client,
+      store,
+      chatId: chatId,
+      threadId: forumTopicId,
+      forumTopic: topic.info,
+      roots: const [],
+      replyCount: 0,
+      onDispose: _threads.remove,
+      sendFiles: sendFiles,
+    );
+    _threads.add(thread);
+    return thread;
+  }
+
   /// Who voted for option [optionId] (its index) of the poll in
   /// [messageId], newest first, up to [limit] of them. Only for polls
   /// that are not anonymous.
@@ -1162,11 +1200,14 @@ final class ConversationController {
     List<td.TextEntity> captionEntities = const [],
     int? replyTo,
     int? threadId,
+    bool forumTopic = false,
     bool silent = false,
     td.MessageSchedulingState? schedule,
   }) async {
     final topic = threadId == null
         ? null
+        : forumTopic
+        ? td.MessageTopicForum(forumTopicId: threadId)
         : td.MessageTopicThread(messageThreadId: threadId);
     final options = sendOptions(silent: silent, schedule: schedule);
     final sent = <td.Message>[];
@@ -1465,6 +1506,9 @@ final class ConversationController {
     for (final thread in _threads.toList()) {
       thread.handle(object);
     }
+    for (final list in _topicLists.toList()) {
+      list.handle(object);
+    }
     switch (object) {
       // Sender names and avatars on screen follow their changes.
       case td.UpdateUser(:final user):
@@ -1537,8 +1581,10 @@ final class ConversationController {
           _notify();
         }
       case td.UpdateSupergroup(:final supergroup):
+        final forum = store.setForum(supergroup.id, supergroup.isForum);
         if (store.setSupergroupStatus(supergroup.id, supergroup.status) !=
-            null) {
+                null ||
+            forum) {
           _notify();
         }
       case td.UpdateBasicGroup(:final basicGroup):
