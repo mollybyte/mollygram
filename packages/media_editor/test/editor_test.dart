@@ -24,6 +24,12 @@ Future<void> waitForPicture(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
+/// The icon button with [tooltip].
+MgIconButton iconButton(WidgetTester tester, String tooltip) =>
+    tester.widget<MgIconButton>(
+      find.byWidgetPredicate((w) => w is MgIconButton && w.tooltip == tooltip),
+    );
+
 void main() {
   late Directory dir;
   late String path;
@@ -258,5 +264,97 @@ void main() {
     expect(result!.edit.strokes, hasLength(1));
     expect(result!.edit.strokes.single.tool, BrushTool.marker);
     expect(result!.isEdited, isTrue);
+  });
+
+  testWidgets('text, emoji and shapes are placed and transformed', (
+    tester,
+  ) async {
+    MediaEditResult? result;
+    tester.view.physicalSize = const Size(1200, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildMgTheme(MgColors.light),
+        home: Builder(
+          builder: (context) => TextButton(
+            onPressed: () async => result = await showMediaEditor(
+              context,
+              path: path,
+              outputDirectory: dir.path,
+            ),
+            child: const Text('open'),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await waitForPicture(tester);
+
+    // Text: the tool adds an empty text and focuses the field.
+    await tester.tap(find.byTooltip('Text'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Hi');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Frame'));
+    await tester.pumpAndSettle();
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+    expect(find.text('Done'), findsOneWidget);
+
+    // Emoji.
+    await tester.tap(find.byTooltip('Emoji'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('🔥'));
+    await tester.pumpAndSettle();
+
+    // Shapes: add an ellipse, then drag it and turn it with the handle.
+    await tester.tap(find.byTooltip('Shapes'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Ellipse'));
+    await tester.pumpAndSettle();
+    // The stage: the window minus 32 px around and 132 px at the bottom.
+    const center = Offset(600, 350);
+    final move = await tester.startGesture(center);
+    await move.moveBy(const Offset(60, 40));
+    await move.up();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Done'));
+    for (var i = 0; i < 200 && result == null; i++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 10)),
+      );
+      await tester.pump();
+    }
+    expect(result, isNotNull);
+    final overlays = result!.edit.overlays;
+    expect(overlays, hasLength(3));
+    expect((overlays[0] as TextOverlay).text, 'Hi');
+    expect((overlays[0] as TextOverlay).look, TextLook.frame);
+    expect((overlays[1] as EmojiOverlay).emoji, '🔥');
+    final shape = overlays[2] as ShapeOverlay;
+    expect(shape.kind, ShapeKind.ellipse);
+    expect(shape.center.dx, greaterThan(0.5));
+    expect(shape.center.dy, greaterThan(0.5));
+  });
+
+  testWidgets('an empty text goes away and Backspace deletes', (tester) async {
+    await open(tester);
+    await tester.tap(find.byTooltip('Text'));
+    await tester.pumpAndSettle();
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    // The empty text was dropped, so undo has nothing to do with it.
+    expect(iconButton(tester, 'Undo').onPressed, isNull);
+    await tester.tap(find.byTooltip('Emoji'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('⭐'));
+    await tester.pumpAndSettle();
+    await tester.sendKeyEvent(LogicalKeyboardKey.backspace);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Undo'));
+    await tester.pumpAndSettle();
+    expect(iconButton(tester, 'Redo').onPressed, isNotNull);
   });
 }

@@ -437,6 +437,143 @@ class AppLocalizationsRu extends AppLocalizations {
   String get close => 'Закрыть';
 
   @override
+  String get peerInfo => 'Информация';
+
+  @override
+  String get statusOnline => 'в сети';
+
+  @override
+  String get lastSeenJustNow => 'был(а) только что';
+
+  @override
+  String lastSeenMinutesAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'был(а) $count минут назад',
+      few: 'был(а) $count минуты назад',
+      one: 'был(а) $count минуту назад',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String lastSeenToday(String time) {
+    return 'был(а) сегодня в $time';
+  }
+
+  @override
+  String lastSeenYesterday(String time) {
+    return 'был(а) вчера в $time';
+  }
+
+  @override
+  String lastSeenDate(String date) {
+    return 'был(а) $date';
+  }
+
+  @override
+  String get lastSeenRecently => 'был(а) недавно';
+
+  @override
+  String get lastSeenWeek => 'был(а) на этой неделе';
+
+  @override
+  String get lastSeenMonth => 'был(а) в этом месяце';
+
+  @override
+  String get lastSeenLongAgo => 'был(а) давно';
+
+  @override
+  String get statusBot => 'бот';
+
+  @override
+  String get deletedAccount => 'Удалённый аккаунт';
+
+  @override
+  String membersCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count участников',
+      few: '$count участника',
+      one: '$count участник',
+      zero: 'нет участников',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String subscribersCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count подписчиков',
+      few: '$count подписчика',
+      one: '$count подписчик',
+      zero: 'нет подписчиков',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get infoBio => 'О себе';
+
+  @override
+  String get infoUsername => 'Имя пользователя';
+
+  @override
+  String get infoPhone => 'Телефон';
+
+  @override
+  String get infoBirthday => 'День рождения';
+
+  @override
+  String get infoDescription => 'Описание';
+
+  @override
+  String get infoLink => 'Ссылка';
+
+  @override
+  String get copied => 'Скопировано';
+
+  @override
+  String get infoMessage => 'Написать';
+
+  @override
+  String get infoMute => 'Без звука';
+
+  @override
+  String get infoUnmute => 'Со звуком';
+
+  @override
+  String get blockUser => 'Заблокировать';
+
+  @override
+  String get unblockUser => 'Разблокировать';
+
+  @override
+  String blockConfirmTitle(String name) {
+    return 'Заблокировать $name?';
+  }
+
+  @override
+  String get blockConfirmMessage =>
+      'Пользователь не сможет писать и звонить вам.';
+
+  @override
+  String get block => 'Заблокировать';
+
+  @override
+  String get memberOwner => 'владелец';
+
+  @override
+  String get memberAdmin => 'админ';
+
+  @override
+  String get infoFailed => 'Не удалось загрузить информацию';
+
+  @override
   String fileSizeBytes(String size) {
     return '$size Б';
   }
@@ -1142,4 +1279,22 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get backToPrevious => 'Вернуться назад';
+
+  @override
+  String get joinChannel => 'Подписаться';
+
+  @override
+  String get joinGroup => 'Вступить в группу';
+
+  @override
+  String get muteChat => 'Без звука';
+
+  @override
+  String get unmuteChat => 'Включить звук';
+
+  @override
+  String get chatUnavailable => 'Вы не можете участвовать в этом чате';
+
+  @override
+  String get chatActionFailed => 'Не получилось, попробуйте ещё раз';
 }

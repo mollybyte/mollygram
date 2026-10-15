@@ -860,6 +860,204 @@ abstract class AppLocalizations {
   /// **'Close'**
   String get close;
 
+  /// No description provided for @peerInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Info'**
+  String get peerInfo;
+
+  /// No description provided for @statusOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'online'**
+  String get statusOnline;
+
+  /// No description provided for @lastSeenJustNow.
+  ///
+  /// In en, this message translates to:
+  /// **'last seen just now'**
+  String get lastSeenJustNow;
+
+  /// No description provided for @lastSeenMinutesAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{last seen 1 minute ago} other{last seen {count} minutes ago}}'**
+  String lastSeenMinutesAgo(int count);
+
+  /// No description provided for @lastSeenToday.
+  ///
+  /// In en, this message translates to:
+  /// **'last seen today at {time}'**
+  String lastSeenToday(String time);
+
+  /// No description provided for @lastSeenYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'last seen yesterday at {time}'**
+  String lastSeenYesterday(String time);
+
+  /// No description provided for @lastSeenDate.
+  ///
+  /// In en, this message translates to:
+  /// **'last seen {date}'**
+  String lastSeenDate(String date);
+
+  /// No description provided for @lastSeenRecently.
+  ///
+  /// In en, this message translates to:
+  /// **'last seen recently'**
+  String get lastSeenRecently;
+
+  /// No description provided for @lastSeenWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'last seen within a week'**
+  String get lastSeenWeek;
+
+  /// No description provided for @lastSeenMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'last seen within a month'**
+  String get lastSeenMonth;
+
+  /// No description provided for @lastSeenLongAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'last seen a long time ago'**
+  String get lastSeenLongAgo;
+
+  /// No description provided for @statusBot.
+  ///
+  /// In en, this message translates to:
+  /// **'bot'**
+  String get statusBot;
+
+  /// No description provided for @deletedAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted account'**
+  String get deletedAccount;
+
+  /// No description provided for @membersCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{no members} =1{1 member} other{{count} members}}'**
+  String membersCount(int count);
+
+  /// No description provided for @subscribersCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{no subscribers} =1{1 subscriber} other{{count} subscribers}}'**
+  String subscribersCount(int count);
+
+  /// No description provided for @infoBio.
+  ///
+  /// In en, this message translates to:
+  /// **'Bio'**
+  String get infoBio;
+
+  /// No description provided for @infoUsername.
+  ///
+  /// In en, this message translates to:
+  /// **'Username'**
+  String get infoUsername;
+
+  /// No description provided for @infoPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Mobile'**
+  String get infoPhone;
+
+  /// No description provided for @infoBirthday.
+  ///
+  /// In en, this message translates to:
+  /// **'Birthday'**
+  String get infoBirthday;
+
+  /// No description provided for @infoDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get infoDescription;
+
+  /// No description provided for @infoLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Link'**
+  String get infoLink;
+
+  /// No description provided for @copied.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied'**
+  String get copied;
+
+  /// No description provided for @infoMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Message'**
+  String get infoMessage;
+
+  /// No description provided for @infoMute.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute'**
+  String get infoMute;
+
+  /// No description provided for @infoUnmute.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute'**
+  String get infoUnmute;
+
+  /// No description provided for @blockUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Block user'**
+  String get blockUser;
+
+  /// No description provided for @unblockUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock user'**
+  String get unblockUser;
+
+  /// No description provided for @blockConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Block {name}?'**
+  String blockConfirmTitle(String name);
+
+  /// No description provided for @blockConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'They won\'t be able to send you messages or call you.'**
+  String get blockConfirmMessage;
+
+  /// No description provided for @block.
+  ///
+  /// In en, this message translates to:
+  /// **'Block'**
+  String get block;
+
+  /// No description provided for @memberOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'owner'**
+  String get memberOwner;
+
+  /// No description provided for @memberAdmin.
+  ///
+  /// In en, this message translates to:
+  /// **'admin'**
+  String get memberAdmin;
+
+  /// No description provided for @infoFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the info'**
+  String get infoFailed;
+
   /// No description provided for @fileSizeBytes.
   ///
   /// In en, this message translates to:
@@ -1921,6 +2119,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Back to where you were'**
   String get backToPrevious;
+
+  /// No description provided for @joinChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Join channel'**
+  String get joinChannel;
+
+  /// No description provided for @joinGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Join group'**
+  String get joinGroup;
+
+  /// No description provided for @muteChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute'**
+  String get muteChat;
+
+  /// No description provided for @unmuteChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute'**
+  String get unmuteChat;
+
+  /// No description provided for @chatUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'You can\'t take part in this chat'**
+  String get chatUnavailable;
+
+  /// No description provided for @chatActionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t do that, try again'**
+  String get chatActionFailed;
 }
 
 class _AppLocalizationsDelegate
