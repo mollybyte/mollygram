@@ -5,6 +5,7 @@ import 'package:mollygram_shell/mollygram_shell.dart';
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../session/connection_status_capsule.dart';
 import '../settings/plugins_page.dart';
 import '../window_drag_area.dart';
 import 'chat_view.dart';
@@ -65,7 +66,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 commands: _commands(l10n),
                 sidebar: const Padding(
                   padding: EdgeInsets.all(8),
-                  child: Sidebar(),
+                  child: Stack(
+                    children: [
+                      Positioned.fill(child: Sidebar()),
+                      // In the island's title bar, right of the window
+                      // buttons.
+                      Positioned(
+                        top: 0,
+                        left: 76,
+                        right: 8,
+                        height: SidebarIsland.titleBarHeight,
+                        child: ConnectionStatusCapsule(),
+                      ),
+                    ],
+                  ),
                 ),
                 sidebarWidth: SidebarIsland.width + 16,
                 paneBuilder: (context, chat, focused) => chat == null

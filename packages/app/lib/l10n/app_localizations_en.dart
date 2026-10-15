@@ -133,6 +133,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noChats => 'No chats yet';
 
   @override
+  String get connectionWaitingForNetwork => 'Waiting for network…';
+
+  @override
+  String get connectionConnectingToProxy => 'Connecting to proxy…';
+
+  @override
+  String get connectionConnecting => 'Connecting…';
+
+  @override
+  String get connectionUpdating => 'Updating…';
+
+  @override
   String get nothingFound => 'Nothing found';
 
   @override

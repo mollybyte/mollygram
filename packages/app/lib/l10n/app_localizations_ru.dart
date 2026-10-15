@@ -134,6 +134,18 @@ class AppLocalizationsRu extends AppLocalizations {
   String get noChats => 'Чатов пока нет';
 
   @override
+  String get connectionWaitingForNetwork => 'Ожидание сети…';
+
+  @override
+  String get connectionConnectingToProxy => 'Подключение к прокси…';
+
+  @override
+  String get connectionConnecting => 'Соединение…';
+
+  @override
+  String get connectionUpdating => 'Обновление…';
+
+  @override
   String get nothingFound => 'Ничего не найдено';
 
   @override

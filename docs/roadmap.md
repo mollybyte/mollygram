@@ -81,7 +81,7 @@ Decisions from the original plan checked against `main` on 2026-10-15.
 | Messages as bubbles with precomputed heights | Changed: flat no-bubble layout like TelegramSwift (decision 2026-10-14) | Plan text updated |
 | Message list as a `CustomScrollView` anchored on a message id, paging both ways | Not yet: reversed `ListView.builder` in `chat_view.dart`, pages only into the past | Needed for opening at the first unread and jumping to replies; first M1 tech item |
 | One command registry (`Actions`/`Intents`) for palette, menus, shortcuts, plugins and `tg://` links | Not yet: palette commands are a list in `packages/shell` | Build with link handling in M1 |
-| Multi-account ready: one client id and data folder per account | Not yet: a single fixed `tdlib/database` folder | Move to per-account folders early in M1, while it is cheap |
+| Multi-account ready: one client id and data folder per account | Yes: `accounts/<slot>/` with an index and a keychain key per slot (`account_storage.dart`); the old `tdlib/` folder is moved on first launch | Account switching UI in M6 |
 | Own drift + SQLCipher database for deleted messages, edit history, workspace, plugin data | Not yet; the workspace is saved to `workspace.json` | Database lands with M3; the workspace can stay in JSON |
 | Ghost mode as one filter on outgoing TDLib requests | Not yet: `viewMessages` is called directly from `ConversationController` | Route through one filter in M3 |
 | Windows and Linux builds on every PR | Changed: desktop builds run on `main` and on PRs labelled `full-ci` (#12) | Accepted to save CI time |

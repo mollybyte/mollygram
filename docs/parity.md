@@ -211,7 +211,7 @@ M8 calls and macOS release, M9 after release.
 | Stickers and emoji: packs, reorder, archived, suggest, large emoji | missing | `InstalledStickerPacksController` | M | M7 |
 | Quick reaction choice | missing | | S | M7 |
 | Proxy: SOCKS5, MTProto, list, share | missing | `ProxyListController` | M | M7 |
-| Connection status in the window ("Connecting…") | missing | `UpdateConnectionState` | S | M1 |
+| Connection status in the window ("Connecting…") | done | `ConnectionMonitor`, capsule in the sidebar title bar | | |
 | Keyboard shortcuts list | partial | Shell shortcuts exist; no list | S | M7 |
 | Auto-delete messages default | missing | | S | M7 |
 | Settings search | missing | | S | M7 |

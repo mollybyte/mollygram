@@ -6,6 +6,7 @@ import 'authorization_controller.dart';
 import 'authorization_stage.dart';
 import 'chat_list_controller.dart';
 import 'chat_search.dart';
+import 'connection_status.dart';
 import 'conversation_controller.dart';
 import 'file_controller.dart';
 import 'sticker_library.dart';
@@ -25,6 +26,7 @@ final class TelegramSession {
     required this.search,
     required this.files,
     required this.stickers,
+    required this.connection,
     required this._initializer,
   });
 
@@ -36,6 +38,9 @@ final class TelegramSession {
   final ChatSearch search;
   final FileController files;
   final StickerLibrary stickers;
+
+  /// The connection state, for the "Connecting…" status in the window.
+  final ConnectionMonitor connection;
   final _errors = StreamController<Object>.broadcast(sync: true);
   StreamSubscription<AuthorizationStage>? _stageSubscription;
   Future<void>? _firstReconcile;
@@ -53,6 +58,7 @@ final class TelegramSession {
     final authorization = AuthorizationController(client);
     final conversations = ConversationController(client);
     final files = FileController(client);
+    final connection = ConnectionMonitor(client);
     final session = TelegramSession._(
       tdlib: tdlib,
       authorization: authorization,
@@ -61,12 +67,14 @@ final class TelegramSession {
       search: ChatSearch(client),
       files: files,
       stickers: StickerLibrary(client),
+      connection: connection,
       initializer: TdlibInitializer(client, parameters: parameters),
     );
     session._stageSubscription = authorization.stages.listen(session._onStage);
     try {
       await conversations.start();
       await files.start();
+      await connection.start();
       await authorization.start();
       // Sending the parameters is part of starting: a wrong database key or
       // bad credentials must fail the session, not leave the UI waiting.
@@ -119,6 +127,7 @@ final class TelegramSession {
     await chatLists.dispose();
     await conversations.dispose();
     await files.dispose();
+    await connection.dispose();
     await authorization.dispose();
     await _tdlib.close();
     await _errors.close();
