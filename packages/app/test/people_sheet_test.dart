@@ -258,9 +258,7 @@ void main() {
       expect(find.text('Boris'), findsOneWidget);
     });
 
-    testWidgets('loads the contacts again after a failed load', (
-      tester,
-    ) async {
+    testWidgets('loads the contacts again after a failed load', (tester) async {
       json.failContacts = true;
       await pump(tester, mode: PeopleSheetMode.contacts);
       expect(find.text('Anna Petrova'), findsNothing);
@@ -450,9 +448,7 @@ final class _FakeTdJson implements td.TdJson {
       'searchPublicChats' => {
         '@type': 'chats',
         'total_count': 1,
-        'chat_ids': [
-          if ((decoded['query']! as String).startsWith('dur')) 77,
-        ],
+        'chat_ids': [if ((decoded['query']! as String).startsWith('dur')) 77],
       },
       'createPrivateChat' => _chat(decoded['user_id']! as int, 'Boris'),
       'importContacts' => {
