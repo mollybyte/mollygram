@@ -1841,6 +1841,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get searchBySender => 'Search by sender';
 
   @override
+  String get searchFilter => 'Filter results';
+
+  @override
+  String get searchAllKinds => 'All messages';
+
+  @override
   String searchCounter(int index, int count) {
     return '$index of $count';
   }

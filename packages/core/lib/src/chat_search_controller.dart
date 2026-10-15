@@ -106,17 +106,24 @@ final class ChatSearchController {
     );
   }
 
-  /// A text search in [chatId] to step through, newest result first.
-  ChatSearchResults find(int chatId, String query, {int? senderUserId}) =>
-      ChatSearchResults._(
-        (from) => search(
-          chatId,
-          query: query,
-          senderUserId: senderUserId,
-          from: from,
-          limit: 30,
-        ),
-      );
+  /// A text search in [chatId] to step through, newest result first,
+  /// narrowed to one member with [senderUserId] and to messages of
+  /// [kind] when given.
+  ChatSearchResults find(
+    int chatId,
+    String query, {
+    int? senderUserId,
+    SharedMediaKind? kind,
+  }) => ChatSearchResults._(
+    (from) => search(
+      chatId,
+      query: query,
+      kind: kind,
+      senderUserId: senderUserId,
+      from: from,
+      limit: 30,
+    ),
+  );
 
   /// Every message of [kind] in [chatId], page by page.
   SharedMediaList sharedMedia(int chatId, SharedMediaKind kind) =>

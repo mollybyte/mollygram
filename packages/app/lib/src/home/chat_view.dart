@@ -2588,11 +2588,13 @@ class _ChatViewState extends ConsumerState<ChatView> {
                       width: double.infinity,
                       child: ChatSearchBar(
                         key: ValueKey(widget.chatId),
-                        find: (query, senderUserId) => session.chatSearch.find(
-                          widget.chatId,
-                          query,
-                          senderUserId: senderUserId,
-                        ),
+                        find: (query, senderUserId, kind) =>
+                            session.chatSearch.find(
+                              widget.chatId,
+                              query,
+                              senderUserId: senderUserId,
+                              kind: kind,
+                            ),
                         onResult: (id) => unawaited(_jumpTo(id)),
                         onClose: _closeSearch,
                         onCalendar: (position) =>
