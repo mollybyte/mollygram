@@ -420,6 +420,7 @@ void main() {
           colors: colors,
         ),
       );
+      await tester.pumpAndSettle();
       await expectLater(
         find.byType(EmojiPanel),
         matchesGoldenFile('goldens/emoji_panel_$theme.png'),

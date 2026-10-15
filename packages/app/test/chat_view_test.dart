@@ -320,6 +320,8 @@ void main() {
     controller.selection = const TextSelection.collapsed(offset: 2);
     await tester.tap(find.byTooltip('Emoji and stickers'));
     await tester.pump();
+    // Past the panel's opening animation.
+    await tester.pump(const Duration(milliseconds: 200));
 
     await tester.tap(find.text('😀'));
     await tester.pump();
@@ -337,6 +339,8 @@ void main() {
     await pump(tester);
     await tester.tap(find.byTooltip('Emoji and stickers'));
     await tester.pump();
+    // Past the panel's opening animation.
+    await tester.pump(const Duration(milliseconds: 200));
     await tester.tap(find.text('Stickers'));
     await tester.runAsync(() => Future<void>.delayed(_tick));
     await tester.pump();

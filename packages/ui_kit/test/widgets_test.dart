@@ -558,6 +558,7 @@ void main() {
     testWidgets('shows recent emoji first and picks one', (tester) async {
       final picked = <String>[];
       await tester.pumpWidget(tab(recent: const ['🦊'], onPick: picked.add));
+      await tester.pumpAndSettle();
 
       expect(find.text('Recently used'), findsOneWidget);
       await tester.tap(find.text('🦊'));
@@ -567,6 +568,7 @@ void main() {
 
     testWidgets('jumps to a group from the bar', (tester) async {
       await tester.pumpWidget(tab());
+      await tester.pumpAndSettle();
       expect(find.text('Flags'), findsNothing);
 
       await tester.tap(find.bySemanticsLabel('Flags'));

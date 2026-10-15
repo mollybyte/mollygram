@@ -48,32 +48,46 @@ class _EmojiPanelState extends State<EmojiPanel> {
       bindings: {
         const SingleActivator(LogicalKeyboardKey.escape): ?widget.onClose,
       },
-      child: SizedBox(
-        width: EmojiPanel.width,
-        height: widget.height,
-        child: Glass(
-          radius: 14,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(top: 8, bottom: 4),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    for (final (i, label) in widget.tabs.indexed)
-                      FolderTab(
-                        label: label,
-                        selected: i == _tab,
-                        onTap: () => setState(() => _tab = i),
-                      ),
-                  ],
+      // Grows out of the emoji button's corner as it fades in.
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0, end: 1),
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+        builder: (context, t, child) => Opacity(
+          opacity: t,
+          child: Transform.scale(
+            scale: 0.94 + 0.06 * t,
+            alignment: Alignment.bottomRight,
+            child: child,
+          ),
+        ),
+        child: SizedBox(
+          width: EmojiPanel.width,
+          height: widget.height,
+          child: Glass(
+            radius: 14,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 8, bottom: 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      for (final (i, label) in widget.tabs.indexed)
+                        FolderTab(
+                          label: label,
+                          selected: i == _tab,
+                          onTap: () => setState(() => _tab = i),
+                        ),
+                    ],
+                  ),
                 ),
-              ),
-              Expanded(
-                child: IndexedStack(index: _tab, children: widget.children),
-              ),
-            ],
+                Expanded(
+                  child: IndexedStack(index: _tab, children: widget.children),
+                ),
+              ],
+            ),
           ),
         ),
       ),
