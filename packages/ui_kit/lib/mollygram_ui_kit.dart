@@ -8,6 +8,7 @@ library;
 export 'src/avatar.dart';
 export 'src/badge.dart';
 export 'src/chat/action_bar.dart';
+export 'src/chat/bar_strip.dart';
 export 'src/chat/bubbles.dart';
 export 'src/chat/calendar.dart';
 export 'src/chat/chat_card.dart';

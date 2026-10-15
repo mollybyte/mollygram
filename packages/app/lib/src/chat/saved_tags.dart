@@ -34,9 +34,8 @@ class SavedTagBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Glass(
-      radius: height / 2,
-      padding: const EdgeInsets.symmetric(horizontal: 6),
+    return BarStrip(
+      padding: const EdgeInsets.symmetric(horizontal: 10),
       child: SizedBox(
         height: height,
         child: ScrollConfiguration(
