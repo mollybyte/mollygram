@@ -244,6 +244,13 @@ abstract final class MgIcons {
     'comment',
     '<path d="M12 20a8 8 0 1 0-7.1-4.3L4 20l4.3-.9A8 8 0 0 0 12 20z"/>',
   );
+  static const list = MgIconData(
+    'list',
+    '<path d="M9 6h12M9 12h12M9 18h12"/>'
+        '<circle cx="4.5" cy="6" r="1"/>'
+        '<circle cx="4.5" cy="12" r="1"/>'
+        '<circle cx="4.5" cy="18" r="1"/>',
+  );
 
   // Media viewer.
   static const forward = MgIconData(
@@ -336,6 +343,7 @@ abstract final class MgIcons {
     sticker,
     views,
     comment,
+    list,
     forward,
     copy,
     loop,

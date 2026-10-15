@@ -673,5 +673,16 @@
   "clearSelection": "Clear selection",
   "copy": "Copy",
   "previousMonth": "Previous month",
-  "nextMonth": "Next month"
+  "nextMonth": "Next month",
+  "pinnedList": "Pinned messages",
+  "pinnedCount": "{count, plural, one{{count} pinned message} other{{count} pinned messages}}",
+  "@pinnedCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "backToChat": "Back to the chat",
+  "unpinAll": "Unpin all messages",
+  "unpinAllTitle": "{count, plural, one{Unpin {count} message?} other{Unpin all {count} messages?}}",
+  "@unpinAllTitle": {
+    "placeholders": { "count": { "type": "int" } }
+  }
 }

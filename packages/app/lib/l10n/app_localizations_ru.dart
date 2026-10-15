@@ -1700,4 +1700,37 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get nextMonth => 'Следующий месяц';
+
+  @override
+  String get pinnedList => 'Закреплённые сообщения';
+
+  @override
+  String pinnedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count закреплённых сообщений',
+      few: '$count закреплённых сообщения',
+      one: '$count закреплённое сообщение',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get backToChat => 'Назад в чат';
+
+  @override
+  String get unpinAll => 'Открепить все';
+
+  @override
+  String unpinAllTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Открепить все $count сообщений?',
+      few: 'Открепить все $count сообщения?',
+      one: 'Открепить $count сообщение?',
+    );
+    return '$_temp0';
+  }
 }

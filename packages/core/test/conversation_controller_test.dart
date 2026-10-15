@@ -282,6 +282,17 @@ void main() {
     expect(controller.store.message(7, 3)?.text, 'Quoted');
   });
 
+  test('unpins every message of a chat', () async {
+    await controller.start();
+    controller.store.setPinned(7, [30, 20]);
+
+    await controller.unpinAll(7);
+
+    expect(json.sent.last, containsPair('@type', 'unpinAllChatMessages'));
+    expect(json.sent.last['chat_id'], 7);
+    expect(controller.store.pinnedIds(7), isEmpty);
+  });
+
   test('finds the last message of a day, or nothing before the chat', () async {
     await controller.start();
 
