@@ -15,6 +15,7 @@ export 'src/conversation_controller.dart';
 export 'src/conversation_store.dart';
 export 'src/file_controller.dart';
 export 'src/link_resolver.dart';
+export 'src/mention_search.dart';
 export 'src/notification_controller.dart';
 export 'src/outgoing_file.dart';
 export 'src/peer_info.dart';

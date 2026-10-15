@@ -920,6 +920,78 @@ abstract class AppLocalizations {
   /// **'Cancel'**
   String get cancel;
 
+  /// No description provided for @formatBold.
+  ///
+  /// In en, this message translates to:
+  /// **'Bold'**
+  String get formatBold;
+
+  /// No description provided for @formatItalic.
+  ///
+  /// In en, this message translates to:
+  /// **'Italic'**
+  String get formatItalic;
+
+  /// No description provided for @formatUnderline.
+  ///
+  /// In en, this message translates to:
+  /// **'Underline'**
+  String get formatUnderline;
+
+  /// No description provided for @formatStrikethrough.
+  ///
+  /// In en, this message translates to:
+  /// **'Strikethrough'**
+  String get formatStrikethrough;
+
+  /// No description provided for @formatMonospace.
+  ///
+  /// In en, this message translates to:
+  /// **'Monospace'**
+  String get formatMonospace;
+
+  /// No description provided for @formatSpoiler.
+  ///
+  /// In en, this message translates to:
+  /// **'Spoiler'**
+  String get formatSpoiler;
+
+  /// No description provided for @formatQuote.
+  ///
+  /// In en, this message translates to:
+  /// **'Quote'**
+  String get formatQuote;
+
+  /// No description provided for @formatLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Link…'**
+  String get formatLink;
+
+  /// No description provided for @formatPlain.
+  ///
+  /// In en, this message translates to:
+  /// **'Plain text'**
+  String get formatPlain;
+
+  /// No description provided for @linkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add link'**
+  String get linkTitle;
+
+  /// No description provided for @linkHint.
+  ///
+  /// In en, this message translates to:
+  /// **'URL'**
+  String get linkHint;
+
+  /// No description provided for @linkApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get linkApply;
+
   /// No description provided for @deleteMessageTitle.
   ///
   /// In en, this message translates to:

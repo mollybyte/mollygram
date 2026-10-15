@@ -13,6 +13,7 @@ import 'contacts_controller.dart';
 import 'conversation_controller.dart';
 import 'file_controller.dart';
 import 'link_resolver.dart';
+import 'mention_search.dart';
 import 'notification_controller.dart';
 import 'peer_info.dart';
 import 'sticker_library.dart';
@@ -47,6 +48,7 @@ final class TelegramSession {
     required this.stickers,
     required this.peers,
     required this.account,
+    required this.mentions,
     required this.storage,
     required this.connection,
     required this.contacts,
@@ -69,6 +71,9 @@ final class TelegramSession {
   final PeerInfoController peers;
   final AccountSettings account;
   final StorageManager storage;
+
+  /// Group members for @mentions in the composer.
+  final MentionSearch mentions;
 
   /// The connection state, for the "Connecting…" status in the window.
   final ConnectionMonitor connection;
@@ -94,6 +99,7 @@ final class TelegramSession {
     final authorization = AuthorizationController(client);
     final conversations = ConversationController(client);
     final files = FileController(client);
+    final mentions = MentionSearch(client);
     final peers = PeerInfoController(client);
     final connection = ConnectionMonitor(client);
     final contacts = ContactsController(client);
@@ -110,6 +116,7 @@ final class TelegramSession {
       stickers: StickerLibrary(client),
       peers: peers,
       account: AccountSettings(client),
+      mentions: mentions,
       storage: StorageManager(client),
       connection: connection,
       contacts: contacts,
@@ -126,6 +133,7 @@ final class TelegramSession {
     try {
       await conversations.start();
       await files.start();
+      await mentions.start();
       await peers.start();
       await connection.start();
       await contacts.start();
@@ -195,6 +203,7 @@ final class TelegramSession {
     await chatLists.dispose();
     await conversations.dispose();
     await files.dispose();
+    await mentions.dispose();
     await peers.dispose();
     await connection.dispose();
     await contacts.dispose();

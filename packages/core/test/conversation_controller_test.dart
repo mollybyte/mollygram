@@ -335,6 +335,28 @@ void main() {
     );
   });
 
+  test('sends and edits with the formatting the composer gives', () async {
+    await controller.start();
+    controller.store.replaceHistory(7, [
+      ConversationMessage(tdMessage(id: 1, chatId: 7, text: 'Hi')),
+    ]);
+    const bold = td.TextEntity(
+      offset: 0,
+      length: 2,
+      type: td.TextEntityTypeBold(),
+    );
+
+    await controller.sendText(7, 'Hi there', entities: const [bold]);
+    await controller.editText(7, 1, 'Hi', entities: const [bold]);
+
+    final send = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    final sent = (send['input_message_content']! as Map)['text']! as Map;
+    expect((sent['entities']! as List).single, bold.toJson());
+    final edit = json.sent.lastWhere((r) => r['@type'] == 'editMessageText');
+    final edited = (edit['input_message_content']! as Map)['text']! as Map;
+    expect((edited['entities']! as List).single, bold.toJson());
+  });
+
   test('edits text messages and captions with the right request', () async {
     await controller.start();
     controller.store.replaceHistory(7, [
@@ -395,13 +417,16 @@ void main() {
         OutgoingFile(path: '/c.pdf', kind: OutgoingKind.document),
       ],
       caption: 'Trip',
+      captionEntities: const [_italic],
       replyTo: 10,
     );
 
     final album = json.sent.firstWhere((r) => r['@type'] == 'sendMessageAlbum');
     final contents = album['input_message_contents']! as List;
     expect(contents, hasLength(2));
-    expect(((contents[0] as Map)['caption']! as Map)['text'], 'Trip');
+    final caption = (contents[0] as Map)['caption']! as Map;
+    expect(caption['text'], 'Trip');
+    expect((caption['entities']! as List).single, _italic.toJson());
     expect((contents[1] as Map)['caption'], isNull);
     expect(album['reply_to'], containsPair('message_id', 10));
 
@@ -1077,3 +1102,9 @@ Map<String, Object?> _reaction(
   Map<String, Object?> type, {
   bool premium = false,
 }) => {'@type': 'availableReaction', 'type': type, 'needs_premium': premium};
+
+const _italic = td.TextEntity(
+  offset: 0,
+  length: 4,
+  type: td.TextEntityTypeItalic(),
+);

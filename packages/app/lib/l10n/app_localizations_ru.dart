@@ -457,6 +457,42 @@ class AppLocalizationsRu extends AppLocalizations {
   String get cancel => 'Отмена';
 
   @override
+  String get formatBold => 'Жирный';
+
+  @override
+  String get formatItalic => 'Курсив';
+
+  @override
+  String get formatUnderline => 'Подчёркнутый';
+
+  @override
+  String get formatStrikethrough => 'Зачёркнутый';
+
+  @override
+  String get formatMonospace => 'Моноширинный';
+
+  @override
+  String get formatSpoiler => 'Спойлер';
+
+  @override
+  String get formatQuote => 'Цитата';
+
+  @override
+  String get formatLink => 'Ссылка…';
+
+  @override
+  String get formatPlain => 'Обычный текст';
+
+  @override
+  String get linkTitle => 'Добавить ссылку';
+
+  @override
+  String get linkHint => 'Адрес';
+
+  @override
+  String get linkApply => 'Применить';
+
+  @override
   String get deleteMessageTitle => 'Удалить сообщение?';
 
   @override

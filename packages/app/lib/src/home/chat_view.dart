@@ -28,6 +28,8 @@ import '../chat/timeline.dart';
 import '../chat/timeline_scroll.dart';
 import '../chat/timeline_view.dart';
 import '../chat_search/chat_search_bar.dart';
+import '../compose/mention_suggester.dart';
+import '../compose/rich_text_bridge.dart';
 import '../profile/peer_info_state.dart';
 import '../session/providers.dart';
 import '../shared_media/message_jump.dart';
@@ -46,7 +48,8 @@ class ChatView extends ConsumerStatefulWidget {
 }
 
 class _ChatViewState extends ConsumerState<ChatView> {
-  final _draft = TextEditingController();
+  final _draft = RichTextEditingController();
+  late final _mentions = MentionSuggester(controller: _draft);
   final _focus = FocusNode();
   late final ConversationController _conversations;
 
@@ -57,6 +60,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
   /// it pushed aside, which comes back when editing ends.
   ConversationMessage? _editing;
   String _setAside = '';
+  List<FormatRange> _setAsideRanges = const [];
   ConversationMessage? _replyAside;
 
   /// Incoming messages already reported to TDLib as viewed.
@@ -125,6 +129,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
         .requireValue
         .conversations;
     _draft.addListener(_clearSendError);
+    _mentions
+      ..search = _mentionSearch()
+      ..addListener(_mentionsChanged);
     _scroll.addListener(_followScroll);
     _open(widget.chatId);
     WidgetsBinding.instance.addPostFrameCallback((_) => _takeJump());
@@ -145,11 +152,15 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _viewed.clear();
     _toView.clear();
     // An edit belongs to the old chat: give back the draft it set aside.
-    if (_editing != null) _draft.text = _setAside;
+    if (_editing != null) _draft.setFormatted(_setAside, _setAsideRanges);
+    _mentions
+      ..search = _mentionSearch()
+      ..reset();
     _failure = null;
     _replyTo = null;
     _editing = null;
     _setAside = '';
+    _setAsideRanges = const [];
     _replyAside = null;
     _panelOpen = false;
     _searching = false;
@@ -169,6 +180,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
   @override
   void dispose() {
     _close(widget.chatId);
+    _mentions.dispose();
     _draft.dispose();
     _focus.dispose();
     _scroll.dispose();
@@ -620,33 +632,33 @@ class _ChatViewState extends ConsumerState<ChatView> {
     if (message.chatId != widget.chatId) return;
     if (_editing == null) {
       _setAside = _draft.text;
+      _setAsideRanges = _draft.ranges;
       _replyAside = _replyTo;
     }
-    final text = message.text;
     setState(() {
       _editing = message;
       _replyTo = null;
     });
-    _draft.value = TextEditingValue(
-      text: text,
-      selection: TextSelection.collapsed(offset: text.length),
+    final text = captionOf(message.content);
+    _draft.setFormatted(
+      message.text,
+      text == null ? const [] : draftRanges(text),
     );
     _focus.requestFocus();
   }
 
   void _stopEditing() {
     final draft = _setAside;
+    final ranges = _setAsideRanges;
     _setAside = '';
+    _setAsideRanges = const [];
     setState(() {
       _editing = null;
       if (_failure == _Failure.edit) _failure = null;
       _replyTo = _replyAside;
       _replyAside = null;
     });
-    _draft.value = TextEditingValue(
-      text: draft,
-      selection: TextSelection.collapsed(offset: draft.length),
-    );
+    _draft.setFormatted(draft, ranges);
   }
 
   /// Esc: stop editing first, then stop replying.
@@ -837,6 +849,18 @@ class _ChatViewState extends ConsumerState<ChatView> {
     });
   }
 
+  void _mentionsChanged() => setState(() {});
+
+  /// Members to offer for an @ in this chat, while it is a group.
+  Future<List<MentionCandidate>> Function(String) _mentionSearch() {
+    final chatId = widget.chatId;
+    return mentionSearchFor(
+      ref.read(telegramSessionProvider).requireValue.mentions,
+      () => ref.read(chatEntryProvider(chatId)).value?.isGroup ?? false,
+      chatId,
+    );
+  }
+
   Future<void> _send(String text) async {
     final editing = _editing;
     // A caption may be removed; a text message can't be emptied.
@@ -846,6 +870,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
     if (text.trim().isEmpty) return;
     final chatId = widget.chatId;
     final replyTo = _replyTo;
+    final ranges = _draft.ranges;
+    final formatted = formattedDraft(text, ranges);
+    if (formatted.text.isEmpty) return;
     _draft.clear();
     setState(() {
       _failure = null;
@@ -853,17 +880,17 @@ class _ChatViewState extends ConsumerState<ChatView> {
     });
     unawaited(_toLatestForSend());
     try {
-      await _conversations.sendText(chatId, text, replyTo: replyTo?.id);
+      await _conversations.sendText(
+        chatId,
+        formatted.text,
+        replyTo: replyTo?.id,
+        entities: formatted.entities,
+      );
     } catch (_) {
       // Give the text back rather than lose it, unless the user has
       // started typing something else or moved to another chat.
       if (!mounted || widget.chatId != chatId) return;
-      if (_draft.text.isEmpty) {
-        _draft.value = TextEditingValue(
-          text: text,
-          selection: TextSelection.collapsed(offset: text.length),
-        );
-      }
+      if (_draft.text.isEmpty) _draft.setFormatted(text, ranges);
       setState(() {
         _failure = _Failure.send;
         _replyTo ??= replyTo;
@@ -875,10 +902,19 @@ class _ChatViewState extends ConsumerState<ChatView> {
       message.content is! td.MessageText;
 
   Future<void> _saveEdit(ConversationMessage message, String text) async {
-    if (text == message.text) return _stopEditing();
+    final ranges = _draft.ranges;
+    final formatted = formattedDraft(text, ranges);
+    final old = captionOf(message.content);
+    if (old != null && sameDraft(formatted, old)) return _stopEditing();
+    if (formatted.text.isEmpty && !_isCaption(message)) return;
     _stopEditing();
     try {
-      await _conversations.editText(message.chatId, message.id, text);
+      await _conversations.editText(
+        message.chatId,
+        message.id,
+        formatted.text,
+        entities: formatted.entities,
+      );
     } catch (_) {
       if (!mounted || widget.chatId != message.chatId) return;
       // Another edit has started meanwhile; keep it and only say so.
@@ -888,10 +924,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
       }
       // Put the edit back so the change is not lost.
       _edit(message);
-      _draft.value = TextEditingValue(
-        text: text,
-        selection: TextSelection.collapsed(offset: text.length),
-      );
+      _draft.setFormatted(text, ranges);
       setState(() => _failure = _Failure.edit);
     }
   }
@@ -989,10 +1022,12 @@ class _ChatViewState extends ConsumerState<ChatView> {
     // The draft becomes the caption, as in the official apps; not while
     // editing, where the composer holds another message's text.
     final useDraft = _editing == null;
+    final draft = useDraft ? _draft.text : '';
+    final draftFormats = useDraft ? _draft.ranges : const <FormatRange>[];
     final choice = await showAttachmentPreview(
       context,
       paths: paths,
-      caption: useDraft ? _draft.text : '',
+      caption: draft,
     );
     if (choice == null && temporary) {
       for (final path in paths) {
@@ -1006,6 +1041,12 @@ class _ChatViewState extends ConsumerState<ChatView> {
       _replyTo = null;
     });
     if (useDraft) _draft.clear();
+    // The draft's formatting goes with it, unless the caption was
+    // rewritten in the preview; Markdown applies either way.
+    final captionRanges = choice.caption == draft
+        ? draftFormats
+        : const <FormatRange>[];
+    final caption = formattedDraft(choice.caption, captionRanges);
     unawaited(_toLatestForSend());
     try {
       // One at a time: each video or song opens a player to be measured.
@@ -1016,13 +1057,16 @@ class _ChatViewState extends ConsumerState<ChatView> {
       await _conversations.sendFiles(
         chatId,
         files,
-        caption: choice.caption,
+        caption: caption.text,
+        captionEntities: caption.entities,
         replyTo: replyTo?.id,
       );
     } catch (_) {
       if (!mounted || widget.chatId != chatId) return;
       // Give the caption and the reply back, as a failed text send does.
-      if (useDraft && _draft.text.isEmpty) _draft.text = choice.caption;
+      if (useDraft && _draft.text.isEmpty) {
+        _draft.setFormatted(choice.caption, captionRanges);
+      }
       setState(() {
         _failure = _Failure.attach;
         _replyTo ??= replyTo;
@@ -1414,6 +1458,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
                       onRecordedVideo: _sendVideoNote,
                       builder: (context, recordButton, recordingBar) =>
                           Composer(
+                            suggestions: _mentions.suggestions,
+                            onSuggestion: _mentions.pick,
+                            onDismissSuggestions: _mentions.dismiss,
                             controller: _draft,
                             focusNode: _focus,
                             header: _composerHeader(l10n),
@@ -1435,6 +1482,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
                               emoji: l10n.emoji,
                               record: l10n.record,
                               send: l10n.send,
+                              format: formatLabelsOf(l10n),
                             ),
                             onSend: (text) => unawaited(_send(text)),
                             recordButton: recordButton,

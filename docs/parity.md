@@ -111,8 +111,8 @@ M8 calls and macOS release, M9 after release.
 | Sticker panel, recent and favourite stickers, sticker search | partial | #34: recent, favourites, installed sets; no search, no set management | S | M1 |
 | GIF panel and GIF search | missing | `GifKeyboardController` | M | M2 |
 | Emoji and sticker suggestions while typing | missing | `InputSwapSuggestionsPanel` | M | M2 |
-| Rich text formatting: bold, italic, code, link, spoiler, quote; Markdown shortcuts | missing | `text_edit.dart` sends plain text | M | M1 |
-| Mentions autocomplete (@) | missing | `SearchChatMembers` | S | M1 |
+| Rich text formatting: bold, italic, code, link, spoiler, quote; Markdown shortcuts | done | `RichTextEditingController` in ui_kit: ⌘B, ⌘I, ⌘U, ⌘⇧X, ⌘⇧M, ⌘⇧P, ⌘⇧., ⌘K, context menu; Markdown converted on send. Captions of files are still plain | | |
+| Mentions autocomplete (@) | done | `MentionSearch` with `ChatMembersFilterMention`; no `:` emoji shortcodes yet | | |
 | Bot command autocomplete (/) and bot keyboards | missing | `ReplyMarkupNode` | M | M2 |
 | Inline bots (@gif, @vid) | missing | `GetInlineQueryResults` | M | M9 |
 | Voice message recording | done | Hold, lock, cancel; Opus in Ogg via AudioToolbox on macOS | M | M1 |
