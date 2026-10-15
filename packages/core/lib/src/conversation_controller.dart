@@ -8,6 +8,7 @@ import 'conversation_store.dart';
 import 'forum_topics.dart';
 import 'message_thread.dart';
 import 'outgoing_file.dart';
+import 'saved_topics.dart';
 import 'text_edit.dart';
 
 /// Loads and maintains conversation timelines from TDLib.
@@ -36,6 +37,15 @@ final class ConversationController {
 
   /// The forum topic lists open on screen, fed every update.
   final _topicLists = <ForumTopicList>{};
+  final _savedLists = <SavedTopicList>{};
+  int? _myId;
+
+  /// The signed-in user's id, once TDLib has said it.
+  int? get myId => _myId;
+
+  /// Whether [chatId] is the user's Saved Messages.
+  bool isSavedMessages(int chatId) =>
+      _myId != null && store.privateUserIdOf(chatId) == _myId;
   StreamSubscription<td.TdObject>? _subscription;
 
   Stream<void> get changes => _changes.stream;
@@ -1105,6 +1115,46 @@ final class ConversationController {
 
   /// The topics of forum [chatId], kept current until disposed; the
   /// first page still has to be loaded.
+  /// The topics of Saved Messages, fed updates until disposed.
+  SavedTopicList openSavedTopics() {
+    final list = SavedTopicList(_client, onDispose: _savedLists.remove);
+    _savedLists.add(list);
+    return list;
+  }
+
+  /// Opens Saved Messages [topic] in [chatId] as a thread of its own.
+  Future<MessageThread> openSavedTopic(
+    int chatId,
+    td.SavedMessagesTopic topic,
+  ) async {
+    final thread = MessageThread(
+      _client,
+      store,
+      chatId: chatId,
+      threadId: topic.id,
+      savedTopic: topic,
+      roots: const [],
+      replyCount: 0,
+      onDispose: _threads.remove,
+      sendFiles: sendFiles,
+    );
+    _threads.add(thread);
+    return thread;
+  }
+
+  /// Pins or unpins Saved Messages topic [topicId].
+  Future<void> setSavedTopicPinned(int topicId, bool pinned) => _client.send(
+    td.ToggleSavedMessagesTopicIsPinned(
+      savedMessagesTopicId: topicId,
+      isPinned: pinned,
+    ),
+  );
+
+  /// Deletes every saved message of topic [topicId].
+  Future<void> deleteSavedTopic(int topicId) => _client.send(
+    td.DeleteSavedMessagesTopicHistory(savedMessagesTopicId: topicId),
+  );
+
   ForumTopicList openTopics(int chatId) {
     final list = ForumTopicList(
       _client,
@@ -1353,11 +1403,14 @@ final class ConversationController {
     int? replyTo,
     int? threadId,
     bool forumTopic = false,
+    bool savedTopic = false,
     bool silent = false,
     td.MessageSchedulingState? schedule,
   }) async {
     final topic = threadId == null
         ? null
+        : savedTopic
+        ? td.MessageTopicSavedMessages(savedMessagesTopicId: threadId)
         : forumTopic
         ? td.MessageTopicForum(forumTopicId: threadId)
         : td.MessageTopicThread(messageThreadId: threadId);
@@ -1661,7 +1714,15 @@ final class ConversationController {
     for (final list in _topicLists.toList()) {
       list.handle(object);
     }
+    for (final list in _savedLists.toList()) {
+      list.handle(object);
+    }
     switch (object) {
+      case td.UpdateOption(
+        name: 'my_id',
+        value: td.OptionValueInteger(:final value),
+      ):
+        _myId = value;
       // Sender names and avatars on screen follow their changes.
       case td.UpdateUser(:final user):
         final sender = MessageSenderId.user(user.id);

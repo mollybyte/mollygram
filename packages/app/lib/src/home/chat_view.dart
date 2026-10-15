@@ -33,6 +33,7 @@ import '../chat/message_actions.dart';
 import '../chat/message_tile.dart';
 import '../chat/poll_composer.dart';
 import '../chat/poll_content.dart';
+import '../chat/saved_topics.dart';
 import '../chat/schedule_picker.dart';
 import '../chat/send_as.dart';
 import '../chat/slow_mode.dart';
@@ -181,6 +182,13 @@ class _ChatViewState extends ConsumerState<ChatView> {
   ForumTopicList? _topics;
   StreamSubscription<void>? _topicsSub;
   var _topicsOpening = false;
+
+  /// Saved Messages shown as the chats they came from, while the list
+  /// button in the capsule is on.
+  SavedTopicList? _savedTopics;
+  StreamSubscription<void>? _savedTopicsSub;
+  var _savedTopicsOpening = false;
+  var _savedOpen = false;
   StreamSubscription<void>? _threadSub;
   final _threadScroll = TimelineScrollController();
   final _threadDraft = RichTextEditingController();
@@ -243,6 +251,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _saveDraft(old.chatId);
     _close(old.chatId);
     _dropTopics();
+    _dropSavedTopics();
     _sponsored = null;
     _sponsoredAsked = false;
     _viewed.clear();
@@ -295,6 +304,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     if (_editing == null) _saveDraft(widget.chatId);
     _close(widget.chatId);
     _dropTopics();
+    _dropSavedTopics();
     _mentions.dispose();
     _emojiHints.dispose();
     _commands.dispose();
@@ -492,10 +502,124 @@ class _ChatViewState extends ConsumerState<ChatView> {
 
   /// A list in place of the timeline: the pinned or the scheduled messages.
   bool get _listOpen =>
-      _pinnedListOpen || _scheduledOpen || _thread != null || _forum;
+      _pinnedListOpen ||
+      _scheduledOpen ||
+      _thread != null ||
+      _forum ||
+      _savedOpen;
 
   /// Whether this chat is a forum group, whose timeline is its topics.
   bool get _forum => _conversations.store.isForum(widget.chatId);
+
+  /// Whether this chat is the user's Saved Messages.
+  bool get _saved => _conversations.isSavedMessages(widget.chatId);
+
+  /// Switches Saved Messages between its timeline and the list of the
+  /// chats the messages came from.
+  void _toggleSaved() {
+    if (_thread?.isSavedTopic ?? false) _closeThread();
+    setState(() => _savedOpen = !_savedOpen);
+  }
+
+  /// The Saved Messages topics in the timeline's place, loading them the
+  /// first time.
+  Widget _savedTopicsView(ConversationStore store) {
+    final topics = _savedTopics;
+    if (topics == null) {
+      if (!_savedTopicsOpening) {
+        _savedTopicsOpening = true;
+        scheduleMicrotask(() => unawaited(_openSavedTopics()));
+      }
+      return const SizedBox.shrink();
+    }
+    return SavedTopicListView(
+      key: const ValueKey('savedTopics'),
+      topics: topics.topics,
+      store: store,
+      myId: _conversations.myId,
+      topInset: _topInset,
+      onOpen: (topic) => unawaited(_openSavedTopic(topic)),
+      onNearEnd: () => unawaited(_quiet(topics.loadMore())),
+      onMenu: (topic, position) => unawaited(
+        showSavedTopicMenu(
+          context,
+          conversations: _conversations,
+          list: topics,
+          topic: topic,
+          position: position,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openSavedTopics() async {
+    final chatId = widget.chatId;
+    final list = _conversations.openSavedTopics();
+    try {
+      await list.load();
+    } on td.TdException {
+      list.dispose();
+      if (mounted && widget.chatId == chatId) _savedTopicsOpening = false;
+      return;
+    }
+    if (!mounted || widget.chatId != chatId) {
+      list.dispose();
+      return;
+    }
+    setState(() => _savedTopics = list);
+    _savedTopicsSub = list.changes.listen((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  /// Opens Saved Messages [topic] in the list's place, with a composer,
+  /// until the back capsule closes it.
+  Future<void> _openSavedTopic(td.SavedMessagesTopic topic) async {
+    final chatId = widget.chatId;
+    final MessageThread thread;
+    try {
+      thread = await _conversations.openSavedTopic(chatId, topic);
+      await thread.load();
+    } on td.TdException {
+      if (mounted) {
+        showMgToast(context, AppLocalizations.of(context).topicUnavailable);
+      }
+      return;
+    }
+    if (!mounted || widget.chatId != chatId) {
+      thread.dispose();
+      return;
+    }
+    _dropThread();
+    setState(() {
+      _thread = thread;
+      _selected = null;
+    });
+    _threadSub = thread.changes.listen((_) {
+      if (mounted) setState(() {});
+    });
+    _threadFocus.requestFocus();
+  }
+
+  void _dropSavedTopics() {
+    _savedTopicsSub?.cancel();
+    _savedTopicsSub = null;
+    _savedTopics?.dispose();
+    _savedTopics = null;
+    _savedTopicsOpening = false;
+    _savedOpen = false;
+  }
+
+  /// The name of the topic the open thread is, forum or Saved Messages.
+  String? _threadTopicName(AppLocalizations l10n) {
+    final thread = _thread;
+    if (thread == null) return null;
+    if (thread.forumTopic case final topic?) return topic.name;
+    if (thread.savedTopic case final topic?) {
+      return savedTopicName(l10n, _conversations.store, topic);
+    }
+    return null;
+  }
 
   /// The topic list in the timeline's place, loading it the first time.
   Widget _topicsView(ConversationStore store) {
@@ -830,7 +954,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
       controller: _threadDraft,
       focusNode: _threadFocus,
       labels: ComposerLabels(
-        hint: (_thread?.isForumTopic ?? false)
+        hint: (_thread?.isStandalone ?? false)
             ? l10n.messageHint
             : _thread?.chatId == widget.chatId
             ? l10n.replyHint
@@ -2930,6 +3054,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
           Positioned.fill(
             child: switch (messages) {
               AsyncData() when _forum && _thread == null => _topicsView(store),
+              AsyncData() when _savedOpen && _thread == null =>
+                _savedTopicsView(store),
               AsyncData(value: final list)
                   when list.isEmpty && store.reachedStart(widget.chatId) =>
                 Center(child: DatePill(l10n.noMessages)),
@@ -3043,7 +3169,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
                   : _thread != null
                   ? ChatTitleCapsule(
                       title:
-                          _thread!.forumTopic?.name ??
+                          _threadTopicName(l10n) ??
                           (_thread!.chatId == widget.chatId
                               ? _thread!.replyCount == 0
                                     ? l10n.replies
@@ -3053,7 +3179,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
                               : l10n.commentCount(_thread!.replyCount)),
                       avatar: MgIconButton(
                         icon: MgIcons.back,
-                        tooltip: _thread!.isForumTopic
+                        tooltip: _thread!.isStandalone
                             ? l10n.backToTopics
                             : l10n.backToChat,
                         onPressed: _closeThread,
@@ -3085,6 +3211,15 @@ class _ChatViewState extends ConsumerState<ChatView> {
                   : ChatTitleCapsule(
                       title: chat?.title ?? '',
                       titleIcon: secret == null ? null : const SecretChatLock(),
+                      avatar: _saved
+                          ? MgIconButton(
+                              icon: MgIcons.list,
+                              tooltip: _savedOpen
+                                  ? l10n.savedShowAsMessages
+                                  : l10n.savedShowAsChats,
+                              onPressed: _toggleSaved,
+                            )
+                          : null,
                       subtitle: secret == null
                           ? ''
                           : secretChatStatusText(
@@ -3180,7 +3315,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
                 ?_sponsoredCard(store),
                 if (_thread case final thread?)
                   _threadComposer(l10n, thread)
-                else if (_forum)
+                else if (_forum || _savedOpen)
                   const SizedBox.shrink()
                 else if (_scheduledOpen)
                   _scheduledBar(l10n)

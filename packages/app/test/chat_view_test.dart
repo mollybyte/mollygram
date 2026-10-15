@@ -1243,6 +1243,77 @@ void main() {
     expect(find.byType(LocationContent), findsOneWidget);
   });
 
+  testWidgets('shows Saved Messages as the chats they came from', (
+    tester,
+  ) async {
+    json.push({
+      '@type': 'updateOption',
+      'name': 'my_id',
+      'value': {'@type': 'optionValueInteger', 'value': 7},
+    });
+    json.push(
+      _chat(
+        lastRead: 13,
+        unread: 0,
+        last: 13,
+        type: {'@type': 'chatTypePrivate', 'user_id': 7},
+      ),
+    );
+    await pump(tester);
+    await tester.tap(find.byTooltip('Show as chats'));
+    await tester.pump();
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    expect(
+      json.sent.where((r) => r['@type'] == 'loadSavedMessagesTopics'),
+      isNotEmpty,
+    );
+    for (final (id, type, order) in [
+      (1, {'@type': 'savedMessagesTopicTypeMyNotes'}, 5),
+      (2, {'@type': 'savedMessagesTopicTypeSavedFromChat', 'chat_id': 7}, 9),
+    ]) {
+      json.push({
+        '@type': 'updateSavedMessagesTopic',
+        'topic': {
+          '@type': 'savedMessagesTopic',
+          'id': id,
+          'type': type,
+          'is_pinned': id == 1,
+          'order': order,
+          'last_message': _message(
+            id: 40 + id,
+            senderId: 2,
+            text: 'Saved $id',
+          ).toJson(),
+        },
+      });
+    }
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    expect(find.text('My notes'), findsOneWidget);
+    expect(find.text('Saved 2'), findsOneWidget);
+    // Pinned first, whatever the order.
+    final rows = tester.getTopLeft(find.byKey(const ValueKey('saved-topic-1')));
+    expect(
+      rows.dy,
+      lessThan(
+        tester.getTopLeft(find.byKey(const ValueKey('saved-topic-2'))).dy,
+      ),
+    );
+
+    await tester.tap(find.byKey(const ValueKey('saved-topic-2')));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    final history = json.sent.lastWhere(
+      (r) => r['@type'] == 'getSavedMessagesTopicHistory',
+    );
+    expect(history['saved_messages_topic_id'], 2);
+    expect(find.text('Kept for later'), findsOneWidget);
+    expect(find.byTooltip('Back to topics'), findsOneWidget);
+  });
+
   testWidgets('puts a switch-to-inline button\'s query in the composer', (
     tester,
   ) async {
@@ -3214,6 +3285,20 @@ final class _FakeTdJson implements td.TdJson {
       },
       'getUser' when decoded['user_id'] == 2 => _user(2, 'Boris'),
       'getMe' => _user(7, 'Me', '79990000000'),
+      'getUser' when decoded['user_id'] == 7 => _user(7, 'Me'),
+      'getSavedMessagesTopicHistory' => {
+        '@type': 'messages',
+        'total_count': 1,
+        'messages': [
+          {
+            ..._message(id: 52, senderId: 2, text: 'Kept for later').toJson(),
+            'topic_id': {
+              '@type': 'messageTopicSavedMessages',
+              'saved_messages_topic_id': 2,
+            },
+          },
+        ],
+      },
       'getMapThumbnailFile' => _stickerFile(900),
       'getUser' when decoded['user_id'] == 50 => {
         ..._user(50, 'GIF Search'),

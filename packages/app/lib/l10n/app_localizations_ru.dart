@@ -2297,6 +2297,23 @@ class AppLocalizationsRu extends AppLocalizations {
   String get backToTopics => 'Назад к темам';
 
   @override
+  String get savedShowAsChats => 'Показать как чаты';
+
+  @override
+  String get savedShowAsMessages => 'Показать как сообщения';
+
+  @override
+  String get savedMyNotes => 'Мои заметки';
+
+  @override
+  String get savedHiddenAuthor => 'Скрытый автор';
+
+  @override
+  String deleteSavedTopicConfirm(String name) {
+    return 'Удалить всё сохранённое из «$name»?';
+  }
+
+  @override
   String get noTopics => 'Тем пока нет';
 
   @override
