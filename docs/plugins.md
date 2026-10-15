@@ -51,7 +51,7 @@ settings:
     options: [{ value: auto, label: Auto-detect }, { value: en, label: English }]
 ```
 
-An unknown field, permission or hook makes the manifest invalid: nothing is silently ignored. Errors are collected into a list and shown at install time.
+An unknown field, permission or hook makes the manifest invalid: nothing is silently ignored. The id names the plugin's folder, so device names such as `con` or `nul` are not allowed in it. Errors are collected into a list and shown at install time.
 
 ## Permissions
 
@@ -91,7 +91,7 @@ A plugin subscribes with `mg.on(event, handler)`, only during load and only to e
 | `notification.incoming` | intercept | `notifications.manage` | `{chatId, messageId, title, body}` | `{cancel}`, `{modify}` or `{defer: seconds}` |
 | `settings.changed` | observe | | `{key, value}` | |
 
-`message.render.code` hands a plugin one code block (a `pre` entity) and its language, not the message: without `messages.read` the host passes `message` on as `{chatId, id}` only, and the app may leave it out. A `code` node is used only when its spans spell exactly the code it was given, so a plugin can color a block but never change what it says; a node has at most 8000 spans.
+`message.render.code` hands a plugin one code block (a `pre` entity) and its language, not the message: without `messages.read` the host passes `message` on as `{chatId, id}` only, and the app may leave it out. A `code` node is used only when its spans spell exactly the code it was given, so a plugin can color a block but never change what it says; a node has at most 8000 spans of up to 4000 characters each. Code blocks are message text, so a plugin that hooks `message.render.code` and also has `net` must declare `messages.read: all`, and the consent sheet lists the hook ("Message rendering").
 
 Events marked 1.1 arrived in SDK 1.1 for the built-in plugins from `forks-research.md` (items 8 and 9); existing events did not change. A plugin that subscribes to them declares `sdk: ^1.1`, otherwise the manifest is invalid.
 
@@ -165,9 +165,9 @@ The Plugins page of the settings window (`packages/app/lib/src/settings/plugins_
 
 `packages/app/lib/src/plugins` connects the sandbox to the app:
 
-- **Installing.** "Install from file…" asks for a plugin's `manifest.yaml`; its folder is loaded with `PluginBundle.load`, so an invalid manifest, a symlink out of the folder or code over 2 MB is refused with the host's errors. Nothing is copied until the user allows the access. The manifest and code are then copied to `plugins/bundles/<id>` in the app support folder, so the plugin no longer depends on the original file. Choices (on or off, settings, update time) are kept in `plugins/state.json`.
-- **Updating.** Picking a plugin that is already installed is an update. An older version is refused; one that asks for nothing new replaces the old at once; one that asks for more waits on the plugin's page ("Version 1.1.0 asks for more access", Review…), and the old version keeps running until the user allows the new access.
-- **Running.** A plugin runs in a `PluginWorker` only once the app has an event it hooks, and only for the events the app delivers so far: `message.render.code`. Turning it off, updating or uninstalling stops it; the host disabling it after failures is shown on its page. Host services beyond `ui.toast` and `text.detectLanguage` are not offered yet and fail with the `unavailable` code.
+- **Installing.** "Install from file…" asks for a plugin's `manifest.yaml` (no other file is accepted); its folder is loaded with `PluginBundle.load`, so an invalid manifest, a manifest or code linked from outside the folder, or code over 2 MB is refused with the host's errors. Nothing is copied until the user allows the access, and only the exact manifest the user approved is installed: a declined install is forgotten, and a failed copy leaves nothing installed and says why. The manifest and code are then copied to `plugins/bundles/<id>` in the app support folder, so the plugin no longer depends on the original file. The copy is written next to the old one and swapped in, and a folder is only loaded when its manifest has the folder's id. Choices (on or off, settings, update time) are kept in `plugins/state.json`; an unreadable one is kept aside as `state.json.bak`.
+- **Updating.** Picking a plugin that is already installed is an update. An older version or the same version is refused; a newer one that asks for nothing new replaces the old at once; one that asks for more waits on the plugin's page ("Version 1.1.0 asks for more access", Review…), and the old version keeps running until the user allows the new access.
+- **Running.** A plugin runs in a `PluginWorker` only once the app has an event it hooks, and only for the events the app delivers so far: `message.render.code`. Turning it off, updating or uninstalling stops it; the host disabling it, after failures or a load error, is shown on its page. The app also gives up on a plugin that does not start within 10 s or answer within 6 s, and a worker isolate that exits is reported as disabled. Host services beyond `ui.toast` and `text.detectLanguage` are not offered yet and fail with the `unavailable` code.
 - **Code blocks.** `FormattedTextView` asks the running plugins for each `pre` block of a message (up to 4096 characters), in install order, and colors it with the first valid answer, using the theme's colors for each token.
 
 ## Distribution

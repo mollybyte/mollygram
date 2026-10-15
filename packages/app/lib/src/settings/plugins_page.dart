@@ -472,16 +472,26 @@ class ConsentSheet extends StatelessWidget {
     final e = request.entry;
     final name = _name(s, e);
     final update = request.update;
-    final rows = s.accessRows(request.permissions);
+    // For an update, only the hooks it adds; render.code hands the plugin
+    // message text, so it is disclosed too.
+    final hooks = [
+      for (final h in update?.manifest.hooks ?? e.manifest.hooks)
+        if (update == null || !e.manifest.hooks.contains(h)) h,
+    ];
+    final rows = s.accessRows(request.permissions, hooks: hooks);
     final title = update == null
         ? s.installTitle(name)
         : s.updateTitle(name, update.manifest.version);
+    final warn = rows.any((r) => r.warning);
     void allow() => Navigator.of(context).pop(true);
     return CallbackShortcuts(
-      bindings: {
-        const SingleActivator(LogicalKeyboardKey.enter): allow,
-        const SingleActivator(LogicalKeyboardKey.numpadEnter): allow,
-      },
+      // Reading all messages is not something to allow by pressing Return.
+      bindings: warn
+          ? const {}
+          : {
+              const SingleActivator(LogicalKeyboardKey.enter): allow,
+              const SingleActivator(LogicalKeyboardKey.numpadEnter): allow,
+            },
       child: Focus(
         autofocus: true,
         child: Semantics(
@@ -545,7 +555,7 @@ class ConsentSheet extends StatelessWidget {
                       children: [for (final r in rows) _AccessRowView(r)],
                     ),
                   ),
-                  if (rows.any((r) => r.warning)) ...[
+                  if (warn) ...[
                     const SizedBox(height: 10),
                     Container(
                       padding: const EdgeInsets.symmetric(

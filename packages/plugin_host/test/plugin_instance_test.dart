@@ -182,6 +182,16 @@ void main() {
       expect(codeSpansFor((r as EventHandled).ui, 'main() {}'), isNull);
     });
 
+    test('spans that are not a list are invalid UI', () async {
+      final p = load(
+        'mg.on("message.render.code", () => [{type: "code", spans: "x"}])',
+        m: manifest(hooks: '  - message.render.code'),
+      );
+      final r = await p.dispatch(PluginEvent.messageRenderCode, payload);
+      expect(r, isA<EventSkipped>());
+      expect(p.logs.last, contains('spans'));
+    });
+
     test('too many spans are invalid UI', () async {
       final p = load(
         'mg.on("message.render.code", () => [{type: "code", spans: '

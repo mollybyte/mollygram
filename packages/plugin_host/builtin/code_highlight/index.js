@@ -52,6 +52,7 @@ const grammars = {
         line: ["//"],
         block: true,
         types: true,
+        lifetimes: true,
     },
     c: {
         keywords: words(`${literals} ${cLike} class public private protected
@@ -90,7 +91,9 @@ const grammars = {
         caseless: true,
     },
 };
+grammars.css = { keywords: words("important"), line: [], block: true, types: false };
 const aliases = {
+    scss: "css", less: "css",
     javascript: "js", typescript: "js", ts: "js", jsx: "js", tsx: "js",
     json: "js", py: "python", golang: "go", rs: "rust", cpp: "c", "c++": "c",
     h: "c", hpp: "c", cs: "java", csharp: "java", kotlin: "java", kt: "java",
@@ -103,9 +106,10 @@ const generic = {
     continue return function func fn def class struct enum interface import
     export from package var let const final static public private new try
     catch finally throw async await`),
-    line: ["//", "#"],
+    line: ["//"],
     block: true,
     types: true,
+    hashAtLineStart: true,
 };
 function grammarOf(language) {
     const name = (language ?? "").trim().toLowerCase();
@@ -116,6 +120,9 @@ const numberRe = /0[xX][\da-fA-F_]+|0[bB][01_]+|\d[\d_]*(?:\.\d+)?(?:[eE][+-]?\d
 const nameRe = /[A-Za-z_$][\w$]*/y;
 const spaceRe = /\s+/y;
 const callRe = /\s*\(/y;
+const charRe = /'(?:\\.|[^\\'\n])'/y;
+// Spans stay under the host's 4000-character limit for a text.
+const maxSpan = 4000;
 const isNameStart = /[A-Za-z_$]/;
 const isDigit = /\d/;
 const isWord = /[\w$]/;
@@ -124,15 +131,73 @@ function at(re, code, i) {
     re.lastIndex = i;
     return re.exec(code)?.[0];
 }
+// The end of a quoted string at [i]: a triple-quoted one runs to its
+// closing quotes, a one-quote one to the line end at the latest. A
+// backslash escapes the next character, a line break too (with \r\n).
+function skipString(code, i) {
+    const ch = code[i];
+    const triple = code.startsWith(ch.repeat(3), i) ? ch.repeat(3) : ch;
+    let j = i + triple.length;
+    while (j < code.length && !code.startsWith(triple, j)) {
+        if (code[j] === "\\") {
+            j += code.startsWith("\r\n", j + 1) ? 3 : 2;
+            continue;
+        }
+        if (triple.length === 1 && code[j] === "\n")
+            return j;
+        j += 1;
+    }
+    return Math.min(code.length, j + triple.length);
+}
+// The end of a template literal at [i], including ${...} parts that may
+// hold strings and templates of their own.
+function skipTemplate(code, i) {
+    let j = i + 1;
+    while (j < code.length) {
+        const c = code[j];
+        if (c === "\\")
+            j += 2;
+        else if (c === "`")
+            return j + 1;
+        else if (c === "$" && code[j + 1] === "{")
+            j = skipExpression(code, j + 2);
+        else
+            j += 1;
+    }
+    return code.length;
+}
+// The end of a ${...} expression starting after its "${".
+function skipExpression(code, i) {
+    let depth = 1;
+    let j = i;
+    while (j < code.length) {
+        const c = code[j];
+        if (c === "`")
+            j = skipTemplate(code, j);
+        else if (c === '"' || c === "'")
+            j = skipString(code, j);
+        else {
+            if (c === "{")
+                depth++;
+            else if (c === "}" && --depth === 0)
+                return j + 1;
+            j += 1;
+        }
+    }
+    return code.length;
+}
 function highlight(code, language) {
     const g = grammarOf(language);
     const spans = [];
     const push = (text, token) => {
         const last = spans[spans.length - 1];
-        if (last && last.token === token)
+        if (last && last.token === token && last.text.length + text.length <= maxSpan) {
             last.text += text;
-        else
-            spans.push({ text, token });
+            return;
+        }
+        for (let k = 0; k < text.length; k += maxSpan) {
+            spans.push({ text: text.slice(k, k + maxSpan), token });
+        }
     };
     let i = 0;
     while (i < code.length) {
@@ -143,7 +208,11 @@ function highlight(code, language) {
             i += space.length;
             continue;
         }
-        if (g.line.some((o) => code.startsWith(o, i))) {
+        const hashComment = g.hashAtLineStart &&
+            ch === "#" &&
+            /^[ \t]*$/.test(code.slice(code.lastIndexOf("\n", i - 1) + 1, i)) &&
+            /[ \t#!\n]/.test(code[i + 1] ?? "\n");
+        if (hashComment || g.line.some((o) => code.startsWith(o, i))) {
             const end = code.indexOf("\n", i);
             const stop = end < 0 ? code.length : end;
             push(code.slice(i, stop), "comment");
@@ -157,16 +226,20 @@ function highlight(code, language) {
             i = stop;
             continue;
         }
-        if (ch === '"' || ch === "'" || ch === "`") {
-            const triple = code.startsWith(ch.repeat(3), i) ? ch.repeat(3) : ch;
-            let j = i + triple.length;
-            while (j < code.length && !code.startsWith(triple, j)) {
-                // A one-quote string ends at the line end even when unclosed.
-                if (triple.length === 1 && ch !== "`" && code[j] === "\n")
-                    break;
-                j += code[j] === "\\" ? 2 : 1;
-            }
-            const stop = Math.min(code.length, code.startsWith(triple, j) ? j + triple.length : j);
+        if (ch === "`") {
+            const stop = skipTemplate(code, i);
+            push(code.slice(i, stop), "string");
+            i = stop;
+            continue;
+        }
+        if (ch === "'" && g.lifetimes) {
+            const literal = at(charRe, code, i);
+            push(literal ?? "'", literal ? "string" : "punctuation");
+            i += literal ? literal.length : 1;
+            continue;
+        }
+        if (ch === '"' || ch === "'") {
+            const stop = skipString(code, i);
             push(code.slice(i, stop), "string");
             i = stop;
             continue;

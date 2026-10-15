@@ -90,6 +90,8 @@ List<Map<String, Object?>> validateUi(Object? raw) {
       },
       'row' ||
       'column' => {'type': type, 'children': nodes(n['children'], depth + 1)},
+      'code' when n['spans'] != null && n['spans'] is! List =>
+        throw UiException('"spans" must be a list'),
       'code' when (n['spans'] as List? ?? const []).length > maxCodeSpans =>
         throw UiException('more than $maxCodeSpans code spans'),
       'code' => {

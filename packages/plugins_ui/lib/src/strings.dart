@@ -65,6 +65,14 @@ final class PluginsStrings {
       'A newer version of this plugin is already installed.',
       'Уже установлена более новая версия этого плагина.',
     ),
+    InstallProblem.sameVersion => _t(
+      'This version is already installed.',
+      'Эта версия уже установлена.',
+    ),
+    InstallProblem.notSaved => _t(
+      'Could not install the plugin: ${f.details.join('; ')}',
+      'Не удалось установить плагин: ${f.details.join('; ')}',
+    ),
     InstallProblem.builtIn => _t(
       'This plugin uses the id of a built-in plugin.',
       'Этот плагин использует идентификатор встроенного плагина.',

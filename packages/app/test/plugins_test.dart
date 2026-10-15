@@ -36,9 +36,12 @@ ${permissions.isEmpty ? '' : 'permissions:\n$permissions'}
 /// Colors "final" as a keyword and leaves the rest plain; a [lie] answers
 /// with text that is not the code.
 final class _FakePlugin implements RunningPlugin {
-  _FakePlugin({this.lie = false});
+  _FakePlugin({this.lie = false, this.disabledReason, this.fails = false});
 
   final bool lie;
+
+  /// Throws from dispatch, as a dead isolate would.
+  final bool fails;
   final dispatched = <Map<String, Object?>>[];
   final status = StreamController<PluginStatus>.broadcast();
   var stopped = false;
@@ -48,6 +51,7 @@ final class _FakePlugin implements RunningPlugin {
   @override
   Future<EventOutcome> dispatch(PluginEvent e, Map<String, Object?> p) async {
     dispatched.add(p);
+    if (fails) throw StateError('worker exited');
     final code = p['code']! as String;
     if (lie) {
       return EventHandled(
@@ -81,7 +85,7 @@ final class _FakePlugin implements RunningPlugin {
   @override
   Stream<PluginStatus> get statusChanges => status.stream;
   @override
-  String? get disabledReason => '3 failures in a row';
+  String? disabledReason;
   @override
   void stop() => stopped = true;
 }
@@ -108,7 +112,14 @@ void main() {
     return dir;
   }
 
-  Future<AppPlugins> load({Directory? picked}) => AppPlugins.load(
+  File? manifestOf(Directory? dir) =>
+      dir == null ? null : File('${dir.path}/manifest.yaml');
+
+  Future<AppPlugins> load({
+    Directory? picked,
+    String? loadError,
+    bool fails = false,
+  }) => AppPlugins.load(
     store: store,
     builtin: [
       BuiltinPlugin(
@@ -117,12 +128,12 @@ void main() {
       ),
     ],
     launch: (m, source, {required settings, required locale}) async {
-      final p = _FakePlugin(lie: lie);
+      final p = _FakePlugin(lie: lie, disabledReason: loadError, fails: fails);
       addTearDown(p.close);
       launched.add(p);
       return p;
     },
-    pick: () async => picked,
+    pick: () async => manifestOf(picked),
     locale: 'en',
   );
 
@@ -164,7 +175,7 @@ void main() {
       final updated = await AppPlugins.load(
         store: store,
         builtin: const [],
-        pick: () async => next,
+        pick: () async => manifestOf(next),
       );
       final u = updated.controller;
       await u.installFromFile();
@@ -221,6 +232,87 @@ void main() {
       expect(launched, hasLength(1));
     });
 
+    test('a plugin that fails to load is marked at once', () async {
+      final plugins = await load(loadError: 'load error: SyntaxError');
+      expect(await plugins.highlightCode('final x', null), isNull);
+      final entry = plugins.controller.entry('dev.mollygram.codehighlight')!;
+      expect(entry.disabledReason, 'load error: SyntaxError');
+      expect(launched.single.stopped, isTrue);
+    });
+
+    test('a plugin that throws leaves the block plain', () async {
+      final plugins = await load(fails: true);
+      expect(await plugins.highlightCode('final x', null), isNull);
+    });
+
+    test('uninstalled and installed again, the same code is used', () async {
+      final v1 = await bundle(_manifest('1.0.0'));
+      final plugins = await load(picked: v1);
+      final c = plugins.controller;
+      await c.installFromFile();
+      await c.uninstall('dev.example.stats');
+      expect(store.bundles, isEmpty);
+      expect(c.entry('dev.example.stats')!.installed, isFalse);
+
+      c.requestInstall('dev.example.stats');
+      expect(c.entry('dev.example.stats')!.installed, isTrue);
+      expect(
+        store.bundles['dev.example.stats']!.manifestSource,
+        contains('1.0.0'),
+      );
+    });
+
+    test('a bundle the user did not approve is never written', () async {
+      final v1 = await bundle(_manifest('1.0.0'));
+      final v2 = await bundle(
+        _manifest('2.0.0', permissions: '  net: [api.example.com]'),
+      );
+      var picked = v1;
+      final plugins = await AppPlugins.load(
+        store: store,
+        builtin: const [],
+        pick: () async => manifestOf(picked),
+      );
+      final c = plugins.controller;
+      await c.installFromFile();
+      picked = v2;
+      await c.installFromFile();
+      c.cancelConsent();
+      await c.uninstall('dev.example.stats');
+
+      // Reinstalling asks for v1 and writes v1, not the declined v2.
+      c.requestInstall('dev.example.stats');
+      expect(
+        store.bundles['dev.example.stats']!.manifestSource,
+        contains('1.0.0'),
+      );
+    });
+
+    test('a failed copy is reported and nothing is installed', () async {
+      store.failWrites = true;
+      final plugins = await load(picked: await bundle(_manifest('1.0.0')));
+      final c = plugins.controller;
+      await c.installFromFile();
+      await Future<void>.delayed(Duration.zero);
+      expect(c.entry('dev.example.stats')!.installed, isFalse);
+      expect(c.installFailure?.problem, InstallProblem.notSaved);
+    });
+
+    test('only a manifest.yaml is accepted', () async {
+      final dir = await bundle(_manifest('1.0.0'));
+      final other = File('${dir.path}/plugin.yaml')..writeAsStringSync('x');
+      final plugins = await AppPlugins.load(
+        store: store,
+        builtin: const [],
+        pick: () async => other,
+      );
+      await plugins.controller.installFromFile();
+      expect(
+        plugins.controller.installFailure?.problem,
+        InstallProblem.invalid,
+      );
+    });
+
     test('spans that change the code are ignored', () async {
       lie = true;
       final plugins = await load();
@@ -230,11 +322,52 @@ void main() {
     test('a plugin the host disables is marked on its page', () async {
       final plugins = await load();
       await plugins.highlightCode('final x', null);
-      launched.single.status.add(PluginStatus.disabled);
+      launched.single
+        ..disabledReason = '3 failures in a row'
+        ..status.add(PluginStatus.disabled);
       await Future<void>.delayed(Duration.zero);
       final entry = plugins.controller.entry('dev.mollygram.codehighlight')!;
       expect(entry.disabledReason, '3 failures in a row');
       expect(launched.single.stopped, isTrue);
+    });
+  });
+
+  group('FilePluginStore', () {
+    test('replaces a copy and skips folders that hold another id', () async {
+      final files = FilePluginStore(Directory('${temp.path}/store'));
+      await files.writeBundle(
+        StoredBundle(
+          id: 'dev.example.stats',
+          manifestSource: _manifest('1.0.0'),
+          source: 'v1',
+        ),
+      );
+      await files.writeBundle(
+        StoredBundle(
+          id: 'dev.example.stats',
+          manifestSource: _manifest('1.1.0'),
+          source: 'v2',
+        ),
+      );
+      // A folder named after a built-in, holding something else.
+      await files.writeBundle(
+        StoredBundle(
+          id: 'dev.mollygram.filters',
+          manifestSource: _manifest('9.0.0'),
+          source: 'x',
+        ),
+      );
+      final bundles = await files.readBundles();
+      expect(bundles.single.id, 'dev.example.stats');
+      expect(bundles.single.source, 'v2');
+    });
+
+    test('keeps an unreadable state file aside', () async {
+      final dir = await Directory('${temp.path}/store').create();
+      File('${dir.path}/state.json').writeAsStringSync('{broken');
+      final files = FilePluginStore(dir);
+      expect(await files.readStates(), isEmpty);
+      expect(File('${dir.path}/state.json.bak').readAsStringSync(), '{broken');
     });
   });
 

@@ -153,6 +153,12 @@ enum InstallProblem {
   /// An older version than the one installed.
   older,
 
+  /// The version that is already installed.
+  sameVersion,
+
+  /// Approved, but could not be saved; see [InstallFailure.details].
+  notSaved,
+
   /// Has the id of one of our own plugins.
   builtIn,
 }
@@ -175,6 +181,9 @@ abstract interface class PluginsDelegate {
   Future<void> setEnabled(PluginEntry entry, bool enabled);
   Future<void> setSetting(PluginEntry entry, String key, Object? value);
   Future<void> applyUpdate(PluginEntry entry, PluginUpdate update);
+
+  /// Forgets a picked plugin the user declined to install.
+  void discard(PluginEntry entry);
 
   /// Opens a file picker and returns the chosen plugin, or null. Throws
   /// [ManifestException] for a bundle that is not a valid plugin.
@@ -281,7 +290,11 @@ final class PluginsController extends ChangeNotifier {
   }
 
   void cancelConsent() {
+    final c = _consent;
     _consent = null;
+    // A declined install leaves nothing behind; a declined update stays on
+    // the plugin's page to review later.
+    if (c != null && !c.isUpdate) delegate?.discard(c.entry);
     notifyListeners();
   }
 
@@ -303,12 +316,23 @@ final class PluginsController extends ChangeNotifier {
         update: () => null,
       ),
     );
-    await delegate?.applyUpdate(e, u);
+    try {
+      await delegate?.applyUpdate(e, u);
+    } on Object catch (error) {
+      // The old version stays, with the update still waiting.
+      _replace(e.copyWith(update: () => u));
+      _fail(InstallFailure(InstallProblem.notSaved, details: ['$error']));
+    }
   }
 
   Future<void> _install(PluginEntry e) async {
     _replace(e.copyWith(installed: true, enabled: true));
-    await delegate?.install(e);
+    try {
+      await delegate?.install(e);
+    } on Object catch (error) {
+      _replace(e);
+      _fail(InstallFailure(InstallProblem.notSaved, details: ['$error']));
+    }
   }
 
   Future<void> uninstall(String id) async {
@@ -361,6 +385,7 @@ final class PluginsController extends ChangeNotifier {
     final i = _entries.indexWhere((e) => e.id == picked.id);
     final current = i < 0 ? null : _entries[i];
     if (current != null && current.builtIn) {
+      d.discard(picked);
       _fail(const InstallFailure(InstallProblem.builtIn));
       return;
     }
@@ -369,9 +394,17 @@ final class PluginsController extends ChangeNotifier {
     } else if (!current.installed) {
       _entries[i] = picked.copyWith(installed: false);
     } else {
-      if (compareVersions(picked.manifest.version, current.manifest.version) <
-          0) {
-        _fail(const InstallFailure(InstallProblem.older));
+      final order = compareVersions(
+        picked.manifest.version,
+        current.manifest.version,
+      );
+      if (order <= 0) {
+        d.discard(picked);
+        _fail(
+          InstallFailure(
+            order < 0 ? InstallProblem.older : InstallProblem.sameVersion,
+          ),
+        );
         return;
       }
       // Installing a newer version of an installed plugin is an update:

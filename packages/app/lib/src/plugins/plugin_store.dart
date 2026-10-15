@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
+import 'package:plugin_host/plugin_host.dart';
 
 /// What the user chose for one plugin: on or off, its settings and when it
 /// was last installed or updated.
@@ -87,16 +88,28 @@ final class FilePluginStore implements PluginStore {
 
   @override
   Future<Map<String, PluginState>> readStates() async {
+    final file = File('${(await _dir()).path}/state.json');
+    final String text;
     try {
-      final file = File('${(await _dir()).path}/state.json');
       if (!await file.exists()) return {};
-      final json = jsonDecode(await file.readAsString());
-      if (json is! Map) return {};
+      text = await file.readAsString();
+    } on FileSystemException {
+      return {};
+    }
+    try {
+      final json = jsonDecode(text);
+      if (json is! Map) throw const FormatException('not an object');
       return {
         for (final MapEntry(:key, :value) in json.entries)
           '$key': PluginState.fromJson(value),
       };
-    } on Object {
+    } on FormatException {
+      // Unreadable: kept aside rather than overwritten by the next save.
+      try {
+        await file.copy('${file.path}.bak');
+      } on FileSystemException {
+        // Nothing more to do.
+      }
       return {};
     }
   }
@@ -120,30 +133,48 @@ final class FilePluginStore implements PluginStore {
     final bundles = <StoredBundle>[];
     await for (final dir in root.list()) {
       if (dir is! Directory) continue;
+      final name = dir.uri.pathSegments.lastWhere((s) => s.isNotEmpty);
+      // Copies still being written or replaced.
+      if (name.endsWith('.tmp') || name.endsWith('.old')) continue;
       try {
+        final manifestSource = await File('${dir.path}/manifest.yaml')
+            .readAsString();
+        // The folder must hold the plugin it is named after.
+        if (PluginManifest.parse(manifestSource).id != name) continue;
         bundles.add(
           StoredBundle(
-            id: dir.uri.pathSegments.lastWhere((s) => s.isNotEmpty),
-            manifestSource: await File('${dir.path}/manifest.yaml')
-                .readAsString(),
+            id: name,
+            manifestSource: manifestSource,
             source: await File('${dir.path}/index.js').readAsString(),
           ),
         );
       } on FileSystemException {
-        // A half-written copy: skipped, the user can install it again.
+        // A damaged copy: skipped, the user can install it again.
+      } on ManifestException {
+        // Same.
       }
     }
     return bundles;
   }
 
+  /// Writes the copy next to the old one and swaps them, so a failure
+  /// halfway leaves the installed version as it was.
   @override
   Future<void> writeBundle(StoredBundle bundle) async {
     final dir = await _bundleDir(bundle.id);
-    await dir.create(recursive: true);
-    await File('${dir.path}/index.js')
+    final temp = Directory('${dir.path}.tmp');
+    final old = Directory('${dir.path}.old');
+    for (final d in [temp, old]) {
+      if (await d.exists()) await d.delete(recursive: true);
+    }
+    await temp.create(recursive: true);
+    await File('${temp.path}/index.js')
         .writeAsString(bundle.source, flush: true);
-    await File('${dir.path}/manifest.yaml')
+    await File('${temp.path}/manifest.yaml')
         .writeAsString(bundle.manifestSource, flush: true);
+    if (await dir.exists()) await dir.rename(old.path);
+    await temp.rename(dir.path);
+    if (await old.exists()) await old.delete(recursive: true);
   }
 
   @override
@@ -164,6 +195,9 @@ final class MemoryPluginStore implements PluginStore {
   final Map<String, PluginState> states;
   final Map<String, StoredBundle> bundles;
 
+  /// Makes [writeBundle] fail, as a full disk would.
+  var failWrites = false;
+
   @override
   Future<Map<String, PluginState>> readStates() async => {...states};
 
@@ -178,8 +212,10 @@ final class MemoryPluginStore implements PluginStore {
   Future<List<StoredBundle>> readBundles() async => [...bundles.values];
 
   @override
-  Future<void> writeBundle(StoredBundle bundle) async =>
-      bundles[bundle.id] = bundle;
+  Future<void> writeBundle(StoredBundle bundle) async {
+    if (failWrites) throw const FileSystemException('disk full');
+    bundles[bundle.id] = bundle;
+  }
 
   @override
   Future<void> deleteBundle(String id) async => bundles.remove(id);

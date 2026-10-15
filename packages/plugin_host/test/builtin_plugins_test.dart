@@ -264,6 +264,44 @@ void main() {
       }
     });
 
+    test('a block that is one long comment stays valid', () async {
+      final p = await start('code_highlight');
+      for (final code in ['// ${'x' * 4090}', '/* ${'y' * 4092}']) {
+        final spans = (await highlight(p, code, language: 'js'))!;
+        expect(spans.map((s) => s.text).join(), code);
+        expect(spans.every((s) => s.text.length <= 4000), isTrue);
+      }
+      expect(p.status, PluginStatus.running);
+    });
+
+    test('nested templates, lifetimes and # stay in their place', () async {
+      final p = await start('code_highlight');
+      final js = (await highlight(
+        p,
+        r'const s = `a ${f(`b ${c}`)} d`; x',
+        language: 'ts',
+      ))!;
+      expect(tokenOf(js, r'`a ${f(`b ${c}`)} d`'), 'string');
+      expect(js.last, (text: ' x', token: 'plain'));
+
+      final rust = (await highlight(
+        p,
+        "fn f<'a>(s: &'a str) -> char { 'x' }",
+        language: 'rust',
+      ))!;
+      expect(tokenOf(rust, "'x'"), 'string');
+      // The lifetime is not the start of a string.
+      expect(rust.where((s) => s.token == 'string').map((s) => s.text), [
+        "'x'",
+      ]);
+
+      final c = (await highlight(p, '#include <stdio.h>\n# note'))!;
+      expect(tokenOf(c, '#include'), 'plain');
+      expect(tokenOf(c, '# note'), 'comment');
+      final css = (await highlight(p, 'a { color: #fff; }', language: 'css'))!;
+      expect(css.where((s) => s.token == 'comment'), isEmpty);
+    });
+
     test('highlights the longest message within the time budget', () async {
       final p = await start('code_highlight');
       // A message holds at most 4096 characters.

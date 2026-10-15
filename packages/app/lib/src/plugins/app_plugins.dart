@@ -86,13 +86,28 @@ final class AppPluginServices implements PluginServices {
 }
 
 /// Asks for a plugin's `manifest.yaml`; its folder is the plugin.
-Future<Directory?> pickPluginBundle() async {
+Future<File?> pickPluginManifest() async {
   final file = await openFile(
     acceptedTypeGroups: const [
-      XTypeGroup(label: 'Plugin manifest', extensions: ['yaml', 'yml']),
+      XTypeGroup(label: 'Plugin manifest', extensions: ['yaml']),
     ],
   );
-  return file == null ? null : File(file.path).parent;
+  return file == null ? null : File(file.path);
+}
+
+/// How long the app waits for a plugin to start or to answer an event
+/// before giving up on it; the host's own limits are shorter.
+const launchTimeout = Duration(seconds: 10);
+const eventTimeout = Duration(seconds: 6);
+
+/// An approved plugin that could not be installed.
+final class PluginInstallError implements Exception {
+  const PluginInstallError(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
 }
 
 /// The plugins of this app: the built-in ones and those the user installed,
@@ -113,7 +128,7 @@ final class AppPlugins implements PluginsDelegate {
 
   final PluginStore _store;
   final PluginLauncher _launch;
-  final Future<Directory?> Function() _pick;
+  final Future<File?> Function() _pick;
   final String _locale;
   final Map<String, PluginState> _states;
 
@@ -136,7 +151,7 @@ final class AppPlugins implements PluginsDelegate {
   static Future<AppPlugins> load({
     required PluginStore store,
     PluginLauncher launch = launchInWorker,
-    Future<Directory?> Function() pick = pickPluginBundle,
+    Future<File?> Function() pick = pickPluginManifest,
     List<BuiltinPlugin>? builtin,
     String? locale,
   }) async {
@@ -195,15 +210,21 @@ final class AppPlugins implements PluginsDelegate {
       if (!e.manifest.hooks.contains(PluginEvent.messageRenderCode.id)) {
         continue;
       }
-      final plugin = await _plugin(e.id);
-      if (plugin == null) continue;
-      final outcome = await plugin.dispatch(PluginEvent.messageRenderCode, {
-        'code': code,
-        'language': ?language,
-      });
-      if (outcome is EventHandled) {
-        result = codeSpansFor(outcome.ui, code);
-        if (result != null) break;
+      try {
+        final plugin = await _plugin(e.id);
+        if (plugin == null) continue;
+        final outcome = await plugin
+            .dispatch(PluginEvent.messageRenderCode, {
+              'code': code,
+              'language': ?language,
+            })
+            .timeout(eventTimeout);
+        if (outcome is EventHandled) {
+          result = codeSpansFor(outcome.ui, code);
+          if (result != null) break;
+        }
+      } on Object {
+        // One plugin failing leaves the block to the next one.
       }
     }
     // A change while this ran makes the answer stale: not kept.
@@ -221,26 +242,45 @@ final class AppPlugins implements PluginsDelegate {
     if (e == null || source == null || !e.active || !_delivered(e)) {
       return Future.value();
     }
-    return _running[id] ??= () async {
+    late final Future<RunningPlugin?> starting;
+    starting = _running[id] ??= () async {
+      // Lets `starting` be set before anything below can look at it.
+      await Future<void>.value();
+      final RunningPlugin p;
       try {
-        final p = await _launch(
+        p = await _launch(
           e.manifest,
           source,
           settings: e.settings,
           locale: _locale,
-        );
-        _subscriptions[id] = p.statusChanges.listen((s) {
-          if (s != PluginStatus.disabled) return;
-          controller.markDisabled(id, p.disabledReason ?? '');
-          _stop(id);
-        });
-        return p;
+        ).timeout(launchTimeout);
       } on Object {
         // Could not start: tried again with the next event.
-        unawaited(_running.remove(id));
+        if (identical(_running[id], starting)) unawaited(_running.remove(id));
         return null;
       }
+      // Turned off, updated or uninstalled while it was starting.
+      if (!identical(_running[id], starting)) {
+        p.stop();
+        return null;
+      }
+      void disabled() {
+        controller.markDisabled(id, p.disabledReason ?? '');
+        _stop(id);
+      }
+
+      // A load error is reported before anyone could listen.
+      if (p.disabledReason != null) {
+        p.stop();
+        disabled();
+        return null;
+      }
+      _subscriptions[id] = p.statusChanges.listen((s) {
+        if (s == PluginStatus.disabled) disabled();
+      });
+      return p;
     }();
+    return starting;
   }
 
   static bool _delivered(PluginEntry e) =>
@@ -267,30 +307,44 @@ final class AppPlugins implements PluginsDelegate {
 
   @override
   Future<PluginEntry?> pickFile() async {
-    final dir = await _pick();
-    if (dir == null) return null;
+    final file = await _pick();
+    if (file == null) return null;
+    if (file.uri.pathSegments.last != 'manifest.yaml') {
+      throw ManifestException(["choose the plugin's manifest.yaml"]);
+    }
     final PluginBundle bundle;
-    final String manifestSource;
     try {
-      bundle = await PluginBundle.load(dir);
-      manifestSource = await File('${dir.path}/manifest.yaml').readAsString();
+      bundle = await PluginBundle.load(file.parent);
     } on FileSystemException catch (e) {
       throw ManifestException([e.message]);
     }
     final id = bundle.manifest.id;
     _pending[id] = StoredBundle(
       id: id,
-      manifestSource: manifestSource,
+      manifestSource: bundle.manifestSource,
       source: bundle.source,
     );
-    return PluginEntry.parse(manifestSource);
+    return PluginEntry.parse(bundle.manifestSource);
+  }
+
+  @override
+  void discard(PluginEntry entry) => _pending.remove(entry.id);
+
+  /// The picked bundle for [manifestSource], the text the user approved.
+  StoredBundle _approved(String id, String manifestSource) {
+    final bundle = _pending[id];
+    if (bundle == null ||
+        bundle.manifestSource.trim() != manifestSource.trim()) {
+      throw const PluginInstallError('pick the plugin file again');
+    }
+    return bundle;
   }
 
   @override
   Future<void> install(PluginEntry entry) async {
-    final bundle = _pending.remove(entry.id);
-    if (bundle == null) return;
+    final bundle = _approved(entry.id, entry.manifestSource);
     await _store.writeBundle(bundle);
+    _pending.remove(entry.id);
     _sources[entry.id] = bundle.source;
     _states[entry.id] = PluginState(updatedAt: DateTime.now());
     _save();
@@ -299,9 +353,9 @@ final class AppPlugins implements PluginsDelegate {
 
   @override
   Future<void> applyUpdate(PluginEntry entry, PluginUpdate update) async {
-    final bundle = _pending.remove(entry.id);
-    if (bundle == null) return;
+    final bundle = _approved(entry.id, update.source);
     await _store.writeBundle(bundle);
+    _pending.remove(entry.id);
     _sources[entry.id] = bundle.source;
     _states[entry.id] = (_states[entry.id] ?? const PluginState()).copyWith(
       updatedAt: DateTime.now(),
@@ -314,10 +368,20 @@ final class AppPlugins implements PluginsDelegate {
   @override
   Future<void> uninstall(PluginEntry entry) async {
     _stop(entry.id);
-    _sources.remove(entry.id);
+    await _store.deleteBundle(entry.id);
+    final source = _sources.remove(entry.id);
     _states.remove(entry.id);
     _save();
-    await _store.deleteBundle(entry.id);
+    // It stays under Available: installing it again asks again, for this
+    // very code, and anything picked earlier is forgotten.
+    _pending.remove(entry.id);
+    if (source != null) {
+      _pending[entry.id] = StoredBundle(
+        id: entry.id,
+        manifestSource: entry.manifestSource,
+        source: source,
+      );
+    }
   }
 
   @override
@@ -358,15 +422,15 @@ final pluginStoreProvider = Provider<PluginStore>((ref) => FilePluginStore());
 final pluginLauncherProvider = Provider<PluginLauncher>(
   (ref) => launchInWorker,
 );
-final pluginBundlePickerProvider = Provider<Future<Directory?> Function()>(
-  (ref) => pickPluginBundle,
+final pluginManifestPickerProvider = Provider<Future<File?> Function()>(
+  (ref) => pickPluginManifest,
 );
 
 final appPluginsProvider = FutureProvider<AppPlugins>((ref) async {
   final plugins = await AppPlugins.load(
     store: ref.watch(pluginStoreProvider),
     launch: ref.watch(pluginLauncherProvider),
-    pick: ref.watch(pluginBundlePickerProvider),
+    pick: ref.watch(pluginManifestPickerProvider),
   );
   ref.onDispose(plugins.dispose);
   return plugins;
