@@ -610,6 +610,45 @@ void main() {
     expect(find.text('Editing'), findsNothing);
   });
 
+  testWidgets('comes back to where a chat was left', (tester) async {
+    json.chat = [for (var id = 1; id <= 60; id++) id];
+    json.push(_chat(lastRead: 60, unread: 0, last: 60));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await pump(tester);
+    await tester.pumpAndSettle();
+    final newest = find.textContaining('Message 60', findRichText: true);
+    expect(newest, findsOneWidget);
+
+    // Up a few screens, then away and back.
+    await tester.drag(find.byType(TimelineView), const Offset(0, 1500));
+    await tester.pumpAndSettle();
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+    expect(newest, findsNothing);
+    final shown = tester
+        .widgetList<RichText>(find.byType(RichText))
+        .map((t) => t.text.toPlainText())
+        .where((t) => t.contains('Message '))
+        .toSet();
+    expect(shown, isNotEmpty);
+
+    _shownChat.value = 8;
+    await tester.pump();
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    _shownChat.value = 7;
+    await tester.pump();
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+    expect(newest, findsNothing);
+    final back = tester
+        .widgetList<RichText>(find.byType(RichText))
+        .map((t) => t.text.toPlainText())
+        .where((t) => t.contains('Message '))
+        .toSet();
+    expect(back.intersection(shown), isNotEmpty);
+  });
+
   testWidgets('drops an edit, not the draft, when the chat changes', (
     tester,
   ) async {
