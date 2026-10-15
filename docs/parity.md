@@ -126,8 +126,8 @@ M8 calls and macOS release, M9 after release.
 | Send preview: spoiler, self-destruct timer, compression choice | missing | `hasSpoiler`, `selfDestructType`; uncompressed default planned | S | M2 |
 | Media editor: crop, rotate, flip, aspect presets | done | `packages/media_editor` | | |
 | Media editor: drawing (pen, marker, arrow, eraser, colours, thickness) | done | `packages/media_editor` | | |
-| Media editor: text, stickers and emoji placed on the image | missing | | M | M4 |
-| Media editor: arrows and shapes, blur and pixelate brush | missing | | M | M4 |
+| Media editor: text, stickers and emoji placed on the image | partial | Text and emoji done; stickers need the app’s sticker picker | M | M4 |
+| Media editor: arrows and shapes, blur and pixelate brush | partial | Arrows and shapes done; blur and pixelate next | M | M4 |
 | Media editor: filters and adjustments (brightness, contrast, saturation, warmth, vignette) | missing | | M | M4 |
 | Video editor: trim, mute, cover frame, quality | missing | `VideoEditorModalController` | M | M4 |
 | Slowmode and restriction notices | missing | | S | M2 |
@@ -169,13 +169,13 @@ M8 calls and macOS release, M9 after release.
 
 | Feature | Status | Notes | Size | M |
 |---|---|---|---|---|
-| User profile: photo, bio, username, phone, birthday, actions | missing | `PeerInfoController` | M | M1 |
-| Group and channel info: description, link, members count | missing | | M | M1 |
-| Shared media tabs: media, files, links, voice, music, GIFs, groups in common | partial | `SharedMediaView` has media, files, links, voice, music; GIFs and groups in common missing; shown once the profile panel hosts it | M | M2 |
-| Members list with search | missing | | M | M6 |
+| User profile: photo, bio, username, phone, birthday, actions | done | `PeerInfoController` in core, inspector panel in `app/lib/src/profile` | | |
+| Group and channel info: description, link, members count | done | First 50 members, most recently active first | | |
+| Shared media tabs: media, files, links, voice, music, GIFs, groups in common | partial | `SharedMediaView` has media, files, links, voice, music; GIFs and groups in common missing; in the info panel | M | M2 |
+| Members list with search | partial | First page in the info panel, no search or paging | M | M6 |
 | Profile photo gallery | missing | | S | M2 |
-| Per-chat notifications and auto-delete timer | missing | | S | M1 |
-| Block, report, share contact | missing | | S | M6 |
+| Per-chat notifications and auto-delete timer | partial | Mute and unmute in the info panel; no mute-for durations, no auto-delete | S | M1 |
+| Block, report, share contact | partial | Block and unblock in the info panel | S | M6 |
 
 ### Groups, channels and admin tools
 

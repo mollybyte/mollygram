@@ -27,6 +27,7 @@ import '../chat/message_tile.dart';
 import '../chat/timeline_scroll.dart';
 import '../chat/timeline_view.dart';
 import '../chat_search/chat_search_bar.dart';
+import '../profile/peer_info_state.dart';
 import '../session/providers.dart';
 import '../voice/voice_record_composer.dart';
 import '../window_drag_area.dart';
@@ -1035,7 +1036,10 @@ class _ChatViewState extends ConsumerState<ChatView> {
                         onClose: _closeSearch,
                       ),
                     )
-                  : ChatTitleCapsule(title: chat?.title ?? ''),
+                  : ChatTitleCapsule(
+                      title: chat?.title ?? '',
+                      onTap: () => togglePeerInfo(ref, widget.chatId),
+                    ),
               actions: const SizedBox.shrink(),
               fill: const WindowDragArea(),
             ),

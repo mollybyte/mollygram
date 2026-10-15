@@ -64,28 +64,42 @@ class DrawPanel extends StatelessWidget {
           duration: const Duration(milliseconds: 160),
           child: IgnorePointer(
             ignoring: erasing,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (final swatch in brushColors)
-                  _Swatch(
-                    color: swatch,
-                    selected: swatch == color,
-                    label: s.color,
-                    onPressed: () => onColor(swatch),
-                  ),
-              ],
-            ),
+            child: ColorSwatches(color: color, onColor: onColor),
           ),
         ),
         const EditorDivider(),
-        _ThicknessSlider(
+        EditorSlider(
           value: thickness,
           color: erasing ? c.fg2 : color,
           label: s.thickness,
           onChanged: onThickness,
         ),
         const SizedBox(width: 8),
+      ],
+    );
+  }
+}
+
+/// The row of [brushColors], the current one ringed.
+class ColorSwatches extends StatelessWidget {
+  const ColorSwatches({super.key, required this.color, required this.onColor});
+
+  final Color color;
+  final ValueChanged<Color> onColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = MediaEditorStrings.of(context);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final swatch in brushColors)
+          _Swatch(
+            color: swatch,
+            selected: swatch == color,
+            label: s.color,
+            onPressed: () => onColor(swatch),
+          ),
       ],
     );
   }
@@ -169,8 +183,9 @@ class _SwatchState extends State<_Swatch> {
 
 /// A short slider whose thumb is a dot of the current color and whose
 /// track thickens from left to right.
-class _ThicknessSlider extends StatelessWidget {
-  const _ThicknessSlider({
+class EditorSlider extends StatelessWidget {
+  const EditorSlider({
+    super.key,
     required this.value,
     required this.color,
     required this.label,

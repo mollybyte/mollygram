@@ -9,6 +9,7 @@ import 'package:image/image.dart' as img;
 
 import '../model/media_edit.dart';
 import '../model/stroke.dart';
+import 'overlays.dart';
 import 'strokes.dart';
 
 /// Paints the edited picture so that [viewport], a rectangle of the
@@ -57,6 +58,7 @@ void paintEdited(
     )
     ..restore();
   paintStrokes(canvas, edit.strokes, oriented, live: liveStroke);
+  paintOverlays(canvas, edit.overlays, oriented);
   if (opacity < 1) canvas.restore();
   canvas.restore();
 }
