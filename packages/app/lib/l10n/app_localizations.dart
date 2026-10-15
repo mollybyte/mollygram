@@ -4268,6 +4268,90 @@ abstract class AppLocalizations {
   /// **'Deleted chat'**
   String get folderDeletedChat;
 
+  /// No description provided for @accounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Accounts'**
+  String get accounts;
+
+  /// No description provided for @accountsAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to {count} accounts, each with its own chats and tabs.'**
+  String accountsAbout(int count);
+
+  /// No description provided for @addAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Add account'**
+  String get addAccount;
+
+  /// No description provided for @accountNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Account {number}'**
+  String accountNumber(int number);
+
+  /// No description provided for @switchToAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to {name}'**
+  String switchToAccount(String name);
+
+  /// No description provided for @notSignedIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Not signed in'**
+  String get notSignedIn;
+
+  /// No description provided for @logOutAccountTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Log out of {name}?'**
+  String logOutAccountTitle(String name);
+
+  /// No description provided for @backToAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to {name}'**
+  String backToAccount(String name);
+
+  /// No description provided for @loggingOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Logging out…'**
+  String get loggingOut;
+
+  /// No description provided for @accountsFull.
+  ///
+  /// In en, this message translates to:
+  /// **'That\'s the limit of {count} accounts. Log out of one to add another.'**
+  String accountsFull(int count);
+
+  /// No description provided for @accountsLegacy.
+  ///
+  /// In en, this message translates to:
+  /// **'The data folder from an earlier version couldn\'t be moved, so only this account can be used. Restart Mollygram to try again.'**
+  String get accountsLegacy;
+
+  /// No description provided for @duplicateAccountTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is already signed in here'**
+  String duplicateAccountTitle(String name);
+
+  /// No description provided for @duplicateAccountMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to it and log out of this copy?'**
+  String get duplicateAccountMessage;
+
+  /// No description provided for @switchAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch'**
+  String get switchAccount;
+
   /// No description provided for @proxy.
   ///
   /// In en, this message translates to:

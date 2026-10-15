@@ -47,6 +47,12 @@ final telegramSessionProvider = FutureProvider<TelegramSession>((ref) async {
       await _forgetAccount(ref);
     }
   }
+  // Replaced while starting (another account was opened): nothing else
+  // will close this client, and it holds the account's database lock.
+  if (!ref.mounted) {
+    await session.dispose();
+    throw StateError('The session was replaced while it started');
+  }
   // A switch flipped while the session was starting.
   session.privacySettings = ref.read(privacySettingsProvider);
   // Online while the window is active, as the official client is.

@@ -962,6 +962,41 @@
   "leaveFailed": "Couldn't leave. Try again.",
   "deleteFailed": "Couldn't delete it. Try again.",
   "folderDeletedChat": "Deleted chat",
+  "accounts": "Accounts",
+  "accountsAbout": "Up to {count} accounts, each with its own chats and tabs.",
+  "@accountsAbout": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "addAccount": "Add account",
+  "accountNumber": "Account {number}",
+  "@accountNumber": {
+    "placeholders": { "number": { "type": "int" } }
+  },
+  "switchToAccount": "Switch to {name}",
+  "@switchToAccount": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "notSignedIn": "Not signed in",
+  "logOutAccountTitle": "Log out of {name}?",
+  "@logOutAccountTitle": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "backToAccount": "Back to {name}",
+  "@backToAccount": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "loggingOut": "Logging out…",
+  "accountsFull": "That's the limit of {count} accounts. Log out of one to add another.",
+  "@accountsFull": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "accountsLegacy": "The data folder from an earlier version couldn't be moved, so only this account can be used. Restart Mollygram to try again.",
+  "duplicateAccountTitle": "{name} is already signed in here",
+  "@duplicateAccountTitle": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "duplicateAccountMessage": "Switch to it and log out of this copy?",
+  "switchAccount": "Switch",
   "proxy": "Proxy",
   "useProxy": "Use proxy",
   "proxyHint": "Telegram connects through the selected proxy. Ping shows the round trip in milliseconds.",
