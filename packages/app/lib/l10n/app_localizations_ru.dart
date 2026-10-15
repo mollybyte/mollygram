@@ -1638,6 +1638,15 @@ class AppLocalizationsRu extends AppLocalizations {
   String get noEmojiFound => 'Эмодзи не найдены';
 
   @override
+  String get stickerSearch => 'Поиск стикеров';
+
+  @override
+  String get noStickersFound => 'Стикеры не найдены';
+
+  @override
+  String get stickerSearchResults => 'Найдено';
+
+  @override
   String get emojiSmileys => 'Смайлы';
 
   @override

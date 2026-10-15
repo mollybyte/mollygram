@@ -65,7 +65,11 @@ class EmojiStickerPanel extends ConsumerWidget {
             onEmoji(emoji);
           },
         ),
-        _StickerTab(library: session.stickers, onPick: onSticker),
+        _StickerTab(
+          library: session.stickers,
+          languages: {language, 'en'}.toList(),
+          onPick: onSticker,
+        ),
       ],
     );
   }
@@ -93,9 +97,16 @@ final class _StickerSection {
 }
 
 class _StickerTab extends StatefulWidget {
-  const _StickerTab({required this.library, required this.onPick});
+  const _StickerTab({
+    required this.library,
+    required this.languages,
+    required this.onPick,
+  });
 
   final StickerLibrary library;
+
+  /// The languages a search understands, such as `ru` and `en`.
+  final List<String> languages;
   final ValueChanged<td.Sticker> onPick;
 
   @override
@@ -108,7 +119,50 @@ class _StickerTabState extends State<_StickerTab> {
   var _section = 0;
   var _failed = false;
 
+  /// The search: its text, the stickers found for it (null while they
+  /// load) and a counter that drops stale answers.
+  var _query = '';
+  List<td.Sticker>? _found;
+  var _searchId = 0;
+  Timer? _debounce;
+
   static const double _cell = 66;
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _onQuery(String value) {
+    final text = value.trim();
+    _debounce?.cancel();
+    final id = ++_searchId;
+    if (text.isEmpty) {
+      setState(() {
+        _query = '';
+        _found = null;
+      });
+      return;
+    }
+    setState(() {
+      _query = text;
+      _found = null;
+    });
+    _debounce = Timer(const Duration(milliseconds: 200), () async {
+      List<td.Sticker> found;
+      try {
+        found = await widget.library.searchStickers(
+          text,
+          languages: widget.languages,
+        );
+      } on Object {
+        found = const [];
+      }
+      if (!mounted || id != _searchId) return;
+      setState(() => _found = found);
+    });
+  }
 
   @override
   void didChangeDependencies() {
@@ -193,44 +247,79 @@ class _StickerTabState extends State<_StickerTab> {
             )
           : const SizedBox.shrink();
     }
-    if (sections.isEmpty) {
-      return Center(
+    final searching = _query.isNotEmpty;
+    final found = _found;
+    final Widget body;
+    if (searching) {
+      body = found == null
+          ? const SizedBox.shrink()
+          : found.isEmpty
+          ? Center(
+              child: Text(
+                l10n.noStickersFound,
+                style: mgTextStyle(c, color: c.fg2),
+              ),
+            )
+          : SectionedGrid(
+              key: ValueKey(_query),
+              cellExtent: _cell,
+              sections: [
+                GridSection(
+                  title: l10n.stickerSearchResults,
+                  count: found.length,
+                  builder: (context, i) => _StickerCell(
+                    sticker: found[i],
+                    onTap: () => widget.onPick(found[i]),
+                  ),
+                ),
+              ],
+            );
+    } else if (sections.isEmpty) {
+      body = Center(
         child: Text(l10n.noStickerSets, style: mgTextStyle(c, color: c.fg2)),
+      );
+    } else {
+      body = SectionedGrid(
+        cellExtent: _cell,
+        controller: _grid,
+        onSection: (section) => setState(() => _section = section),
+        sections: [
+          for (final section in sections)
+            GridSection(
+              title: section.title,
+              count: section.count,
+              builder: (context, i) {
+                final stickers = section.stickers;
+                if (stickers == null || i >= stickers.length) {
+                  return const SizedBox.shrink();
+                }
+                return _StickerCell(
+                  sticker: stickers[i],
+                  onTap: () => widget.onPick(stickers[i]),
+                );
+              },
+            ),
+        ],
       );
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Expanded(
-          child: SectionedGrid(
-            cellExtent: _cell,
-            controller: _grid,
-            onSection: (section) => setState(() => _section = section),
-            sections: [
-              for (final section in sections)
-                GridSection(
-                  title: section.title,
-                  count: section.count,
-                  builder: (context, i) {
-                    final stickers = section.stickers;
-                    if (stickers == null || i >= stickers.length) {
-                      return const SizedBox.shrink();
-                    }
-                    return _StickerCell(
-                      sticker: stickers[i],
-                      onTap: () => widget.onPick(stickers[i]),
-                    );
-                  },
-                ),
-            ],
+        Padding(
+          padding: const EdgeInsets.fromLTRB(10, 8, 10, 4),
+          child: MgSearchField(
+            hintText: l10n.stickerSearch,
+            onChanged: _onQuery,
           ),
         ),
-        PanelSectionBar(
-          selected: _section,
-          labels: [for (final section in sections) section.title],
-          items: [for (final section in sections) section.icon],
-          onSelect: _grid.jumpTo,
-        ),
+        Expanded(child: body),
+        if (!searching && sections.isNotEmpty)
+          PanelSectionBar(
+            selected: _section,
+            labels: [for (final section in sections) section.title],
+            items: [for (final section in sections) section.icon],
+            onSelect: _grid.jumpTo,
+          ),
       ],
     );
   }

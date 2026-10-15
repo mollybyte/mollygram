@@ -1886,6 +1886,42 @@ void main() {
     expect(find.byType(EmojiPanel), findsNothing);
   });
 
+  testWidgets('finds stickers by a word in the panel', (tester) async {
+    await pump(tester);
+    await tester.tap(find.byTooltip('Emoji and stickers'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.tap(find.text('Stickers'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+
+    final field = find.byWidgetPredicate(
+      (w) => w is TextField && w.decoration?.hintText == 'Search stickers',
+    );
+    await tester.enterText(field, 'love');
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+
+    final search = json.sent.lastWhere((r) => r['@type'] == 'searchStickers');
+    expect(search['query'], 'love');
+    expect(search['input_language_codes'], contains('en'));
+    expect(find.text('Found'), findsOneWidget);
+    // The sets' bar steps aside for the results.
+    expect(find.text('Cats'), findsNothing);
+
+    await tester.tap(find.bySemanticsLabel('😻'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    final send = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    expect(
+      ((send['input_message_content']! as Map)['sticker']! as Map)['sticker'],
+      {'@type': 'inputFileId', 'id': 304},
+    );
+  });
+
   testWidgets('sends a sticker from the panel and closes it', (tester) async {
     await pump(tester);
     await tester.tap(find.byTooltip('Emoji and stickers'));
@@ -2215,6 +2251,10 @@ final class _FakeTdJson implements td.TdJson {
         'stickers': [_sticker(1, '🐱')],
       },
       'getFavoriteStickers' => {'@type': 'stickers', 'stickers': <Object?>[]},
+      'searchStickers' => {
+        '@type': 'stickers',
+        'stickers': [_sticker(4, '😻')],
+      },
       'getInstalledStickerSets' => {
         '@type': 'stickerSets',
         'total_count': 1,
