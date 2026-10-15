@@ -10,6 +10,8 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../links/link_router.dart';
 import '../plugins/code_highlight.dart';
+import 'custom_emoji.dart';
+import 'media_content.dart' show StickerContent;
 
 /// A stretch of a message's text the user has selected, as a quote to
 /// reply with: [position] is its offset in the text, in UTF-16 units as
@@ -76,20 +78,39 @@ class _FormattedTextViewState extends ConsumerState<FormattedTextView> {
     super.dispose();
   }
 
-  /// The spans are all text, so the offsets of the selection are those
-  /// of the message's text; only [trailing] comes after it.
+  /// The offsets of the selection are those of the message's text, except
+  /// that a custom emoji drawn as a sticker takes one position in place
+  /// of its text; only [trailing] comes after it.
   void _onSelection() {
     final onSelection = widget.onSelection;
     if (onSelection == null || !_selection.registered) return;
     final range = _selection.selection.range;
     final s = widget.text.text;
     if (range == null) return onSelection(null);
-    final start = math
-        .min(range.startOffset, range.endOffset)
+    final start = _textOffset(math.min(range.startOffset, range.endOffset))
         .clamp(0, s.length);
-    final end = math.max(range.startOffset, range.endOffset).clamp(0, s.length);
+    final end = _textOffset(math.max(range.startOffset, range.endOffset))
+        .clamp(0, s.length);
     if (start >= end) return onSelection(null);
     onSelection(QuoteSelection(text: s.substring(start, end), position: start));
+  }
+
+  /// Custom emoji drawn as stickers in the last build, by offset in the
+  /// text, with their length.
+  final _drawn = <int, int>{};
+
+  /// The offset in the message's text of [rendered], an offset among the
+  /// spans as laid out.
+  int _textOffset(int rendered) {
+    var offset = rendered;
+    var shift = 0;
+    for (final at in _drawn.keys.toList()..sort()) {
+      if (at - shift >= rendered) break;
+      final extra = _drawn[at]! - 1;
+      shift += extra;
+      offset += extra;
+    }
+    return offset;
   }
 
   void _disposeRecognizers() {
@@ -101,13 +122,41 @@ class _FormattedTextViewState extends ConsumerState<FormattedTextView> {
 
   @override
   Widget build(BuildContext context) {
+    final emoji = ref.watch(customEmojiProvider);
+    return ListenableBuilder(
+      listenable: emoji,
+      builder: (context, _) => _build(context, emoji),
+    );
+  }
+
+  Widget _build(BuildContext context, CustomEmojiCache emoji) {
     _disposeRecognizers();
+    _drawn.clear();
     final c = MgColors.of(context);
+    final fontSize =
+        widget.style?.fontSize ??
+        DefaultTextStyle.of(context).style.fontSize ??
+        MgType.body;
     final spans = buildEntitySpans(
       widget.text,
       colors: c,
       revealed: _revealed,
       highlights: _highlights(),
+      onCustomEmoji: (id, offset, length) {
+        final sticker = emoji.lookup(id);
+        if (sticker == null) return null;
+        _drawn[offset] = length;
+        final side = fontSize * 1.3;
+        return WidgetSpan(
+          alignment: PlaceholderAlignment.middle,
+          child: StickerContent(
+            sticker: sticker,
+            side: side,
+            animate: false,
+            lazy: true,
+          ),
+        );
+      },
       onLink: (url) {
         final r = TapGestureRecognizer()
           ..onTap = () => openLinkFrom(context, url);
@@ -193,6 +242,8 @@ List<InlineSpan> buildEntitySpans(
   GestureRecognizer Function(String hashtag)? onHashtag,
   GestureRecognizer Function(String command)? onBotCommand,
   GestureRecognizer Function(int offset)? onSpoiler,
+  InlineSpan? Function(int customEmojiId, int offset, int length)?
+  onCustomEmoji,
 }) {
   final s = text.text;
   final entities = [
@@ -200,6 +251,17 @@ List<InlineSpan> buildEntitySpans(
       if (e.length > 0 && e.offset >= 0 && e.offset + e.length <= s.length) e,
   ];
   if (entities.isEmpty) return [TextSpan(text: s)];
+  // A custom emoji drawn as a sticker replaces its text; the emoji text
+  // stays when the sticker isn't known.
+  final drawn = <int, InlineSpan>{};
+  if (onCustomEmoji != null) {
+    for (final e in entities) {
+      if (e.type case td.TextEntityTypeCustomEmoji(:final customEmojiId)) {
+        final span = onCustomEmoji(customEmojiId, e.offset, e.length);
+        if (span != null) drawn[e.offset] = span;
+      }
+    }
+  }
   final cuts = <int>{0, s.length};
   for (final e in entities) {
     cuts
@@ -230,6 +292,11 @@ List<InlineSpan> buildEntitySpans(
     final start = points[i];
     final end = points[i + 1];
     if (start == end) continue;
+    if (drawn[start] case final span?) {
+      // The entity's cuts fall on its ends, so one piece covers it.
+      spans.add(span);
+      continue;
+    }
     final piece = s.substring(start, end);
     while (nextToken < tokens.length && tokens[nextToken].$2 <= start) {
       nextToken++;

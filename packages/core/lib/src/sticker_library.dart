@@ -82,6 +82,16 @@ final class StickerLibrary {
     return found.stickers;
   }
 
+  /// The stickers behind custom emoji, by their ids; unknown ids are
+  /// left out.
+  Future<List<td.Sticker>> customEmoji(List<int> ids) async {
+    if (ids.isEmpty) return const [];
+    final found = await _client.send(
+      td.GetCustomEmojiStickers(customEmojiIds: ids),
+    );
+    return found.stickers;
+  }
+
   /// Emoji whose Telegram keywords start with [query], in the given
   /// languages (IETF codes such as `ru`), best matches first.
   Future<List<String>> searchEmoji(
