@@ -13,6 +13,8 @@ final class OutgoingFile {
     this.height = 0,
     this.duration = 0,
     this.forceFile = false,
+    this.thumbnail,
+    this.cover,
   });
 
   final String path;
@@ -29,6 +31,34 @@ final class OutgoingFile {
   /// Sent as a plain file even when TDLib would recognise a video or a
   /// song in it.
   final bool forceFile;
+
+  /// A small JPEG shown for a video before it downloads, at most 320 px
+  /// a side; null lets TDLib make one.
+  final String? thumbnail;
+
+  /// A JPEG the user chose as the video's cover frame; null shows the
+  /// first frame.
+  final String? cover;
+
+  OutgoingFile copyWith({
+    String? path,
+    OutgoingKind? kind,
+    int? width,
+    int? height,
+    int? duration,
+    bool? forceFile,
+    String? thumbnail,
+    String? cover,
+  }) => OutgoingFile(
+    path: path ?? this.path,
+    kind: kind ?? this.kind,
+    width: width ?? this.width,
+    height: height ?? this.height,
+    duration: duration ?? this.duration,
+    forceFile: forceFile ?? this.forceFile,
+    thumbnail: thumbnail ?? this.thumbnail,
+    cover: cover ?? this.cover,
+  );
 
   /// The same file, sent untouched.
   OutgoingFile asDocument() =>
@@ -119,6 +149,14 @@ td.InputMessageContent inputContentOf(
     OutgoingKind.video => td.InputMessageVideo(
       video: td.InputVideo(
         video: input,
+        thumbnail: file.thumbnail == null
+            ? null
+            : td.InputThumbnail(
+                thumbnail: td.InputFileLocal(path: file.thumbnail!),
+                width: 0,
+                height: 0,
+              ),
+        cover: file.cover == null ? null : td.InputFileLocal(path: file.cover!),
         startTimestamp: 0,
         addedStickerFileIds: const [],
         duration: file.duration,

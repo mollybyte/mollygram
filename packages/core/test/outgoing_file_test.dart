@@ -52,4 +52,28 @@ void main() {
     final document = inputContentOf(_file('/a.jpg').asDocument());
     expect(document, isA<td.InputMessageDocument>());
   });
+
+  test('sends an edited video with its thumbnail and cover', () {
+    final video = inputContentOf(
+      const OutgoingFile(
+        path: '/clip.mp4',
+        kind: OutgoingKind.video,
+        duration: 7,
+        thumbnail: '/thumb.jpg',
+        cover: '/cover.jpg',
+      ),
+    );
+    expect(video, isA<td.InputMessageVideo>());
+    final input = (video as td.InputMessageVideo).video;
+    expect(input.duration, 7);
+    expect(
+      (input.thumbnail!.thumbnail as td.InputFileLocal).path,
+      '/thumb.jpg',
+    );
+    expect((input.cover! as td.InputFileLocal).path, '/cover.jpg');
+
+    final plain = inputContentOf(_file('/clip.mp4').copyWith(duration: 3));
+    expect((plain as td.InputMessageVideo).video.thumbnail, isNull);
+    expect(plain.video.cover, isNull);
+  });
 }

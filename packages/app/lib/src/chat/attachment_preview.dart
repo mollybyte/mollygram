@@ -7,6 +7,7 @@ import 'package:mollygram_media_editor/mollygram_media_editor.dart';
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../media/native_video_engine.dart';
 import 'describe.dart';
 
 /// What the user confirmed in [showAttachmentPreview].
@@ -54,8 +55,10 @@ class _PreviewState extends State<_Preview> {
   final _focus = FocusNode();
   var _asFiles = false;
 
-  /// Photos the user edited, by their original path.
+  /// Photos and videos the user edited, by their original path.
   final _edited = <String, MediaEditResult>{};
+  final _editedVideos = <String, VideoEditResult>{};
+  static const _videoEngine = NativeVideoEngine();
 
   @override
   void initState() {
@@ -76,6 +79,17 @@ class _PreviewState extends State<_Preview> {
   ];
 
   OutgoingFile _withEdit(OutgoingFile file) {
+    final video = _editedVideos[file.path];
+    if (video != null && video.isEdited) {
+      return file.copyWith(
+        path: video.path,
+        width: video.width,
+        height: video.height,
+        duration: video.duration.inSeconds,
+        thumbnail: video.thumbnailPath,
+        cover: video.coverPath,
+      );
+    }
     final edit = _edited[file.path];
     if (edit == null || !edit.isEdited) return file;
     return OutgoingFile(
@@ -87,6 +101,19 @@ class _PreviewState extends State<_Preview> {
   }
 
   Future<void> _edit(OutgoingFile file) async {
+    if (file.kind == OutgoingKind.video) {
+      final previous = _editedVideos[file.path];
+      final result = await showVideoEditor(
+        context,
+        path: file.path,
+        engine: _videoEngine,
+        initial: previous?.edit ?? const VideoEdit(),
+      );
+      if (result == null || !mounted) return;
+      setState(() => _editedVideos[file.path] = result);
+      _focus.requestFocus();
+      return;
+    }
     final previous = _edited[file.path];
     final result = await showMediaEditor(
       context,
@@ -143,12 +170,26 @@ class _PreviewState extends State<_Preview> {
                   runSpacing: 6,
                   children: [
                     for (final (i, file) in files.indexed)
-                      file.kind == OutgoingKind.photo
-                          ? _Thumbnail(
-                              path: file.path,
-                              onEdit: () => _edit(widget.files[i]),
-                            )
-                          : _FileLine(file: file),
+                      switch (file.kind) {
+                        OutgoingKind.photo => _Thumbnail(
+                          key: ValueKey(file.path),
+                          image: Image.file(
+                            File(file.path),
+                            fit: BoxFit.cover,
+                            cacheWidth: 250,
+                            errorBuilder: (context, _, _) =>
+                                ColoredBox(color: c.field),
+                          ),
+                          onEdit: () => _edit(widget.files[i]),
+                        ),
+                        OutgoingKind.video => _VideoThumbnail(
+                          key: ValueKey(file.path),
+                          path: file.path,
+                          engine: _videoEngine,
+                          onEdit: () => _edit(widget.files[i]),
+                        ),
+                        _ => _FileLine(file: file),
+                      },
                   ],
                 ),
               ),
@@ -223,10 +264,20 @@ class _PreviewState extends State<_Preview> {
 
 /// A photo with an edit button that appears on hover.
 class _Thumbnail extends StatefulWidget {
-  const _Thumbnail({required this.path, required this.onEdit});
+  const _Thumbnail({
+    super.key,
+    required this.image,
+    required this.onEdit,
+    this.badge,
+  });
 
-  final String path;
-  final VoidCallback onEdit;
+  final Widget image;
+
+  /// Null hides the edit button.
+  final VoidCallback? onEdit;
+
+  /// Shown in the bottom left corner, such as a play mark on a video.
+  final Widget? badge;
 
   @override
   State<_Thumbnail> createState() => _ThumbnailState();
@@ -248,35 +299,98 @@ class _ThumbnailState extends State<_Thumbnail> {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              Image.file(
-                File(widget.path),
-                key: ValueKey(widget.path),
-                fit: BoxFit.cover,
-                cacheWidth: 250,
-                errorBuilder: (context, _, _) => ColoredBox(color: c.field),
-              ),
-              Positioned(
-                right: 6,
-                top: 6,
-                child: AnimatedOpacity(
-                  opacity: _hover ? 1 : 0,
-                  duration: const Duration(milliseconds: 120),
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: c.mediaPill,
-                      shape: BoxShape.circle,
-                    ),
-                    child: MgIconButton(
-                      icon: EditorIcons.edit,
-                      tooltip: MediaEditorStrings.of(context).edit,
-                      onPressed: widget.onEdit,
+              widget.image,
+              if (widget.badge != null)
+                Positioned(left: 6, bottom: 6, child: widget.badge!),
+              if (widget.onEdit != null)
+                Positioned(
+                  right: 6,
+                  top: 6,
+                  child: AnimatedOpacity(
+                    opacity: _hover ? 1 : 0,
+                    duration: const Duration(milliseconds: 120),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: c.mediaPill,
+                        shape: BoxShape.circle,
+                      ),
+                      child: MgIconButton(
+                        icon: EditorIcons.edit,
+                        tooltip: MediaEditorStrings.of(context).edit,
+                        onPressed: widget.onEdit,
+                      ),
                     ),
                   ),
                 ),
-              ),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// A video's first frame with a play mark; the edit button appears once
+/// the frame is read, since the editor needs the same engine.
+class _VideoThumbnail extends StatefulWidget {
+  const _VideoThumbnail({
+    super.key,
+    required this.path,
+    required this.engine,
+    required this.onEdit,
+  });
+
+  final String path;
+  final VideoEngine engine;
+  final VoidCallback onEdit;
+
+  @override
+  State<_VideoThumbnail> createState() => _VideoThumbnailState();
+}
+
+class _VideoThumbnailState extends State<_VideoThumbnail> {
+  Uint8List? _frame;
+  var _failed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final frame = await widget.engine.frame(
+        widget.path,
+        Duration.zero,
+        maxSide: 320,
+      );
+      if (mounted) setState(() => _frame = frame);
+    } on Object {
+      if (mounted) setState(() => _failed = true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    final frame = _frame;
+    return _Thumbnail(
+      image: frame == null
+          ? ColoredBox(
+              color: c.field,
+              child: _failed
+                  ? Center(child: MgIcon(MgIcons.video, size: 24, color: c.fg2))
+                  : null,
+            )
+          : Image.memory(frame, fit: BoxFit.cover, gaplessPlayback: true),
+      onEdit: frame == null ? null : widget.onEdit,
+      badge: Container(
+        width: 24,
+        height: 24,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(color: c.mediaPill, shape: BoxShape.circle),
+        child: MgIcon(MgIcons.play, size: 12, color: Colors.white),
       ),
     );
   }

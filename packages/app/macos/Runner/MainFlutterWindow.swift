@@ -14,6 +14,7 @@ class MainFlutterWindow: NSWindow {
   private var notifications: NotificationsChannel?
   private var voiceCapture: VoiceCaptureChannel?
   private var videoNoteCapture: VideoNoteCaptureChannel?
+  private var videoEdit: VideoEditChannel?
 
   override func awakeFromNib() {
     let flutterViewController = FlutterViewController()
@@ -56,6 +57,7 @@ class MainFlutterWindow: NSWindow {
     videoNoteCapture = VideoNoteCaptureChannel(
       messenger: flutterViewController.engine.binaryMessenger,
       textures: flutterViewController.registrar(forPlugin: "VideoNoteCapture").textures)
+    videoEdit = VideoEditChannel(messenger: flutterViewController.engine.binaryMessenger)
 
     RegisterGeneratedPlugins(registry: flutterViewController)
 

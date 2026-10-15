@@ -1,6 +1,6 @@
 # mollygram_media_editor
 
-The editor for photos (and later videos) before they are sent.
+The editor for photos and videos before they are sent.
 
 ```dart
 final result = await showMediaEditor(context, path: '/path/photo.jpg');
@@ -18,3 +18,20 @@ final result = await showMediaEditor(context, path: '/path/photo.jpg');
 
 Keys: Escape leaves the tool or cancels, Enter confirms, ⌘Z / ⇧⌘Z undo and
 redo, ⌘R rotates.
+
+## Video
+
+```dart
+final result = await showVideoEditor(context, path: '/path/clip.mov', engine: engine);
+// result.path: the trimmed file (or the original when nothing changed)
+// result.thumbnailPath, result.coverPath: JPEGs for the message
+```
+
+- `VideoEdit` holds the kept range, whether the sound goes and the cover
+  frame, all as positions in the original file.
+- `VideoEngine` is what reads and writes the file: probing, frames at a
+  time, and the export. The app provides one (AVFoundation on macOS);
+  tests use a fake.
+
+Keys: Escape cancels, Enter confirms, M mutes, ← → step a second
+(⇧ a tenth).

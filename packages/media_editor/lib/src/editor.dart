@@ -15,6 +15,7 @@ import 'render/overlays.dart';
 import 'render/render.dart';
 import 'strings.dart';
 import 'ui/adjust_panel.dart';
+import 'ui/backdrop.dart';
 import 'ui/controls.dart';
 import 'ui/draw_panel.dart';
 import 'ui/editor_icons.dart';
@@ -913,7 +914,7 @@ class _MediaEditorPageState extends State<MediaEditorPage>
           type: MaterialType.transparency,
           child: Stack(
             children: [
-              Positioned.fill(child: _Backdrop(colors: c)),
+              Positioned.fill(child: EditorBackdrop(colors: c)),
               Positioned.fill(
                 child: AnimatedPadding(
                   duration: const Duration(milliseconds: 260),
@@ -1234,26 +1235,6 @@ class _MediaEditorPageState extends State<MediaEditorPage>
       ],
     );
   }
-}
-
-/// The blurred, dimmed window behind the editor: dark in the dark theme, a
-/// calm light gray in the light one, like Photos.
-class _Backdrop extends StatelessWidget {
-  const _Backdrop({required this.colors});
-
-  final MgColors colors;
-
-  @override
-  Widget build(BuildContext context) => ClipRect(
-    child: BackdropFilter(
-      filter: ui.ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-      child: ColoredBox(
-        color: colors.isDark
-            ? const Color(0xEE141416)
-            : const Color(0xEEEDEDF0),
-      ),
-    ),
-  );
 }
 
 /// A floating glass panel with a tool's options. It fades and slides in
