@@ -30,9 +30,7 @@ class _WindowBackgroundState extends ConsumerState<WindowBackground> {
     if (blur != _blurSent) {
       _blurSent = blur;
       _sent = null; // the frame's colour goes out again after the switch
-      _window
-          .invokeMethod<void>('setBlurred', blur)
-          .catchError((Object _) {});
+      _window.invokeMethod<void>('setBlurred', blur).catchError((Object _) {});
     }
     final opaque = blur ? frame.withValues(alpha: 1) : frame;
     if (opaque == _sent) return;

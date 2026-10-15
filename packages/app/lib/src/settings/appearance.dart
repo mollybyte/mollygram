@@ -109,7 +109,8 @@ MgColors vesperBlur(MgColors base, double opacity) => base.copyWith(
   rim: const Color(0x1AFFFFFF),
   highlight: const Color(0x24FFFFFF),
   frame: const Color(0xFF1A1714).withValues(alpha: opacity),
-  card: const Color(0xFF24201C).withValues(alpha: (opacity + 0.1).clamp(0.0, 1.0)),
+  card: const Color(0xFF24201C)
+      .withValues(alpha: (opacity + 0.1).clamp(0.0, 1.0)),
 );
 
 /// One wallpaper's tint of the window and the text: the window frame and
