@@ -844,4 +844,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mediaMute => 'Mute';
+
+  @override
+  String get unreadMessages => 'Unread messages';
+
+  @override
+  String get scrollToBottom => 'Scroll to the newest message';
+
+  @override
+  String get nextMention => 'Next mention';
+
+  @override
+  String get nextReaction => 'Next reaction';
 }

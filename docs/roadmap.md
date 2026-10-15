@@ -79,7 +79,7 @@ Decisions from the original plan checked against `main` on 2026-10-15.
 | media_kit for video, AVFoundation decoder as fallback | Yes: `packages/media` on media_kit | None |
 | QuickJS-ng plugins with manifest permissions | Yes: `packages/plugin_host`, built-in Filters and Translate | None |
 | Messages as bubbles with precomputed heights | Changed: flat no-bubble layout like TelegramSwift (decision 2026-10-14) | Plan text updated |
-| Message list as a `CustomScrollView` anchored on a message id, paging both ways | Not yet: reversed `ListView.builder` in `chat_view.dart`, pages only into the past | Needed for opening at the first unread and jumping to replies; first M1 tech item |
+| Message list as a `CustomScrollView` anchored on a message id, paging both ways | Yes: `TimelineView` with `TimelineScrollController`, `loadAround` and `loadNewer` in core | Done with the unread work |
 | One command registry (`Actions`/`Intents`) for palette, menus, shortcuts, plugins and `tg://` links | Not yet: palette commands are a list in `packages/shell` | Build with link handling in M1 |
 | Multi-account ready: one client id and data folder per account | Not yet: a single fixed `tdlib/database` folder | Move to per-account folders early in M1, while it is cheap |
 | Own drift + SQLCipher database for deleted messages, edit history, workspace, plugin data | Not yet; the workspace is saved to `workspace.json` | Database lands with M3; the workspace can stay in JSON |
