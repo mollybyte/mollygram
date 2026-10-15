@@ -893,6 +893,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get menuMarkAllRead => 'Mark all as read';
 
   @override
+  String get menuHideArchive => 'Hide archive';
+
+  @override
+  String get menuShowArchive => 'Show archive';
+
+  @override
+  String get showArchiveRow => 'Archive in the chat list';
+
+  @override
+  String get showArchiveRowHint =>
+      'Archived chats stay in the rail and in search while the row is hidden.';
+
+  @override
   String get menuClearHistory => 'Clear history';
 
   @override

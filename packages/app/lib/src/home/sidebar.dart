@@ -14,6 +14,7 @@ import '../downloads/downloads_bar.dart';
 import '../folders/folder_icons.dart';
 import '../privacy/ghost_mode_capsule.dart';
 import '../session/providers.dart';
+import '../settings/preferences.dart';
 import '../window_drag_area.dart';
 import 'chat_menu.dart';
 import 'chat_status.dart';
@@ -140,7 +141,11 @@ class _SidebarState extends ConsumerState<Sidebar> {
       _forward = shown == null || place(list) >= place(shown);
       _shownList = list;
     }
-    final showArchive = list.isMain && query.isEmpty && archived.isNotEmpty;
+    final hideArchive = ref.watch(
+      preferencesProvider.select((p) => p.hideArchive),
+    );
+    final showArchive =
+        list.isMain && query.isEmpty && archived.isNotEmpty && !hideArchive;
 
     // In the archive the way back takes the folders' place.
     final Widget header = list.isArchive
@@ -181,6 +186,17 @@ class _SidebarState extends ConsumerState<Sidebar> {
       search: MgSearchField(hintText: l10n.searchHint, controller: _search),
       actions: [
         GhostModeCapsule(onTap: widget.onPrivacy),
+        // With the row hidden the archive is one tap away.
+        if (hideArchive && (list.isArchive || archived.isNotEmpty))
+          _ArchiveButton(
+            tooltip: l10n.archivedChats,
+            selected: list.isArchive,
+            onTap: () => select(const ChatListLocation.archive()),
+            onShow: () => ref
+                .read(preferencesProvider.notifier)
+                .update((p) => p.copyWith(hideArchive: false)),
+            showLabel: l10n.menuShowArchive,
+          ),
         MgIconButton(
           icon: MgIcons.settings,
           tooltip: l10n.settings,
@@ -264,6 +280,42 @@ class _SidebarState extends ConsumerState<Sidebar> {
         if (chat.title.toLowerCase().contains(query) && seen.add(chat.id)) chat,
     ];
   }
+}
+
+/// The archive in the rail while its row is hidden; right-click brings the
+/// row back.
+class _ArchiveButton extends StatelessWidget {
+  const _ArchiveButton({
+    required this.tooltip,
+    required this.selected,
+    required this.onTap,
+    required this.onShow,
+    required this.showLabel,
+  });
+
+  final String tooltip;
+  final bool selected;
+  final VoidCallback onTap;
+  final VoidCallback onShow;
+  final String showLabel;
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    behavior: HitTestBehavior.translucent,
+    onSecondaryTapUp: (details) => unawaited(
+      showMgMenu(
+        context,
+        position: details.globalPosition,
+        items: [MgMenuItem(label: showLabel, onSelected: onShow)],
+      ),
+    ),
+    child: MgIconButton(
+      icon: MgIcons.archive,
+      tooltip: tooltip,
+      selected: selected,
+      onPressed: onTap,
+    ),
+  );
 }
 
 /// The way back from the archive: a pill with a chevron and the title.
@@ -444,6 +496,9 @@ class _ChatListState extends ConsumerState<_ChatList> {
       chats: session.chatLists,
       position: position,
       onFailed: _failed,
+      onHide: () => ref
+          .read(preferencesProvider.notifier)
+          .update((p) => p.copyWith(hideArchive: true)),
     );
     if (mounted) setState(() => _menuFor = null);
   }

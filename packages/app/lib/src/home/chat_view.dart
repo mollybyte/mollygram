@@ -272,6 +272,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
       ..search = _inlineSearch()
       ..addListener(_mentionsChanged);
     _scroll.addListener(_followScroll);
+    _scroll.addListener(() => _topUp(_scroll));
+    _threadScroll.addListener(() => _topUp(_threadScroll));
     _open(widget.chatId);
     WidgetsBinding.instance.addPostFrameCallback((_) => _takeJump());
   }
@@ -1674,6 +1676,21 @@ class _ChatViewState extends ConsumerState<ChatView> {
       setState(() => _returnTo = null);
     }
     _away.value = !atEnd || fromBottom > 360 || _returnTo != null;
+  }
+
+  /// Rows ask for more history as they are built, but a page that came
+  /// back short or empty builds nothing new: the scroll position asks
+  /// again, so the top of a chat or of comments is never a dead end.
+  void _topUp(ScrollController controller) {
+    if (!controller.hasClients) return;
+    final position = controller.position;
+    if (!position.hasContentDimensions) return;
+    if (position.maxScrollExtent - position.pixels > 600) return;
+    if (controller == _threadScroll) {
+      unawaited(_quiet(_thread?.loadOlder() ?? Future<void>.value()));
+    } else if (!_conversations.store.reachedStart(widget.chatId)) {
+      _loadOlder();
+    }
   }
 
   /// Scrolls to [messageId], loading the history around it when it is
@@ -3836,7 +3853,6 @@ class _ChatViewState extends ConsumerState<ChatView> {
                               ? () => unawaited(_inline.loadMore())
                               : null,
                         ),
-                      ?keyboardPanel,
                       if (_panelOpen)
                         Align(
                           alignment: Alignment.centerRight,
@@ -3862,6 +3878,21 @@ class _ChatViewState extends ConsumerState<ChatView> {
                     ],
                   ),
                 ),
+                // A bot's keyboard is a solid strip above the composer, so
+                // messages never scroll through the gaps between buttons.
+                if (keyboardPanel != null)
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: c.card,
+                      border: Border(
+                        top: BorderSide(color: c.separator, width: 0.5),
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
+                      child: keyboardPanel,
+                    ),
+                  ),
                 // The composer is the card's own bottom edge; the other
                 // bars still float over the messages.
                 if (_thread case final thread?)

@@ -128,6 +128,7 @@ Future<void> showMessageMenu(
     if (properties?.canBeReplied ?? false)
       MgMenuItem(
         label: l10n.menuReply,
+        icon: MgIcons.reply,
         onSelected: () => handlers.onReply(target),
       ),
     // Part of this row's text is selected: it can be quoted.
@@ -136,22 +137,26 @@ Future<void> showMessageMenu(
         row.messages.any((m) => m.id == quote.message.id))
       MgMenuItem(
         label: l10n.menuQuote,
+        icon: MgIcons.quote,
         onSelected: () => handlers.onQuote(quote.message, quote.quote),
       ),
     if ((properties?.canBeEdited ?? false) && _isEditable(target))
       MgMenuItem(
         label: l10n.menuEdit,
+        icon: MgIcons.edit,
         onSelected: () => handlers.onEdit(target),
       ),
     if (target.editDate > 0 && !target.isDeleted)
       if (handlers.onEditHistory case final onEditHistory?)
         MgMenuItem(
           label: l10n.menuEditHistory,
+          icon: MgIcons.recent,
           onSelected: () => onEditHistory(target),
         ),
     if ((properties?.canBeEdited ?? false) && _isOpenPoll(target))
       MgMenuItem(
         label: l10n.menuStopPoll,
+        icon: MgIcons.close,
         onSelected: () => unawaited(
           _confirmStopPoll(
             context,
@@ -164,12 +169,14 @@ Future<void> showMessageMenu(
     if (target.text.isNotEmpty && !protected)
       MgMenuItem(
         label: l10n.menuCopyText,
+        icon: MgIcons.copy,
         onSelected: () =>
             unawaited(Clipboard.setData(ClipboardData(text: target.text))),
       ),
     if (properties?.canGetLink ?? false)
       MgMenuItem(
         label: l10n.menuCopyLink,
+        icon: MgIcons.link,
         onSelected: () => unawaited(
           conversations
               .linkOf(chatId, target.id)
@@ -180,6 +187,7 @@ Future<void> showMessageMenu(
     if (savable != null) ...[
       MgMenuItem(
         label: l10n.menuSaveAs,
+        icon: MgIcons.download,
         onSelected: () => unawaited(
           saveMessageFile(
             context,
@@ -194,6 +202,7 @@ Future<void> showMessageMenu(
       ),
       MgMenuItem(
         label: l10n.menuSaveToDownloads,
+        icon: MgIcons.downloadAll,
         onSelected: () => unawaited(
           saveMessageFile(
             context,
@@ -209,6 +218,7 @@ Future<void> showMessageMenu(
       if (savedPath != null && Platform.isMacOS)
         MgMenuItem(
           label: l10n.menuQuickLook,
+          icon: MgIcons.views,
           onSelected: () => unawaited(quickLookFile(savedPath)),
         ),
       if (savedPath != null)
@@ -216,17 +226,20 @@ Future<void> showMessageMenu(
           label: Platform.isMacOS
               ? l10n.menuShowInFinder
               : l10n.menuShowInFolder,
+          icon: MgIcons.file,
           onSelected: () => unawaited(revealFile(savedPath)),
         ),
     ],
     if (properties?.canBeForwarded ?? false)
       MgMenuItem(
         label: l10n.menuForward,
+        icon: MgIcons.forward,
         onSelected: () => handlers.onForward(row.messages),
       ),
     if (properties?.canBePinned ?? false)
       MgMenuItem(
         label: target.message.isPinned ? l10n.menuUnpin : l10n.menuPin,
+        icon: MgIcons.pin,
         onSelected: () => unawaited(
           conversations
               .setPinned(chatId, target.id, pinned: !target.message.isPinned)
@@ -234,10 +247,15 @@ Future<void> showMessageMenu(
         ),
       ),
     if (handlers.onSelect case final onSelect?)
-      MgMenuItem(label: l10n.menuSelect, onSelected: () => onSelect(row)),
+      MgMenuItem(
+        label: l10n.menuSelect,
+        icon: MgIcons.select,
+        onSelected: () => onSelect(row),
+      ),
     if (properties?.canReportChat ?? false)
       MgMenuItem(
         label: l10n.menuReport,
+        icon: MgIcons.flag,
         onSelected: () => unawaited(
           reportMessages(
             context,
@@ -251,6 +269,7 @@ Future<void> showMessageMenu(
     if (canDelete)
       MgMenuItem(
         label: l10n.menuDelete,
+        icon: MgIcons.trash,
         destructive: true,
         onSelected: () => unawaited(
           confirmDeleteMessages(

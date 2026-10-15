@@ -655,11 +655,24 @@ void main() {
             onPick: (_) {},
           ),
           items: [
-            MgMenuItem(label: 'Reply', onSelected: () {}),
-            MgMenuItem(label: 'Edit', onSelected: () {}),
-            MgMenuItem(label: 'Copy text', onSelected: () {}),
-            MgMenuItem(label: 'Forward', onSelected: () {}),
-            MgMenuItem(label: 'Delete', destructive: true, onSelected: () {}),
+            MgMenuItem(label: 'Reply', icon: MgIcons.reply, onSelected: () {}),
+            MgMenuItem(label: 'Edit', icon: MgIcons.edit, onSelected: () {}),
+            MgMenuItem(
+              label: 'Copy text',
+              icon: MgIcons.copy,
+              onSelected: () {},
+            ),
+            MgMenuItem(
+              label: 'Forward',
+              icon: MgIcons.forward,
+              onSelected: () {},
+            ),
+            MgMenuItem(
+              label: 'Delete',
+              icon: MgIcons.trash,
+              destructive: true,
+              onSelected: () {},
+            ),
           ],
         ),
       );

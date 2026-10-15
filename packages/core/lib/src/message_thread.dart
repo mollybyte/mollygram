@@ -129,11 +129,10 @@ final class MessageThread {
               limit: _page,
             ),
     );
-    // A short first page is the whole history; a later one may be short
-    // because TDLib trims, so only an empty one ends it.
-    final last = fromMessageId == 0
-        ? page.messages.length < _page
-        : page.messages.isEmpty;
+    // TDLib may answer with fewer messages than asked, the first page
+    // included, while it still has older ones to fetch: only an empty page
+    // ends the history.
+    final last = page.messages.isEmpty;
     return (page.messages, last);
   }
 
