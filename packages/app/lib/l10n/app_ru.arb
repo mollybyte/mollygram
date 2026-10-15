@@ -272,6 +272,7 @@
   "pollExplanationHint": "Пояснение (необязательно)",
   "pollQuizHint": "Отметьте правильный ответ; участники увидят пояснение после ответа.",
   "pollCreate": "Создать",
+  "startBot": "Запустить",
   "contentGame": "Игра",
   "contentInvoice": "Счёт",
   "contentStory": "История",

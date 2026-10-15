@@ -286,6 +286,27 @@ void main() {
       expect(c.emojiQuery, isNull);
     });
 
+    test('finds the bot command being typed', () {
+      final c = RichTextEditingController(text: '/sta')
+        ..selection = const TextSelection.collapsed(offset: 4);
+      expect(c.commandQuery, 'sta');
+      c.value = const TextEditingValue(
+        text: '/',
+        selection: TextSelection.collapsed(offset: 1),
+      );
+      expect(c.commandQuery, '');
+      c.value = const TextEditingValue(
+        text: '/start now',
+        selection: TextSelection.collapsed(offset: 10),
+      );
+      expect(c.commandQuery, isNull);
+      c.value = const TextEditingValue(
+        text: 'a /b',
+        selection: TextSelection.collapsed(offset: 4),
+      );
+      expect(c.commandQuery, isNull);
+    });
+
     test('finds the @word at the caret and inserts a mention', () {
       final c = RichTextEditingController(text: 'hi @ve')
         ..selection = const TextSelection.collapsed(offset: 6);

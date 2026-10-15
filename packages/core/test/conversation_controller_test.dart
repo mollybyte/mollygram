@@ -999,6 +999,38 @@ void main() {
     expect((query['payload']! as Map)['data'], base64.encode([1, 2]));
   });
 
+  test('learns the commands of a bot when its chat opens', () async {
+    json.push(
+      _chat(
+        lastRead: 0,
+        unread: 0,
+        last: 0,
+        type: const {'@type': 'chatTypePrivate', 'user_id': 77},
+      ),
+    );
+    await controller.start();
+    await controller.openChat(7);
+    expect(controller.store.botUserIdOf(7), 77);
+    expect(controller.store.botCommands(7).map((c) => c.command), [
+      'start',
+      'help',
+    ]);
+
+    json.push({
+      '@type': 'updateUserFullInfo',
+      'user_id': 77,
+      'user_full_info': _botFull(['start']),
+    });
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    expect(controller.store.botCommands(7).map((c) => c.command), ['start']);
+
+    await controller.sendBotStart(7, 77);
+    final start = json.sent.lastWhere(
+      (r) => r['@type'] == 'sendBotStartMessage',
+    );
+    expect(start['bot_user_id'], 77);
+  });
+
   test('follows a poll and votes in it', () async {
     json.history = (_) => [
       td.Message.fromJson({
@@ -1313,6 +1345,38 @@ Map<String, Object?> _supergroup(int id, Map<String, Object?> status) => {
   },
 };
 
+/// The full info of bot 77 with [commands], as far as the store reads it.
+Map<String, Object?> _botFull(List<String> commands) => {
+  '@type': 'userFullInfo',
+  'gift_settings': {
+    '@type': 'giftSettings',
+    'accepted_gift_types': {'@type': 'acceptedGiftTypes'},
+  },
+  'bot_info': {
+    '@type': 'botInfo',
+    'short_description': '',
+    'description': '',
+    'manager_bot_user_id': 0,
+    'commands': [
+      for (final command in commands)
+        {
+          '@type': 'botCommand',
+          'command': command,
+          'description': 'Does $command',
+          'is_ephemeral': false,
+        },
+    ],
+    'privacy_policy_url': '',
+    'web_app_background_light_color': 0,
+    'web_app_background_dark_color': 0,
+    'web_app_header_light_color': 0,
+    'web_app_header_dark_color': 0,
+    'can_get_revenue_statistics': false,
+    'can_manage_emoji_status': false,
+    'has_media_previews': false,
+  },
+};
+
 td.Poll _poll({required int? chosen}) => td.Poll(
   id: 555,
   question: const td.FormattedText(text: 'Tea or coffee?', entities: []),
@@ -1610,6 +1674,12 @@ final class _FakeTdJson implements td.TdJson {
         // A scheduled message comes back marked so.
         'scheduling_state': ?(decoded['options'] as Map?)?['scheduling_state'],
       },
+      'sendBotStartMessage' => _message(
+        id: 13,
+        chatId: 7,
+        text: '/start',
+        sendingState: const td.MessageSendingStatePending(sendingId: 1),
+      ).toJson(),
       'getOption' when decoded['name'] == 'message_caption_length_max' => {
         '@type': 'optionValueInteger',
         'value': '10',
@@ -1657,6 +1727,54 @@ final class _FakeTdJson implements td.TdJson {
           },
         ],
       },
+      'getUser' when decoded['user_id'] == 77 => {
+        '@type': 'user',
+        'id': 77,
+        'first_name': 'Helper',
+        'last_name': '',
+        'usernames': null,
+        'phone_number': '',
+        'status': {'@type': 'userStatusEmpty'},
+        'profile_photo': null,
+        'accent_color_id': 0,
+        'background_custom_emoji_id': 0,
+        'profile_accent_color_id': -1,
+        'profile_background_custom_emoji_id': 0,
+        'emoji_status': null,
+        'is_contact': false,
+        'is_mutual_contact': false,
+        'is_close_friend': false,
+        'verification_status': null,
+        'is_premium': false,
+        'is_support': false,
+        'restriction_reason': '',
+        'restriction_info': null,
+        'has_active_stories': false,
+        'has_unread_active_stories': false,
+        'restricts_new_chats': false,
+        'paid_message_star_count': 0,
+        'paid_message_gram_count': 0,
+        'have_access': true,
+        'type': {
+          '@type': 'userTypeBot',
+          'can_be_edited': false,
+          'can_join_groups': true,
+          'can_read_all_group_messages': false,
+          'has_main_web_app': false,
+          'is_inline': false,
+          'inline_query_placeholder': '',
+          'need_location': false,
+          'can_connect_to_business': false,
+          'can_be_added_to_attachment_menu': false,
+          'active_user_count': 0,
+        },
+        'language_code': '',
+        'added_to_attachment_menu': false,
+      },
+      'getUserFullInfo' when decoded['user_id'] == 77 => _botFull([
+        'start',
+        'help',
+      ]),
       'getCallbackQueryAnswer' => {
         '@type': 'callbackQueryAnswer',
         'text': '',

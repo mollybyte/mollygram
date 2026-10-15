@@ -168,6 +168,9 @@ final class ConversationStore {
   final _drafts = <int, td.DraftMessage>{};
   final _slowMode = <int, ({int delay, DateTime until})>{};
   final _replyMarkup = <int, int>{};
+  final _privateUserOf = <int, int>{};
+  final _bots = <int>{};
+  final _botCommands = <int, List<BotCommand>>{};
   final _hasScheduled = <int>{};
   final _scheduledVersion = <int, int>{};
 
@@ -456,14 +459,65 @@ final class ConversationStore {
   void setChatType(int chatId, td.ChatType type) {
     _supergroupOf.remove(chatId);
     _basicGroupOf.remove(chatId);
+    _privateUserOf.remove(chatId);
     switch (type) {
       case td.ChatTypeSupergroup(:final supergroupId):
         _supergroupOf[chatId] = supergroupId;
       case td.ChatTypeBasicGroup(:final basicGroupId):
         _basicGroupOf[chatId] = basicGroupId;
+      case td.ChatTypePrivate(:final userId):
+        _privateUserOf[chatId] = userId;
       default:
         break;
     }
+  }
+
+  int? basicGroupIdOf(int chatId) => _basicGroupOf[chatId];
+
+  int? chatOfSupergroup(int supergroupId) =>
+      _chatOf(_supergroupOf, supergroupId);
+
+  int? chatOfBasicGroup(int basicGroupId) =>
+      _chatOf(_basicGroupOf, basicGroupId);
+
+  int? chatOfPrivateUser(int userId) => _chatOf(_privateUserOf, userId);
+
+  static int? _chatOf(Map<int, int> ids, int id) {
+    for (final entry in ids.entries) {
+      if (entry.value == id) return entry.key;
+    }
+    return null;
+  }
+
+  /// The user of a private chat; null for groups, channels and secret
+  /// chats.
+  int? privateUserIdOf(int chatId) => _privateUserOf[chatId];
+
+  /// Remembers whether [userId] is a bot; true when that changed.
+  bool setBot(int userId, bool isBot) =>
+      isBot ? _bots.add(userId) : _bots.remove(userId);
+
+  /// The bot of a private chat with one; null elsewhere.
+  int? botUserIdOf(int chatId) {
+    final userId = _privateUserOf[chatId];
+    return userId != null && _bots.contains(userId) ? userId : null;
+  }
+
+  /// The commands the bots of [chatId] offer, for the `/` popup.
+  List<BotCommand> botCommands(int chatId) => _botCommands[chatId] ?? const [];
+
+  /// Remembers the commands of [chatId]; true when they changed.
+  bool setBotCommands(int chatId, List<BotCommand> commands) {
+    final same =
+        _botCommands[chatId]?.toString() == commands.toString() ||
+        (commands.isEmpty && !_botCommands.containsKey(chatId));
+    if (same) return false;
+    if (commands.isEmpty) {
+      _botCommands.remove(chatId);
+    } else {
+      _botCommands[chatId] = List.unmodifiable(commands);
+    }
+    return true;
   }
 
   /// Returns the chat the supergroup belongs to when its status changed.
@@ -669,4 +723,22 @@ final class ConversationStore {
 
   void setChannel(int chatId, bool isChannel) =>
       isChannel ? _channels.add(chatId) : _channels.remove(chatId);
+}
+
+/// A command a bot offers, with the bot it belongs to.
+final class BotCommand {
+  const BotCommand({
+    required this.botUserId,
+    required this.command,
+    required this.description,
+  });
+
+  final int botUserId;
+
+  /// Without the leading slash.
+  final String command;
+  final String description;
+
+  @override
+  String toString() => '$botUserId/$command:$description';
 }

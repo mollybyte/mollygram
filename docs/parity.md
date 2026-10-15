@@ -114,7 +114,7 @@ M8 calls and macOS release, M9 after release.
 | Emoji and sticker suggestions while typing | done | `:word` offers Telegram's emoji keywords in the composer popup; a draft that is one emoji shows a strip of matching stickers above the composer | M | M2 |
 | Rich text formatting: bold, italic, code, link, spoiler, quote; Markdown shortcuts | done | `RichTextEditingController` in ui_kit: ⌘B, ⌘I, ⌘U, ⌘⇧X, ⌘⇧M, ⌘⇧P, ⌘⇧., ⌘K, context menu; Markdown converted on send. Captions of files are still plain | | |
 | Mentions autocomplete (@) | done | `MentionSearch` with `ChatMembersFilterMention`; no `:` emoji shortcodes yet | | |
-| Bot command autocomplete (/) and bot keyboards | partial | Inline keyboards under messages (links, callbacks with the bot's answer as a toast, copy text, user links) and the bot's reply keyboard above the composer with a toggle; no / autocomplete, no switch-to-inline, no request buttons | M | M2 |
+| Bot command autocomplete (/) and bot keyboards | partial | A / offers the commands the chat's bots announce and sends the pick; inline keyboards under messages (links, callbacks with the bot's answer as a toast, copy text, user links) and the bot's reply keyboard above the composer with a toggle; no switch-to-inline, no request buttons | M | M2 |
 | Inline bots (@gif, @vid) | missing | `GetInlineQueryResults` | M | M9 |
 | Voice message recording | done | Hold, lock, cancel; Opus in Ogg via AudioToolbox on macOS | M | M1 |
 | Video message (circle) recording | partial | Hold, lock, cancel, 60 s limit; 640×640 H.264 via AVFoundation on macOS. Front camera only, no flip or preview before sending | L | M4 |
@@ -257,7 +257,7 @@ M8 calls and macOS release, M9 after release.
 |---|---|---|---|---|
 | Stories: view, react, reply, post, stealth mode | missing | `Story*` controllers | L | M9 |
 | Premium: subscribe screen, limits, emoji status, profile colour | missing | `PremiumBoardingController` | L | M9 |
-| Bots: start, menu button, inline keyboards, callback answers | missing | | M | M2 |
+| Bots: start, menu button, inline keyboards, callback answers | partial | Start in place of the composer in a fresh bot chat, / command popup, inline keyboards and callback answers; no menu button yet | M | M2 |
 | Mini apps (web apps) | missing | `WebappBrowser`, needs a webview | L | M9 |
 | Payments and invoices | missing | `PaymentsCheckoutController` | L | M9 |
 | Stars: balance, paid media, paid reactions, subscriptions | missing | | L | M9 |

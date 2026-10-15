@@ -235,6 +235,19 @@ class RichTextEditingController extends TextEditingController {
     return query;
   }
 
+  /// The bot command being typed: the draft starts with a slash, the
+  /// caret is in that first word, and nothing else was written. Without
+  /// the slash; empty right after it. Null otherwise.
+  String? get commandQuery {
+    final selection = value.selection;
+    if (!selection.isValid || !selection.isCollapsed) return null;
+    if (!text.startsWith('/')) return null;
+    final caret = selection.baseOffset;
+    if (caret != text.length || text.length > 33) return null;
+    final query = text.substring(1);
+    return RegExp(r'^[A-Za-z0-9_]*$').hasMatch(query) ? query : null;
+  }
+
   /// Replaces the `:word` at the caret with [emoji].
   void insertEmoji(String emoji) {
     final query = emojiQuery;
