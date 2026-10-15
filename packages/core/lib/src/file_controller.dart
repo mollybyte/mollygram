@@ -37,6 +37,30 @@ final class FileController {
   /// The newest known state of [file].
   td.File latest(td.File file) => _files[file.id] ?? file;
 
+  /// A map of [width] by [height] points around [location], as TDLib
+  /// renders it for a location message in [chatId]; a file to download
+  /// like any other.
+  Future<td.File> mapThumbnail(
+    td.Location location, {
+    required int width,
+    required int height,
+    int zoom = 15,
+    int chatId = 0,
+  }) async {
+    final file = await _client.send(
+      td.GetMapThumbnailFile(
+        location: location,
+        zoom: zoom,
+        width: width,
+        height: height,
+        scale: 2,
+        chatId: chatId,
+      ),
+    );
+    _put(file);
+    return file;
+  }
+
   /// Each new state of the file [fileId].
   Stream<td.File> changesOf(int fileId) =>
       _changes.stream.where((file) => file.id == fileId);

@@ -1604,6 +1604,24 @@ abstract class AppLocalizations {
   /// **'Live location'**
   String get contentLiveLocation;
 
+  /// No description provided for @liveLocationEnded.
+  ///
+  /// In en, this message translates to:
+  /// **'Live location ended'**
+  String get liveLocationEnded;
+
+  /// No description provided for @liveMinutesLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min left'**
+  String liveMinutesLeft(int minutes);
+
+  /// No description provided for @liveHoursLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours} h left'**
+  String liveHoursLeft(int hours);
+
   /// No description provided for @contentContact.
   ///
   /// In en, this message translates to:

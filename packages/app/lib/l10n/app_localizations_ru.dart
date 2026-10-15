@@ -910,6 +910,19 @@ class AppLocalizationsRu extends AppLocalizations {
   String get contentLiveLocation => 'Трансляция геопозиции';
 
   @override
+  String get liveLocationEnded => 'Трансляция завершена';
+
+  @override
+  String liveMinutesLeft(int minutes) {
+    return 'осталось $minutes мин';
+  }
+
+  @override
+  String liveHoursLeft(int hours) {
+    return 'осталось $hours ч';
+  }
+
+  @override
   String get contentContact => 'Контакт';
 
   @override
