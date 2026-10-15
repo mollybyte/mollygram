@@ -86,6 +86,12 @@ class _ChatViewState extends ConsumerState<ChatView> {
   /// button that goes back down.
   final _away = ValueNotifier(false);
 
+  /// Which pinned message the bar shows, 0 for the newest; chats whose bar
+  /// the user closed, until the app restarts.
+  var _pinnedIndex = 0;
+  static final _pinnedHidden = <int>{};
+  var _pinnedShown = false;
+
   @override
   void initState() {
     super.initState();
@@ -116,6 +122,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _anchor = null;
     _unreadFrom = null;
     _flashId = null;
+    _pinnedIndex = 0;
     _flashTimer?.cancel();
     _scroll.pinToBottom();
     _away.value = false;
@@ -140,6 +147,42 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _readAtOpen = store.lastReadInbox(chatId);
     _awaitingUnread = store.unreadCount(chatId) > 0;
     unawaited(_quiet(_conversations.openChat(chatId)));
+    if (!store.hasPinned(chatId)) {
+      unawaited(_quiet(_conversations.loadPinned(chatId)));
+    }
+  }
+
+  /// The bar's click: to the pinned message it shows, then on to the
+  /// previous one, around to the newest after the oldest.
+  Future<void> _openPinned(List<int> ids) async {
+    final index = _pinnedIndex.clamp(0, ids.length - 1);
+    final next = (index + 1) % ids.length;
+    setState(() => _pinnedIndex = next);
+    await _jumpTo(ids[index]);
+  }
+
+  /// The bar under the header, when the chat has pinned messages and the
+  /// user hasn't closed it.
+  Widget? _pinnedBar(AppLocalizations l10n, ConversationStore store) {
+    final chatId = widget.chatId;
+    final ids = store.pinnedIds(chatId);
+    _pinnedShown = ids.isNotEmpty && !_pinnedHidden.contains(chatId);
+    if (!_pinnedShown) return null;
+    final index = _pinnedIndex.clamp(0, ids.length - 1);
+    final message = store.message(chatId, ids[index]);
+    final content = message?.content;
+    return PinnedBar(
+      title: ids.length > 1
+          ? l10n.pinnedMessageNumber(ids.length - index)
+          : l10n.pinnedMessage,
+      text: content == null ? '' : describeContent(l10n, content),
+      thumbnail: content == null ? null : mediaThumbnail(content),
+      index: index,
+      count: ids.length,
+      closeTooltip: l10n.hidePinned,
+      onTap: () => unawaited(_openPinned(ids)),
+      onClose: () => setState(() => _pinnedHidden.add(chatId)),
+    );
   }
 
   void _close(int chatId) =>
@@ -203,8 +246,11 @@ class _ChatViewState extends ConsumerState<ChatView> {
   );
 
   /// The scroll offset that puts the anchor's row just under the header.
-  static double _underHeader(double viewport) =>
-      -(viewport - TimelineView.topInset - 8);
+  double _underHeader(double viewport) => -(viewport - _topInset - 8);
+
+  /// Where the timeline starts under the header and the pinned bar.
+  double get _topInset =>
+      TimelineView.headerInset + (_pinnedShown ? PinnedBar.height + 8 : 0);
 
   /// Keeps [_scroll.pinned] and the down button in step with where the
   /// user leaves the view.
@@ -888,6 +934,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
                   unreadFrom: _unreadFrom,
                   flashId: _flashId,
                   flash: _flash,
+                  topInset: _topInset,
                   onShown: _shown,
                   onNearTop: _loadOlder,
                   onNearBottom: _loadNewer,
@@ -897,6 +944,13 @@ class _ChatViewState extends ConsumerState<ChatView> {
               _ => const SizedBox.shrink(),
             },
           ),
+          if (_pinnedBar(l10n, store) case final bar?)
+            Positioned(
+              top: 10 + ChatHeaderBar.height + 8,
+              left: 14,
+              right: 14,
+              child: bar,
+            ),
           Positioned(
             top: 10,
             left: 14,

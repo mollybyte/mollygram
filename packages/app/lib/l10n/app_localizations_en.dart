@@ -868,4 +868,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nextReaction => 'Next reaction';
+
+  @override
+  String get menuPin => 'Pin';
+
+  @override
+  String get menuUnpin => 'Unpin';
+
+  @override
+  String get pinnedMessage => 'Pinned message';
+
+  @override
+  String pinnedMessageNumber(int number) {
+    return 'Pinned message #$number';
+  }
+
+  @override
+  String get hidePinned => 'Hide pinned messages';
 }

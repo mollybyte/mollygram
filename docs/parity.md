@@ -59,7 +59,7 @@ M8 calls and macOS release, M9 after release.
 | "New messages" separator and opening at the first unread | done | Unread PR: `TimelineView` grows both ways from the first unread | | |
 | Scroll-to-bottom button with unread counter | done | Unread PR | | |
 | Jump to next mention and reaction | done | Unread PR: `SearchChatMessages` with the unread filters | | |
-| Pinned message bar with cycling and the pinned list | missing | `UpdateMessageIsPinned` is handled, no bar | M | M1 |
+| Pinned message bar with cycling and the pinned list | partial | Pinned PR: bar with cycling, pin and unpin from the menu; no pinned list view | S | M2 |
 | Jump to a replied message and back | partial | Unread PR: jump with a highlight; no "back" button yet | S | M1 |
 | Date headers and sticky date | partial | Date pills exist, not sticky while scrolling | S | M1 |
 | Jump to date (calendar) | missing | `ChatCalendarModalController` | M | M2 |
