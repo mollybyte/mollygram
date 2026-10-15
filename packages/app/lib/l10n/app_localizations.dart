@@ -1453,6 +1453,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Mute'**
   String get mediaMute;
+
+  /// No description provided for @unreadMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Unread messages'**
+  String get unreadMessages;
+
+  /// No description provided for @scrollToBottom.
+  ///
+  /// In en, this message translates to:
+  /// **'Scroll to the newest message'**
+  String get scrollToBottom;
+
+  /// No description provided for @nextMention.
+  ///
+  /// In en, this message translates to:
+  /// **'Next mention'**
+  String get nextMention;
+
+  /// No description provided for @nextReaction.
+  ///
+  /// In en, this message translates to:
+  /// **'Next reaction'**
+  String get nextReaction;
 }
 
 class _AppLocalizationsDelegate

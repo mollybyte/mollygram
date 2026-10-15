@@ -860,4 +860,16 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get mediaMute => 'Выключить звук';
+
+  @override
+  String get unreadMessages => 'Непрочитанные сообщения';
+
+  @override
+  String get scrollToBottom => 'К последнему сообщению';
+
+  @override
+  String get nextMention => 'Следующее упоминание';
+
+  @override
+  String get nextReaction => 'Следующая реакция';
 }

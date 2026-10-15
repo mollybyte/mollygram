@@ -79,6 +79,7 @@ class MessageRowActions {
     this.onMenu,
     this.onOpen,
     this.onViewMedia,
+    this.onJump,
   });
 
   /// Adds the reaction, or takes it back when the user had chosen it.
@@ -100,6 +101,9 @@ class MessageRowActions {
 
   /// A click on a photo, video or GIF, which opens the media viewer.
   final void Function(ConversationMessage message)? onViewMedia;
+
+  /// A click on a reply's quote, which scrolls to the message it answers.
+  final void Function(int messageId)? onJump;
 }
 
 /// A message, or an album, in Telegram's flat layout: no bubbles, the
@@ -530,10 +534,18 @@ class _MessageBody extends StatelessWidget {
       text = '';
     }
     if (quote != null && quote.isNotEmpty) text = quote;
+    final jump = actions.onJump;
+    // Only an original of this chat that still exists can be scrolled to.
+    final canJump =
+        jump != null &&
+        reply.chatId == message.chatId &&
+        reply.messageId != 0 &&
+        !store.isMissing(message.chatId, message.id);
     return ReplyHeader(
       author: author,
       text: text,
       thumbnail: content == null ? null : _replyThumbnail(content),
+      onTap: canJump ? () => jump(reply.messageId) : null,
     );
   }
 

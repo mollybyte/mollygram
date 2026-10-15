@@ -375,5 +375,9 @@
   "mediaSpeed": "Playback speed",
   "mediaLoop": "Loop",
   "mediaUnmute": "Unmute",
-  "mediaMute": "Mute"
+  "mediaMute": "Mute",
+  "unreadMessages": "Unread messages",
+  "scrollToBottom": "Scroll to the newest message",
+  "nextMention": "Next mention",
+  "nextReaction": "Next reaction"
 }

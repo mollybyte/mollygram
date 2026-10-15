@@ -225,5 +225,9 @@
   "mediaSpeed": "Скорость",
   "mediaLoop": "Повтор",
   "mediaUnmute": "Включить звук",
-  "mediaMute": "Выключить звук"
+  "mediaMute": "Выключить звук",
+  "unreadMessages": "Непрочитанные сообщения",
+  "scrollToBottom": "К последнему сообщению",
+  "nextMention": "Следующее упоминание",
+  "nextReaction": "Следующая реакция"
 }
