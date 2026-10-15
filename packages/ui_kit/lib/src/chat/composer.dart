@@ -56,6 +56,8 @@ class Composer extends StatefulWidget {
     this.onPaste,
     this.allowEmpty = false,
     this.header,
+    this.recordButton,
+    this.replacement,
     this.maxLines = 8,
     this.suggestions = const [],
     this.onSuggestion,
@@ -91,6 +93,15 @@ class Composer extends StatefulWidget {
   /// Drawn above the text field inside the glass, such as the message
   /// being replied to.
   final Widget? header;
+
+  /// Shown instead of the plain microphone while there is no draft, such
+  /// as a button that records on press and hold.
+  final Widget? recordButton;
+
+  /// Shown in place of attach, the text field and emoji, such as the timer
+  /// and live waveform of a recording. The send or record button stays,
+  /// so a press that started on it keeps its pointer.
+  final Widget? replacement;
   final int maxLines;
 
   /// Shown in a popup above the field, such as members matching an
@@ -347,6 +358,52 @@ class _ComposerState extends State<Composer> {
     final l = widget.labels;
     final style = mgTextStyle(c, size: MgType.title);
     final hasDraft = _text.text.trim().isNotEmpty || widget.allowEmpty;
+    final replacing = widget.replacement != null;
+    final fieldRow = Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        MgIconButton(
+          icon: MgIcons.attach,
+          tooltip: l.attach,
+          iconSize: 18,
+          onPressed: widget.onAttach,
+        ),
+        const SizedBox(width: 2),
+        Expanded(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 32),
+            child: Center(
+              widthFactor: 1,
+              child: Focus(
+                onKeyEvent: _onKey,
+                skipTraversal: true,
+                child: TextField(
+                  controller: _text,
+                  focusNode: widget.focusNode,
+                  minLines: 1,
+                  maxLines: widget.maxLines,
+                  keyboardType: TextInputType.multiline,
+                  style: style,
+                  cursorHeight: 16,
+                  contextMenuBuilder: _contextMenu,
+                  decoration: InputDecoration.collapsed(
+                    hintText: l.hint,
+                    hintStyle: style.copyWith(color: c.fg2),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 2),
+        MgIconButton(
+          icon: MgIcons.emoji,
+          tooltip: l.emoji,
+          iconSize: 18,
+          onPressed: widget.onEmoji,
+        ),
+      ],
+    );
     final composer = Glass(
       radius: 22,
       padding: const EdgeInsets.fromLTRB(6, 4, 4, 4),
@@ -354,59 +411,71 @@ class _ComposerState extends State<Composer> {
         Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            MgIconButton(
-              icon: MgIcons.attach,
-              tooltip: l.attach,
-              iconSize: 18,
-              onPressed: widget.onAttach,
-            ),
-            const SizedBox(width: 2),
             Expanded(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: 32),
-                child: Center(
-                  widthFactor: 1,
-                  child: Focus(
-                    onKeyEvent: _onKey,
-                    skipTraversal: true,
-                    child: TextField(
-                      controller: _text,
-                      focusNode: widget.focusNode,
-                      minLines: 1,
-                      maxLines: widget.maxLines,
-                      keyboardType: TextInputType.multiline,
-                      style: style,
-                      cursorHeight: 16,
-                      contextMenuBuilder: _contextMenu,
-                      decoration: InputDecoration.collapsed(
-                        hintText: l.hint,
-                        hintStyle: style.copyWith(color: c.fg2),
-                      ),
+              child: Stack(
+                children: [
+                  IgnorePointer(
+                    ignoring: replacing,
+                    child: AnimatedOpacity(
+                      opacity: replacing ? 0 : 1,
+                      duration: const Duration(milliseconds: 160),
+                      curve: Curves.easeOut,
+                      child: fieldRow,
                     ),
                   ),
+                  Positioned.fill(
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 220),
+                      switchInCurve: Curves.easeOutCubic,
+                      switchOutCurve: Curves.easeInCubic,
+                      transitionBuilder: (child, animation) => FadeTransition(
+                        opacity: animation,
+                        child: SlideTransition(
+                          position: Tween(
+                            begin: const Offset(0.04, 0),
+                            end: Offset.zero,
+                          ).animate(animation),
+                          child: child,
+                        ),
+                      ),
+                      child:
+                          widget.replacement ??
+                          const SizedBox.shrink(key: ValueKey('none')),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 2),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 150),
+              switchInCurve: Curves.easeOutBack,
+              switchOutCurve: Curves.easeIn,
+              transitionBuilder: (child, animation) => FadeTransition(
+                opacity: animation,
+                child: ScaleTransition(
+                  scale: Tween(begin: 0.6, end: 1.0).animate(animation),
+                  child: child,
                 ),
               ),
+              child: hasDraft
+                  ? MgSendButton(
+                      key: const ValueKey('send'),
+                      tooltip: l.send,
+                      onPressed: widget.onSend == null ? null : _send,
+                    )
+                  : KeyedSubtree(
+                      key: const ValueKey('record'),
+                      child:
+                          widget.recordButton ??
+                          MgIconButton(
+                            icon: MgIcons.mic,
+                            tooltip: l.record,
+                            iconSize: 18,
+                            onPressed: widget.onRecord,
+                          ),
+                    ),
             ),
-            const SizedBox(width: 2),
-            MgIconButton(
-              icon: MgIcons.emoji,
-              tooltip: l.emoji,
-              iconSize: 18,
-              onPressed: widget.onEmoji,
-            ),
-            const SizedBox(width: 2),
-            if (hasDraft)
-              MgSendButton(
-                tooltip: l.send,
-                onPressed: widget.onSend == null ? null : _send,
-              )
-            else
-              MgIconButton(
-                icon: MgIcons.mic,
-                tooltip: l.record,
-                iconSize: 18,
-                onPressed: widget.onRecord,
-              ),
           ],
         ),
       ),

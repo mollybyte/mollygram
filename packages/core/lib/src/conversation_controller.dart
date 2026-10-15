@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 
@@ -171,6 +172,40 @@ final class ConversationController {
     } finally {
       _loadingNewer.remove(chatId);
     }
+  }
+
+  /// Joins the group or channel [chatId]. The chat may need approval, in
+  /// which case the request is sent and the user stays out for now.
+  Future<void> joinChat(int chatId) async {
+    await _client.send(td.JoinChat(chatId: chatId));
+  }
+
+  /// Mutes the notifications of [chatId] for good, or unmutes them.
+  Future<void> setMuted(int chatId, {required bool muted}) async {
+    await _client.send(
+      td.SetChatNotificationSettings(
+        chatId: chatId,
+        notificationSettings: td.ChatNotificationSettings(
+          useDefaultMuteFor: !muted,
+          // TDLib's "forever".
+          muteFor: muted ? 2147483647 : 0,
+          useDefaultSound: true,
+          soundId: 0,
+          useDefaultShowPreview: true,
+          showPreview: true,
+          useDefaultMuteStories: true,
+          muteStories: false,
+          useDefaultStorySound: true,
+          storySoundId: 0,
+          useDefaultShowStoryPoster: true,
+          showStoryPoster: true,
+          useDefaultDisablePinnedMessageNotifications: true,
+          disablePinnedMessageNotifications: false,
+          useDefaultDisableMentionNotifications: true,
+          disableMentionNotifications: false,
+        ),
+      ),
+    );
   }
 
   /// Loads the pinned messages of [chatId] for the bar under the header.
@@ -407,6 +442,39 @@ final class ConversationController {
               height: sticker.height,
             ),
             emoji: sticker.emoji,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Sends a recorded voice message: an Ogg Opus file at [path] with its
+  /// length and Telegram's packed 5-bit [waveform].
+  Future<void> sendVoiceNote(
+    int chatId, {
+    required String path,
+    required Duration duration,
+    required Uint8List waveform,
+    int? replyTo,
+  }) async {
+    _add(
+      await _client.send(
+        td.SendMessage(
+          chatId: chatId,
+          replyTo: replyTo == null
+              ? null
+              : td.InputMessageReplyToMessage(
+                  messageId: replyTo,
+                  checklistTaskId: 0,
+                  pollOptionId: '',
+                ),
+          inputMessageContent: td.InputMessageVoiceNote(
+            voiceNote: td.InputVoiceNote(
+              voiceNote: td.InputFileLocal(path: path),
+              // Rounded up, as the official apps do: 0.4 s shows as 0:01.
+              duration: (duration.inMilliseconds / 1000).ceil(),
+              waveform: waveform,
+            ),
           ),
         ),
       ),
@@ -667,7 +735,26 @@ final class ConversationController {
           ..setChannel(chat.id, switch (chat.type) {
             td.ChatTypeSupergroup(:final isChannel) => isChannel,
             _ => false,
-          });
+          })
+          ..setChatType(chat.id, chat.type)
+          ..setMuteFor(chat.id, chat.notificationSettings.muteFor);
+      case td.UpdateSupergroup(:final supergroup):
+        if (store.setSupergroupStatus(supergroup.id, supergroup.status) !=
+            null) {
+          _notify();
+        }
+      case td.UpdateBasicGroup(:final basicGroup):
+        if (store.setBasicGroupStatus(basicGroup.id, basicGroup.status) !=
+            null) {
+          _notify();
+        }
+      case td.UpdateChatNotificationSettings(
+        :final chatId,
+        :final notificationSettings,
+      ):
+        if (store.setMuteFor(chatId, notificationSettings.muteFor)) {
+          _notify();
+        }
       case td.UpdateChatReadInbox(
         :final chatId,
         :final lastReadInboxMessageId,

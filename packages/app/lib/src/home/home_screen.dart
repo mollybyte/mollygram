@@ -5,7 +5,10 @@ import 'package:mollygram_shell/mollygram_shell.dart';
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../commands/command_registry.dart';
+import '../links/link_host.dart';
 import '../notifications/notification_service.dart';
+import '../profile/peer_info_host.dart';
 import '../session/connection_status_capsule.dart';
 import '../settings/settings_window.dart';
 import '../window_drag_area.dart';
@@ -30,13 +33,42 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   /// The section the settings opened on; null while they are closed.
   String? _settings;
+  late final CommandRegistry _registry = ref.read(commandRegistryProvider);
+  late AppLocalizations _l10n;
+  late ShellStrings _shellStrings;
 
   void _openSettings([String section = accountSectionId]) =>
       setState(() => _settings = section);
 
   void _closeSettings() => setState(() => _settings = null);
 
-  List<PaletteCommand> _commands(AppLocalizations l10n) {
+  @override
+  void initState() {
+    super.initState();
+    _registry
+      ..register('app', _commands)
+      ..register('shell', _shellCommands);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _l10n = AppLocalizations.of(context);
+    _shellStrings = ShellStrings.forLocale(
+      Localizations.maybeLocaleOf(context),
+    );
+  }
+
+  @override
+  void dispose() {
+    _registry
+      ..unregister('app', _commands)
+      ..unregister('shell', _shellCommands);
+    super.dispose();
+  }
+
+  List<PaletteCommand> _commands() {
+    final l10n = _l10n;
     final other = lookupAppLocalizations(
       Locale(l10n.localeName == 'ru' ? 'en' : 'ru'),
     );
@@ -63,13 +95,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ];
   }
 
+  List<PaletteCommand> _shellCommands() =>
+      shellCommands(ref.read(workspaceControllerProvider), _shellStrings);
+
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
     final workspace = ref.watch(workspaceControllerProvider);
     final directory = ref.watch(chatDirectoryProvider);
     final home = CallbackShortcuts(
-      bindings: {HomeScreen.settingsShortcut: _openSettings},
+      // The shell binds its own shortcuts.
+      bindings: _registry.shortcutsOf('app'),
       child: GlassScope(
         child: Stack(
           children: [
@@ -78,7 +113,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: WorkspaceShell(
                 controller: workspace,
                 directory: directory,
-                commands: _commands(l10n),
+                commandSource: () => _registry.commands,
                 sidebar: const Padding(
                   padding: EdgeInsets.all(8),
                   child: Stack(
@@ -99,7 +134,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 sidebarWidth: SidebarIsland.width + 16,
                 paneBuilder: (context, chat, focused) => chat == null
                     ? const _NoChat()
-                    : ChatView(key: ValueKey(chat), chatId: chat),
+                    : PeerInfoHost(
+                        key: ValueKey(chat),
+                        chatId: chat,
+                        child: ChatView(chatId: chat),
+                      ),
                 // Jumping to the message itself comes with the chat view's
                 // history navigation; for now the chat opens.
                 onOpenMessage: (message, target) =>
@@ -111,25 +150,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
     );
     final settings = _settings;
-    return NotificationsHost(
-      child: Stack(
-        children: [
-          // The chats stay mounted under the settings, so drafts and scroll
-          // positions survive opening them.
-          Positioned.fill(
-            child: ExcludeFocus(
-              excluding: settings != null,
-              child: TickerMode(enabled: settings == null, child: home),
-            ),
-          ),
-          if (settings != null)
+    return LinkHost(
+      contentLeft: SidebarIsland.width + 16,
+      covered: settings != null,
+      child: NotificationsHost(
+        child: Stack(
+          children: [
+            // The chats stay mounted under the settings, so drafts and
+            // scroll positions survive opening them.
             Positioned.fill(
-              child: SettingsWindow(
-                initialSection: settings,
-                onClose: _closeSettings,
+              child: ExcludeFocus(
+                excluding: settings != null,
+                child: TickerMode(enabled: settings == null, child: home),
               ),
             ),
-        ],
+            if (settings != null)
+              Positioned.fill(
+                child: SettingsWindow(
+                  initialSection: settings,
+                  onClose: _closeSettings,
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

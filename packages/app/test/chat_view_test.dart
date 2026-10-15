@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mollygram/l10n/app_localizations.dart';
 import 'package:mollygram/src/chat/media_content.dart';
 import 'package:mollygram/src/chat/recent_emoji.dart';
+import 'package:mollygram/src/chat/timeline_view.dart';
 import 'package:mollygram/src/home/chat_view.dart';
 import 'package:mollygram/src/session/providers.dart';
 import 'package:mollygram_core/mollygram_core.dart';
@@ -190,6 +191,7 @@ void main() {
     json.chat = [for (var id = 1; id <= 60; id++) id];
     // The newest message answers the oldest, far above the screen.
     json.repliesTo = {60: 1};
+    json.texts = {60: 'Answer'};
     json.push(_chat(lastRead: 60, unread: 0, last: 60));
     await tester.runAsync(() => Future<void>.delayed(_tick));
     await pump(tester);
@@ -199,6 +201,9 @@ void main() {
       findsNothing,
     );
 
+    // A little way up from the bottom, so there is somewhere to return.
+    await tester.drag(find.byType(TimelineView), const Offset(0, 120));
+    await tester.pumpAndSettle();
     await tester.tap(find.byType(ReplyHeader));
     await tester.runAsync(() => Future<void>.delayed(_tick));
     await tester.pumpAndSettle();
@@ -207,6 +212,49 @@ void main() {
       find.textContaining(RegExp(r'Message 1(?!\d)'), findRichText: true),
     );
     expect(target.top, inInclusiveRange(0, 800));
+
+    // The down button first goes back to where the user was.
+    final back = find.byTooltip('Back to where you were');
+    expect(back, findsOneWidget);
+    await tester.tap(back);
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+    expect(find.text('Answer', findRichText: true), findsOneWidget);
+    expect(find.byTooltip('Back to where you were'), findsNothing);
+  });
+
+  testWidgets('floats the date of the top row while scrolling', (tester) async {
+    json.chat = [for (var id = 1; id <= 60; id++) id];
+    json.push(_chat(lastRead: 60, unread: 0, last: 60));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await pump(tester);
+    await tester.pumpAndSettle();
+    final floating = find.byKey(const ValueKey('floatingDate'));
+    expect(floating, findsNothing);
+
+    final gesture = await tester.startGesture(const Offset(600, 400));
+    await gesture.moveBy(const Offset(0, 200));
+    await tester.pump();
+    await gesture.moveBy(const Offset(0, 200));
+    await tester.pump();
+    expect(floating, findsOneWidget);
+    final pill = tester.widget<AnimatedOpacity>(
+      find.ancestor(of: floating, matching: find.byType(AnimatedOpacity)),
+    );
+    expect(pill.opacity, 1);
+
+    await gesture.up();
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<AnimatedOpacity>(
+            find.ancestor(of: floating, matching: find.byType(AnimatedOpacity)),
+          )
+          .opacity,
+      0,
+    );
   });
 
   testWidgets('shows the pinned messages and cycles through them', (
@@ -288,6 +336,48 @@ void main() {
     await tester.runAsync(() => Future<void>.delayed(_tick));
     final unpin = json.sent.lastWhere((r) => r['@type'] == 'unpinChatMessage');
     expect(unpin['message_id'], 12);
+  });
+
+  testWidgets('offers to join a channel, then to mute it', (tester) async {
+    json.chat = [for (var id = 1; id <= 10; id++) id];
+    json
+      ..push(
+        _chat(
+          lastRead: 10,
+          unread: 0,
+          last: 10,
+          type: {
+            '@type': 'chatTypeSupergroup',
+            'supergroup_id': 99,
+            'is_channel': true,
+          },
+        ),
+      )
+      ..push(_supergroup(99, {'@type': 'chatMemberStatusLeft'}));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await pump(tester, group: false);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(Composer), findsNothing);
+    await tester.tap(find.text('Join channel'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    expect(json.sent.last['@type'], 'joinChat');
+
+    json.push(
+      _supergroup(99, {
+        '@type': 'chatMemberStatusMember',
+        'member_since_date': 0,
+      }),
+    );
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pumpAndSettle();
+    expect(find.byType(Composer), findsNothing);
+    await tester.tap(find.text('Mute'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    final mute = json.sent.lastWhere(
+      (r) => r['@type'] == 'setChatNotificationSettings',
+    );
+    expect((mute['notification_settings']! as Map)['mute_for'], greaterThan(0));
   });
 
   testWidgets('names the sender once per run in a group', (tester) async {
@@ -620,12 +710,13 @@ Map<String, Object?> _chat({
   required int lastRead,
   required int unread,
   required int last,
+  Map<String, Object?> type = const {'@type': 'chatTypePrivate', 'user_id': 2},
 }) => {
   '@type': 'updateNewChat',
   'chat': {
     '@type': 'chat',
     'id': 7,
-    'type': {'@type': 'chatTypePrivate', 'user_id': 2},
+    'type': type,
     'title': 'Boris',
     'last_message': _message(
       id: last,
@@ -647,6 +738,34 @@ Map<String, Object?> _chat({
   },
 };
 
+Map<String, Object?> _supergroup(int id, Map<String, Object?> status) => {
+  '@type': 'updateSupergroup',
+  'supergroup': {
+    '@type': 'supergroup',
+    'id': id,
+    'date': 0,
+    'status': status,
+    'member_count': 10,
+    'boost_level': 0,
+    'has_automatic_translation': false,
+    'has_linked_chat': false,
+    'has_location': false,
+    'sign_messages': false,
+    'show_message_sender': false,
+    'join_to_send_messages': false,
+    'join_by_request': false,
+    'is_slow_mode_enabled': false,
+    'is_channel': true,
+    'is_broadcast_group': false,
+    'is_forum': false,
+    'is_direct_messages_group': false,
+    'is_administered_direct_messages_group': false,
+    'has_direct_messages_group': false,
+    'has_forum_tabs': false,
+    'paid_message_star_count': 0,
+  },
+};
+
 final class _FakeTdJson implements td.TdJson {
   final _queue = Queue<String>();
   final sent = <Map<String, Object?>>[];
@@ -662,6 +781,9 @@ final class _FakeTdJson implements td.TdJson {
 
   /// The pinned messages, newest first.
   var pinned = <int>[];
+
+  /// Texts of [chat] messages other than "Message N".
+  var texts = <int, String>{};
   var _nextClientId = 0;
 
   /// Delivers [update] as TDLib would.
@@ -698,7 +820,11 @@ final class _FakeTdJson implements td.TdJson {
             decoded['limit']! as int,
           ))
             {
-              ..._message(id: id, senderId: 2, text: 'Message $id').toJson(),
+              ..._message(
+                id: id,
+                senderId: 2,
+                text: texts[id] ?? 'Message $id',
+              ).toJson(),
               if (repliesTo[id] case final original?)
                 'reply_to': {
                   '@type': 'messageReplyToMessage',
@@ -787,6 +913,7 @@ final class _FakeTdJson implements td.TdJson {
         'next_from_message_id': 0,
       },
       'downloadFile' => _stickerFile(decoded['file_id']! as int),
+      'joinChat' => {'@type': 'chatJoinResultSuccess'},
       'forwardMessages' => {
         '@type': 'messages',
         'total_count': 0,

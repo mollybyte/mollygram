@@ -21,6 +21,7 @@ class WorkspaceShell extends StatefulWidget {
     this.sidebarWidth = 0,
     this.strings,
     this.commands = const [],
+    this.commandSource,
     this.onOpenMessage,
   });
 
@@ -40,6 +41,11 @@ class WorkspaceShell extends StatefulWidget {
   /// Commands from the rest of the app and from plugins, listed before the
   /// shell's own tab and split commands.
   final List<PaletteCommand> commands;
+
+  /// Where the palette reads its commands each time it is built, such as
+  /// the app's command registry. When set, it replaces [commands] and the
+  /// shell's own commands, so it lists those itself (see [shellCommands]).
+  final List<PaletteCommand> Function()? commandSource;
 
   final void Function(MessageHit message, OpenTarget target)? onOpenMessage;
 
@@ -151,10 +157,12 @@ class WorkspaceShellState extends State<WorkspaceShell> {
                     child: _PalettePlacement(
                       child: CommandPalette(
                         directory: widget.directory,
-                        commands: [
-                          ...widget.commands,
-                          ...shellCommands(widget.controller, strings),
-                        ],
+                        commands:
+                            widget.commandSource?.call() ??
+                            [
+                              ...widget.commands,
+                              ...shellCommands(widget.controller, strings),
+                            ],
                         strings: strings,
                         initialQuery: _paletteQuery,
                         onOpenChat: (chat, target) =>
