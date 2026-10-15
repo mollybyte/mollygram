@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 import 'package:mollygram_core/mollygram_core.dart';
@@ -84,6 +85,35 @@ class MessageRowContext {
 
   /// This row is among the selected ones.
   final bool selected;
+}
+
+/// Tells its child whether the pointer is over it, for what shows only
+/// on hover, without rebuilding the child as the pointer moves.
+class _HoverScope extends StatefulWidget {
+  const _HoverScope({required this.builder});
+
+  final Widget Function(BuildContext context, ValueListenable<bool> hovered)
+  builder;
+
+  @override
+  State<_HoverScope> createState() => _HoverScopeState();
+}
+
+class _HoverScopeState extends State<_HoverScope> {
+  final _hovered = ValueNotifier(false);
+
+  @override
+  void dispose() {
+    _hovered.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => MouseRegion(
+    onEnter: (_) => _hovered.value = true,
+    onExit: (_) => _hovered.value = false,
+    child: widget.builder(context, _hovered),
+  );
 }
 
 /// Callbacks of a message row.
@@ -623,14 +653,16 @@ class _MessageBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ..._headers(l10n),
-        _content(context, l10n),
-        PluginMessageExtras(message: message),
-      ],
+    return _HoverScope(
+      builder: (context, hovered) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ..._headers(l10n),
+          _content(context, l10n),
+          PluginMessageExtras(message: message, hovered: hovered),
+        ],
+      ),
     );
   }
 
