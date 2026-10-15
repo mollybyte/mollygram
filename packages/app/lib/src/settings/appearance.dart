@@ -94,7 +94,7 @@ SurfaceTint? surfaceTint(WallpaperPreset preset) => switch (preset) {
     light: (c) => c.copyWith(
       fg: const Color(0xFF18161E),
       fg2: const Color(0xFF5C5768),
-      muted: const Color(0xFF8F8A9B),
+      muted: const Color(0xFF6E6978),
       separator: const Color(0x1F1C1A22),
       hover: const Color(0x0F1C1A22),
       field: const Color(0x0F1C1A22),
@@ -109,7 +109,7 @@ SurfaceTint? surfaceTint(WallpaperPreset preset) => switch (preset) {
     dark: (c) => c.copyWith(
       fg: const Color(0xFFF7F5FB),
       fg2: const Color(0xFFB9B4C6),
-      muted: const Color(0xFF857F93),
+      muted: const Color(0xFF9A94A8),
       separator: const Color(0x1FEEEAF5),
       hover: const Color(0x0FEEEAF5),
       field: const Color(0x0FEEEAF5),
@@ -126,7 +126,7 @@ SurfaceTint? surfaceTint(WallpaperPreset preset) => switch (preset) {
   WallpaperPreset.sage => (
     light: (c) => c.copyWith(
       fg2: const Color(0xFF5E645C),
-      muted: const Color(0xFF86897F),
+      muted: const Color(0xFF6A6D63),
       glass: const Color(0x80FFFFFF),
       glassSolid: const Color(0xF0F5F7F2),
       rim: const Color(0xCCFFFFFF),
@@ -135,7 +135,7 @@ SurfaceTint? surfaceTint(WallpaperPreset preset) => switch (preset) {
     ),
     dark: (c) => c.copyWith(
       fg2: const Color(0xFF9AA6A8),
-      muted: const Color(0xFF6A767A),
+      muted: const Color(0xFF96A1A5),
       glass: const Color(0x801C2226),
       glassSolid: const Color(0xF0222A2E),
       rim: const Color(0x1CFFFFFF),
@@ -147,7 +147,7 @@ SurfaceTint? surfaceTint(WallpaperPreset preset) => switch (preset) {
   WallpaperPreset.linen => (
     light: (c) => c.copyWith(
       fg2: const Color(0xFF6F685E),
-      muted: const Color(0xFF9B948A),
+      muted: const Color(0xFF77706A),
       glass: const Color(0x85FFFDF8),
       glassSolid: const Color(0xF0F8F5EF),
       rim: const Color(0xD9FFFFFF),
@@ -158,7 +158,7 @@ SurfaceTint? surfaceTint(WallpaperPreset preset) => switch (preset) {
     ),
     dark: (c) => c.copyWith(
       fg2: const Color(0xFFA39C92),
-      muted: const Color(0xFF726B62),
+      muted: const Color(0xFFA0988E),
       glass: const Color(0x802C2824),
       glassSolid: const Color(0xF02A2622),
       rim: const Color(0x1AFFFFFF),
