@@ -173,9 +173,49 @@ final chatListProvider =
       // same rows is not sent on, so the sidebar does not rebuild for it.
       return _startWith(
         chatLists.store.chatsFor(list),
-        chatLists.changes.map((_) => chatLists.store.chatsFor(list)),
+        _batched(
+          chatLists.changes,
+          _burst,
+        ).map((_) => chatLists.store.chatsFor(list)),
       ).distinct(_sameRows);
     });
+
+/// Sending a message makes TDLib send several updates one after another:
+/// the draft clears, the message appears, the chat moves up, its last message
+/// settles. Shown one by one they flash the row through states that are
+/// gone a moment later, so the sidebar waits this long to take them
+/// together.
+const _burst = Duration(milliseconds: 32);
+
+/// Passes the events of [source] on at most once per [window]: the first
+/// event opens a window and one event leaves when it ends, for all that
+/// arrived in it.
+Stream<void> _batched(Stream<void> source, Duration window) {
+  late final StreamController<void> controller;
+  StreamSubscription<void>? subscription;
+  Timer? timer;
+  controller = StreamController<void>(
+    onListen: () {
+      subscription = source.listen(
+        (_) => timer ??= Timer(window, () {
+          timer = null;
+          if (!controller.isClosed) controller.add(null);
+        }),
+        onError: controller.addError,
+        onDone: () {
+          timer?.cancel();
+          unawaited(controller.close());
+        },
+      );
+    },
+    onCancel: () {
+      timer?.cancel();
+      timer = null;
+      return subscription?.cancel();
+    },
+  );
+  return controller.stream;
+}
 
 /// Whether two lists hold the same entries, by identity: the store replaces
 /// an entry when it changes.
