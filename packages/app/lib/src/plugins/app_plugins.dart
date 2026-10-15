@@ -670,7 +670,8 @@ final class AppPlugins implements PluginsDelegate {
     final source = _sources.remove(entry.id);
     _states.remove(entry.id);
     _logs.remove(entry.id);
-    unawaited(_services.storage.clear(entry.id).catchError((Object _) {}));
+    // Awaited: the file must be gone before uninstall reports done.
+    await _services.storage.clear(entry.id).catchError((Object _) {});
     _save();
     // It stays under Available: installing it again asks again, for this
     // very code, and anything picked earlier is forgotten.
