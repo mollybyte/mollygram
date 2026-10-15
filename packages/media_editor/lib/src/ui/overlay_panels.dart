@@ -272,3 +272,58 @@ class ShapePanel extends StatelessWidget {
     );
   }
 }
+
+/// The sticker tool: a button that opens the app's picker and, with a
+/// sticker selected, its size.
+class StickerPanel extends StatelessWidget {
+  const StickerPanel({
+    super.key,
+    required this.overlay,
+    required this.onAdd,
+    required this.onScale,
+    required this.onScaleEnd,
+  });
+
+  final ImageOverlay? overlay;
+  final VoidCallback onAdd;
+  final ValueChanged<double> onScale;
+  final VoidCallback onScaleEnd;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = MediaEditorStrings.of(context);
+    final c = MgColors.of(context);
+    final overlay = this.overlay;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const SizedBox(width: 4),
+        MgTextButton(label: s.addSticker, onPressed: onAdd),
+        AnimatedSize(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          alignment: Alignment.centerLeft,
+          child: overlay == null
+              ? const SizedBox(height: 32)
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const EditorDivider(),
+                    Listener(
+                      onPointerUp: (_) => onScaleEnd(),
+                      onPointerCancel: (_) => onScaleEnd(),
+                      child: EditorSlider(
+                        value: ((overlay.scale - 0.1) / 0.7).clamp(0.0, 1.0),
+                        color: c.accent,
+                        label: s.size,
+                        onChanged: onScale,
+                      ),
+                    ),
+                  ],
+                ),
+        ),
+        const SizedBox(width: 8),
+      ],
+    );
+  }
+}

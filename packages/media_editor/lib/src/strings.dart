@@ -55,6 +55,8 @@ final class MediaEditorStrings {
     required this.setCover,
     required this.coverFrame,
     required this.secondsShort,
+    required this.stickers,
+    required this.addSticker,
   });
 
   /// Opens the editor, on the attachment preview.
@@ -123,6 +125,10 @@ final class MediaEditorStrings {
   /// The unit after a length in seconds, as in "8.4 s".
   final String secondsShort;
 
+  /// The sticker tool.
+  final String stickers;
+  final String addSticker;
+
   String preset(FilterPreset p) => presetNames[p.index];
   String adjustment(Adjustment a) => adjustmentNames[a.index];
 
@@ -188,6 +194,8 @@ final class MediaEditorStrings {
     setCover: 'Use as cover',
     coverFrame: 'Cover frame',
     secondsShort: 's',
+    stickers: 'Stickers',
+    addSticker: 'Add sticker',
   );
 
   static const ru = MediaEditorStrings._(
@@ -252,6 +260,8 @@ final class MediaEditorStrings {
     setCover: 'Сделать обложкой',
     coverFrame: 'Кадр обложки',
     secondsShort: 'с',
+    stickers: 'Стикеры',
+    addSticker: 'Добавить стикер',
   );
 
   /// The strings for the ambient locale: Russian for `ru`, English

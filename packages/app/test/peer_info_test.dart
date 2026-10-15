@@ -494,6 +494,7 @@ final class _FakeTdJson implements td.TdJson {
       'getAuthorizationState' => {'@type': 'authorizationStateReady'},
       'getChat' => _chats[decoded['chat_id']]!,
       'getUser' => _users[decoded['user_id']]!,
+      'getMe' => _user(7, 'Me', ''),
       'createPrivateChat' => _chats[decoded['user_id'] == 5 ? 10 : 11]!,
       'getUserFullInfo' => {
         '@type': 'userFullInfo',

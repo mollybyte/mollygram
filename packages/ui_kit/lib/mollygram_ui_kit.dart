@@ -13,6 +13,7 @@ export 'src/chat/calendar.dart';
 export 'src/chat/chat_header.dart';
 export 'src/chat/composer.dart';
 export 'src/chat/composer_suggestions.dart';
+export 'src/chat/dialogs.dart';
 export 'src/chat/emoji_panel.dart';
 export 'src/chat/formatting.dart';
 export 'src/chat/link_sheet.dart';

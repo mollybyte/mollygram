@@ -545,6 +545,62 @@ void main() {
     expect(delete['revoke'], isTrue);
   });
 
+  testWidgets('opens the full reaction picker and reacts from it', (
+    tester,
+  ) async {
+    await pump(tester);
+
+    await rightClick(tester, 'From Vera');
+    await tester.tap(find.byTooltip('More reactions'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    expect(find.byType(ReactionGrid), findsOneWidget);
+    await tester.tap(
+      find.descendant(of: find.byType(ReactionGrid), matching: find.text('🎉')),
+    );
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+
+    expect(find.byType(ReactionGrid), findsNothing);
+    final added = json.sent.lastWhere(
+      (r) => r['@type'] == 'addMessageReaction',
+    );
+    expect(added['message_id'], 12);
+    expect((added['reaction_type']! as Map)['emoji'], '🎉');
+  });
+
+  testWidgets('reports a message with a reason and details', (tester) async {
+    await pump(tester);
+
+    await rightClick(tester, 'From Vera');
+    await tester.tap(find.text('Report'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    // The server names the reasons.
+    expect(find.text('Report for'), findsOneWidget);
+    await tester.tap(find.text('Spam'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    // Then asks for details, which are required here.
+    expect(find.text('Add details'), findsOneWidget);
+    await tester.enterText(find.byType(TextField).last, 'Adverts');
+    await tester.pump();
+    await tester.tap(find.text('Send'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+
+    final reports = json.sent.where((r) => r['@type'] == 'reportChat');
+    expect(reports, hasLength(3));
+    expect(reports.first['message_ids'], [12]);
+    expect(reports.last['option_id'], 'AQ==');
+    expect(reports.last['text'], 'Adverts');
+    expect(find.text('Thank you, the report is on its way.'), findsOneWidget);
+    // The toast goes away by itself.
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+    expect(find.text('Thank you, the report is on its way.'), findsNothing);
+  });
+
   testWidgets('forwards a message to the chat picked', (tester) async {
     await pump(tester);
 
@@ -1212,7 +1268,22 @@ final class _FakeTdJson implements td.TdJson {
         'can_be_deleted_for_all_users': true,
         'can_get_viewers': decoded['message_id'] == 10,
         'can_get_added_reactions': true,
+        'can_report_chat': true,
       },
+      'reportChat' when decoded['option_id'] == '' => {
+        '@type': 'reportChatResultOptionRequired',
+        'title': 'Report for',
+        'options': [
+          {'@type': 'reportOption', 'id': 'AQ==', 'text': 'Spam'},
+          {'@type': 'reportOption', 'id': 'Ag==', 'text': 'Violence'},
+        ],
+      },
+      'reportChat' when decoded['text'] == '' => {
+        '@type': 'reportChatResultTextRequired',
+        'option_id': decoded['option_id'],
+        'is_optional': false,
+      },
+      'reportChat' => {'@type': 'reportChatResultOk'},
       'getMessageViewers' => {
         '@type': 'messageViewers',
         'viewers': [
@@ -1235,7 +1306,14 @@ final class _FakeTdJson implements td.TdJson {
           },
         ],
         'recent_reactions': <Object?>[],
-        'popular_reactions': <Object?>[],
+        'popular_reactions': [
+          for (final emoji in ['🔥', '🎉'])
+            {
+              '@type': 'availableReaction',
+              'type': {'@type': 'reactionTypeEmoji', 'emoji': emoji},
+              'needs_premium': false,
+            },
+        ],
         'allow_custom_emoji': true,
         'are_tags': false,
       },

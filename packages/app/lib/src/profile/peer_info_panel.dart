@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mollygram_core/mollygram_core.dart';
+import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../l10n/app_localizations.dart';
@@ -11,8 +12,14 @@ import '../chat/formatted_text.dart';
 import '../chat/message_tile.dart' show SenderAvatar;
 import '../session/providers.dart';
 import '../window_drag_area.dart';
+import 'edit_chat_sheet.dart';
+import 'invite_links_sheet.dart';
 import 'last_seen.dart';
+import 'manage_sheet.dart';
+import 'member_sheets.dart';
 import 'peer_info_state.dart';
+
+part 'members_section.dart';
 
 /// The content of the info panel for one chat: the photo, name and
 /// status, quick actions, the details in grouped rows and, for a group,
@@ -57,6 +64,7 @@ class PeerInfoPanel extends ConsumerWidget {
                 onMember: onMember,
                 onMessage: onMessage,
                 onSharedMedia: onSharedMedia,
+                onClose: onClose,
               ),
             ),
             AsyncError() => Center(
@@ -211,6 +219,7 @@ class _Content extends ConsumerWidget {
     required this.onMember,
     required this.onMessage,
     required this.onSharedMedia,
+    required this.onClose,
   });
 
   final PeerInfo info;
@@ -218,12 +227,17 @@ class _Content extends ConsumerWidget {
   final ValueChanged<int> onMember;
   final VoidCallback onMessage;
   final VoidCallback? onSharedMedia;
+  final VoidCallback onClose;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final c = MgColors.of(context);
     final peers = ref.read(telegramSessionProvider).requireValue.peers;
+    final rights = info.isUser
+        ? ChatRights.none
+        : ref.watch(chatRightsProvider(info.chatId)).value ?? ChatRights.none;
+    final channel = info.kind == PeerKind.channel;
     final title = info.isDeleted ? l10n.deletedAccount : info.title;
     final status = describePeerStatus(l10n, info, now: now);
 
@@ -329,6 +343,16 @@ class _Content extends ConsumerWidget {
                           .catchError((Object _) {}),
                     ),
                   ),
+                if (rights.canChangeInfo) ...[
+                  const SizedBox(width: 8),
+                  _ActionTile(
+                    icon: MgIcons.compose,
+                    label: l10n.edit,
+                    onTap: () => unawaited(
+                      showManageSheet<void>(context, EditChatSheet(info: info)),
+                    ),
+                  ),
+                ],
               ],
             ),
           ],
@@ -356,29 +380,36 @@ class _Content extends ConsumerWidget {
               ],
             ),
           ],
-          if (info.members.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 6),
-              child: Text(
-                l10n.membersCount(info.memberCount),
-                style: mgTextStyle(c, size: MgType.caption, color: c.fg2),
-              ),
-            ),
+          if (rights.canManageLinks) ...[
+            const SizedBox(height: 12),
             _Group(
-              inset: 52,
               children: [
-                for (final member in info.members)
-                  _MemberRow(
-                    member: member,
-                    status: member.isBot
-                        ? l10n.statusBot
-                        : describeUserStatus(l10n, member.status, now: now),
-                    online: isOnline(member.status, now),
-                    onTap: () => onMember(member.userId),
+                _NavRow(
+                  label: l10n.inviteLinks,
+                  onTap: () => unawaited(
+                    showManageSheet<void>(
+                      context,
+                      InviteLinksSheet(chatId: info.chatId),
+                    ),
                   ),
+                ),
               ],
             ),
+          ],
+          // Channel subscribers are for its administrators to see.
+          if (channel
+              ? rights.isOwner || rights.isAdmin
+              : info.members.isNotEmpty)
+            _MembersSection(
+              key: ValueKey(info.chatId),
+              info: info,
+              rights: rights,
+              now: now,
+              onMember: onMember,
+            ),
+          if (!info.isUser && rights.isMember) ...[
+            const SizedBox(height: 16),
+            _LeaveRows(info: info, rights: rights, onLeft: onClose),
           ],
         ],
       ),
@@ -447,10 +478,13 @@ class _Group extends StatelessWidget {
 
 /// A row that highlights under the pointer and reacts to clicks.
 class _Pressable extends StatefulWidget {
-  const _Pressable({required this.child, this.onTap});
+  const _Pressable({required this.child, this.onTap, this.onMenu});
 
   final Widget child;
   final VoidCallback? onTap;
+
+  /// A right click, with where it happened, for a context menu.
+  final ValueChanged<Offset>? onMenu;
 
   @override
   State<_Pressable> createState() => _PressableState();
@@ -470,6 +504,9 @@ class _PressableState extends State<_Pressable> {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: widget.onTap,
+        onSecondaryTapUp: widget.onMenu == null
+            ? null
+            : (details) => widget.onMenu!(details.globalPosition),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 120),
           color: _hover && enabled ? c.hover : const Color(0x00000000),
@@ -674,12 +711,14 @@ class _MemberRow extends StatelessWidget {
     required this.status,
     required this.online,
     required this.onTap,
+    this.onMenu,
   });
 
   final PeerMember member;
   final String status;
   final bool online;
   final VoidCallback onTap;
+  final ValueChanged<Offset>? onMenu;
 
   @override
   Widget build(BuildContext context) {
@@ -692,6 +731,7 @@ class _MemberRow extends StatelessWidget {
     };
     return _Pressable(
       onTap: onTap,
+      onMenu: onMenu,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         child: Row(
@@ -732,6 +772,99 @@ class _MemberRow extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Leave, and for the owner Delete, with a confirmation. A refusal from
+/// TDLib is said under the rows.
+class _LeaveRows extends ConsumerStatefulWidget {
+  const _LeaveRows({
+    required this.info,
+    required this.rights,
+    required this.onLeft,
+  });
+
+  final PeerInfo info;
+  final ChatRights rights;
+  final VoidCallback onLeft;
+
+  @override
+  ConsumerState<_LeaveRows> createState() => _LeaveRowsState();
+}
+
+class _LeaveRowsState extends ConsumerState<_LeaveRows> {
+  String? _error;
+
+  Future<void> _leave({required bool delete}) async {
+    final l10n = AppLocalizations.of(context);
+    final channel = widget.info.kind == PeerKind.channel;
+    // The owner of a supergroup or channel stays its owner after leaving
+    // and may come back; say so before they go.
+    final ownerNote = widget.rights.isOwner && widget.rights.isSupergroup
+        ? l10n.leaveOwnerNote
+        : null;
+    final confirmed = await showMgConfirm(
+      context,
+      title: delete
+          ? (channel ? l10n.deleteChannelTitle : l10n.deleteGroupTitle)
+          : (channel ? l10n.leaveChannelTitle : l10n.leaveGroupTitle),
+      message: delete
+          ? (channel ? l10n.deleteChannelMessage : l10n.deleteGroupMessage)
+          : ownerNote,
+      confirmLabel: delete ? l10n.deleteForEveryone : l10n.leave,
+      cancelLabel: l10n.cancel,
+      destructive: true,
+    );
+    if (confirmed == null || !mounted) return;
+    final management = ref
+        .read(telegramSessionProvider)
+        .requireValue
+        .management;
+    try {
+      delete
+          ? await management.deleteChat(widget.info.chatId)
+          : await management.leave(widget.info.chatId);
+      widget.onLeft();
+    } on Object {
+      if (mounted) {
+        setState(() => _error = delete ? l10n.deleteFailed : l10n.leaveFailed);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final c = MgColors.of(context);
+    final channel = widget.info.kind == PeerKind.channel;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _Group(
+          children: [
+            _ActionRow(
+              label: channel ? l10n.leaveChannel : l10n.leaveGroup,
+              color: MgDestructive.color,
+              onTap: () => unawaited(_leave(delete: false)),
+            ),
+            if (widget.rights.canDeleteChat)
+              _ActionRow(
+                label: channel ? l10n.deleteChannel : l10n.deleteGroup,
+                color: MgDestructive.color,
+                onTap: () => unawaited(_leave(delete: true)),
+              ),
+          ],
+        ),
+        if (_error case final error?)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
+            child: Text(
+              error,
+              style: mgTextStyle(c, size: MgType.small, color: c.fg2),
+            ),
+          ),
+      ],
     );
   }
 }

@@ -94,3 +94,17 @@ void openPeerInfo(WidgetRef ref, int chatId) {
 /// Opens or closes the info panel of [chatId]; the chat header calls it.
 void togglePeerInfo(WidgetRef ref, int chatId) =>
     ref.read(peerInfoPanelsProvider.notifier).toggle(chatId);
+
+/// What the user may do in a group or channel, read again whenever its
+/// members change (the user may have been promoted or removed).
+final chatRightsProvider = FutureProvider.autoDispose.family<ChatRights, int>((
+  ref,
+  chatId,
+) {
+  final management = ref.watch(telegramSessionProvider).requireValue.management;
+  final subscription = management.changes
+      .where((id) => id == chatId)
+      .listen((_) => ref.invalidateSelf());
+  ref.onDispose(subscription.cancel);
+  return management.rights(chatId);
+});

@@ -890,6 +890,42 @@ abstract class AppLocalizations {
   /// **'Quote'**
   String get menuQuote;
 
+  /// No description provided for @menuReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Report'**
+  String get menuReport;
+
+  /// No description provided for @moreReactions.
+  ///
+  /// In en, this message translates to:
+  /// **'More reactions'**
+  String get moreReactions;
+
+  /// No description provided for @reportDetailsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add details'**
+  String get reportDetailsTitle;
+
+  /// No description provided for @reportDetailsOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'You can add details, or send the report as it is.'**
+  String get reportDetailsOptional;
+
+  /// No description provided for @reportDetailsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'What is wrong with this message?'**
+  String get reportDetailsHint;
+
+  /// No description provided for @reportSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Thank you, the report is on its way.'**
+  String get reportSent;
+
   /// No description provided for @seenBy.
   ///
   /// In en, this message translates to:
@@ -3283,6 +3319,546 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, one{Unpin {count} message?} other{Unpin all {count} messages?}}'**
   String unpinAllTitle(int count);
+
+  /// No description provided for @edit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get edit;
+
+  /// No description provided for @create.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get create;
+
+  /// No description provided for @remove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get remove;
+
+  /// No description provided for @leave.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave'**
+  String get leave;
+
+  /// No description provided for @newGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'New group'**
+  String get newGroup;
+
+  /// No description provided for @newChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'New channel'**
+  String get newChannel;
+
+  /// No description provided for @groupName.
+  ///
+  /// In en, this message translates to:
+  /// **'Group name'**
+  String get groupName;
+
+  /// No description provided for @channelName.
+  ///
+  /// In en, this message translates to:
+  /// **'Channel name'**
+  String get channelName;
+
+  /// No description provided for @descriptionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Description (optional)'**
+  String get descriptionHint;
+
+  /// No description provided for @descriptionNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Shown on the info panel under the name.'**
+  String get descriptionNote;
+
+  /// No description provided for @chatTitleRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a name'**
+  String get chatTitleRequired;
+
+  /// No description provided for @addMembersHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add members'**
+  String get addMembersHint;
+
+  /// No description provided for @createFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t create it. Try again.'**
+  String get createFailed;
+
+  /// No description provided for @editGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit group'**
+  String get editGroup;
+
+  /// No description provided for @editChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit channel'**
+  String get editChannel;
+
+  /// No description provided for @setPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Set photo'**
+  String get setPhoto;
+
+  /// No description provided for @changePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Change photo'**
+  String get changePhoto;
+
+  /// No description provided for @removePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove photo'**
+  String get removePhoto;
+
+  /// No description provided for @inviteLinks.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite links'**
+  String get inviteLinks;
+
+  /// No description provided for @primaryLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Primary link'**
+  String get primaryLink;
+
+  /// No description provided for @createPrimaryLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate a link'**
+  String get createPrimaryLink;
+
+  /// No description provided for @additionalLinks.
+  ///
+  /// In en, this message translates to:
+  /// **'Additional links'**
+  String get additionalLinks;
+
+  /// No description provided for @copyLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy link'**
+  String get copyLink;
+
+  /// No description provided for @revokeLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke'**
+  String get revokeLink;
+
+  /// No description provided for @revokeLinkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke this link?'**
+  String get revokeLinkTitle;
+
+  /// No description provided for @revokeLinkMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody will be able to join with it any more.'**
+  String get revokeLinkMessage;
+
+  /// No description provided for @revokePrimaryMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody will be able to join with it any more. A new primary link replaces it.'**
+  String get revokePrimaryMessage;
+
+  /// No description provided for @createLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a new link'**
+  String get createLink;
+
+  /// No description provided for @newLink.
+  ///
+  /// In en, this message translates to:
+  /// **'New link'**
+  String get newLink;
+
+  /// No description provided for @linkNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Link name (only admins see it)'**
+  String get linkNameHint;
+
+  /// No description provided for @linkDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Works for'**
+  String get linkDuration;
+
+  /// No description provided for @linkMemberLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Number of uses'**
+  String get linkMemberLimit;
+
+  /// No description provided for @linkRequestApproval.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve new members'**
+  String get linkRequestApproval;
+
+  /// No description provided for @noLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'No limit'**
+  String get noLimit;
+
+  /// No description provided for @oneDay.
+  ///
+  /// In en, this message translates to:
+  /// **'1 day'**
+  String get oneDay;
+
+  /// No description provided for @oneWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'1 week'**
+  String get oneWeek;
+
+  /// No description provided for @oneMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'1 month'**
+  String get oneMonth;
+
+  /// No description provided for @linkJoined.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{nobody joined} =1{1 joined} other{{count} joined}}'**
+  String linkJoined(int count);
+
+  /// No description provided for @linkJoinedOf.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} of {limit} joined'**
+  String linkJoinedOf(int count, int limit);
+
+  /// No description provided for @linkApproval.
+  ///
+  /// In en, this message translates to:
+  /// **'with approval'**
+  String get linkApproval;
+
+  /// No description provided for @linkExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'expired'**
+  String get linkExpired;
+
+  /// No description provided for @linkExpires.
+  ///
+  /// In en, this message translates to:
+  /// **'expires {date}'**
+  String linkExpires(String date);
+
+  /// No description provided for @searchMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Search members'**
+  String get searchMembers;
+
+  /// No description provided for @showMoreMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Show more'**
+  String get showMoreMembers;
+
+  /// No description provided for @promoteToAdmin.
+  ///
+  /// In en, this message translates to:
+  /// **'Make admin'**
+  String get promoteToAdmin;
+
+  /// No description provided for @editAdminRights.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit admin rights'**
+  String get editAdminRights;
+
+  /// No description provided for @dismissAdmin.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss admin'**
+  String get dismissAdmin;
+
+  /// No description provided for @restrictMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Restrict'**
+  String get restrictMember;
+
+  /// No description provided for @removeFromGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from group'**
+  String get removeFromGroup;
+
+  /// No description provided for @removeFromChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from channel'**
+  String get removeFromChannel;
+
+  /// No description provided for @removeMemberTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {name}?'**
+  String removeMemberTitle(String name);
+
+  /// No description provided for @addAdmin.
+  ///
+  /// In en, this message translates to:
+  /// **'New admin'**
+  String get addAdmin;
+
+  /// No description provided for @adminRights.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin rights'**
+  String get adminRights;
+
+  /// No description provided for @adminRightsOf.
+  ///
+  /// In en, this message translates to:
+  /// **'What {name} can do'**
+  String adminRightsOf(String name);
+
+  /// No description provided for @restrictWhatCan.
+  ///
+  /// In en, this message translates to:
+  /// **'What {name} can still do'**
+  String restrictWhatCan(String name);
+
+  /// No description provided for @rightChangeInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Change group info'**
+  String get rightChangeInfo;
+
+  /// No description provided for @rightChangeChannelInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Change channel info'**
+  String get rightChangeChannelInfo;
+
+  /// No description provided for @rightPostMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Post messages'**
+  String get rightPostMessages;
+
+  /// No description provided for @rightEditMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit others\' messages'**
+  String get rightEditMessages;
+
+  /// No description provided for @rightDeleteMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete messages'**
+  String get rightDeleteMessages;
+
+  /// No description provided for @rightBanUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'Ban users'**
+  String get rightBanUsers;
+
+  /// No description provided for @rightInviteUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'Add members'**
+  String get rightInviteUsers;
+
+  /// No description provided for @rightAddSubscribers.
+  ///
+  /// In en, this message translates to:
+  /// **'Add subscribers'**
+  String get rightAddSubscribers;
+
+  /// No description provided for @rightPinMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Pin messages'**
+  String get rightPinMessages;
+
+  /// No description provided for @rightManageVideoChats.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage video chats'**
+  String get rightManageVideoChats;
+
+  /// No description provided for @rightAddAdmins.
+  ///
+  /// In en, this message translates to:
+  /// **'Add new admins'**
+  String get rightAddAdmins;
+
+  /// No description provided for @rightAnonymous.
+  ///
+  /// In en, this message translates to:
+  /// **'Remain anonymous'**
+  String get rightAnonymous;
+
+  /// No description provided for @permSendMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Send messages'**
+  String get permSendMessages;
+
+  /// No description provided for @permSendMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'Send media'**
+  String get permSendMedia;
+
+  /// No description provided for @permSendStickers.
+  ///
+  /// In en, this message translates to:
+  /// **'Send stickers and GIFs'**
+  String get permSendStickers;
+
+  /// No description provided for @permSendPolls.
+  ///
+  /// In en, this message translates to:
+  /// **'Send polls'**
+  String get permSendPolls;
+
+  /// No description provided for @permEmbedLinks.
+  ///
+  /// In en, this message translates to:
+  /// **'Embed links'**
+  String get permEmbedLinks;
+
+  /// No description provided for @leaveGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave group'**
+  String get leaveGroup;
+
+  /// No description provided for @leaveChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave channel'**
+  String get leaveChannel;
+
+  /// No description provided for @deleteGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete group'**
+  String get deleteGroup;
+
+  /// No description provided for @deleteChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete channel'**
+  String get deleteChannel;
+
+  /// No description provided for @leaveGroupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave this group?'**
+  String get leaveGroupTitle;
+
+  /// No description provided for @leaveChannelTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave this channel?'**
+  String get leaveChannelTitle;
+
+  /// No description provided for @deleteGroupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this group?'**
+  String get deleteGroupTitle;
+
+  /// No description provided for @deleteChannelTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this channel?'**
+  String get deleteChannelTitle;
+
+  /// No description provided for @membersFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the members.'**
+  String get membersFailed;
+
+  /// No description provided for @memberChangeFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t make the change. You may not have the right to.'**
+  String get memberChangeFailed;
+
+  /// No description provided for @removeRestrictions.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove restrictions'**
+  String get removeRestrictions;
+
+  /// No description provided for @rightManageTopics.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage topics'**
+  String get rightManageTopics;
+
+  /// No description provided for @notAddedMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{The group is created, but {names} couldn\'t be added because of their privacy settings.} other{The group is created, but {names} couldn\'t be added because of their privacy settings.}}'**
+  String notAddedMembers(int count, String names);
+
+  /// No description provided for @leaveOwnerNote.
+  ///
+  /// In en, this message translates to:
+  /// **'You stay the owner and can come back with an invite link.'**
+  String get leaveOwnerNote;
+
+  /// No description provided for @deleteGroupMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Every member loses the group and all its messages. This can\'t be undone.'**
+  String get deleteGroupMessage;
+
+  /// No description provided for @deleteChannelMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Every subscriber loses the channel and all its posts. This can\'t be undone.'**
+  String get deleteChannelMessage;
+
+  /// No description provided for @leaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t leave. Try again.'**
+  String get leaveFailed;
+
+  /// No description provided for @deleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t delete it. Try again.'**
+  String get deleteFailed;
 
   /// No description provided for @folderDeletedChat.
   ///
