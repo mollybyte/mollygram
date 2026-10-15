@@ -11,6 +11,7 @@ import '../home/format.dart';
 import 'describe.dart';
 import 'formatted_text.dart';
 import 'message_tile.dart';
+import 'report.dart';
 
 /// What the chat does for the commands of the message menu.
 final class MessageMenuHandlers {
@@ -164,6 +165,19 @@ Future<void> showMessageMenu(
       label: l10n.menuSelect,
       onSelected: () => handlers.onSelect(row),
     ),
+    if (properties?.canReportChat ?? false)
+      MgMenuItem(
+        label: l10n.menuReport,
+        onSelected: () => unawaited(
+          reportMessages(
+            context,
+            conversations: conversations,
+            chatId: chatId,
+            messageIds: [for (final message in row.messages) message.id],
+            isShown: isShown,
+          ),
+        ),
+      ),
     if (canDelete)
       MgMenuItem(
         label: l10n.menuDelete,

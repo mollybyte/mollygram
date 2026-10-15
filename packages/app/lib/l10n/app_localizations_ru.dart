@@ -442,6 +442,22 @@ class AppLocalizationsRu extends AppLocalizations {
   String get menuQuote => 'Цитировать';
 
   @override
+  String get menuReport => 'Пожаловаться';
+
+  @override
+  String get reportDetailsTitle => 'Добавить подробности';
+
+  @override
+  String get reportDetailsOptional =>
+      'Можно добавить подробности или отправить жалобу как есть.';
+
+  @override
+  String get reportDetailsHint => 'Что не так с этим сообщением?';
+
+  @override
+  String get reportSent => 'Спасибо, жалоба отправлена.';
+
+  @override
   String seenBy(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

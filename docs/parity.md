@@ -94,7 +94,7 @@ M8 calls and macOS release, M9 after release.
 | Pin and unpin | done (#49) | | S | M1 |
 | Forward without author or caption | done | Checkboxes in the forward picker | S | M2 |
 | Save media to Downloads, show in Finder | missing | | S | M1 |
-| Report message | missing | `ReportChat` | S | M2 |
+| Report message | done | `ReportChat` step by step: reason, sub-reason, details, toast (`chat/report.dart`) | | |
 | Who read and who reacted | done | Rows at the top of the message menu, read time in private chats | S | M2 |
 | Message info: view count, forwards, edit date | done | Views and forwards on channel posts, full date and edit time on hover | S | M2 |
 | Select and copy part of a message | done | | | M2 |

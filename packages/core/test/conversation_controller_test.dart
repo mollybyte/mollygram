@@ -327,6 +327,32 @@ void main() {
     );
   });
 
+  test('reports messages step by step as the server asks', () async {
+    await controller.start();
+
+    final first = await controller.report(7, [10]);
+    final options = (first as td.ReportChatResultOptionRequired).options;
+    expect(options.map((o) => o.text), ['Spam', 'Violence']);
+    var sent = json.sent.last;
+    expect(sent['@type'], 'reportChat');
+    expect(sent['option_id'], '');
+    expect(sent['message_ids'], [10]);
+
+    final second = await controller.report(7, [10], optionId: options[0].id);
+    expect(second, isA<td.ReportChatResultTextRequired>());
+    sent = json.sent.last;
+    expect(sent['option_id'], 'AQ==');
+
+    final third = await controller.report(
+      7,
+      [10],
+      optionId: options[0].id,
+      text: 'Adverts',
+    );
+    expect(third, isA<td.ReportChatResultOk>());
+    expect(json.sent.last['text'], 'Adverts');
+  });
+
   test('unpins every message of a chat', () async {
     await controller.start();
     controller.store.setPinned(7, [30, 20]);
@@ -1143,6 +1169,20 @@ final class _FakeTdJson implements td.TdJson {
         '@type': 'messageReadDateRead',
         'read_date': 1700000000,
       },
+      'reportChat' when decoded['option_id'] == '' => {
+        '@type': 'reportChatResultOptionRequired',
+        'title': 'Report for',
+        'options': [
+          {'@type': 'reportOption', 'id': 'AQ==', 'text': 'Spam'},
+          {'@type': 'reportOption', 'id': 'Ag==', 'text': 'Violence'},
+        ],
+      },
+      'reportChat' when decoded['text'] == '' => {
+        '@type': 'reportChatResultTextRequired',
+        'option_id': decoded['option_id'],
+        'is_optional': true,
+      },
+      'reportChat' => {'@type': 'reportChatResultOk'},
       'getChatMessageByDate' when byDateError != null => {
         '@type': 'error',
         'code': byDateError,

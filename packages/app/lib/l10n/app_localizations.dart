@@ -890,6 +890,36 @@ abstract class AppLocalizations {
   /// **'Quote'**
   String get menuQuote;
 
+  /// No description provided for @menuReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Report'**
+  String get menuReport;
+
+  /// No description provided for @reportDetailsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add details'**
+  String get reportDetailsTitle;
+
+  /// No description provided for @reportDetailsOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'You can add details, or send the report as it is.'**
+  String get reportDetailsOptional;
+
+  /// No description provided for @reportDetailsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'What is wrong with this message?'**
+  String get reportDetailsHint;
+
+  /// No description provided for @reportSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Thank you, the report is on its way.'**
+  String get reportSent;
+
   /// No description provided for @seenBy.
   ///
   /// In en, this message translates to:
