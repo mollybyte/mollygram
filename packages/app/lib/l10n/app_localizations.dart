@@ -1477,6 +1477,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Next reaction'**
   String get nextReaction;
+
+  /// No description provided for @searchInChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Search in chat'**
+  String get searchInChat;
+
+  /// No description provided for @searchCounter.
+  ///
+  /// In en, this message translates to:
+  /// **'{index} of {count}'**
+  String searchCounter(int index, int count);
+
+  /// No description provided for @searchNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No results'**
+  String get searchNoResults;
+
+  /// No description provided for @searchOlder.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous result'**
+  String get searchOlder;
+
+  /// No description provided for @searchNewer.
+  ///
+  /// In en, this message translates to:
+  /// **'Next result'**
+  String get searchNewer;
+
+  /// No description provided for @sharedMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared media'**
+  String get sharedMedia;
+
+  /// No description provided for @sharedMediaTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Media'**
+  String get sharedMediaTab;
+
+  /// No description provided for @sharedFilesTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Files'**
+  String get sharedFilesTab;
+
+  /// No description provided for @sharedLinksTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Links'**
+  String get sharedLinksTab;
+
+  /// No description provided for @sharedVoiceTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice'**
+  String get sharedVoiceTab;
+
+  /// No description provided for @sharedMusicTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Music'**
+  String get sharedMusicTab;
+
+  /// No description provided for @sharedMediaEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No photos or videos yet'**
+  String get sharedMediaEmpty;
+
+  /// No description provided for @sharedFilesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No files yet'**
+  String get sharedFilesEmpty;
+
+  /// No description provided for @sharedLinksEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No links yet'**
+  String get sharedLinksEmpty;
+
+  /// No description provided for @sharedVoiceEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No voice messages yet'**
+  String get sharedVoiceEmpty;
+
+  /// No description provided for @sharedMusicEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No music yet'**
+  String get sharedMusicEmpty;
+
+  /// No description provided for @sharedLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the list'**
+  String get sharedLoadFailed;
+
+  /// No description provided for @showInChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Show in chat'**
+  String get showInChat;
 }
 
 class _AppLocalizationsDelegate

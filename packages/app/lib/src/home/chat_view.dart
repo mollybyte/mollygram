@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_media/mollygram_media.dart';
+import 'package:mollygram_shell/mollygram_shell.dart' show primaryShortcut;
 import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 import 'package:pasteboard/pasteboard.dart';
@@ -25,6 +26,7 @@ import '../chat/message_actions.dart';
 import '../chat/message_tile.dart';
 import '../chat/timeline_scroll.dart';
 import '../chat/timeline_view.dart';
+import '../chat_search/chat_search_bar.dart';
 import '../session/providers.dart';
 import '../window_drag_area.dart';
 
@@ -63,6 +65,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
 
   /// Whether the emoji and sticker panel is open over the composer.
   var _panelOpen = false;
+
+  /// Whether the ⌘F search capsule takes the title's place.
+  var _searching = false;
 
   final _scroll = TimelineScrollController();
 
@@ -113,6 +118,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _setAside = '';
     _replyAside = null;
     _panelOpen = false;
+    _searching = false;
     _anchor = null;
     _unreadFrom = null;
     _flashId = null;
@@ -401,6 +407,13 @@ class _ChatViewState extends ConsumerState<ChatView> {
 
   void _togglePanel() {
     setState(() => _panelOpen = !_panelOpen);
+    _focus.requestFocus();
+  }
+
+  void _openSearch() => setState(() => _searching = true);
+
+  void _closeSearch() {
+    setState(() => _searching = false);
     _focus.requestFocus();
   }
 
@@ -857,7 +870,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     final messages = ref.watch(conversationProvider(widget.chatId));
     final store = session.conversations.store;
 
-    return DropTarget(
+    final view = DropTarget(
       onDragEntered: (_) => setState(() => _dragging = true),
       onDragExited: (_) => setState(() => _dragging = false),
       onDragDone: (details) {
@@ -902,7 +915,18 @@ class _ChatViewState extends ConsumerState<ChatView> {
             left: 14,
             right: 14,
             child: ChatHeaderBar(
-              title: ChatTitleCapsule(title: chat?.title ?? ''),
+              title: _searching
+                  ? SizedBox(
+                      width: double.infinity,
+                      child: ChatSearchBar(
+                        key: ValueKey(widget.chatId),
+                        find: (query) =>
+                            session.chatSearch.find(widget.chatId, query),
+                        onResult: (id) => unawaited(_jumpTo(id)),
+                        onClose: _closeSearch,
+                      ),
+                    )
+                  : ChatTitleCapsule(title: chat?.title ?? ''),
               actions: const SizedBox.shrink(),
               fill: const WindowDragArea(),
             ),
@@ -996,6 +1020,10 @@ class _ChatViewState extends ConsumerState<ChatView> {
             ),
         ],
       ),
+    );
+    return CallbackShortcuts(
+      bindings: {primaryShortcut(LogicalKeyboardKey.keyF): _openSearch},
+      child: view,
     );
   }
 }

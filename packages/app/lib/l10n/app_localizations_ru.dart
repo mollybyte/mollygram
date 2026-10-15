@@ -872,4 +872,60 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get nextReaction => 'Следующая реакция';
+
+  @override
+  String get searchInChat => 'Поиск в чате';
+
+  @override
+  String searchCounter(int index, int count) {
+    return '$index из $count';
+  }
+
+  @override
+  String get searchNoResults => 'Ничего не найдено';
+
+  @override
+  String get searchOlder => 'Предыдущий результат';
+
+  @override
+  String get searchNewer => 'Следующий результат';
+
+  @override
+  String get sharedMedia => 'Общие материалы';
+
+  @override
+  String get sharedMediaTab => 'Медиа';
+
+  @override
+  String get sharedFilesTab => 'Файлы';
+
+  @override
+  String get sharedLinksTab => 'Ссылки';
+
+  @override
+  String get sharedVoiceTab => 'Голосовые';
+
+  @override
+  String get sharedMusicTab => 'Музыка';
+
+  @override
+  String get sharedMediaEmpty => 'Здесь пока нет фото и видео';
+
+  @override
+  String get sharedFilesEmpty => 'Здесь пока нет файлов';
+
+  @override
+  String get sharedLinksEmpty => 'Здесь пока нет ссылок';
+
+  @override
+  String get sharedVoiceEmpty => 'Здесь пока нет голосовых сообщений';
+
+  @override
+  String get sharedMusicEmpty => 'Здесь пока нет музыки';
+
+  @override
+  String get sharedLoadFailed => 'Не удалось загрузить список';
+
+  @override
+  String get showInChat => 'Показать в чате';
 }
