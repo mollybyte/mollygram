@@ -31,6 +31,7 @@ import '../chat/forward_picker.dart';
 import '../chat/inline_results.dart';
 import '../chat/link_preview_bar.dart';
 import '../chat/location_picker.dart';
+import '../chat/measured.dart';
 import '../chat/media_viewer.dart';
 import '../chat/message_actions.dart';
 import '../chat/message_tile.dart';
@@ -378,10 +379,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
       return;
     }
     final viewport = _scroll.position.viewportDimension;
-    final hit = TimelineView.rowAt(
-      _timelineKey,
-      viewport - TimelineView.bottomInset - 4,
-    );
+    final hit = TimelineView.rowAt(_timelineKey, viewport - _bottomInset - 4);
     if (hit == null) return;
     _positions[chatId] = hit.messageId;
   }
@@ -401,7 +399,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     }
     _scroll
       ..pinned = false
-      ..request((_) => -(TimelineView.bottomInset + 4));
+      ..request((_) => -(_bottomInset + 4));
     setState(() => _anchor = id);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && widget.chatId == chatId) _followScroll();
@@ -1506,7 +1504,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
       final viewport = _scroll.position.viewportDimension;
       _returnTo = TimelineView.rowAt(
         _timelineKey,
-        viewport - TimelineView.bottomInset - 4,
+        viewport - _bottomInset - 4,
       )?.messageId;
     }
     if (!store.contains(chatId, messageId)) {
@@ -2115,6 +2113,14 @@ class _ChatViewState extends ConsumerState<ChatView> {
   /// The id of the message whose keyboard the user hid; 0 for none.
   var _keyboardHiddenFor = 0;
 
+  /// The height of the bot keyboard on screen, which the timeline makes
+  /// room for; 0 without one.
+  var _keyboardHeight = 0.0;
+
+  /// The space the timeline leaves under its newest message: the composer
+  /// and the bot keyboard above it.
+  double get _bottomInset => TimelineView.composerInset + _keyboardHeight;
+
   /// The bot keyboard the chat shows in place of its own, loaded when the
   /// message carrying it isn't at hand yet.
   (int, td.ReplyMarkupShowKeyboard)? _replyKeyboard(ConversationStore store) {
@@ -2229,12 +2235,19 @@ class _ChatViewState extends ConsumerState<ChatView> {
       return null;
     }
     final (id, markup) = keyboard;
-    return ReplyKeyboard(
-      rows: markup.rows,
-      onPressed: (button) {
-        unawaited(_pressKeyboardButton(id, button));
-        if (markup.oneTime) setState(() => _keyboardHiddenFor = id);
+    return Measured(
+      onSize: (size) {
+        if (mounted && size.height != _keyboardHeight) {
+          setState(() => _keyboardHeight = size.height);
+        }
       },
+      child: ReplyKeyboard(
+        rows: markup.rows,
+        onPressed: (button) {
+          unawaited(_pressKeyboardButton(id, button));
+          if (markup.oneTime) setState(() => _keyboardHiddenFor = id);
+        },
+      ),
     );
   }
 
@@ -3347,6 +3360,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
       });
     }
 
+    final keyboardPanel = _selected == null && !_listOpen
+        ? _replyKeyboardPanel(store)
+        : null;
     final view = DropTarget(
       onDragEntered: (_) => setState(() => _dragging = true),
       onDragExited: (_) => setState(() => _dragging = false),
@@ -3423,6 +3439,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
                   flashId: _flashId,
                   flash: _flash,
                   topInset: _topInset,
+                  bottomInset: keyboardPanel == null
+                      ? TimelineView.composerInset
+                      : _bottomInset,
                   selection: _selected,
                   onDateTap: (day, position) =>
                       unawaited(_openCalendar(day, position)),
@@ -3613,8 +3632,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
                         ? () => unawaited(_inline.loadMore())
                         : null,
                   ),
-                if (_selected == null && !_listOpen)
-                  ?_replyKeyboardPanel(store),
+                ?keyboardPanel,
                 if (_panelOpen)
                   Align(
                     alignment: Alignment.centerRight,

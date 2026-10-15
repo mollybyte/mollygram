@@ -1620,6 +1620,36 @@ void main() {
     expect(find.text('Menu'), findsOneWidget);
   });
 
+  testWidgets('makes room under the messages for a bot\'s keyboard', (
+    tester,
+  ) async {
+    json.history = [_replyKeyboardMessage(), ..._history];
+    json.push(_chat(lastRead: 13, unread: 0, last: 13, replyMarkup: 17));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await pump(tester);
+    await tester.pump();
+    TimelineView timeline() =>
+        tester.widget<TimelineView>(find.byType(TimelineView));
+    final keyboard = tester.getSize(find.byType(ReplyKeyboard));
+    expect(keyboard.height, greaterThan(60));
+    expect(
+      timeline().bottomInset,
+      TimelineView.composerInset + keyboard.height,
+    );
+    // The newest message sits above the keyboard, not under it.
+    final newest = tester.getBottomLeft(find.text('Mine'));
+    expect(
+      newest.dy,
+      lessThan(tester.getTopLeft(find.byType(ReplyKeyboard)).dy),
+    );
+
+    // Hidden, the keyboard gives the space back.
+    await tester.tap(find.byTooltip('Bot keyboard'));
+    await tester.pump();
+    expect(find.byType(ReplyKeyboard), findsNothing);
+    expect(timeline().bottomInset, TimelineView.composerInset);
+  });
+
   testWidgets('offers emoji for a :word and stickers for an emoji', (
     tester,
   ) async {
