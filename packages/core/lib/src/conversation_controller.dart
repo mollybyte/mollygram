@@ -911,6 +911,48 @@ final class ConversationController {
     return null;
   }
 
+  /// The text that starts an inline query to bot [botUserId]: its
+  /// username and [query], as a switch-to-inline button asks for; null
+  /// when the bot has no username.
+  Future<String?> switchInlineText(int botUserId, String query) async {
+    final td.User user;
+    try {
+      user = await _client.send(td.GetUser(userId: botUserId));
+    } on td.TdException {
+      return null;
+    }
+    final usernames = user.usernames;
+    final username = usernames == null
+        ? ''
+        : usernames.editableUsername.isNotEmpty
+        ? usernames.editableUsername
+        : usernames.activeUsernames.firstOrNull ?? '';
+    if (username.isEmpty) return null;
+    return '@$username $query';
+  }
+
+  /// The signed-in user.
+  Future<td.User> me() => _client.send(const td.GetMe());
+
+  /// Answers a bot's request for users, from the button [buttonId] of
+  /// [messageId] in [chatId], with [userIds].
+  Future<void> shareUsersWithBot(
+    int chatId,
+    int messageId,
+    int buttonId,
+    List<int> userIds,
+  ) => _client.send(
+    td.ShareUsersWithBot(
+      source: td.KeyboardButtonSourceMessage(
+        chatId: chatId,
+        messageId: messageId,
+      ),
+      buttonId: buttonId,
+      sharedUserIds: userIds,
+      onlyCheck: false,
+    ),
+  );
+
   /// Asks inline bot [botUserId] for its results to [query], as the
   /// composer shows them while the user types `@bot query`; [offset] is
   /// the previous answer's `nextOffset` for the following page.

@@ -140,7 +140,7 @@ Future<void> showTopicMenu(
               cancelLabel: l10n.cancel,
               destructive: true,
             );
-            if (confirmed != true) return;
+            if (confirmed == null) return;
             await run(() async {
               await conversations.deleteTopic(chatId, id);
               list.remove(id);

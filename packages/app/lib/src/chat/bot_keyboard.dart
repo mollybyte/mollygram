@@ -45,13 +45,22 @@ class InlineKeyboard extends StatelessWidget {
 }
 
 /// A bot's keyboard in place of the usual one, above the composer: rows
-/// of text buttons, each sending its text. Buttons that ask for a phone,
-/// a location or a poll can't be pressed yet.
+/// of buttons. [onPressed] gets the button; most send their text, others
+/// ask for the phone number, a poll or a user. Buttons that ask for a
+/// location, a chat or a web app can't be pressed yet.
 class ReplyKeyboard extends StatelessWidget {
   const ReplyKeyboard({super.key, required this.rows, required this.onPressed});
 
   final List<List<td.KeyboardButton>> rows;
-  final void Function(String text) onPressed;
+  final void Function(td.KeyboardButton button) onPressed;
+
+  static bool supports(td.KeyboardButtonType type) => switch (type) {
+    td.KeyboardButtonTypeText() ||
+    td.KeyboardButtonTypeRequestPhoneNumber() ||
+    td.KeyboardButtonTypeRequestPoll() ||
+    td.KeyboardButtonTypeRequestUsers() => true,
+    _ => false,
+  };
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -64,8 +73,8 @@ class ReplyKeyboard extends StatelessWidget {
               _Key(
                 label: button.text,
                 style: button.style,
-                enabled: button.type is td.KeyboardButtonTypeText,
-                onPressed: () => onPressed(button.text),
+                enabled: supports(button.type),
+                onPressed: () => onPressed(button),
               ),
           ],
       ],

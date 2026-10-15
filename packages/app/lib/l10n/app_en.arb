@@ -356,6 +356,14 @@
   "sendAsPremium": "Telegram Premium",
   "botKeyboard": "Bot keyboard",
   "botNoAnswer": "The bot did not answer",
+  "sharePhoneTitle": "Share your phone number?",
+  "sharePhoneMessage": "{bot} will receive the phone number of your account.",
+  "@sharePhoneMessage": {
+    "placeholders": {
+      "bot": {"type": "String"}
+    }
+  },
+  "share": "Share",
   "attachFile": "File…",
   "attachPoll": "Poll…",
   "attachContact": "Contact…",
