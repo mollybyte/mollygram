@@ -116,7 +116,7 @@ M8 calls and macOS release, M9 after release.
 | Bot command autocomplete (/) and bot keyboards | missing | `ReplyMarkupNode` | M | M2 |
 | Inline bots (@gif, @vid) | missing | `GetInlineQueryResults` | M | M9 |
 | Voice message recording | done | Hold, lock, cancel; Opus in Ogg via AudioToolbox on macOS | M | M1 |
-| Video message (circle) recording | missing | Playback done in `packages/media` | L | M4 |
+| Video message (circle) recording | partial | Hold, lock, cancel, 60 s limit; 640×640 H.264 via AVFoundation on macOS. Front camera only, no flip or preview before sending | L | M4 |
 | Silent send and scheduled messages, scheduled list | missing | `MessageSchedulingStateSendAtDate` | M | M2 |
 | Send as (channel identity) | missing | `ChatInputSendAsView` | S | M6 |
 | Polls and quizzes creation | missing | `NewPollController` | M | M2 |

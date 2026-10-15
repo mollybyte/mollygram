@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
@@ -17,12 +18,14 @@ import 'voice_record_controller.dart';
 /// The recording dot and the cancel warning: the system red.
 const _red = Color(0xFFFF3B30);
 
-/// Gives a composer voice recording: a record button for its trailing slot
-/// and, while recording, the bar that takes the place of the text field.
+/// Gives a composer voice and video message recording: a record button for
+/// its trailing slot and, while recording, the bar that takes the place of
+/// the text field. A click on the button switches between voice and video.
 ///
 /// ```dart
 /// VoiceRecordComposer(
 ///   onRecorded: send,
+///   onRecordedVideo: sendVideo,
 ///   builder: (context, button, bar) =>
 ///       Composer(recordButton: button, replacement: bar, ...),
 /// )
@@ -32,18 +35,25 @@ class VoiceRecordComposer extends StatefulWidget {
     super.key,
     required this.onRecorded,
     required this.builder,
+    this.onRecordedVideo,
     this.recorder,
+    this.videoRecorder,
   });
 
-  /// Sends a finished recording.
+  /// Sends a finished voice message.
   final Future<void> Function(RecordedVoice voice) onRecorded;
+
+  /// Sends a finished video message; without it the button records voice
+  /// only.
+  final Future<void> Function(RecordedVideoNote note)? onRecordedVideo;
 
   /// [bar] is null unless recording.
   final Widget Function(BuildContext context, Widget button, Widget? bar)
   builder;
 
-  /// For tests; the app records through the platform channel.
+  /// For tests; the app records through the platform channels.
   final VoiceRecorder? recorder;
+  final VideoNoteRecorder? videoRecorder;
 
   @override
   State<VoiceRecordComposer> createState() => _VoiceRecordComposerState();
@@ -51,6 +61,7 @@ class VoiceRecordComposer extends StatefulWidget {
 
 class _VoiceRecordComposerState extends State<VoiceRecordComposer> {
   late final VoiceRecordController _controller;
+  final _composerLink = LayerLink();
   final _barFocus = FocusNode(debugLabel: 'voice recording');
   FocusNode? _focusBefore;
   bool _wasRecording = false;
@@ -66,6 +77,18 @@ class _VoiceRecordComposerState extends State<VoiceRecordComposer> {
                 '${(await getTemporaryDirectory()).path}/Voice',
           ),
       onRecorded: (voice) => widget.onRecorded(voice),
+      // The camera capture exists on macOS only for now.
+      videoRecorder:
+          widget.videoRecorder ??
+          (Platform.isMacOS
+              ? VideoNoteRecorder(
+                  directory: () async =>
+                      '${(await getTemporaryDirectory()).path}/Video',
+                )
+              : null),
+      onRecordedVideo: widget.onRecordedVideo == null
+          ? null
+          : (note) => widget.onRecordedVideo!(note),
     )..addListener(_changed);
   }
 
@@ -108,16 +131,19 @@ class _VoiceRecordComposerState extends State<VoiceRecordComposer> {
   Widget build(BuildContext context) {
     final recording =
         _controller.isRecording || _controller.phase == RecordPhase.sending;
-    return widget.builder(
-      context,
-      _RecordButton(controller: _controller),
-      recording
-          ? _RecordingBar(
-              key: const ValueKey('voice bar'),
-              controller: _controller,
-              focusNode: _barFocus,
-            )
-          : null,
+    return CompositedTransformTarget(
+      link: _composerLink,
+      child: widget.builder(
+        context,
+        _RecordButton(controller: _controller, composerLink: _composerLink),
+        recording
+            ? _RecordingBar(
+                key: const ValueKey('voice bar'),
+                controller: _controller,
+                focusNode: _barFocus,
+              )
+            : null,
+      ),
     );
   }
 }
@@ -125,9 +151,12 @@ class _VoiceRecordComposerState extends State<VoiceRecordComposer> {
 /// The microphone in the composer. A press held past a moment records; the
 /// big circle, the lock and notes are drawn above everything in an overlay.
 class _RecordButton extends StatefulWidget {
-  const _RecordButton({required this.controller});
+  const _RecordButton({required this.controller, required this.composerLink});
 
   final VoiceRecordController controller;
+
+  /// The whole composer, which the video circle sits above.
+  final LayerLink composerLink;
 
   @override
   State<_RecordButton> createState() => _RecordButtonState();
@@ -238,19 +267,21 @@ class _RecordButtonState extends State<_RecordButton>
     final c = MgColors.of(context);
     final l10n = AppLocalizations.of(context);
     final active = _c.isActive;
+    final video = _c.isVideo;
     return CompositedTransformTarget(
       link: _link,
       child: OverlayPortal(
         controller: _portal,
         overlayChildBuilder: (context) => _RecordOverlay(
           link: _link,
+          composerLink: widget.composerLink,
           controller: _c,
           appear: _appear,
           hintFade: _hintFade,
         ),
         child: Semantics(
           button: true,
-          label: l10n.voiceHoldToRecord,
+          label: video ? l10n.videoHoldToRecord : l10n.voiceHoldToRecord,
           child: MouseRegion(
             cursor: SystemMouseCursors.click,
             onEnter: (_) => setState(() => _hover = true),
@@ -269,10 +300,27 @@ class _RecordButtonState extends State<_RecordButton>
                   color: _hover && !active ? c.hover : const Color(0x00000000),
                   shape: BoxShape.circle,
                 ),
-                child: MgIcon(
-                  MgIcons.mic,
-                  size: 18,
-                  color: active ? c.accent : (_hover ? c.fg : c.fg2),
+                // A click turns the microphone into the camera and back.
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 220),
+                  switchInCurve: Curves.easeOutBack,
+                  switchOutCurve: Curves.easeIn,
+                  transitionBuilder: (child, a) => FadeTransition(
+                    opacity: a,
+                    child: ScaleTransition(
+                      scale: Tween(begin: 0.5, end: 1.0).animate(a),
+                      child: RotationTransition(
+                        turns: Tween(begin: -0.12, end: 0.0).animate(a),
+                        child: child,
+                      ),
+                    ),
+                  ),
+                  child: MgIcon(
+                    video ? MgIcons.camera : MgIcons.mic,
+                    key: ValueKey(video),
+                    size: 18,
+                    color: active ? c.accent : (_hover ? c.fg : c.fg2),
+                  ),
                 ),
               ),
             ),
@@ -288,12 +336,14 @@ class _RecordButtonState extends State<_RecordButton>
 class _RecordOverlay extends StatelessWidget {
   const _RecordOverlay({
     required this.link,
+    required this.composerLink,
     required this.controller,
     required this.appear,
     required this.hintFade,
   });
 
   final LayerLink link;
+  final LayerLink composerLink;
   final VoiceRecordController controller;
   final Animation<double> appear;
   final Animation<double> hintFade;
@@ -302,6 +352,13 @@ class _RecordOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: [
+        CompositedTransformFollower(
+          link: composerLink,
+          targetAnchor: Alignment.topCenter,
+          followerAnchor: Alignment.bottomCenter,
+          offset: const Offset(0, -24),
+          child: _VideoCircle(controller: controller, appear: appear),
+        ),
         CompositedTransformFollower(
           link: link,
           targetAnchor: Alignment.center,
@@ -417,7 +474,11 @@ class _BigCircleState extends State<_BigCircle>
                       child: FadeTransition(opacity: a, child: child),
                     ),
                     child: MgIcon(
-                      locked ? MgIcons.send : MgIcons.mic,
+                      locked
+                          ? MgIcons.send
+                          : controller.isVideo
+                          ? MgIcons.camera
+                          : MgIcons.mic,
                       key: ValueKey(locked),
                       size: locked ? 22 : 24,
                       stroke: locked ? 2.4 : 2,
@@ -624,9 +685,8 @@ class _HintBubble extends StatelessWidget {
 
   final VoiceRecordController controller;
 
-  static final _privacySettings = Uri.parse(
-    'x-apple.systempreferences:com.apple.preference.security'
-    '?Privacy_Microphone',
+  static Uri _privacySettings(String pane) => Uri.parse(
+    'x-apple.systempreferences:com.apple.preference.security?$pane',
   );
 
   @override
@@ -640,8 +700,10 @@ class _HintBubble extends StatelessWidget {
         // Keeps the last text while fading out.
         if (hint == null) return const SizedBox.shrink();
         final text = switch (hint) {
-          RecordHint.holdToRecord => l10n.voiceHoldToRecord,
+          RecordHint.holdToRecordVoice => l10n.voiceHoldToRecord,
+          RecordHint.holdToRecordVideo => l10n.videoHoldToRecord,
           RecordHint.microphoneDenied => l10n.voiceMicrophoneDenied,
+          RecordHint.cameraDenied => l10n.videoCameraDenied,
           RecordHint.failed => l10n.voiceRecordFailed,
         };
         return ConstrainedBox(
@@ -654,7 +716,8 @@ class _HintBubble extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(text, style: mgTextStyle(c, size: MgType.small)),
-                if (hint == RecordHint.microphoneDenied)
+                if (hint == RecordHint.microphoneDenied ||
+                    hint == RecordHint.cameraDenied)
                   Padding(
                     padding: const EdgeInsets.only(top: 2),
                     child: MouseRegion(
@@ -662,7 +725,15 @@ class _HintBubble extends StatelessWidget {
                       child: GestureDetector(
                         onTap: () {
                           controller.dismissHint();
-                          unawaited(launchUrl(_privacySettings));
+                          unawaited(
+                            launchUrl(
+                              _privacySettings(
+                                hint == RecordHint.cameraDenied
+                                    ? 'Privacy_Camera'
+                                    : 'Privacy_Microphone',
+                              ),
+                            ),
+                          );
                         },
                         child: Text(
                           l10n.voiceOpenSettings,
@@ -812,6 +883,8 @@ class _RecordingBarState extends State<_RecordingBar>
                               style: mgTextStyle(c, color: _red),
                             ),
                           )
+                        : controller.isVideo
+                        ? const SizedBox.expand(key: ValueKey('video'))
                         : SizedBox.expand(
                             key: const ValueKey('wave'),
                             child: CustomPaint(
@@ -896,4 +969,180 @@ class _LiveWaveformPainter extends CustomPainter {
   @override
   bool shouldRepaint(_LiveWaveformPainter old) =>
       old.peaks != peaks || old.color != color || old.elapsed != elapsed;
+}
+
+/// The camera in a circle above the composer while a video message
+/// records, with a ring that fills toward Telegram's 60 second limit.
+class _VideoCircle extends StatefulWidget {
+  const _VideoCircle({required this.controller, required this.appear});
+
+  final VoiceRecordController controller;
+  final Animation<double> appear;
+
+  static const double side = 248;
+
+  @override
+  State<_VideoCircle> createState() => _VideoCircleState();
+}
+
+class _VideoCircleState extends State<_VideoCircle>
+    with SingleTickerProviderStateMixin {
+  late final Ticker _ticker;
+  final _progress = ValueNotifier(0.0);
+  late final _scale = CurvedAnimation(
+    parent: widget.appear,
+    curve: Curves.easeOutBack,
+    reverseCurve: Curves.easeInCubic,
+  );
+
+  /// Kept while the circle shrinks away after the recording ends.
+  VideoNotePreview? _preview;
+  bool _video = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = createTicker((elapsed) {
+      if (widget.controller.isRecording) {
+        _progress.value =
+            elapsed.inMicroseconds / CircleQuality.maxDuration.inMicroseconds;
+      }
+    });
+    widget.controller.addListener(_changed);
+    _changed();
+  }
+
+  void _changed() {
+    final controller = widget.controller;
+    // Kept from the last recording while the circle shrinks away.
+    if (controller.phase == RecordPhase.starting) _preview = null;
+    if (controller.isActive) _video = controller.isVideo;
+    _preview = controller.preview ?? _preview;
+    if (controller.isRecording && _video && !_ticker.isActive) {
+      _progress.value = 0;
+      unawaited(_ticker.start());
+    } else if (!controller.isRecording && _ticker.isActive) {
+      _ticker.stop();
+    }
+    setState(() {});
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_changed);
+    _ticker.dispose();
+    _scale.dispose();
+    _progress.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_video) return const SizedBox.shrink();
+    final c = MgColors.of(context);
+    final preview = _preview;
+    final armed = widget.controller.cancelArmed;
+    const side = _VideoCircle.side;
+    return IgnorePointer(
+      child: FadeTransition(
+        opacity: widget.appear,
+        child: ScaleTransition(
+          scale: Tween(begin: 0.6, end: 1.0).animate(_scale),
+          alignment: Alignment.bottomCenter,
+          child: SizedBox.square(
+            dimension: side + 16,
+            child: CustomPaint(
+              foregroundPainter: _RingPainter(
+                progress: _progress,
+                color: armed ? c.fg2 : c.accent,
+                track: c.rim,
+              ),
+              child: Center(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: c.shadow,
+                        blurRadius: 24,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: ClipOval(
+                    child: SizedBox.square(
+                      dimension: side,
+                      child: AnimatedOpacity(
+                        opacity: armed ? 0.55 : 1,
+                        duration: const Duration(milliseconds: 180),
+                        child: ColoredBox(
+                          color: c.glassSolid,
+                          child: preview == null
+                              ? Center(
+                                  child: MgIcon(
+                                    MgIcons.camera,
+                                    size: 28,
+                                    color: c.fg2,
+                                  ),
+                                )
+                              // Mirrored, like looking into a mirror; the
+                              // recording itself is not.
+                              : Transform.flip(
+                                  flipX: true,
+                                  child: FittedBox(
+                                    fit: BoxFit.cover,
+                                    child: SizedBox(
+                                      width: preview.width.toDouble(),
+                                      height: preview.height.toDouble(),
+                                      child: Texture(
+                                        textureId: preview.textureId,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RingPainter extends CustomPainter {
+  _RingPainter({
+    required this.progress,
+    required this.color,
+    required this.track,
+  }) : super(repaint: progress);
+
+  final ValueListenable<double> progress;
+  final Color color;
+  final Color track;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Rect.fromCircle(
+      center: size.center(Offset.zero),
+      radius: size.shortestSide / 2 - 3,
+    );
+    final stroke = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3
+      ..strokeCap = StrokeCap.round;
+    canvas.drawArc(rect, 0, math.pi * 2, false, stroke..color = track);
+    final sweep = progress.value.clamp(0.0, 1.0) * math.pi * 2;
+    if (sweep > 0) {
+      canvas.drawArc(rect, -math.pi / 2, sweep, false, stroke..color = color);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_RingPainter old) =>
+      old.color != color || old.track != track || old.progress != progress;
 }

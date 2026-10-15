@@ -294,6 +294,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get voiceSendFailed => 'Не удалось отправить голосовое';
 
   @override
+  String get videoHoldToRecord => 'Удерживайте, чтобы записать видеосообщение';
+
+  @override
+  String get videoCameraDenied => 'У Mollygram нет доступа к камере.';
+
+  @override
   String previewYou(String text) {
     return 'Вы: $text';
   }

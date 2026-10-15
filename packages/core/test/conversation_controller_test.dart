@@ -431,6 +431,27 @@ void main() {
     });
   });
 
+  test('sends a video message with its side', () async {
+    await controller.start();
+
+    await controller.sendVideoNote(
+      7,
+      path: '/tmp/circle.mp4',
+      duration: const Duration(milliseconds: 5100),
+      side: 640,
+    );
+
+    final send = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    final content = send['input_message_content']! as Map;
+    expect(content['@type'], 'inputMessageVideoNote');
+    expect(content['video_note'], {
+      '@type': 'inputVideoNote',
+      'video_note': {'@type': 'inputFileLocal', 'path': '/tmp/circle.mp4'},
+      'duration': 6,
+      'length': 640,
+    });
+  });
+
   test('sends a voice message with its waveform', () async {
     await controller.start();
 

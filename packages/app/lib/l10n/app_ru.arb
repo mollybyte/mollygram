@@ -85,6 +85,8 @@
   "voiceOpenSettings": "Открыть Системные настройки",
   "voiceRecordFailed": "Не удалось начать запись",
   "voiceSendFailed": "Не удалось отправить голосовое",
+  "videoHoldToRecord": "Удерживайте, чтобы записать видеосообщение",
+  "videoCameraDenied": "У Mollygram нет доступа к камере.",
   "previewYou": "Вы: {text}",
   "previewPhoto": "Фото",
   "previewVideo": "Видео",
