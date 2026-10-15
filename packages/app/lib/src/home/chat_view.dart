@@ -19,6 +19,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../l10n/app_localizations.dart';
 import '../chat/attachment_preview.dart';
 import '../chat/bot_keyboard.dart';
+import '../chat/contact_picker.dart';
 import '../chat/describe.dart';
 import '../chat/emoji_sticker_panel.dart';
 import '../chat/formatted_text.dart';
@@ -1550,9 +1551,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
     }
   }
 
-  /// The attach button: pick files, then confirm them in the preview.
-  /// The attach button's menu: files, and a poll where the chat allows
-  /// one (groups and channels).
+  /// The attach button's menu: files, a poll where the chat allows one
+  /// (groups and channels), and a contact.
   Future<void> _attachMenu(Offset position) async {
     final l10n = AppLocalizations.of(context);
     final store = _conversations.store;
@@ -1572,8 +1572,39 @@ class _ChatViewState extends ConsumerState<ChatView> {
             label: l10n.attachPoll,
             onSelected: () => unawaited(_createPoll()),
           ),
+        MgMenuItem(
+          label: l10n.attachContact,
+          onSelected: () => unawaited(_sendContact()),
+        ),
       ],
     );
+  }
+
+  Future<void> _sendContact() async {
+    final chatId = widget.chatId;
+    final user = await pickContact(context);
+    if (user == null || !mounted || widget.chatId != chatId) return;
+    final replyTo = _replyTo;
+    setState(() {
+      _replyTo = null;
+      _replyQuote = null;
+      _failure = null;
+    });
+    try {
+      await _conversations.sendContact(
+        chatId,
+        td.Contact(
+          phoneNumber: user.phoneNumber,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          vcard: '',
+          userId: user.id,
+        ),
+        replyTo: replyTo?.id,
+      );
+    } on td.TdException {
+      if (mounted) setState(() => _failure = _Failure.send);
+    }
   }
 
   Future<void> _createPoll() async {

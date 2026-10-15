@@ -1652,6 +1652,18 @@ abstract class AppLocalizations {
   /// **'Poll…'**
   String get attachPoll;
 
+  /// No description provided for @attachContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact…'**
+  String get attachContact;
+
+  /// No description provided for @sendContactTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send contact'**
+  String get sendContactTitle;
+
   /// No description provided for @newPollTitle.
   ///
   /// In en, this message translates to:

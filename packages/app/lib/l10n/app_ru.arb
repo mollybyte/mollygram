@@ -259,6 +259,8 @@
   "botNoAnswer": "Бот не ответил",
   "attachFile": "Файл…",
   "attachPoll": "Опрос…",
+  "attachContact": "Контакт…",
+  "sendContactTitle": "Отправить контакт",
   "newPollTitle": "Новый опрос",
   "newQuizTitle": "Новая викторина",
   "pollQuestionHint": "Задайте вопрос",
