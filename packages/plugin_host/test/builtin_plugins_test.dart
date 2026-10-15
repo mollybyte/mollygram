@@ -119,10 +119,9 @@ void main() {
     Future<List<Map<String, Object?>>> render(
       PluginInstance p,
       String text,
-    ) async => ((await p.dispatch(
-      PluginEvent.messageRenderText,
-      msg(text),
-    )) as EventHandled).ui;
+    ) async => (_check(
+      await p.dispatch(PluginEvent.messageRenderText, msg(text)),
+    ) as EventHandled).ui;
 
     test(
       'offers a translation for another language, sends nothing yet',
@@ -152,6 +151,29 @@ void main() {
       final again = await render(p, german);
       expect(again.first['text'], 'translated to ru');
       expect(services.calls, isNot(contains('messages.translate')));
+    });
+
+    test('a translation longer than the message is shown whole', () async {
+      final long = 'Guten Morgen ${'und so weiter ' * 290}'.trim();
+      expect(long.length, greaterThan(4000));
+      services.translation = 'Доброе утро ${'и так далее ' * 700}';
+      final p = await start('translate', settings: {'auto': true});
+      for (var i = 0; i < 4; i++) {
+        final ui = await render(p, long);
+        expect(ui.first['text'], services.translation);
+      }
+      expect(p.status, PluginStatus.running);
+    });
+
+    test('a full cache lets the oldest translations go', () async {
+      services.maxValues = 5;
+      final p = await start('translate', settings: {'auto': true});
+      for (var i = 0; i < 8; i++) {
+        final ui = await render(p, '$german $i');
+        expect(ui.first['text'], 'translated to en');
+      }
+      expect(services.storage.length, lessThanOrEqualTo(5));
+      expect(p.logs.where((l) => l.contains('cache write failed')), isEmpty);
     });
 
     test('an edited message is translated again', () async {
@@ -313,4 +335,9 @@ void main() {
       expect(p.status, PluginStatus.running);
     });
   });
+}
+
+EventOutcome _check(EventOutcome o) {
+  if (o is EventSkipped) fail('skipped: ${o.reason}');
+  return o;
 }

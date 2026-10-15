@@ -247,6 +247,19 @@ class PluginDetailsPage extends StatelessWidget {
             ],
           ),
         _Manifest(controller: controller, entry: entry),
+        if (entry.installed)
+          SettingsGroup(
+            children: [
+              SettingsRow(
+                key: const ValueKey('log'),
+                title: s.log,
+                chevron: true,
+                onTap: () =>
+                    SettingsNavigation.of(context)
+                        .push(s.log, (context) => PluginLogPage(id: entry.id)),
+              ),
+            ],
+          ),
         if (entry.installed && !entry.builtIn) ...[
           const SizedBox(height: 14),
           Row(
@@ -378,6 +391,64 @@ class _Options extends StatelessWidget {
         ),
       ),
     };
+  }
+}
+
+/// What a plugin logged in this run of the app, its last 200 lines, and
+/// why the host turned it off, if it did.
+class PluginLogPage extends ConsumerWidget {
+  const PluginLogPage({super.key, required this.id});
+
+  final String id;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final plugins = ref.watch(appPluginsProvider).value;
+    if (plugins == null) return const SizedBox.expand();
+    final c = MgColors.of(context);
+    final s = _strings(context);
+    return ValueListenableBuilder(
+      valueListenable: plugins.logRevision,
+      builder: (context, _, _) {
+        final lines = plugins.logsOf(id);
+        return SettingsPage(
+          children: [
+            if (lines.isEmpty)
+              SettingsFooter(s.logEmpty)
+            else ...[
+              SettingsGroup(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+                    child: SelectableText(
+                      lines.join('\n'),
+                      style: TextStyle(
+                        fontFamily: monoFamily,
+                        fontFamilyFallback: monoFallback,
+                        fontSize: MgType.caption,
+                        height: 1.55,
+                        color: c.fg,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Align(
+                alignment: Alignment.centerRight,
+                child: SettingsButton(
+                  key: const ValueKey('copyLog'),
+                  label: s.copyLog,
+                  onPressed: () => unawaited(
+                    Clipboard.setData(ClipboardData(text: lines.join('\n'))),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        );
+      },
+    );
   }
 }
 

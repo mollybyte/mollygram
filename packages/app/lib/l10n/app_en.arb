@@ -954,5 +954,7 @@
   "deleteChannelMessage": "Every subscriber loses the channel and all its posts. This can't be undone.",
   "leaveFailed": "Couldn't leave. Try again.",
   "deleteFailed": "Couldn't delete it. Try again.",
-  "folderDeletedChat": "Deleted chat"
+  "folderDeletedChat": "Deleted chat",
+  "pluginShowMessage": "Show",
+  "pluginFilteredMessage": "Filtered by a plugin"
 }

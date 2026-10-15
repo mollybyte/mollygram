@@ -2482,4 +2482,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get folderDeletedChat => 'Deleted chat';
+
+  @override
+  String get pluginShowMessage => 'Show';
+
+  @override
+  String get pluginFilteredMessage => 'Filtered by a plugin';
 }
