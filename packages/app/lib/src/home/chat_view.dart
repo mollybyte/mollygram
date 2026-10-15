@@ -1252,6 +1252,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
         onQuote: (message, quote) => _replyInThread(message, quote: quote),
         onEdit: _editInThread,
         onForward: (messages) => unawaited(_forward(messages)),
+        recentChats: _recentForwardTargets,
+        onForwardTo: (messages, chatId) =>
+            unawaited(_forward(messages, toChat: chatId)),
       ),
     );
   }
@@ -1817,6 +1820,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
         onQuote: (message, quote) => _reply(message, quote: quote),
         onEdit: _edit,
         onForward: (messages) => unawaited(_forward(messages)),
+        recentChats: _recentForwardTargets,
+        onForwardTo: (messages, chatId) =>
+            unawaited(_forward(messages, toChat: chatId)),
         onSelect: _select,
         onEditHistory: _session.capture.keepEdits ? _showEditHistory : null,
       ),
@@ -2604,12 +2610,26 @@ class _ChatViewState extends ConsumerState<ChatView> {
     }
   }
 
-  Future<void> _forward(List<ConversationMessage> messages) async {
+  /// The chats the message menu offers under Forward: the latest ones,
+  /// the open chat left out.
+  List<ChatListEntry> _recentForwardTargets() => [
+    for (final chat
+        in ref.read(chatListProvider(const ChatListLocation.main())).value ??
+            const <ChatListEntry>[])
+      if (chat.id != widget.chatId) chat,
+  ].take(6).toList();
+
+  Future<void> _forward(
+    List<ConversationMessage> messages, {
+    int? toChat,
+  }) async {
     final hasCaptions = messages.any(
       (message) =>
           message.content is! td.MessageText && message.text.isNotEmpty,
     );
-    final choice = await pickForwardTarget(context, hasCaptions: hasCaptions);
+    final choice = toChat != null
+        ? ForwardChoice(chatId: toChat, hideSender: false, hideCaptions: false)
+        : await pickForwardTarget(context, hasCaptions: hasCaptions);
     if (choice == null || messages.isEmpty) return;
     try {
       await _conversations.forwardMessages(

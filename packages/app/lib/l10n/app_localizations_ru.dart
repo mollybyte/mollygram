@@ -550,6 +550,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get menuForward => 'Переслать';
 
   @override
+  String get menuChooseChat => 'Выбрать чат…';
+
+  @override
   String get menuSaveAs => 'Сохранить как…';
 
   @override

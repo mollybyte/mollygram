@@ -2220,6 +2220,31 @@ void main() {
     expect(forward['send_copy'], isFalse);
   });
 
+  testWidgets('forwards from the recent chats in the menu', (tester) async {
+    await pump(tester);
+    // The sidebar keeps the chat list loaded; here it is asked for.
+    ProviderScope.containerOf(tester.element(find.byType(ChatView)))
+        .listen(chatListProvider(const ChatListLocation.main()), (_, _) {});
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+
+    await rightClick(tester, 'From Vera');
+    final forward = find.text('Forward');
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await mouse.addPointer(location: tester.getCenter(forward));
+    await mouse.moveTo(tester.getCenter(forward));
+    await tester.pump();
+    expect(find.text('Choose chat…'), findsOneWidget);
+    await tester.tap(find.text('Saved'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+
+    expect(find.text('Forward to chat'), findsNothing);
+    final sent = json.sent.lastWhere((r) => r['@type'] == 'forwardMessages');
+    expect(sent['chat_id'], 9);
+    expect(sent['message_ids'], [12]);
+  });
+
   testWidgets('selects text with the mouse and replies with it quoted', (
     tester,
   ) async {

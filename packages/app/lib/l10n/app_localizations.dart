@@ -1058,6 +1058,12 @@ abstract class AppLocalizations {
   /// **'Forward'**
   String get menuForward;
 
+  /// No description provided for @menuChooseChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose chat…'**
+  String get menuChooseChat;
+
   /// No description provided for @menuSaveAs.
   ///
   /// In en, this message translates to:

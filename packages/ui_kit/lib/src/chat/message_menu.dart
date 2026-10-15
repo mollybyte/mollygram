@@ -12,6 +12,7 @@ final class MgMenuItem {
   const MgMenuItem({
     required this.label,
     this.icon,
+    this.leading,
     this.onSelected,
     this.destructive = false,
     this.submenu = const [],
@@ -21,6 +22,7 @@ final class MgMenuItem {
   const MgMenuItem.divider()
     : label = '',
       icon = null,
+      leading = null,
       onSelected = null,
       destructive = false,
       submenu = const [],
@@ -31,6 +33,9 @@ final class MgMenuItem {
   /// A small line icon before the label; when any item of a menu has one,
   /// the labels of all of them line up after the icon column.
   final MgIconData? icon;
+
+  /// A small widget (an avatar) in the icon's place, about 18 px across.
+  final Widget? leading;
 
   /// Runs after the menu closes; an item with a [submenu] may leave it out.
   final VoidCallback? onSelected;
@@ -247,7 +252,9 @@ class _Menu extends StatelessWidget {
                       ? const _Separator()
                       : _MenuRow(
                           item: item,
-                          iconColumn: items.any((i) => i.icon != null),
+                          iconColumn: items.any(
+                            (i) => i.icon != null || i.leading != null,
+                          ),
                           open: identical(item, openItem),
                           onHover: onHover,
                         ),
@@ -351,7 +358,12 @@ class _MenuRowState extends State<_MenuRow> {
                 if (widget.iconColumn)
                   SizedBox(
                     width: 24,
-                    child: item.icon == null
+                    child: item.leading != null
+                        ? Align(
+                            alignment: Alignment.centerLeft,
+                            child: item.leading,
+                          )
+                        : item.icon == null
                         ? null
                         : Align(
                             alignment: Alignment.centerLeft,
