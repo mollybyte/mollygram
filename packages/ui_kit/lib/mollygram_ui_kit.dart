@@ -24,6 +24,7 @@ export 'src/chat/message_parts.dart';
 export 'src/chat/pinned_bar.dart';
 export 'src/chat/rich_text_controller.dart';
 export 'src/chat/selection.dart';
+export 'src/chat/selection_menu.dart';
 export 'src/chat/status_text.dart';
 export 'src/chat/timeline_parts.dart';
 export 'src/forms/buttons.dart';

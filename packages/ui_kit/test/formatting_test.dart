@@ -465,6 +465,20 @@ void main() {
       expect(c.text, 'hello world');
     });
 
+    testWidgets('the selection menu formats and copies', (tester) async {
+      final c = await pump(tester);
+      final state = tester.state<EditableTextState>(find.byType(EditableText));
+      expect(state.showToolbar(), isTrue);
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(find.byType(SelectionMenu), findsOneWidget);
+      expect(find.text('Copy'), findsOneWidget);
+      expect(find.text('Plain text'), findsOneWidget);
+      await tester.tap(find.text('B'));
+      await tester.pump();
+      expect(c.isActive(_b), isTrue);
+      expect(find.byType(SelectionMenu), findsNothing);
+    });
+
     testWidgets('⌘K asks for a link', (tester) async {
       final c = await pump(tester);
       await press(tester, LogicalKeyboardKey.keyK);

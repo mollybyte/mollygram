@@ -1,7 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/cupertino.dart'
-    show CupertinoDesktopTextSelectionToolbarButton;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -14,6 +12,7 @@ import 'composer_suggestions.dart';
 import 'formatting.dart';
 import 'link_sheet.dart';
 import 'rich_text_controller.dart';
+import 'selection_menu.dart';
 
 /// Localized labels of the [Composer] buttons. The UI kit has no strings
 /// of its own; the app passes them in.
@@ -269,69 +268,124 @@ class _ComposerState extends State<Composer> {
   Widget _contextMenu(BuildContext context, EditableTextState state) {
     final labels = widget.labels.format;
     final text = _text;
-    final system = AdaptiveTextSelectionToolbar.getAdaptiveButtons(
-      context,
-      state.contextMenuButtonItems,
-    ).toList();
-    if (labels == null ||
-        text is! RichTextEditingController ||
-        text.selection.isCollapsed) {
-      return AdaptiveTextSelectionToolbar(
-        anchors: state.contextMenuAnchors,
-        children: system,
-      );
-    }
-    void run(VoidCallback action) {
+    final mac = defaultTargetPlatform == TargetPlatform.macOS;
+    final modifier = mac ? '\u2318' : 'Ctrl+';
+    final shift = mac ? '\u21E7' : 'Shift+';
+    void run(VoidCallback? action) {
       ContextMenuController.removeAny();
-      action();
+      action?.call();
     }
 
-    Widget item(String label, VoidCallback action, {bool on = false}) {
-      // Formats already on get a checkmark, as in a macOS menu.
-      final content = Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(width: 16, child: on ? const Text('\u2713') : null),
-          Text(label),
-        ],
+    String? shortcut(ContextMenuButtonType type) => switch (type) {
+      ContextMenuButtonType.cut => '${modifier}X',
+      ContextMenuButtonType.copy => '${modifier}C',
+      ContextMenuButtonType.paste => '${modifier}V',
+      ContextMenuButtonType.selectAll => '${modifier}A',
+      _ => null,
+    };
+    final commands = [
+      for (final item in state.contextMenuButtonItems)
+        if (item.type != ContextMenuButtonType.custom)
+          SelectionCommand(
+            label: AdaptiveTextSelectionToolbar.getButtonLabel(context, item),
+            shortcut: shortcut(item.type),
+            onPressed: () => run(item.onPressed),
+          ),
+    ];
+    final rich =
+        labels != null &&
+        text is RichTextEditingController &&
+        !text.selection.isCollapsed;
+    if (!rich) {
+      return SelectionMenu(
+        anchors: state.contextMenuAnchors,
+        formats: const [],
+        commands: commands,
       );
-      void pressed() => run(action);
-      return defaultTargetPlatform == TargetPlatform.macOS
-          ? CupertinoDesktopTextSelectionToolbarButton(
-              onPressed: pressed,
-              child: content,
-            )
-          : DesktopTextSelectionToolbarButton(
-              onPressed: pressed,
-              child: content,
-            );
     }
-
-    Widget toggle(String label, TextFormat format) =>
-        item(label, () => text.toggle(format), on: text.isActive(format));
-    final c = MgColors.of(context);
-    return AdaptiveTextSelectionToolbar(
+    SelectionFormatButton format(
+      TextFormat format,
+      String name,
+      String keys,
+      Widget Function(Color color) glyph,
+    ) => SelectionFormatButton(
+      glyph: glyph,
+      tooltip: '$name  $keys',
+      active: text.isActive(format),
+      onPressed: () => run(() => text.toggle(format)),
+    );
+    Widget letter(
+      String value,
+      Color color, {
+      FontWeight? weight,
+      FontStyle? style,
+      TextDecoration? decoration,
+    }) => selectionLetter(
+      context,
+      value,
+      color,
+      weight: weight,
+      style: style,
+      decoration: decoration,
+    );
+    return SelectionMenu(
       anchors: state.contextMenuAnchors,
-      children: [
-        ...system,
-        Container(
-          height: 1,
-          margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          color: c.separator,
+      formats: [
+        format(
+          TextFormat.bold,
+          labels.bold,
+          '${modifier}B',
+          (c) => letter('B', c, weight: FontWeight.w800),
         ),
-        toggle(labels.bold, TextFormat.bold),
-        toggle(labels.italic, TextFormat.italic),
-        toggle(labels.underline, TextFormat.underline),
-        toggle(labels.strikethrough, TextFormat.strikethrough),
-        toggle(labels.monospace, TextFormat.monospace),
-        toggle(labels.spoiler, TextFormat.spoiler),
-        toggle(labels.quote, TextFormat.quote),
-        item(
-          labels.link,
-          () => unawaited(_askLink(text)),
-          on: text.selectedLink != null,
+        format(
+          TextFormat.italic,
+          labels.italic,
+          '${modifier}I',
+          (c) => letter('I', c, style: FontStyle.italic),
         ),
-        item(labels.plain, text.clearFormatting),
+        format(
+          TextFormat.underline,
+          labels.underline,
+          '${modifier}U',
+          (c) => letter('U', c, decoration: TextDecoration.underline),
+        ),
+        format(
+          TextFormat.strikethrough,
+          labels.strikethrough,
+          '$modifier${shift}X',
+          (c) => letter('S', c, decoration: TextDecoration.lineThrough),
+        ),
+        format(
+          TextFormat.monospace,
+          labels.monospace,
+          '$modifier${shift}M',
+          (c) => Icon(Icons.code, size: 17, color: c),
+        ),
+        format(
+          TextFormat.spoiler,
+          labels.spoiler,
+          '$modifier${shift}P',
+          (c) => Icon(Icons.visibility_off_outlined, size: 15, color: c),
+        ),
+        format(
+          TextFormat.quote,
+          labels.quote,
+          '$modifier$shift.',
+          (c) => selectionIcon(MgIcons.quote, c),
+        ),
+        SelectionFormatButton(
+          glyph: (c) => selectionIcon(MgIcons.link, c),
+          tooltip: '${labels.link}  ${modifier}K',
+          active: text.selectedLink != null,
+          onPressed: () => run(() => unawaited(_askLink(text))),
+        ),
+      ],
+      commands: commands,
+      extra: [
+        SelectionCommand(
+          label: labels.plain,
+          onPressed: () => run(text.clearFormatting),
+        ),
       ],
     );
   }
