@@ -322,6 +322,14 @@ void main() {
       findsOneWidget,
     );
 
+    // It is a full-width strip, flush under the header.
+    final card = tester.getRect(find.byType(ChatView));
+    final strip = tester.getRect(bar);
+    expect(strip.left, card.left);
+    expect(strip.right, card.right);
+    expect(strip.top, card.top + ChatHeaderBar.height);
+    expect(strip.height, PinnedBar.height);
+
     // A click goes to it and the bar moves on to the older one.
     await tester.tap(find.byType(PinnedBar));
     await tester.runAsync(() => Future<void>.delayed(_tick));

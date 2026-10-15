@@ -3714,11 +3714,10 @@ class _ChatViewState extends ConsumerState<ChatView> {
               Positioned(
                 top:
                     ChatHeaderBar.height +
-                    8 +
                     _translateInset +
                     (_tagsShown ? SavedTagBar.height : 0),
-                left: 14,
-                right: 14,
+                left: 0,
+                right: 0,
                 child: bar,
               ),
           Positioned(

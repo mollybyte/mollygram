@@ -560,5 +560,37 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.tab);
       expect(picked, [1, 1]);
     });
+
+    testWidgets(
+      'suggestions float over the chat and leave the composer alone',
+      (tester) async {
+        final c = RichTextEditingController();
+        addTearDown(c.dispose);
+        Widget build(List<ComposerSuggestion> suggestions) => themed(
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Composer(
+              labels: labels,
+              controller: c,
+              onSend: (_) {},
+              suggestions: suggestions,
+              onSuggestion: (_) {},
+            ),
+          ),
+        );
+        await tester.pumpWidget(build(const []));
+        final bar = tester.getRect(find.byType(Composer));
+        await tester.pumpWidget(
+          build(const [
+            ComposerSuggestion(title: 'Boris'),
+            ComposerSuggestion(title: 'Vera'),
+          ]),
+        );
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(tester.getRect(find.byType(Composer)), bar);
+        final list = tester.getRect(find.byType(ComposerSuggestionList));
+        expect(list.bottom, lessThanOrEqualTo(bar.top));
+      },
+    );
   });
 }

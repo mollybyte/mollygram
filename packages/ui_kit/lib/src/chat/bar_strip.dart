@@ -25,7 +25,7 @@ class BarStrip extends StatelessWidget {
           c.fg.withValues(alpha: c.isDark ? 0.07 : 0.04),
           c.card,
         ),
-        border: Border(bottom: BorderSide(color: c.separator, width: 0.5)),
+        border: Border(bottom: BorderSide(color: c.separator, width: 1)),
       ),
       child: Padding(padding: padding, child: child),
     );

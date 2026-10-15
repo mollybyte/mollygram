@@ -371,6 +371,15 @@ abstract final class MgIcons {
     'select',
     '<circle cx="12" cy="12" r="8.5"/><path d="m8.5 12.3 2.4 2.4 4.6-5"/>',
   );
+  static const code = MgIconData(
+    'code',
+    '<path d="m8 7-5 5 5 5M16 7l5 5-5 5"/>',
+  );
+  static const spoiler = MgIconData(
+    'spoiler',
+    '<path d="M3 12S6.5 5.5 12 5.5 21 12 21 12s-3.5 6.5-9 6.5S3 12 3 12z"/>'
+        '<circle cx="12" cy="12" r="3"/><path d="M4 4l16 16"/>',
+  );
 
   static const List<MgIconData> all = [
     group,
@@ -444,6 +453,8 @@ abstract final class MgIcons {
     edit,
     link,
     select,
+    code,
+    spoiler,
   ];
 }
 
