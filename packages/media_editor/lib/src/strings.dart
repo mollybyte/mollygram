@@ -23,6 +23,13 @@ final class MediaEditorStrings {
     required this.landscape,
     required this.saving,
     required this.failed,
+    required this.draw,
+    required this.pen,
+    required this.marker,
+    required this.arrow,
+    required this.eraser,
+    required this.color,
+    required this.thickness,
   });
 
   /// Opens the editor, on the attachment preview.
@@ -49,6 +56,15 @@ final class MediaEditorStrings {
   /// Shown when the file could not be read or written.
   final String failed;
 
+  /// The drawing tool and its brushes.
+  final String draw;
+  final String pen;
+  final String marker;
+  final String arrow;
+  final String eraser;
+  final String color;
+  final String thickness;
+
   static const en = MediaEditorStrings._(
     edit: 'Edit',
     cancel: 'Cancel',
@@ -66,6 +82,13 @@ final class MediaEditorStrings {
     landscape: 'Landscape',
     saving: 'Saving…',
     failed: 'Couldn’t edit this file',
+    draw: 'Draw',
+    pen: 'Pen',
+    marker: 'Marker',
+    arrow: 'Arrow',
+    eraser: 'Eraser',
+    color: 'Color',
+    thickness: 'Thickness',
   );
 
   static const ru = MediaEditorStrings._(
@@ -85,6 +108,13 @@ final class MediaEditorStrings {
     landscape: 'Горизонтально',
     saving: 'Сохранение…',
     failed: 'Не удалось изменить файл',
+    draw: 'Рисовать',
+    pen: 'Ручка',
+    marker: 'Маркер',
+    arrow: 'Стрелка',
+    eraser: 'Ластик',
+    color: 'Цвет',
+    thickness: 'Толщина',
   );
 
   /// The strings for the ambient locale: Russian for `ru`, English

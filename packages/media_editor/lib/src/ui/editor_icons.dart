@@ -42,4 +42,24 @@ abstract final class EditorIcons {
     'portrait',
     '<rect x="7" y="3.5" width="10" height="17" rx="2"/>',
   );
+  static const pen = MgIconData(
+    'pen',
+    '<path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 0 1 3 3L8 19z"/>'
+        '<path d="m14.5 6.5 3 3"/><path d="M5 16l3 3"/>',
+  );
+  static const marker = MgIconData(
+    'marker',
+    '<path d="M9 20H4l6-6"/>'
+        '<path d="M10 14 17.5 6.5a2 2 0 0 1 3 3L13 17l-3-3z"/>'
+        '<path d="M4 21h16"/>',
+  );
+  static const arrow = MgIconData(
+    'arrow',
+    '<path d="M5 19 19 5"/><path d="M10 5h9v9"/>',
+  );
+  static const eraser = MgIconData(
+    'eraser',
+    '<path d="m7 20-3.5-3.5a2 2 0 0 1 0-2.8l9.2-9.2a2 2 0 0 1 2.8 0l4 4a2 2 0 0 1 0 2.8L12 18.8"/>'
+        '<path d="M8.5 9.5 15 16"/><path d="M12 20h8"/>',
+  );
 }
