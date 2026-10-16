@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../../l10n/app_localizations.dart';
-import '../../folders/folder_sheet.dart';
 import '../settings_style.dart';
 
 /// One field of a [FormSheet].
@@ -45,7 +44,7 @@ Future<bool> showFormSheet(
   required Future<String?> Function(List<String> values) onSubmit,
   FormSheetAside? aside,
 }) async {
-  final result = await showFolderSheet<Object>(
+  final result = await showMgSheet<Object>(
     context,
     FormSheet(
       title: title,
@@ -144,7 +143,7 @@ class _FormSheetState extends State<FormSheet> {
       child: SizedBox(
         width: 340,
         child: Glass(
-          radius: 14,
+          radius: MgRadius.popover,
           padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -187,7 +186,7 @@ class _FormSheetState extends State<FormSheet> {
                 ),
               ],
               AnimatedSize(
-                duration: const Duration(milliseconds: 160),
+                duration: MgMotion.standard,
                 curve: Curves.easeOutCubic,
                 alignment: Alignment.topLeft,
                 child: _error == null

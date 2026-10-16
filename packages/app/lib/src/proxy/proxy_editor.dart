@@ -19,38 +19,13 @@ Future<void> showProxyEditor(
   ProxySettings? initial,
   bool fromLink = false,
   bool connect = false,
-}) => showGeneralDialog<void>(
-  context: context,
-  barrierDismissible: true,
-  barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-  barrierColor: const Color(0x00000000),
-  transitionDuration: MediaQuery.disableAnimationsOf(context)
-      ? Duration.zero
-      : const Duration(milliseconds: 160),
-  transitionBuilder: (context, animation, _, child) {
-    final curved = CurvedAnimation(
-      parent: animation,
-      curve: Curves.easeOutCubic,
-      reverseCurve: Curves.easeInCubic,
-    );
-    return FadeTransition(
-      opacity: curved,
-      child: ScaleTransition(
-        scale: Tween(begin: 0.96, end: 1.0).animate(curved),
-        child: child,
-      ),
-    );
-  },
-  pageBuilder: (context, _, _) => Material(
-    type: MaterialType.transparency,
-    child: Center(
-      child: ProxyEditor(
-        editing: editing,
-        initial: initial ?? editing?.settings,
-        fromLink: fromLink,
-        connect: connect,
-      ),
-    ),
+}) => showMgSheet<void>(
+  context,
+  ProxyEditor(
+    editing: editing,
+    initial: initial ?? editing?.settings,
+    fromLink: fromLink,
+    connect: connect,
   ),
 );
 
@@ -241,7 +216,7 @@ class _ProxyEditorState extends ConsumerState<ProxyEditor> {
           child: SizedBox(
             width: 360,
             child: Glass(
-              radius: 14,
+              radius: MgRadius.popover,
               padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -282,7 +257,7 @@ class _ProxyEditorState extends ConsumerState<ProxyEditor> {
                   ),
                   const SizedBox(height: 8),
                   AnimatedSize(
-                    duration: const Duration(milliseconds: 160),
+                    duration: MgMotion.standard,
                     curve: Curves.easeOutCubic,
                     alignment: Alignment.topCenter,
                     child: _kind == ProxyKind.mtproto
@@ -355,7 +330,7 @@ class _ProxyEditorState extends ConsumerState<ProxyEditor> {
                       const SizedBox(width: 6),
                       Expanded(
                         child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 140),
+                          duration: MgMotion.standard,
                           child: Text(
                             switch (_check) {
                               _Check.idle => '',
@@ -467,7 +442,7 @@ class _KindPicker extends StatelessWidget {
                   child: GestureDetector(
                     onTap: enabled ? () => onChanged(kind) : null,
                     child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 160),
+                      duration: MgMotion.standard,
                       curve: Curves.easeOutCubic,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
