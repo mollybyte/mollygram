@@ -641,5 +641,27 @@ void main() {
       final list = tester.getRect(find.byType(ComposerSuggestionList));
       expect(list.bottom, lessThanOrEqualTo(bar.top - 80));
     });
+
+    testWidgets('the bar is 50 px and the microphone is a plain icon', (
+      tester,
+    ) async {
+      final c = RichTextEditingController();
+      addTearDown(c.dispose);
+      await tester.pumpWidget(
+        themed(
+          Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [Composer(labels: labels, controller: c, onSend: (_) {})],
+          ),
+        ),
+      );
+      // 50 px plus the hairline above it.
+      expect(tester.getSize(find.byType(Composer)).height, 51);
+      expect(find.byType(MgRecordButton), findsOneWidget);
+      expect(find.byType(MgSendButton), findsNothing);
+      await tester.enterText(find.byType(EditableText), 'Hi');
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.byType(MgSendButton), findsOneWidget);
+    });
   });
 }
