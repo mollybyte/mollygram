@@ -360,12 +360,16 @@ class VideoNoteContent extends ConsumerStatefulWidget {
     required this.chatId,
     required this.messageId,
     required this.videoNote,
+    this.unread = false,
     this.meta,
   });
 
   final int chatId;
   final int messageId;
   final td.VideoNote videoNote;
+
+  /// Nobody has watched it yet.
+  final bool unread;
 
   /// The time and ticks, drawn over the circle.
   final Widget? meta;
@@ -462,8 +466,11 @@ class _VideoNoteContentState extends ConsumerState<VideoNoteContent> {
             ),
             Positioned(
               left: 10,
-              bottom: 12,
-              child: MediaPill(formatDuration(note.duration)),
+              top: 12,
+              child: MediaPill(
+                formatDuration(note.duration),
+                unread: widget.unread,
+              ),
             ),
             if (widget.meta != null)
               Positioned(right: 10, bottom: 12, child: widget.meta!),

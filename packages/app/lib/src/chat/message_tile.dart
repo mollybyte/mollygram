@@ -454,7 +454,7 @@ class MessageTile extends StatelessWidget {
     final tile = Padding(
       padding: EdgeInsets.only(
         top: context.startsRun
-            ? (metrics.compact ? 5 : 10)
+            ? (metrics.compact ? 6 : 12)
             : metrics.messageGap,
       ),
       child: Row(
@@ -482,21 +482,25 @@ class MessageTile extends StatelessWidget {
               children: [
                 if (context.startsRun)
                   SelectionContainer.disabled(
-                    child: _SenderLink(
-                      onTap: openSender,
-                      child: Text(
-                        name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: mgTextStyle(
-                          c,
-                          size: MgType.small,
-                          weight: MgWeight.medium,
-                          color: peerNameColor(
+                    // Lifted so the name sits on the avatar's top edge.
+                    child: Transform.translate(
+                      offset: const Offset(0, -2),
+                      child: _SenderLink(
+                        onTap: openSender,
+                        child: Text(
+                          name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: mgTextStyle(
                             c,
-                            store.colorOf(message.sender),
+                            size: MgType.small,
+                            weight: MgWeight.medium,
+                            color: peerNameColor(
+                              c,
+                              store.colorOf(message.sender),
+                            ),
+                            height: 1.35,
                           ),
-                          height: 1.35,
                         ),
                       ),
                     ),
@@ -809,11 +813,12 @@ class _MessageBody extends StatelessWidget {
             ),
           null => _BigEmoji(emoji),
         };
-      case td.MessageVideoNote(:final videoNote):
+      case td.MessageVideoNote(:final videoNote, :final isViewed):
         final note = VideoNoteContent(
           chatId: message.chatId,
           messageId: message.id,
           videoNote: videoNote,
+          unread: !isViewed,
         );
         final reason = concealmentOf(message);
         if (reason == null) return note;
@@ -854,12 +859,13 @@ class _MessageBody extends StatelessWidget {
             document: document,
           ),
         );
-      case td.MessageVoiceNote(:final voiceNote):
+      case td.MessageVoiceNote(:final voiceNote, :final isListened):
         return _withCaption(
           VoiceNoteContent(
             chatId: message.chatId,
             messageId: message.id,
             voiceNote: voiceNote,
+            unread: !isListened,
           ),
         );
       case td.MessageAudio(:final audio):

@@ -145,12 +145,16 @@ class VoiceNoteContent extends ConsumerStatefulWidget {
     required this.chatId,
     required this.messageId,
     required this.voiceNote,
+    this.unread = false,
     this.meta,
   });
 
   final int chatId;
   final int messageId;
   final td.VoiceNote voiceNote;
+
+  /// Nobody has played it yet: the receiver, or for our own the recipient.
+  final bool unread;
   final Widget? meta;
 
   @override
@@ -212,6 +216,7 @@ class _VoiceNoteContentState extends ConsumerState<VoiceNoteContent> {
           ],
         ),
         meta: widget.meta,
+        unread: widget.unread,
       ),
     );
     if (!_open) return row;
@@ -549,6 +554,7 @@ class _FileRow extends StatelessWidget {
     this.subtitleTrailing,
     this.meta,
     this.onTap,
+    this.unread = false,
   });
 
   final Widget button;
@@ -560,6 +566,9 @@ class _FileRow extends StatelessWidget {
   final Widget? subtitleTrailing;
   final Widget? meta;
   final VoidCallback? onTap;
+
+  /// A dot after the subtitle: a voice message nobody has played yet.
+  final bool unread;
 
   @override
   Widget build(BuildContext context) {
@@ -590,6 +599,10 @@ class _FileRow extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: MessageMeta.styleOf(c),
                     ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 5),
+                    child: MgUnreadDot(unread: unread, color: c.accent),
                   ),
                   AnimatedSize(
                     duration: const Duration(milliseconds: 180),
