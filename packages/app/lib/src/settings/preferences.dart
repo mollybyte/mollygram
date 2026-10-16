@@ -191,9 +191,9 @@ final class Preferences {
   static const defaultTextSize = 13;
 
   /// How opaque the window stays in the blurred theme.
-  static const minBlurOpacity = 0.7;
+  static const minBlurOpacity = 0.4;
   static const maxBlurOpacity = 0.95;
-  static const defaultBlurOpacity = 0.82;
+  static const defaultBlurOpacity = 0.62;
 
   /// Photos download everywhere, videos on Wi-Fi, files when asked.
   static const defaultAutoDownload = {

@@ -23,7 +23,7 @@ class BarStrip extends StatelessWidget {
       decoration: BoxDecoration(
         color: Color.alphaBlend(
           c.fg.withValues(alpha: c.isDark ? 0.07 : 0.04),
-          c.card,
+          c.solid(c.card),
         ),
         border: Border(bottom: BorderSide(color: c.separator, width: 1)),
       ),

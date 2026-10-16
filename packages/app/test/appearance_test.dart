@@ -33,10 +33,17 @@ void main() {
       }
     });
 
+    test('solid() makes panels opaque over the matte base', () {
+      final c = vesperBlur(MgColors.dark, Preferences.minBlurOpacity);
+      expect(c.solid(c.card).a, 1);
+      expect(c.solid(c.frame).a, 1);
+      expect(c.glass.a, greaterThan(0.8));
+    });
+
     test('the frame is translucent by the chosen opacity', () {
       final c = vesperBlur(MgColors.dark, 0.75);
       expect(c.frame.a, closeTo(0.75, 0.01));
-      expect(c.card.a, greaterThan(c.frame.a));
+      expect(c.card.a, lessThan(c.frame.a));
     });
   });
 
