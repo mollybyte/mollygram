@@ -1,6 +1,15 @@
 import Cocoa
 import FlutterMacOS
 
+/// The blur layer behind Flutter's surface. It only paints: it never takes a
+/// click, a drag or the first-responder role from the Flutter view above it.
+private final class PassiveEffectView: NSVisualEffectView {
+  override func hitTest(_ point: NSPoint) -> NSView? { nil }
+  override var acceptsFirstResponder: Bool { false }
+  override var mouseDownCanMoveWindow: Bool { false }
+  override func acceptsFirstMouse(for event: NSEvent?) -> Bool { false }
+}
+
 class MainFlutterWindow: NSWindow {
   /// Where the window buttons go, in points from the window's top-left
   /// corner. The sidebar island is inset 8 pt and its title bar row is 44 pt
@@ -15,7 +24,7 @@ class MainFlutterWindow: NSWindow {
   private static let frameName = "MainWindow"
 
   /// The blur behind the window while the Vesper Blur theme is on.
-  private var vibrancyView: NSVisualEffectView?
+  private var vibrancyView: PassiveEffectView?
 
   private var notifications: NotificationsChannel?
   private var voiceCapture: VoiceCaptureChannel?
@@ -143,17 +152,20 @@ class MainFlutterWindow: NSWindow {
     if on {
       if vibrancyView == nil, let frameView = contentView?.superview,
          let content = contentView {
-        let effect = NSVisualEffectView(frame: frameView.bounds)
+        let effect = PassiveEffectView(frame: frameView.bounds)
         effect.autoresizingMask = [.width, .height]
         effect.material = .underWindowBackground
         effect.blendingMode = .behindWindow
         effect.state = .active
-        frameView.addSubview(effect, positioned: .below, relativeTo: content)
+        // Bottom-most in the frame view, so it can never sit over the content.
+        frameView.addSubview(effect, positioned: .below, relativeTo: nil)
         vibrancyView = effect
       }
       appearance = NSAppearance(named: .darkAqua)
       isOpaque = false
       backgroundColor = .clear
+      ignoresMouseEvents = false
+      makeFirstResponder(contentViewController?.view)
     } else {
       vibrancyView?.removeFromSuperview()
       vibrancyView = nil
