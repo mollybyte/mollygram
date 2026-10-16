@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import 'forms/pressable.dart';
 import 'icons.dart';
 import 'theme/colors.dart';
+import 'theme/tokens.dart';
 
 /// A round 32 px icon button (`.ib` in the mockup): secondary color at rest,
 /// a hover fill, the accent with a field fill when [selected].
@@ -38,42 +40,36 @@ class MgIconButton extends StatefulWidget {
 }
 
 class _MgIconButtonState extends State<MgIconButton> {
-  bool _hover = false;
-
   @override
   Widget build(BuildContext context) {
     final c = MgColors.of(context);
-    final enabled = widget.onPressed != null;
-    final hover = _hover && enabled;
-    final fg = widget.selected
-        ? c.accent
-        : (hover ? c.fg : (widget.quiet ? c.quiet : c.icon));
-    final bg = widget.selected
-        ? c.field
-        : (hover ? c.hover : const Color(0x00000000));
     return Tooltip(
       message: widget.tooltip,
       excludeFromSemantics: true,
-      child: Semantics(
-        button: true,
-        enabled: enabled,
+      child: MgPressable(
+        onTap: widget.onPressed,
+        semanticsLabel: widget.tooltip,
         toggled: widget.selected ? true : null,
-        label: widget.tooltip,
-        child: MouseRegion(
-          cursor: enabled ? SystemMouseCursors.click : MouseCursor.defer,
-          onEnter: (_) => setState(() => _hover = true),
-          onExit: (_) => setState(() => _hover = false),
-          child: GestureDetector(
-            onTap: widget.onPressed,
-            child: Container(
-              width: widget.size,
-              height: widget.size,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
-              child: MgIcon(widget.icon, size: widget.iconSize, color: fg),
-            ),
-          ),
-        ),
+        focusRadius: widget.size / 2,
+        scale: 0.92,
+        builder: (context, st) {
+          final hover = st.hovered;
+          final fg = widget.selected
+              ? c.accent
+              : (hover ? c.fg : (widget.quiet ? c.quiet : c.icon));
+          final bg = widget.selected
+              ? c.field
+              : (st.pressed || hover ? c.hover : const Color(0x00000000));
+          return AnimatedContainer(
+            duration: MgMotion.fast,
+            curve: MgMotion.standardCurve,
+            width: widget.size,
+            height: widget.size,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
+            child: MgIcon(widget.icon, size: widget.iconSize, color: fg),
+          );
+        },
       ),
     );
   }
