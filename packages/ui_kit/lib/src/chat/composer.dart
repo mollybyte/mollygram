@@ -520,7 +520,9 @@ class _ComposerState extends State<Composer> {
         const SizedBox(width: 8),
         Expanded(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: MgSendButton.rowHeight),
+            constraints: const BoxConstraints(
+              minHeight: MgSendButton.rowHeight,
+            ),
             child: Center(
               widthFactor: 1,
               child: Focus(
