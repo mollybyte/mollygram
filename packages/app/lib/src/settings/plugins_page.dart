@@ -511,15 +511,10 @@ Future<void> askConsent(
 ) async {
   final request = controller.consent;
   if (request == null) return;
-  final allowed = await showGeneralDialog<bool>(
-    context: context,
-    barrierDismissible: true,
-    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+  final allowed = await showMgSheet<bool>(
+    context,
+    ConsentSheet(request),
     barrierColor: const Color(0x14000000),
-    transitionDuration: settingsMotionOf(context),
-    pageBuilder: (context, _, _) => Center(child: ConsentSheet(request)),
-    transitionBuilder: (context, animation, _, child) =>
-        FadeTransition(opacity: animation, child: child),
   );
   if (allowed == true) {
     await controller.allowConsent();
@@ -573,7 +568,7 @@ class ConsentSheet extends StatelessWidget {
           child: SizedBox(
             width: 380,
             child: Glass(
-              radius: 14,
+              radius: MgRadius.popover,
               padding: const EdgeInsets.fromLTRB(18, 18, 18, 14),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -698,7 +693,7 @@ class _DefaultButton extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
               color: c.accent,
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(MgRadius.control),
             ),
             child: Center(
               widthFactor: 1,

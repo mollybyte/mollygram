@@ -11,12 +11,18 @@ import 'message_menu.dart';
 
 /// Shows [child] centered over the window the way every alert and sheet
 /// appears: a 200 ms fade and a slight grow from 97 %, a 150 ms fade out,
-/// no dimming. A click outside closes it.
-Future<T?> showMgSheet<T>(BuildContext context, Widget child) {
+/// no dimming unless a [barrierColor] asks for it. A click outside closes
+/// it.
+Future<T?> showMgSheet<T>(
+  BuildContext context,
+  Widget child, {
+  Color barrierColor = const Color(0x00000000),
+}) {
   final animate = !MediaQuery.disableAnimationsOf(context);
   return Navigator.of(context, rootNavigator: true).push<T>(
     _SheetRoute<T>(
       animate: animate,
+      barrierColor: barrierColor,
       barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
       pageBuilder: (context, _, _) => Material(
         type: MaterialType.transparency,
@@ -54,10 +60,10 @@ class _SheetRoute<T> extends RawDialogRoute<T> {
     required this.animate,
     required super.pageBuilder,
     required super.barrierLabel,
+    required super.barrierColor,
     super.transitionBuilder,
   }) : super(
          barrierDismissible: true,
-         barrierColor: const Color(0x00000000),
          transitionDuration: animate ? MgMotion.standard : Duration.zero,
        );
 

@@ -7,7 +7,6 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../chat/message_tile.dart' show SenderAvatar;
 import '../../contacts/providers.dart';
-import '../../folders/folder_sheet.dart';
 import '../settings_style.dart';
 
 /// Picks people from the contacts, leaving out [exclude]. Completes with
@@ -17,7 +16,7 @@ Future<List<int>?> showUserPicker(
   required String title,
   required String action,
   Set<int> exclude = const {},
-}) => showFolderSheet<List<int>>(
+}) => showMgSheet<List<int>>(
   context,
   UserPicker(title: title, action: action, exclude: exclude),
 );
@@ -79,7 +78,7 @@ class _UserPickerState extends ConsumerState<UserPicker> {
         width: 360,
         height: 500,
         child: Glass(
-          radius: 14,
+          radius: MgRadius.popover,
           padding: const EdgeInsets.fromLTRB(10, 14, 10, 12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -184,7 +183,7 @@ class _PickRowState extends State<_PickRow> {
           behavior: HitTestBehavior.opaque,
           onTap: widget.onTap,
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 90),
+            duration: MgMotion.fast,
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
             decoration: BoxDecoration(
               color: _hover ? c.hover : c.hover.withValues(alpha: 0),

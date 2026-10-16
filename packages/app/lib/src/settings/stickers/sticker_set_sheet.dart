@@ -9,7 +9,6 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../chat/media_content.dart';
-import '../../folders/folder_sheet.dart';
 import '../../session/providers.dart';
 import '../settings_style.dart';
 
@@ -47,7 +46,7 @@ Future<StickerSetLookup> showStickerSetSheet(
     return StickerSetLookup.failed;
   }
   if (!context.mounted) return StickerSetLookup.shown;
-  await showFolderSheet<void>(
+  await showMgSheet<void>(
     context,
     StickerSetSheet(set: set, onInstalled: onInstalled),
   );
@@ -68,7 +67,7 @@ Future<void> showStickerSetSheetById(BuildContext context, int setId) async {
     return;
   }
   if (!context.mounted) return;
-  await showFolderSheet<void>(context, StickerSetSheet(set: set));
+  await showMgSheet<void>(context, StickerSetSheet(set: set));
 }
 
 /// A set's stickers in a grid, animated under the pointer, and the button
@@ -141,7 +140,7 @@ class _StickerSetSheetState extends ConsumerState<StickerSetSheet> {
           width: 420,
           height: 520,
           child: Glass(
-            radius: 14,
+            radius: MgRadius.popover,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
