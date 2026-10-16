@@ -103,6 +103,7 @@ Future<void> showTopicMenu(
       if (manage)
         MgMenuItem(
           label: topic.isPinned ? l10n.unpinTopic : l10n.pinTopic,
+          icon: topic.isPinned ? MgIcons.unpin : MgIcons.pinOutline,
           onSelected: () => unawaited(
             run(
               () => conversations.setTopicPinned(chatId, id, !topic.isPinned),
@@ -112,6 +113,7 @@ Future<void> showTopicMenu(
       if (!topic.info.isGeneral)
         MgMenuItem(
           label: topic.info.isClosed ? l10n.reopenTopic : l10n.closeTopic,
+          icon: topic.info.isClosed ? MgIcons.lockOpen : MgIcons.lock,
           onSelected: () => unawaited(
             run(
               () => conversations.setTopicClosed(
@@ -124,12 +126,14 @@ Future<void> showTopicMenu(
         ),
       MgMenuItem(
         label: l10n.editTopic,
+        icon: MgIcons.edit,
         onSelected: () =>
             unawaited(showTopicSheet(context, chatId, topic: topic.info)),
       ),
       if (manage && !topic.info.isGeneral)
         MgMenuItem(
           label: l10n.deleteTopic,
+          icon: MgIcons.trash,
           destructive: true,
           onSelected: () => unawaited(() async {
             final confirmed = await showMgConfirm(

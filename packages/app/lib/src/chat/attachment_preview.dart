@@ -218,15 +218,18 @@ class _PreviewState extends State<_Preview> {
       items: [
         MgMenuItem(
           label: l10n.sendWithoutSound,
+          icon: MgIcons.muted,
           onSelected: () => _send(silent: true),
         ),
         MgMenuItem(
           label: l10n.scheduleMessage,
+          icon: MgIcons.recent,
           onSelected: () => unawaited(_schedule()),
         ),
         if (widget.allowSendWhenOnline)
           MgMenuItem(
             label: l10n.sendWhenOnline,
+            icon: MgIcons.profile,
             onSelected: () => _send(
               schedule: const td.MessageSchedulingStateSendWhenOnline(),
             ),

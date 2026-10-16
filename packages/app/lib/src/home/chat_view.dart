@@ -800,6 +800,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
         items: [
           MgMenuItem(
             label: l10n.translateChooseLanguage,
+            icon: MgIcons.translate,
             submenu: [
               for (final code in translateTargets)
                 MgMenuItem(
@@ -816,6 +817,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
           if (source != null)
             MgMenuItem(
               label: l10n.translateSkipLanguage(languageName(source, locale)),
+              icon: MgIcons.close,
               onSelected: () => _updateTranslation(
                 (p) => p.copyWith(
                   translateSkip: {...p.translateSkip, source},
@@ -826,6 +828,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
           if (!active)
             MgMenuItem(
               label: l10n.translateHideBar,
+              icon: MgIcons.hide,
               onSelected: () => _updateTranslation(
                 (p) =>
                     p.copyWith(translateHidden: {...p.translateHidden, chatId}),
@@ -1084,11 +1087,13 @@ class _ChatViewState extends ConsumerState<ChatView> {
       items: [
         MgMenuItem(
           label: l10n.savedTagName,
+          icon: MgIcons.tag,
           onSelected: () => unawaited(_nameTag(l10n, tags, tag)),
         ),
         if (tag.label.isNotEmpty)
           MgMenuItem(
             label: l10n.savedTagClearName,
+            icon: MgIcons.clear,
             onSelected: () => unawaited(_quiet(tags.setLabel(tag.tag, ''))),
           ),
       ],
@@ -1611,16 +1616,19 @@ class _ChatViewState extends ConsumerState<ChatView> {
       items: [
         MgMenuItem(
           label: l10n.menuSendNow,
+          icon: MgIcons.send,
           onSelected: () => unawaited(
             _quiet(_conversations.sendScheduledNow(chatId, row.primary.id)),
           ),
         ),
         MgMenuItem(
           label: l10n.menuReschedule,
+          icon: MgIcons.recent,
           onSelected: () => unawaited(_rescheduleMessage(row.primary.id)),
         ),
         MgMenuItem(
           label: l10n.menuDelete,
+          icon: MgIcons.trash,
           destructive: true,
           onSelected: () =>
               unawaited(_quiet(_conversations.deleteScheduled(chatId, ids))),
@@ -2956,15 +2964,18 @@ class _ChatViewState extends ConsumerState<ChatView> {
       items: [
         MgMenuItem(
           label: l10n.sendWithoutSound,
+          icon: MgIcons.muted,
           onSelected: () => unawaited(_send(text, silent: true)),
         ),
         MgMenuItem(
           label: l10n.scheduleMessage,
+          icon: MgIcons.recent,
           onSelected: () => unawaited(_schedule(text)),
         ),
         if (_canSendWhenOnline)
           MgMenuItem(
             label: l10n.sendWhenOnline,
+            icon: MgIcons.profile,
             onSelected: () => unawaited(_sendWhenOnline(text)),
           ),
       ],
@@ -3114,19 +3125,23 @@ class _ChatViewState extends ConsumerState<ChatView> {
       items: [
         MgMenuItem(
           label: l10n.attachFile,
+          icon: MgIcons.file,
           onSelected: () => unawaited(_chooseFiles()),
         ),
         if (canPoll)
           MgMenuItem(
             label: l10n.attachPoll,
+            icon: MgIcons.poll,
             onSelected: () => unawaited(_createPoll()),
           ),
         MgMenuItem(
           label: l10n.attachLocation,
+          icon: MgIcons.location,
           onSelected: () => unawaited(_sendLocation()),
         ),
         MgMenuItem(
           label: l10n.attachContact,
+          icon: MgIcons.profile,
           onSelected: () => unawaited(_sendContact()),
         ),
       ],

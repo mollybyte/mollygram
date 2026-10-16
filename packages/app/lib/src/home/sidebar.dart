@@ -373,7 +373,9 @@ class _ArchiveButton extends StatelessWidget {
       showMgMenu(
         context,
         position: details.globalPosition,
-        items: [MgMenuItem(label: showLabel, onSelected: onShow)],
+        items: [
+          MgMenuItem(label: showLabel, icon: MgIcons.views, onSelected: onShow),
+        ],
       ),
     ),
     child: MgIconButton(
