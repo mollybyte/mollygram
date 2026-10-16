@@ -583,7 +583,7 @@ class _AccountsGroupState extends ConsumerState<AccountsGroup> {
 
 /// One account: avatar (the profile photo for the open one), name and
 /// phone, a check on the open one and Log out on the others.
-class _AccountRow extends ConsumerWidget {
+class _AccountRow extends ConsumerWidget implements SettingsGroupRow {
   const _AccountRow({
     required this.account,
     required this.number,

@@ -114,6 +114,11 @@ class SettingsPage extends StatelessWidget {
 
 /// A rounded box of rows with hairlines between them, with an optional
 /// [title] above and a [footer] below.
+/// A widget that builds a [SettingsRow] or [SettingsSwitchRow], so a
+/// [SettingsGroup] lets the row draw its own hairline from the title on
+/// instead of a full-width one at the row inset.
+abstract interface class SettingsGroupRow implements Widget {}
+
 class SettingsGroup extends StatelessWidget {
   const SettingsGroup({
     super.key,
@@ -138,7 +143,7 @@ class SettingsGroup extends StatelessWidget {
       final last = i == children.length - 1;
       // A row draws its own hairline, from its title on (see SettingsRow);
       // anything else gets one at the row inset.
-      if (child is SettingsRow || child is SettingsSwitchRow) {
+      if (child is SettingsGroupRow) {
         rows.add(_RowSeparator(below: !last, child: child));
       } else {
         rows.add(child);
@@ -272,7 +277,7 @@ class SettingsFooter extends StatelessWidget {
 /// [title] with an optional [subtitle], and a [trailing] value or control.
 /// With [onTap] the row highlights while pressed and shows a chevron when
 /// [chevron] is set.
-class SettingsRow extends StatefulWidget {
+class SettingsRow extends StatefulWidget implements SettingsGroupRow {
   const SettingsRow({
     super.key,
     required this.title,
@@ -606,7 +611,7 @@ class SettingsSwitch extends StatelessWidget {
 }
 
 /// A group row with a switch; a click anywhere on the row flips it.
-class SettingsSwitchRow extends StatelessWidget {
+class SettingsSwitchRow extends StatelessWidget implements SettingsGroupRow {
   const SettingsSwitchRow({
     super.key,
     required this.title,

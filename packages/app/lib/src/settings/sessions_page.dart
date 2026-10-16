@@ -230,7 +230,7 @@ class _ActiveSessionsPageState extends ConsumerState<ActiveSessionsPage> {
   }
 }
 
-class _SessionRow extends StatefulWidget {
+class _SessionRow extends StatefulWidget implements SettingsGroupRow {
   const _SessionRow({super.key, required this.session, this.onTerminate});
 
   final ActiveSession session;
