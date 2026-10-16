@@ -9,6 +9,7 @@ import '../icon_button.dart';
 import '../icons.dart';
 import '../theme/colors.dart';
 import '../theme/theme.dart';
+import '../theme/tokens.dart';
 import 'composer_suggestions.dart';
 import 'formatting.dart';
 import 'link_sheet.dart';
@@ -504,7 +505,7 @@ class _ComposerState extends State<Composer> {
           builder: (context) => MgIconButton(
             icon: MgIcons.plus,
             iconSize: 22,
-            size: MgSendButton.size,
+            size: MgSendButton.rowHeight,
             quiet: true,
             tooltip: l.attach,
             onPressed: switch (widget.onAttachMenu) {
@@ -519,7 +520,7 @@ class _ComposerState extends State<Composer> {
         const SizedBox(width: 8),
         Expanded(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: MgSendButton.size),
+            constraints: const BoxConstraints(minHeight: MgSendButton.rowHeight),
             child: Center(
               widthFactor: 1,
               child: Focus(
@@ -548,7 +549,7 @@ class _ComposerState extends State<Composer> {
         MgIconButton(
           icon: MgIcons.emoji,
           iconSize: 22,
-          size: MgSendButton.size,
+          size: MgSendButton.rowHeight,
           quiet: true,
           tooltip: l.emoji,
           onPressed: widget.onEmoji,
@@ -603,17 +604,35 @@ class _ComposerState extends State<Composer> {
               ),
             ),
             const SizedBox(width: 8),
+            // The square stays put and the glyph morphs: the new button
+            // grows and fades in over the old one, which only fades at
+            // the very end, so there is never a gap in the square.
             AnimatedSwitcher(
-              duration: const Duration(milliseconds: 150),
-              switchInCurve: Curves.easeOutBack,
-              switchOutCurve: Curves.easeIn,
-              transitionBuilder: (child, animation) => FadeTransition(
-                opacity: animation,
-                child: ScaleTransition(
-                  scale: Tween(begin: 0.6, end: 1.0).animate(animation),
-                  child: child,
-                ),
-              ),
+              duration: MediaQuery.disableAnimationsOf(context)
+                  ? Duration.zero
+                  : MgMotion.standard,
+              switchInCurve: MgMotion.enter,
+              switchOutCurve: Curves.linear,
+              transitionBuilder: (child, animation) {
+                final entering =
+                    child.key == ValueKey(hasDraft ? 'send' : 'record');
+                if (!entering) {
+                  return FadeTransition(
+                    opacity: CurvedAnimation(
+                      parent: animation,
+                      curve: const Interval(0, 0.15),
+                    ),
+                    child: child,
+                  );
+                }
+                return FadeTransition(
+                  opacity: animation,
+                  child: ScaleTransition(
+                    scale: Tween(begin: 0.7, end: 1.0).animate(animation),
+                    child: child,
+                  ),
+                );
+              },
               child: hasDraft
                   ? MgSendButton(
                       key: const ValueKey('send'),
