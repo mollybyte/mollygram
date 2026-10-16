@@ -119,7 +119,7 @@ class _ForwardPickerState extends ConsumerState<_ForwardPicker> {
   /// Scrolls by the least that shows the cursor's row whole.
   void _reveal() {
     if (!_scroll.hasClients) return;
-    final extent = ChatListTile.extentOf(context);
+    const extent = _ForwardRow.extent;
     final top = _cursor * extent;
     final position = _scroll.position;
     final target = top < position.pixels
@@ -238,152 +238,268 @@ class _ForwardPickerState extends ConsumerState<_ForwardPicker> {
     }
     _matches = matches;
     final cursor = matches.isEmpty ? 0 : _cursor.clamp(0, matches.length - 1);
-    return SizedBox(
-      width: 360,
-      height: 540,
-      child: Glass(
-        radius: 14,
-        padding: const EdgeInsets.fromLTRB(10, 12, 10, 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(left: 4, bottom: 10),
-              child: Text(
-                l10n.forwardTitle,
-                style: mgTextStyle(c, weight: FontWeight.w600),
-              ),
-            ),
-            Focus(
-              canRequestFocus: false,
-              onKeyEvent: _onKey,
-              child: MgSearchField(
-                focusNode: _search,
-                hintText: l10n.forwardSearch,
-                onChanged: (value) => unawaited(_find(value)),
-                onSubmitted: (_) => _submit(matches),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Expanded(
-              child: loaded == null
-                  ? const SizedBox.shrink()
-                  : matches.isEmpty
-                  ? Center(
-                      child: Text(
-                        l10n.noChatsFound,
-                        style: mgTextStyle(c, color: c.fg2),
-                      ),
-                    )
-                  : ListView.builder(
-                      controller: _scroll,
-                      itemExtent: ChatListTile.extentOf(context),
-                      itemCount: matches.length,
-                      itemBuilder: (context, i) {
-                        final chat = matches[i];
-                        final tile = ChatListTile(
-                          key: ValueKey(chat.id),
-                          title: chat.title,
-                          avatar: PeerAvatar.chat(
-                            name: chat.title,
-                            size: ChatListTile.avatarSize,
-                            photo: chat.photo,
-                          ),
-                          subtitle: formatPreview(l10n, chat.lastMessage),
-                          highlighted: i == cursor,
-                          onTap: () => _tap(chat.id),
-                        );
-                        if (!widget.multiple) return tile;
-                        return Stack(
-                          children: [
-                            tile,
-                            Positioned(
-                              right: MgSpace.l,
-                              top: 0,
-                              bottom: 0,
-                              child: IgnorePointer(
-                                child: Center(
-                                  child: _Tick(on: _picked.contains(chat.id)),
-                                ),
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-            ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.only(left: 4),
-              child: MgCheckRow(
-                label: l10n.forwardHideSender,
-                value: _hideSender,
-                onChanged: (value) => setState(() => _hideSender = value),
-              ),
-            ),
-            // Captions can only go once the messages are sent as copies.
-            if (widget.hasCaptions)
-              Padding(
-                padding: const EdgeInsets.only(left: 4, top: 6),
-                child: AnimatedOpacity(
-                  opacity: _hideSender ? 1 : 0.45,
-                  duration: const Duration(milliseconds: 150),
-                  child: IgnorePointer(
-                    ignoring: !_hideSender,
-                    child: MgCheckRow(
-                      label: l10n.forwardHideCaptions,
-                      value: _hideSender && _hideCaptions,
-                      onChanged: (value) =>
-                          setState(() => _hideCaptions = value),
+    // A plain card, as Telegram's share sheet is: the list reads better
+    // on a solid surface than on glass.
+    return Container(
+      width: 330,
+      height: 500,
+      padding: const EdgeInsets.fromLTRB(12, 16, 12, 12),
+      decoration: BoxDecoration(
+        color: c.glassSolid.withValues(alpha: 1),
+        borderRadius: BorderRadius.circular(MgRadius.card),
+        border: Border.all(color: c.separator, width: 0.5),
+        boxShadow: [
+          BoxShadow(
+            color: c.shadow,
+            blurRadius: 40,
+            offset: const Offset(0, 14),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 0, 0, 10),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    l10n.forwardTitle,
+                    style: mgTextStyle(
+                      c,
+                      size: 15,
+                      weight: FontWeight.w600,
+                      height: 1.2,
                     ),
                   ),
                 ),
+                MgIconButton(
+                  icon: MgIcons.close,
+                  size: 24,
+                  iconSize: 14,
+                  tooltip: MaterialLocalizations.of(context).closeButtonLabel,
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
+          ),
+          Focus(
+            canRequestFocus: false,
+            onKeyEvent: _onKey,
+            child: MgSearchField(
+              focusNode: _search,
+              hintText: l10n.forwardSearch,
+              onChanged: (value) => unawaited(_find(value)),
+              onSubmitted: (_) => _submit(matches),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Expanded(
+            child: loaded == null
+                ? const SizedBox.shrink()
+                : matches.isEmpty
+                ? Center(
+                    child: Text(
+                      l10n.noChatsFound,
+                      style: mgTextStyle(c, color: c.fg2),
+                    ),
+                  )
+                : ListView.builder(
+                    controller: _scroll,
+                    itemExtent: _ForwardRow.extent,
+                    itemCount: matches.length,
+                    itemBuilder: (context, i) {
+                      final chat = matches[i];
+                      return _ForwardRow(
+                        key: ValueKey(chat.id),
+                        title: chat.title,
+                        avatar: PeerAvatar.chat(
+                          name: chat.title,
+                          size: _ForwardRow.avatarSize,
+                          photo: chat.photo,
+                        ),
+                        subtitle: formatPreview(l10n, chat.lastMessage),
+                        highlighted: i == cursor,
+                        tick: widget.multiple
+                            ? _Tick(on: _picked.contains(chat.id))
+                            : null,
+                        onTap: () => _tap(chat.id),
+                      );
+                    },
+                  ),
+          ),
+          const SizedBox(height: 10),
+          Padding(
+            padding: const EdgeInsets.only(left: 4),
+            child: MgCheckRow(
+              label: l10n.forwardHideSender,
+              value: _hideSender,
+              onChanged: (value) => setState(() => _hideSender = value),
+            ),
+          ),
+          // Captions can only go once the messages are sent as copies.
+          if (widget.hasCaptions)
+            Padding(
+              padding: const EdgeInsets.only(left: 4, top: 6),
+              child: AnimatedOpacity(
+                opacity: _hideSender ? 1 : 0.45,
+                duration: const Duration(milliseconds: 150),
+                child: IgnorePointer(
+                  ignoring: !_hideSender,
+                  child: MgCheckRow(
+                    label: l10n.forwardHideCaptions,
+                    value: _hideSender && _hideCaptions,
+                    onChanged: (value) => setState(() => _hideCaptions = value),
+                  ),
+                ),
               ),
-            // The comment and Send slide in once a chat is ticked.
-            AnimatedSize(
-              duration: MgMotion.standard,
-              curve: MgMotion.enter,
-              alignment: Alignment.topCenter,
-              child: _picked.isEmpty
-                  ? const SizedBox(width: double.infinity)
-                  : Padding(
-                      padding: const EdgeInsets.only(top: MgSpace.ml),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Container(
-                              height: 30,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: MgSpace.l,
-                              ),
-                              alignment: Alignment.centerLeft,
-                              decoration: BoxDecoration(
-                                color: c.field,
-                                borderRadius: BorderRadius.circular(15),
-                              ),
-                              child: TextField(
-                                controller: _comment,
-                                focusNode: _commentFocus,
-                                style: mgTextStyle(c),
-                                cursorHeight: 15,
-                                onSubmitted: (_) => _submit(matches),
-                                decoration: InputDecoration.collapsed(
-                                  hintText: l10n.forwardComment,
-                                  hintStyle: mgTextStyle(c, color: c.fg2),
-                                ),
+            ),
+          // The comment and Send slide in once a chat is ticked.
+          AnimatedSize(
+            duration: MgMotion.standard,
+            curve: MgMotion.enter,
+            alignment: Alignment.topCenter,
+            child: _picked.isEmpty
+                ? const SizedBox(width: double.infinity)
+                : Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            height: 30,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: MgSpace.l,
+                            ),
+                            alignment: Alignment.centerLeft,
+                            decoration: BoxDecoration(
+                              color: c.field,
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                            child: TextField(
+                              controller: _comment,
+                              focusNode: _commentFocus,
+                              style: mgTextStyle(c),
+                              cursorHeight: 15,
+                              onSubmitted: (_) => _submit(matches),
+                              decoration: InputDecoration.collapsed(
+                                hintText: l10n.forwardComment,
+                                hintStyle: mgTextStyle(c, color: c.fg2),
                               ),
                             ),
                           ),
-                          const SizedBox(width: MgSpace.m),
-                          _SendButton(
-                            label: '${l10n.send} ${_picked.length}',
-                            onTap: () => _submit(matches),
-                          ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(width: MgSpace.m),
+                        _SendButton(
+                          label: '${l10n.send} ${_picked.length}',
+                          onTap: () => _submit(matches),
+                        ),
+                      ],
                     ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A chat in the picker: a small avatar, the name over one line of the
+/// last message, and the tick of a multiple pick on the right.
+class _ForwardRow extends StatefulWidget {
+  const _ForwardRow({
+    super.key,
+    required this.title,
+    required this.avatar,
+    required this.subtitle,
+    required this.highlighted,
+    required this.onTap,
+    this.tick,
+  });
+
+  static const double extent = 46;
+  static const double avatarSize = 34;
+
+  final String title;
+  final Widget avatar;
+  final String subtitle;
+
+  /// The keyboard cursor is on this row.
+  final bool highlighted;
+  final VoidCallback onTap;
+  final Widget? tick;
+
+  @override
+  State<_ForwardRow> createState() => _ForwardRowState();
+}
+
+class _ForwardRowState extends State<_ForwardRow> {
+  var _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    final tick = widget.tick;
+    return Semantics(
+      button: true,
+      label: widget.title,
+      onTap: widget.onTap,
+      excludeSemantics: true,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _hover = true),
+        onExit: (_) => setState(() => _hover = false),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: widget.onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            decoration: BoxDecoration(
+              color: _hover || widget.highlighted
+                  ? c.hover
+                  : const Color(0x00000000),
+              borderRadius: BorderRadius.circular(9),
             ),
-          ],
+            child: Row(
+              children: [
+                widget.avatar,
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: mgTextStyle(
+                          c,
+                          size: MgType.small,
+                          weight: MgWeight.medium,
+                          height: 1.25,
+                        ),
+                      ),
+                      if (widget.subtitle.isNotEmpty)
+                        Text(
+                          widget.subtitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: mgTextStyle(
+                            c,
+                            size: MgType.caption,
+                            color: c.fg2,
+                            height: 1.3,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                if (tick != null) ...[const SizedBox(width: 10), tick],
+              ],
+            ),
+          ),
         ),
       ),
     );

@@ -496,7 +496,7 @@ class _Menu extends StatelessWidget {
   final GlobalKey Function(MgMenuItem item) keyOf;
 
   /// Keeps the rows' corners concentric with the panel's.
-  static const double padding = radius - MgRadius.small;
+  static const double padding = radius - _rowRadius + 1;
 
   /// A touch rounder than other popovers, as Telegram's menus are.
   static const double radius = MgRadius.card;
@@ -507,8 +507,9 @@ class _Menu extends StatelessWidget {
       type: MaterialType.transparency,
       child: IntrinsicWidth(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(minWidth: 210, maxWidth: 320),
+          constraints: const BoxConstraints(minWidth: 236, maxWidth: 320),
           child: Glass(
+            dense: true,
             radius: radius,
             tail: tail,
             padding: const EdgeInsets.all(padding),
@@ -518,9 +519,9 @@ class _Menu extends StatelessWidget {
               children: [
                 if (header != null) ...[
                   header!,
-                  if (items.isNotEmpty) const _Separator(),
+                  if (_tidy(items).isNotEmpty) const _Separator(),
                 ],
-                for (final item in items)
+                for (final item in _tidy(items))
                   item.isDivider
                       ? const _Separator()
                       : _MenuRow(
@@ -543,15 +544,24 @@ class _Menu extends StatelessWidget {
   }
 }
 
+/// [items] without dividers at the ends or two in a row, so callers can
+/// put one between each group whether or not the group has rows.
+List<MgMenuItem> _tidy(List<MgMenuItem> items) {
+  final rows = <MgMenuItem>[];
+  for (final item in items) {
+    if (item.isDivider && (rows.isEmpty || rows.last.isDivider)) continue;
+    rows.add(item);
+  }
+  if (rows.isNotEmpty && rows.last.isDivider) rows.removeLast();
+  return rows;
+}
+
 class _Separator extends StatelessWidget {
   const _Separator();
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(
-      vertical: MgSpace.xs,
-      horizontal: MgSpace.m,
-    ),
+    padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 4),
     child: SizedBox(
       height: 1,
       child: ColoredBox(color: MgColors.of(context).separator),
@@ -625,17 +635,17 @@ class _MenuRowState extends State<_MenuRow> {
           onTap: _select,
           child: Container(
             height: 30,
-            padding: const EdgeInsets.symmetric(horizontal: MgSpace.ml),
+            padding: const EdgeInsets.symmetric(horizontal: 10),
             alignment: Alignment.centerLeft,
             decoration: BoxDecoration(
               color: lit ? menuHighlight(c) : const Color(0x00000000),
-              borderRadius: BorderRadius.circular(MgRadius.small),
+              borderRadius: BorderRadius.circular(_rowRadius),
             ),
             child: Row(
               children: [
                 if (widget.iconColumn)
                   SizedBox(
-                    width: 28,
+                    width: 27,
                     child: item.leading != null
                         ? Align(
                             alignment: Alignment.centerLeft,
@@ -647,7 +657,7 @@ class _MenuRowState extends State<_MenuRow> {
                             alignment: Alignment.centerLeft,
                             child: MgIcon(
                               item.icon!,
-                              size: 16,
+                              size: 15,
                               color: iconColor,
                             ),
                           ),
@@ -657,7 +667,12 @@ class _MenuRowState extends State<_MenuRow> {
                     item.label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: mgTextStyle(c, color: color, height: 1.2),
+                    style: mgTextStyle(
+                      c,
+                      size: MgType.small,
+                      color: color,
+                      height: 1.2,
+                    ),
                   ),
                 ),
                 if (item.submenu.isNotEmpty) ...[
@@ -672,6 +687,9 @@ class _MenuRowState extends State<_MenuRow> {
     );
   }
 }
+
+/// The corners of a menu row, concentric with the menu's.
+const double _rowRadius = 7;
 
 /// The fill under a highlighted menu row: a soft tint of the text colour
 /// that reads on light and dark glass alike.
@@ -713,9 +731,9 @@ class ReactionBar extends StatelessWidget {
     final c = MgColors.of(context);
     final onMore = this.onMore;
     return Padding(
-      padding: const EdgeInsets.all(MgSpace.xxs),
+      padding: const EdgeInsets.fromLTRB(2, 2, 2, 4),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         spacing: MgSpace.xxs,
         children: [
           for (final emoji in reactions)
@@ -775,6 +793,7 @@ class ReactionGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = MgColors.of(context);
     return Glass(
+      dense: true,
       radius: MgRadius.popover,
       padding: const EdgeInsets.all(MgSpace.s),
       child: SizedBox(
@@ -820,14 +839,14 @@ class _ReactionButton extends StatefulWidget {
     required this.fill,
     required this.hover,
     required this.onTap,
-    this.size = 32,
+    this.size = 28,
   });
 
   final String emoji;
 
   /// What an icon drawn in place of the emoji measures, matching the
   /// emoji's glyph.
-  static const double iconSize = 22;
+  static const double iconSize = 19;
 
   /// What the button is for when it has no [emoji], such as "More".
   final String? label;
@@ -878,7 +897,7 @@ class _ReactionButtonState extends State<_ReactionButton> {
                 widget.child ??
                 Text(
                   widget.emoji,
-                  style: const TextStyle(fontSize: 19, height: 1.1),
+                  style: const TextStyle(fontSize: 17, height: 1.1),
                 ),
           ),
         ),
@@ -1117,6 +1136,7 @@ class MgAlert extends StatelessWidget {
     return SizedBox(
       width: width,
       child: Glass(
+        dense: true,
         radius: MgRadius.card,
         padding: const EdgeInsets.fromLTRB(
           MgSpace.xl,
@@ -1308,21 +1328,21 @@ class _MgMenuInfoRowState extends State<MgMenuInfoRow> {
           onTap: enabled ? _select : null,
           child: Container(
             height: 30,
-            padding: const EdgeInsets.symmetric(horizontal: MgSpace.ml),
+            padding: const EdgeInsets.symmetric(horizontal: 10),
             decoration: BoxDecoration(
               color: lit ? menuHighlight(c) : const Color(0x00000000),
-              borderRadius: BorderRadius.circular(MgRadius.small),
+              borderRadius: BorderRadius.circular(_rowRadius),
             ),
             child: Row(
               children: [
-                MgIcon(widget.icon, size: 16, color: c.fg2),
-                const SizedBox(width: MgSpace.m),
+                MgIcon(widget.icon, size: 15, color: c.fg2),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     widget.label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: mgTextStyle(c, color: color),
+                    style: mgTextStyle(c, size: MgType.small, color: color),
                   ),
                 ),
                 if (widget.avatars.isNotEmpty) ...[
@@ -1389,6 +1409,7 @@ class MgPeopleList extends StatelessWidget {
     return ConstrainedBox(
       constraints: const BoxConstraints(minWidth: 220, maxWidth: 300),
       child: Glass(
+        dense: true,
         radius: MgRadius.popover,
         padding: const EdgeInsets.all(MgSpace.xs),
         child: Column(

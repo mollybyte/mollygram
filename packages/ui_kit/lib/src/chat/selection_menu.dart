@@ -89,6 +89,7 @@ class SelectionMenu extends StatelessWidget {
             child: ConstrainedBox(
               constraints: const BoxConstraints(minWidth: 232),
               child: Glass(
+                dense: true,
                 radius: MgRadius.card,
                 // Keeps the rows' corners concentric with the panel's.
                 padding: const EdgeInsets.all(MgRadius.card - MgRadius.small),
