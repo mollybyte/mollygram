@@ -46,14 +46,63 @@ class Sidebar extends ConsumerStatefulWidget {
 
 class _SidebarState extends ConsumerState<Sidebar> {
   final _search = TextEditingController();
+  final _searchFocus = FocusNode();
+
+  /// The keyboard cursor in the shown chats while the search is used: the
+  /// arrows move it, Enter opens it. Null until an arrow key is pressed
+  /// with an empty search; a query puts it on the first match.
+  int? _cursor;
+  var _shownChats = const <ChatListEntry>[];
+  var _lastQuery = '';
 
   @override
   void initState() {
     super.initState();
     _search.addListener(() {
+      final query = _search.text.trim();
+      if (query != _lastQuery) {
+        _lastQuery = query;
+        _cursor = query.isEmpty ? null : 0;
+      }
       setState(() {});
       _searchOnServer();
     });
+  }
+
+  KeyEventResult _onSearchKey(FocusNode node, KeyEvent event) {
+    if (event is KeyUpEvent) return KeyEventResult.ignored;
+    final chats = _shownChats;
+    final key = event.logicalKey;
+    if (key == LogicalKeyboardKey.arrowDown ||
+        key == LogicalKeyboardKey.arrowUp) {
+      if (chats.isEmpty) return KeyEventResult.handled;
+      final delta = key == LogicalKeyboardKey.arrowDown ? 1 : -1;
+      setState(() {
+        final from = _cursor ?? (delta > 0 ? -1 : chats.length);
+        _cursor = (from + delta).clamp(0, chats.length - 1);
+      });
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.enter ||
+        key == LogicalKeyboardKey.numpadEnter) {
+      final cursor = _cursor;
+      if (event is KeyDownEvent && cursor != null && cursor < chats.length) {
+        ref
+            .read(workspaceControllerProvider)
+            .open(chats[cursor].id, target: _clickTarget());
+      }
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.escape && event is KeyDownEvent) {
+      if (_search.text.isNotEmpty) {
+        _search.clear();
+      } else {
+        _searchFocus.unfocus();
+        setState(() => _cursor = null);
+      }
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
   }
 
   /// Chats found by TDLib for the current query, beyond the loaded pages.
@@ -91,6 +140,7 @@ class _SidebarState extends ConsumerState<Sidebar> {
   void dispose() {
     _searchTimer?.cancel();
     _search.dispose();
+    _searchFocus.dispose();
     super.dispose();
   }
 
@@ -131,6 +181,10 @@ class _SidebarState extends ConsumerState<Sidebar> {
     final shown = query.isEmpty
         ? chats
         : _matching(query, [...chats, ...everything, ...archived, ...found]);
+    _shownChats = shown;
+    final cursorId = _cursor != null && shown.isNotEmpty
+        ? shown[_cursor!.clamp(0, shown.length - 1)].id
+        : null;
     final select = ref.read(selectedChatListProvider.notifier).select;
     int place(ChatListLocation l) => l.isMain
         ? 0
@@ -184,7 +238,15 @@ class _SidebarState extends ConsumerState<Sidebar> {
 
     return SidebarIsland(
       titleBarFill: const WindowDragArea(),
-      search: MgSearchField(hintText: l10n.searchHint, controller: _search),
+      search: Focus(
+        canRequestFocus: false,
+        onKeyEvent: _onSearchKey,
+        child: MgSearchField(
+          hintText: l10n.searchHint,
+          controller: _search,
+          focusNode: _searchFocus,
+        ),
+      ),
       actions: [
         GhostModeCapsule(onTap: widget.onPrivacy),
         // With the row hidden the archive is one tap away.
@@ -257,6 +319,7 @@ class _SidebarState extends ConsumerState<Sidebar> {
                   list: list,
                   chats: shown,
                   archived: showArchive ? archived : null,
+                  highlightedId: cursorId,
                   animate: query.isEmpty,
                   // TDLib sends the list a page at a time; the next page is
                   // asked for as the end comes on screen. Search filters
@@ -399,11 +462,15 @@ class _ChatList extends ConsumerStatefulWidget {
     required this.list,
     required this.chats,
     this.archived,
+    this.highlightedId,
     this.animate = true,
     this.onNearEnd,
   });
 
   final ChatListLocation list;
+
+  /// The chat under the keyboard cursor; scrolled into view.
+  final int? highlightedId;
   final List<ChatListEntry> chats;
 
   /// Pinned chats for the grid over the list; they are not in [chats].
@@ -430,6 +497,7 @@ class _ChatListState extends ConsumerState<_ChatList> {
   int? _menuFor;
   var _notice = false;
   Timer? _noticeTimer;
+  final _scroll = ScrollController();
 
   @override
   void initState() {
@@ -437,9 +505,38 @@ class _ChatListState extends ConsumerState<_ChatList> {
     _index = _indexOf(widget.chats);
   }
 
+  /// Brings the row under the keyboard cursor into view, scrolling by the
+  /// least that shows it whole.
+  void _reveal(int chatId) {
+    final row = _index[chatId];
+    if (row == null || !_scroll.hasClients) return;
+    final extent = ChatListTile.extentOf(context);
+    final top = (row + (widget.archived != null ? 1 : 0)) * extent;
+    final position = _scroll.position;
+    final target = top < position.pixels
+        ? top
+        : top + extent > position.pixels + position.viewportDimension
+        ? top + extent - position.viewportDimension
+        : null;
+    if (target == null) return;
+    unawaited(
+      _scroll.animateTo(
+        target.clamp(0.0, position.maxScrollExtent),
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOutCubic,
+      ),
+    );
+  }
+
   @override
   void didUpdateWidget(_ChatList old) {
     super.didUpdateWidget(old);
+    final highlighted = widget.highlightedId;
+    if (highlighted != null && highlighted != old.highlightedId) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _reveal(highlighted);
+      });
+    }
     if (identical(old.chats, widget.chats) &&
         (old.archived == null) == (widget.archived == null)) {
       return;
@@ -518,6 +615,7 @@ class _ChatListState extends ConsumerState<_ChatList> {
   @override
   void dispose() {
     _noticeTimer?.cancel();
+    _scroll.dispose();
     super.dispose();
   }
 
@@ -535,6 +633,7 @@ class _ChatListState extends ConsumerState<_ChatList> {
       builder: (context, layout, _) {
         final selected = layout.focusedChat;
         final list = ListView.builder(
+          controller: _scroll,
           padding: const EdgeInsets.fromLTRB(6, 0, 6, 8),
           itemExtent: ChatListTile.extentOf(context),
           itemCount: chats.length + shift,
@@ -577,6 +676,7 @@ class _ChatListState extends ConsumerState<_ChatList> {
               entrance: _entrances[chat.id],
               selected: chat.id == selected,
               menuOpen: _menuFor == chat.id,
+              highlighted: chat.id == widget.highlightedId,
               onTap: () => workspace.open(chat.id, target: _clickTarget()),
               onContextMenu: (position) => _openMenu(chat, position),
             );
@@ -627,6 +727,7 @@ class _ChatRow extends ConsumerStatefulWidget {
     required this.entrance,
     required this.selected,
     required this.menuOpen,
+    required this.highlighted,
     required this.onTap,
     required this.onContextMenu,
   });
@@ -637,6 +738,7 @@ class _ChatRow extends ConsumerStatefulWidget {
   final _Entrance? entrance;
   final bool selected;
   final bool menuOpen;
+  final bool highlighted;
   final VoidCallback onTap;
   final ValueChanged<Offset> onContextMenu;
 
@@ -779,6 +881,7 @@ class _ChatRowState extends ConsumerState<_ChatRow>
           : formatActivity(l10n, actors, named: !chat.type.isPrivate),
       selected: widget.selected,
       menuOpen: widget.menuOpen,
+      highlighted: widget.highlighted,
       onTap: widget.onTap,
       onContextMenu: widget.onContextMenu,
     );
