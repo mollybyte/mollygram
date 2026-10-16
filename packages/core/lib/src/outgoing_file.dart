@@ -17,6 +17,7 @@ final class OutgoingFile {
     this.selfDestruct = 0,
     this.thumbnail,
     this.cover,
+    this.alone = false,
   });
 
   /// [selfDestruct] for a photo or video that goes away once viewed.
@@ -52,6 +53,10 @@ final class OutgoingFile {
   /// first frame.
   final String? cover;
 
+  /// Sent as its own message even beside other photos and videos, when
+  /// the user turned album grouping off.
+  final bool alone;
+
   OutgoingFile copyWith({
     String? path,
     OutgoingKind? kind,
@@ -63,6 +68,7 @@ final class OutgoingFile {
     int? selfDestruct,
     String? thumbnail,
     String? cover,
+    bool? alone,
   }) => OutgoingFile(
     path: path ?? this.path,
     kind: kind ?? this.kind,
@@ -74,6 +80,7 @@ final class OutgoingFile {
     selfDestruct: selfDestruct ?? this.selfDestruct,
     thumbnail: thumbnail ?? this.thumbnail,
     cover: cover ?? this.cover,
+    alone: alone ?? this.alone,
   );
 
   /// The same file, sent untouched.
@@ -127,6 +134,7 @@ List<List<OutgoingFile>> groupForSending(List<OutgoingFile> files) {
   for (final file in files) {
     // Self-destructing media goes alone, as TDLib wants it.
     final family = switch (file.kind) {
+      OutgoingKind.photo || OutgoingKind.video when file.alone => null,
       OutgoingKind.photo ||
       OutgoingKind.video when file.selfDestruct != 0 => null,
       OutgoingKind.photo || OutgoingKind.video => 'media',

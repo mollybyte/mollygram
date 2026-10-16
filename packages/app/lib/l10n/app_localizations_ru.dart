@@ -997,6 +997,15 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String get attachAddMore => 'Добавить ещё';
+
+  @override
+  String get groupAlbum => 'Сгруппировать в альбом';
+
+  @override
+  String get removeFromSend => 'Убрать';
+
+  @override
   String get sendAsFiles => 'Отправить как файлы';
 
   @override

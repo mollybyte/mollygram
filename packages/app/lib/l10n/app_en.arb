@@ -368,6 +368,9 @@
   "@attachPhotosTitle": {
     "placeholders": { "count": { "type": "int" } }
   },
+  "attachAddMore": "Add more",
+  "groupAlbum": "Group as an album",
+  "removeFromSend": "Remove",
   "sendAsFiles": "Send as files",
   "hideWithSpoiler": "Hide with a spoiler",
   "viewOnce": "View once",

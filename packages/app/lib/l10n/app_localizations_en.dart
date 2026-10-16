@@ -992,6 +992,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get attachAddMore => 'Add more';
+
+  @override
+  String get groupAlbum => 'Group as an album';
+
+  @override
+  String get removeFromSend => 'Remove';
+
+  @override
   String get sendAsFiles => 'Send as files';
 
   @override
