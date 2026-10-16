@@ -299,7 +299,7 @@ class _ShortcutsPageState extends ConsumerState<ShortcutsPage> {
   }
 }
 
-class _ShortcutRow extends StatelessWidget {
+class _ShortcutRow extends StatelessWidget implements SettingsGroupRow {
   const _ShortcutRow({
     super.key,
     required this.action,

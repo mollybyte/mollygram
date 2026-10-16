@@ -255,9 +255,11 @@ class _FolderList extends StatelessWidget {
                         ? null
                         : Align(
                             alignment: Alignment.topCenter,
+                            // From the title on, past the 24 symbol.
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
+                              padding: const EdgeInsets.only(
+                                left: settingsInset + 24 + 10,
+                                right: settingsInset,
                               ),
                               child: Container(height: 0.5, color: c.separator),
                             ),

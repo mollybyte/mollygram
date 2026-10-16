@@ -219,7 +219,7 @@ class _AudienceGroup extends StatelessWidget {
 }
 
 /// "Always allow" or "Never allow", with how many it holds.
-class _ExceptionsRow extends StatelessWidget {
+class _ExceptionsRow extends StatelessWidget implements SettingsGroupRow {
   const _ExceptionsRow({
     required this.rule,
     required this.always,

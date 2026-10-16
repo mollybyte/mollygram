@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 
 /// The solid surfaces of the settings window, after macOS System Settings:
-/// a tinted source list, a plain content pane and grouped boxes on it.
+/// a tinted source list, a recessed content pane and solid boxes on it.
 @immutable
 class SettingsColors {
   const SettingsColors._({
@@ -16,24 +16,34 @@ class SettingsColors {
   final Color sidebar;
   final Color pane;
   final Color group;
+
+  /// The hairline of a box that lies on another surface; groups on the
+  /// pane only draw it in dark.
   final Color groupBorder;
 
   /// A row while the mouse is down on it.
   final Color pressed;
 
   /// The window's own surfaces, as in the chats: the source list lies on
-  /// the frame, the pane is a card, and its groups are a shade off it.
+  /// the frame, and the pane, between the frame and the card, carries
+  /// groups in the card's colour (white on grey, as TelegramSwift draws
+  /// its blocks). Each wallpaper tint sets frame and card as a pair, so
+  /// the mix follows it.
   static SettingsColors of(BuildContext context) {
     final c = MgColors.of(context);
     return SettingsColors._(
       sidebar: c.frame,
-      pane: c.card,
-      group: Color.alphaBlend(c.field, c.card),
+      pane: Color.lerp(c.card, c.frame, 0.65)!,
+      group: c.card,
       groupBorder: c.separator,
       pressed: c.isDark ? const Color(0x1AFFFFFF) : const Color(0x14000000),
     );
   }
 }
+
+/// The horizontal inset of a row's content, its section header and its
+/// footer: TelegramSwift's 14, which MgSpace has no step for.
+const settingsInset = 14.0;
 
 /// How long a settings transition takes: short and eased, so it reads as
 /// a response to the click rather than an animation to wait for.
@@ -47,7 +57,7 @@ class SettingsSymbol extends StatelessWidget {
     super.key,
     required this.icon,
     required this.tint,
-    this.size = 22,
+    this.size = 24,
   });
 
   final MgIconData icon;
@@ -60,7 +70,8 @@ class SettingsSymbol extends StatelessWidget {
     height: size,
     alignment: Alignment.center,
     decoration: BoxDecoration(
-      borderRadius: BorderRadius.circular(size * 0.27),
+      // 7 on the 24 tile, TelegramSwift's continuous corner.
+      borderRadius: BorderRadius.circular(size * 7 / 24),
       // The faint rim keeps the tile apart from a selection of the same hue.
       border: Border.all(color: const Color(0x2EFFFFFF), width: 0.5),
       gradient: LinearGradient(
@@ -86,11 +97,11 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListView(
-    padding: const EdgeInsets.fromLTRB(24, 4, 24, 28),
+    padding: const EdgeInsets.fromLTRB(MgSpace.xxl, 4, MgSpace.xxl, 28),
     children: [
       Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 560),
+          constraints: const BoxConstraints(maxWidth: 600),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: children,
@@ -101,8 +112,13 @@ class SettingsPage extends StatelessWidget {
   );
 }
 
-/// A rounded inset box of rows with hairlines between them, with an
-/// optional bold [title] above and a [footer] below.
+/// A rounded box of rows with hairlines between them, with an optional
+/// [title] above and a [footer] below.
+/// A widget that builds a [SettingsRow] or [SettingsSwitchRow], so a
+/// [SettingsGroup] lets the row draw its own hairline from the title on
+/// instead of a full-width one at the row inset.
+abstract interface class SettingsGroupRow implements Widget {}
+
 class SettingsGroup extends StatelessWidget {
   const SettingsGroup({
     super.key,
@@ -123,40 +139,63 @@ class SettingsGroup extends StatelessWidget {
     final s = SettingsColors.of(context);
     final rows = <Widget>[];
     for (var i = 0; i < children.length; i++) {
-      if (i > 0) {
-        rows.add(
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Container(height: 0.5, color: c.separator),
-          ),
-        );
+      final child = children[i];
+      final last = i == children.length - 1;
+      // A row draws its own hairline, from its title on (see SettingsRow);
+      // anything else gets one at the row inset.
+      if (child is SettingsGroupRow) {
+        rows.add(_RowSeparator(below: !last, child: child));
+      } else {
+        rows.add(child);
+        if (!last) {
+          rows.add(
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: settingsInset),
+              child: Container(height: 0.5, color: c.separator),
+            ),
+          );
+        }
       }
-      rows.add(children[i]);
     }
+    final shape = BorderRadius.circular(MgRadius.popover);
     return Padding(
-      padding: const EdgeInsets.only(top: 18),
+      padding: const EdgeInsets.only(top: MgSpace.xxl),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (title != null)
             Padding(
-              padding: const EdgeInsets.fromLTRB(2, 0, 2, 7),
+              padding: const EdgeInsets.fromLTRB(
+                settingsInset,
+                0,
+                settingsInset,
+                MgSpace.s,
+              ),
               child: Semantics(
                 header: true,
                 child: Text(
                   title!,
-                  style: mgTextStyle(c, weight: FontWeight.w600),
+                  style: mgTextStyle(
+                    c,
+                    size: MgType.small,
+                    weight: MgWeight.medium,
+                    color: c.fg2,
+                  ),
                 ),
               ),
             ),
           DecoratedBox(
             decoration: BoxDecoration(
               color: s.group,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: s.groupBorder, width: 0.5),
+              borderRadius: shape,
+              // The card is lighter than the pane in light; in dark the
+              // two are close, and a hairline keeps the box apart.
+              border: c.isDark
+                  ? Border.all(color: s.groupBorder, width: 0.5)
+                  : null,
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: shape,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: rows,
@@ -168,6 +207,21 @@ class SettingsGroup extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Tells a [SettingsRow] in a [SettingsGroup] whether a hairline goes
+/// under it.
+class _RowSeparator extends InheritedWidget {
+  const _RowSeparator({required this.below, required super.child});
+
+  final bool below;
+
+  static bool of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_RowSeparator>()?.below ??
+      false;
+
+  @override
+  bool updateShouldNotify(_RowSeparator old) => old.below != below;
 }
 
 /// The small text under a group. [error] paints it red, [success] in the
@@ -188,7 +242,12 @@ class SettingsFooter extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = MgColors.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(2, 6, 2, 0),
+      padding: const EdgeInsets.fromLTRB(
+        settingsInset,
+        MgSpace.s,
+        settingsInset,
+        0,
+      ),
       child: AnimatedSwitcher(
         duration: settingsMotionOf(context),
         layoutBuilder: (current, previous) => Stack(
@@ -218,7 +277,7 @@ class SettingsFooter extends StatelessWidget {
 /// [title] with an optional [subtitle], and a [trailing] value or control.
 /// With [onTap] the row highlights while pressed and shows a chevron when
 /// [chevron] is set.
-class SettingsRow extends StatefulWidget {
+class SettingsRow extends StatefulWidget implements SettingsGroupRow {
   const SettingsRow({
     super.key,
     required this.title,
@@ -245,6 +304,7 @@ class SettingsRow extends StatefulWidget {
 class _SettingsRowState extends State<SettingsRow> {
   var _pressed = false;
   var _hover = false;
+  final _leading = GlobalKey();
 
   void _press(bool value) {
     if (_pressed != value) setState(() => _pressed = value);
@@ -256,10 +316,14 @@ class _SettingsRowState extends State<SettingsRow> {
     final s = SettingsColors.of(context);
     final tappable = widget.onTap != null;
     final subtitle = widget.subtitle;
+    final separator = _RowSeparator.of(context);
     Widget row = AnimatedContainer(
       duration: const Duration(milliseconds: 90),
       constraints: const BoxConstraints(minHeight: 40),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      padding: const EdgeInsets.symmetric(
+        horizontal: settingsInset,
+        vertical: 7,
+      ),
       color: _pressed
           ? s.pressed
           : _hover && tappable
@@ -268,8 +332,8 @@ class _SettingsRowState extends State<SettingsRow> {
       child: Row(
         children: [
           if (widget.leading != null) ...[
-            widget.leading!,
-            const SizedBox(width: 10),
+            KeyedSubtree(key: _leading, child: widget.leading!),
+            const SizedBox(width: _leadingGap),
           ],
           Expanded(
             child: Column(
@@ -293,7 +357,7 @@ class _SettingsRowState extends State<SettingsRow> {
                     overflow: TextOverflow.ellipsis,
                     style: mgTextStyle(
                       c,
-                      size: MgType.caption,
+                      size: MgType.small,
                       color: c.fg2,
                       height: 1.35,
                     ),
@@ -307,11 +371,20 @@ class _SettingsRowState extends State<SettingsRow> {
           ],
           if (widget.chevron) ...[
             const SizedBox(width: 6),
-            MgIcon(MgIcons.chevron, size: 13, stroke: 2.2, color: c.fg2),
+            MgIcon(MgIcons.chevron, size: 12, stroke: 1.8, color: c.muted),
           ],
         ],
       ),
     );
+    if (separator) {
+      row = CustomPaint(
+        foregroundPainter: _SeparatorPainter(
+          color: c.separator,
+          leading: widget.leading == null ? null : _leading,
+        ),
+        child: row,
+      );
+    }
     if (!tappable) return MergeSemantics(child: row);
     row = MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -333,6 +406,41 @@ class _SettingsRowState extends State<SettingsRow> {
       child: Semantics(button: true, onTap: widget.onTap, child: row),
     );
   }
+}
+
+/// The gap between a row's leading item and its title.
+const _leadingGap = 10.0;
+
+/// The hairline under a row: from the title's x, past the leading item as
+/// TelegramSwift indents it, to the row inset on the right.
+class _SeparatorPainter extends CustomPainter {
+  const _SeparatorPainter({required this.color, required this.leading});
+
+  final Color color;
+
+  /// The leading item, measured once laid out; its width moves the start.
+  final GlobalKey? leading;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final box = leading?.currentContext?.findRenderObject() as RenderBox?;
+    final start =
+        settingsInset +
+        (box != null && box.hasSize ? box.size.width + _leadingGap : 0);
+    canvas.drawRect(
+      Rect.fromLTRB(
+        start,
+        size.height - 0.5,
+        size.width - settingsInset,
+        size.height,
+      ),
+      Paint()..color = color,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_SeparatorPainter old) =>
+      old.color != color || old.leading != leading;
 }
 
 /// A small macOS push button, such as "Log out…" under a group.
@@ -503,7 +611,7 @@ class SettingsSwitch extends StatelessWidget {
 }
 
 /// A group row with a switch; a click anywhere on the row flips it.
-class SettingsSwitchRow extends StatelessWidget {
+class SettingsSwitchRow extends StatelessWidget implements SettingsGroupRow {
   const SettingsSwitchRow({
     super.key,
     required this.title,
