@@ -394,12 +394,7 @@ class _ChatListTileState extends State<ChatListTile> {
     final grey = on ? c.onAccentSecondary : (c.isDark ? c.fg2 : c.muted);
     final activity = widget.activity;
     if (activity != null) {
-      return MgStatusText(
-        activity,
-        activity: true,
-        size: size,
-        color: grey,
-      );
+      return MgStatusText(activity, activity: true, size: size, color: grey);
     }
     final sender = widget.draftLabel == null ? widget.sender : null;
     final thumbnails = widget.thumbnails;
