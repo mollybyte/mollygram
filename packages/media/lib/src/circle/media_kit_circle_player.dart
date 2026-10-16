@@ -94,6 +94,8 @@ class MediaKitCirclePlayer implements CirclePlayer {
     _source = source;
     _waitingForFrames = false;
     _status.value = CircleStatus.loading;
+    _duration.value = Duration.zero;
+    _position.value = Duration.zero;
     await _ready;
     if (_disposed || generation != _generation) return;
     await _player.open(Media(source.uri), play: play);
@@ -141,6 +143,7 @@ class MediaKitCirclePlayer implements CirclePlayer {
     await _player.setVolume(0);
     await _player.setRate(1);
     _position.value = Duration.zero;
+    _duration.value = Duration.zero;
   }
 
   @override

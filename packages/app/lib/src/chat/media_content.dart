@@ -438,7 +438,7 @@ class _VideoNoteContentState extends ConsumerState<VideoNoteContent> {
       setState(() => _withSound = true);
       // One sound at a time: a voice message stops, and the capsule moves
       // from it to this circle.
-      unawaited(_audio.stop());
+      await _audio.stop();
       _active.value = (
         chatId: widget.chatId,
         messageId: widget.messageId,

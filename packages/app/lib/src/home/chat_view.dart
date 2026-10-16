@@ -3847,13 +3847,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
                                 '',
                       onTap: () => togglePeerInfo(ref, widget.chatId),
                     ),
-              actions: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CirclePlayerCapsule(chatId: widget.chatId),
-                  AudioPlayerCapsule(chatId: widget.chatId),
-                ],
-              ),
+              actions: AudioPlayerCapsule(chatId: widget.chatId),
               fill: const WindowDragArea(),
             ),
           ),

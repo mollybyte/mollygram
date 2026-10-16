@@ -23,7 +23,8 @@ import 'voice_autoplay.dart';
 /// the right of the chat header, like the player bar of the official
 /// client: play or pause, who sent it and what it is, the time, the speed
 /// and a close button. The title shows the message in its chat. Nothing
-/// is drawn while nothing is loaded.
+/// is drawn while nothing is loaded. A video circle that plays with sound
+/// takes the same place, with its own capsule.
 class AudioPlayerCapsule extends ConsumerWidget {
   const AudioPlayerCapsule({super.key, required this.chatId});
 
@@ -35,72 +36,49 @@ class AudioPlayerCapsule extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final player = ref.watch(audioPlayerProvider);
-    return ValueListenableBuilder(
-      valueListenable: player.track,
-      builder: (context, track, _) => AnimatedSwitcher(
-        duration: _duration,
-        switchInCurve: Curves.easeOutCubic,
-        switchOutCurve: Curves.easeInCubic,
-        transitionBuilder: (child, animation) => FadeTransition(
-          opacity: animation,
-          child: SlideTransition(
-            position: Tween(
-              begin: const Offset(0.08, 0),
-              end: Offset.zero,
-            ).animate(animation),
-            child: child,
-          ),
-        ),
-        child: track is AudioTrackKey
-            ? _Capsule(
-                key: ValueKey(track),
-                track: track,
-                player: player,
-                currentChatId: chatId,
-              )
-            : const SizedBox.shrink(),
-      ),
-    );
-  }
-}
-
-/// The video message that is playing with sound, in the same capsule as a
-/// voice message: play or pause, whose circle it is, the time, the speed
-/// and a close button that silences it. Nothing is drawn otherwise.
-class CirclePlayerCapsule extends ConsumerWidget {
-  const CirclePlayerCapsule({super.key, required this.chatId});
-
-  /// The chat this header belongs to.
-  final int chatId;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
     final active = ref.watch(activeCircleProvider);
-    return ValueListenableBuilder(
-      valueListenable: active,
-      builder: (context, ActiveCircle? circle, _) => AnimatedSwitcher(
-        duration: AudioPlayerCapsule._duration,
-        switchInCurve: Curves.easeOutCubic,
-        switchOutCurve: Curves.easeInCubic,
-        transitionBuilder: (child, animation) => FadeTransition(
-          opacity: animation,
-          child: SlideTransition(
-            position: Tween(
-              begin: const Offset(0.08, 0),
-              end: Offset.zero,
-            ).animate(animation),
-            child: child,
+    // One switcher for both, so a handoff between a voice message and a
+    // circle never lays out two full capsules at once.
+    return ListenableBuilder(
+      listenable: Listenable.merge([player.track, active]),
+      builder: (context, _) {
+        final track = player.track.value;
+        final circle = active.value;
+        return AnimatedSwitcher(
+          duration: _duration,
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeInCubic,
+          layoutBuilder: (current, previous) => Stack(
+            alignment: Alignment.centerRight,
+            children: [...previous, ?current],
           ),
-        ),
-        child: circle == null
-            ? const SizedBox.shrink()
-            : _CircleCapsule(
-                key: ValueKey((circle.chatId, circle.messageId)),
-                circle: circle,
-                active: active,
-                currentChatId: chatId,
-              ),
-      ),
+          transitionBuilder: (child, animation) => FadeTransition(
+            opacity: animation,
+            child: SlideTransition(
+              position: Tween(
+                begin: const Offset(0.08, 0),
+                end: Offset.zero,
+              ).animate(animation),
+              child: child,
+            ),
+          ),
+          child: circle != null
+              ? _CircleCapsule(
+                  key: ValueKey((circle.chatId, circle.messageId)),
+                  circle: circle,
+                  active: active,
+                  currentChatId: chatId,
+                )
+              : track is AudioTrackKey
+              ? _Capsule(
+                  key: ValueKey(track),
+                  track: track,
+                  player: player,
+                  currentChatId: chatId,
+                )
+              : const SizedBox.shrink(),
+        );
+      },
     );
   }
 }
