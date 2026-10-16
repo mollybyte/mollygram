@@ -94,7 +94,7 @@ class PluginsPage extends ConsumerWidget {
   }
 }
 
-class _PluginRow extends StatelessWidget {
+class _PluginRow extends StatelessWidget implements SettingsGroupRow {
   const _PluginRow({super.key, required this.entry, required this.onTap});
 
   final PluginEntry entry;
@@ -304,7 +304,7 @@ class PluginDetailsPage extends StatelessWidget {
   }
 }
 
-class _AccessRowView extends StatelessWidget {
+class _AccessRowView extends StatelessWidget implements SettingsGroupRow {
   const _AccessRowView(this.row);
 
   final AccessRow row;
@@ -317,7 +317,7 @@ class _AccessRowView extends StatelessWidget {
   );
 }
 
-class _Options extends StatelessWidget {
+class _Options extends StatelessWidget implements SettingsGroupRow {
   const _Options({
     required this.controller,
     required this.entry,

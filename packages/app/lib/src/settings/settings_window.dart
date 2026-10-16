@@ -214,8 +214,12 @@ class SettingsWindow extends ConsumerStatefulWidget {
   /// Width of the source list.
   static const sidebarWidth = 236.0;
 
-  /// Height of the title bar band, where the window buttons sit.
-  static const titleBarHeight = 52.0;
+  /// Height of the title bar band, where the window buttons sit:
+  /// TelegramSwift's navigation bar.
+  static const titleBarHeight = 50.0;
+
+  /// Top of the back and close buttons (32 tall), centred on the band.
+  static const _buttonTop = (titleBarHeight - 32) / 2;
 
   @override
   ConsumerState<SettingsWindow> createState() => _SettingsWindowState();
@@ -403,8 +407,8 @@ class _SettingsWindowState extends ConsumerState<SettingsWindow>
                         overflow: TextOverflow.ellipsis,
                         style: mgTextStyle(
                           c,
-                          size: 15,
-                          weight: FontWeight.w700,
+                          size: MgType.title,
+                          weight: MgWeight.medium,
                           height: 1.2,
                         ),
                       ),
@@ -434,7 +438,7 @@ class _SettingsWindowState extends ConsumerState<SettingsWindow>
         ),
         if (_nested.isNotEmpty)
           Positioned(
-            top: 12,
+            top: SettingsWindow._buttonTop,
             left: 10,
             child: MgIconButton(
               icon: MgIcons.back,
@@ -443,7 +447,7 @@ class _SettingsWindowState extends ConsumerState<SettingsWindow>
             ),
           ),
         Positioned(
-          top: 12,
+          top: SettingsWindow._buttonTop,
           right: 10,
           child: MgIconButton(
             icon: MgIcons.close,
@@ -562,14 +566,14 @@ class _SidebarItemState extends State<_SidebarItem> {
           child: SettingsSidebarTile(
             selected: selected,
             hover: _hover,
-            height: 32,
+            height: 34,
             child: Row(
               children: [
                 SettingsSymbol(
                   icon: widget.section.icon,
                   tint: widget.section.tint,
                 ),
-                const SizedBox(width: 9),
+                const SizedBox(width: MgSpace.ml),
                 Expanded(
                   child: Text(
                     widget.section.title(l10n),
@@ -621,7 +625,7 @@ class SettingsSidebarTile extends StatelessWidget {
             : hover
             ? c.hover
             : c.accent.withValues(alpha: 0),
-        borderRadius: BorderRadius.circular(7),
+        borderRadius: BorderRadius.circular(MgRadius.control),
       ),
       child: child,
     );

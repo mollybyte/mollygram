@@ -108,7 +108,7 @@ class PrivacyExtrasPage extends ConsumerWidget {
 
 /// The stored data's size with "Clear", after a confirmation; when its
 /// key is lost, "Reset" instead.
-class _StoredDataRow extends ConsumerWidget {
+class _StoredDataRow extends ConsumerWidget implements SettingsGroupRow {
   const _StoredDataRow();
 
   Future<void> _run(

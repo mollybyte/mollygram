@@ -234,8 +234,8 @@ class StickerSetReorderList extends StatelessWidget {
                             alignment: Alignment.topCenter,
                             child: Padding(
                               padding: const EdgeInsets.only(
-                                left: 56,
-                                right: 12,
+                                left: settingsInset + 32 + 10,
+                                right: settingsInset,
                               ),
                               child: Container(height: 0.5, color: c.separator),
                             ),
