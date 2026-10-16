@@ -465,8 +465,26 @@ class _ComposerState extends State<Composer> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [header, field],
+      children: [
+        Padding(
+          padding: EdgeInsets.only(left: _leadingWidth),
+          child: header,
+        ),
+        field,
+      ],
     );
+  }
+
+  final _leadingKey = GlobalKey();
+  double _leadingWidth = 0;
+
+  void _measureLeading() {
+    final width = widget.leading == null
+        ? 0.0
+        : (_leadingKey.currentContext?.size?.width ?? 0);
+    if (width != _leadingWidth && mounted) {
+      setState(() => _leadingWidth = width);
+    }
   }
 
   @override
@@ -476,10 +494,12 @@ class _ComposerState extends State<Composer> {
     final style = mgTextStyle(c, size: MgType.title);
     final hasDraft = _text.text.trim().isNotEmpty || widget.allowEmpty;
     final replacing = widget.replacement != null;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _measureLeading());
     final fieldRow = Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        ?widget.leading,
+        if (widget.leading case final leading?)
+          KeyedSubtree(key: _leadingKey, child: leading),
         Builder(
           builder: (context) => MgIconButton(
             icon: MgIcons.plus,
