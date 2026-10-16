@@ -75,9 +75,13 @@ import 'workspace.dart';
 /// One conversation: messages scroll under the floating header and
 /// composer.
 class ChatView extends ConsumerStatefulWidget {
-  const ChatView({super.key, required this.chatId});
+  const ChatView({super.key, required this.chatId, this.focused = true});
 
   final int chatId;
+
+  /// Whether this is the pane that has the keyboard; in a split tab only
+  /// that one takes the cursor.
+  final bool focused;
 
   @override
   ConsumerState<ChatView> createState() => _ChatViewState();
@@ -294,7 +298,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
   /// chat keeps the focus it has.
   void _focusComposer() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_onScreen || _inputFocus.context == null) return;
+      if (!mounted || !_onScreen || !widget.focused) return;
+      if (_inputFocus.context == null) return;
       if (ModalRoute.of(context)?.isCurrent == false) return;
       _inputFocus.requestFocus();
     });
@@ -377,6 +382,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
   @override
   void didUpdateWidget(ChatView old) {
     super.didUpdateWidget(old);
+    if (widget.focused && !old.focused) _focusComposer();
     if (old.chatId == widget.chatId) return;
     _focusComposer();
     // An edit belongs to the old chat: give back the draft it set aside.
