@@ -185,20 +185,28 @@ class _DownloadRowState extends ConsumerState<_DownloadRow> {
         if (path != null) ...[
           MgMenuItem(
             label: l10n.openFile,
+            icon: MgIcons.file,
             onSelected: () => unawaited(quickLookFile(path)),
           ),
           MgMenuItem(
             label: l10n.menuShowInFinder,
+            icon: MgIcons.folder,
             onSelected: () => unawaited(revealFile(path)),
           ),
         ] else
           MgMenuItem(
             label: entry.isPaused ? l10n.resume : l10n.pause,
+            icon: entry.isPaused ? MgIcons.play : MgIcons.pause,
             onSelected: () => unawaited(_primary()),
           ),
-        MgMenuItem(label: l10n.showInChat, onSelected: _openChat),
+        MgMenuItem(
+          label: l10n.showInChat,
+          icon: MgIcons.chat,
+          onSelected: _openChat,
+        ),
         MgMenuItem(
           label: l10n.removeFromList,
+          icon: MgIcons.close,
           destructive: true,
           onSelected: () => unawaited(_downloads.remove(entry.fileId)),
         ),

@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -133,9 +134,14 @@ class Glass extends StatelessWidget {
     required this.child,
     this.padding = EdgeInsets.zero,
     this.tail,
+    this.dense = false,
   });
 
   final double radius;
+
+  /// A denser, clearer pane for menus and alerts: more fill and no inner
+  /// glow, so rows of text read crisply over busy chats.
+  final bool dense;
   final EdgeInsetsGeometry padding;
   final Widget child;
 
@@ -154,7 +160,11 @@ class Glass extends StatelessWidget {
         painter: _GlassBodyPainter(
           radius: radius,
           tail: tail,
-          fill: blur ? c.glass : c.glassSolid,
+          fill: !blur
+              ? c.glassSolid
+              : dense
+              ? c.glass.withValues(alpha: math.max(c.glass.a, 0.62))
+              : c.glass,
         ),
         foregroundPainter: _GlassRimPainter(
           radius: radius,
@@ -162,7 +172,7 @@ class Glass extends StatelessWidget {
           rim: c.rim,
           highlight: c.highlight,
           lowlight: c.lowlight,
-          glow: c.glow,
+          glow: dense ? const Color(0x00000000) : c.glow,
         ),
         child: Padding(
           padding: tail == null

@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -63,5 +64,38 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);
     await tester.pumpAndSettle();
     expect(picked, ['f', 'd']);
+  });
+
+  testWidgets('the text menu highlights a row softly, not with the accent', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      themed(
+        SelectionMenu(
+          anchors: const TextSelectionToolbarAnchors(
+            primaryAnchor: Offset(100, 100),
+          ),
+          formats: const [],
+          commands: [
+            SelectionCommand(label: 'Copy', shortcut: '⌘C', onPressed: () {}),
+          ],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await mouse.addPointer(location: Offset.zero);
+    addTearDown(mouse.removePointer);
+    await mouse.moveTo(tester.getCenter(find.text('Copy')));
+    await tester.pump();
+
+    final row = tester.widget<Container>(
+      find
+          .ancestor(of: find.text('Copy'), matching: find.byType(Container))
+          .first,
+    );
+    final c = MgColors.of(tester.element(find.text('Copy')));
+    expect((row.decoration! as BoxDecoration).color, menuHighlight(c));
+    expect(tester.widget<Text>(find.text('Copy')).style?.color, c.fg);
   });
 }

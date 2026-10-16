@@ -356,6 +356,18 @@ void main() {
       'Delete chat',
     ]) {
       expect(find.text(label), findsOneWidget, reason: label);
+      // Every row carries its icon, as Telegram's menus do.
+      final icons = tester.widgetList<MgIcon>(
+        find.descendant(
+          of: find.ancestor(of: find.text(label), matching: find.byType(Row)),
+          matching: find.byType(MgIcon),
+        ),
+      );
+      expect(
+        icons.where((i) => i.icon != MgIcons.chevron),
+        isNotEmpty,
+        reason: label,
+      );
     }
 
     // Mute opens its durations beside it.

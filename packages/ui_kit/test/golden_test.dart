@@ -4,6 +4,7 @@ library;
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
@@ -773,6 +774,54 @@ void main() {
       await expectLater(
         find.byType(MaterialApp),
         matchesGoldenFile('goldens/message_menu_$theme.png'),
+      );
+    });
+
+    testWidgets('context menu $theme', skip: _skip, (tester) async {
+      tester.view.physicalSize = const Size(440, 400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(themed(const Wallpaper(), colors: colors));
+      final context = tester.element(find.byType(Wallpaper));
+      MgMenuItem row(String label, MgIconData icon) =>
+          MgMenuItem(label: label, icon: icon, onSelected: () {});
+      unawaited(
+        showMgMenu(
+          context,
+          position: const Offset(100, 40),
+          header: ReactionBar(
+            reactions: const ['a', 'b', 'c', 'd', 'e', 'f'],
+            onPick: (_) {},
+            onMore: () {},
+          ),
+          items: [
+            row('Reply', MgIcons.reply),
+            row('Copy text', MgIcons.copy),
+            row('Copy link', MgIcons.link),
+            const MgMenuItem.divider(),
+            row('Forward', MgIcons.forward),
+            row('Pin', MgIcons.pinOutline),
+            row('Select', MgIcons.select),
+            const MgMenuItem.divider(),
+            row('Edit', MgIcons.edit),
+            MgMenuItem(
+              label: 'Delete',
+              icon: MgIcons.trash,
+              destructive: true,
+              onSelected: () {},
+            ),
+          ],
+        ),
+      );
+      await tester.pump();
+      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await mouse.addPointer(location: Offset.zero);
+      addTearDown(mouse.removePointer);
+      await mouse.moveTo(tester.getCenter(find.text('Forward')));
+      await tester.pump();
+      await expectLater(
+        find.byType(MaterialApp),
+        matchesGoldenFile('goldens/context_menu_$theme.png'),
       );
     });
 

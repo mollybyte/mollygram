@@ -381,7 +381,78 @@ abstract final class MgIcons {
         '<circle cx="12" cy="12" r="3"/><path d="M4 4l16 16"/>',
   );
 
+  // Context menus (TelegramSwift's menu icons, redrawn as line icons).
+  static const pinOutline = MgIconData(
+    'pinOutline',
+    '<path d="M9 3h6l-1 7 3 3v1H7v-1l3-3zM12 14v7"/>',
+  );
+  static const unpin = MgIconData(
+    'unpin',
+    '<path d="M9 3h6l-1 7 3 3v1H7v-1l3-3zM12 14v7M4 4l16 16"/>',
+  );
+  static const markUnread = MgIconData(
+    'markUnread',
+    '<path d="M13 5H4v11h5l-5 4v-4M20 11v5H9"/>'
+        '<circle cx="18.5" cy="5.5" r="2.5" fill="currentColor" stroke="none"/>',
+  );
+  static const unarchive = MgIconData(
+    'unarchive',
+    '<rect x="3" y="4" width="18" height="5" rx="1.5"/>'
+        '<path d="M5 9v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9M12 17v-5M9.5 14.5'
+        'L12 12l2.5 2.5"/>',
+    stroke: 1.7,
+  );
+  static const clear = MgIconData(
+    'clear',
+    '<path d="M15 4l5 5-9 9H7l-3-3zM11 8l5 5M10 20h10"/>',
+  );
+  static const leave = MgIconData(
+    'leave',
+    '<path d="M14 4H5v16h9M10 12h10M17 9l3 3-3 3"/>',
+  );
+  static const hide = MgIconData(
+    'hide',
+    '<path d="M3 12s3.5-6.5 9-6.5 9 6.5 9 6.5-3.5 6.5-9 6.5S3 12 3 12z"/>'
+        '<circle cx="12" cy="12" r="3"/><path d="M4 4l16 16"/>',
+  );
+  static const poll = MgIconData(
+    'poll',
+    '<path d="M5 20V11M12 20V4M19 20v-6"/>',
+    stroke: 2,
+  );
+  static const location = MgIconData(
+    'location',
+    '<path d="M12 21s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12z"/>'
+        '<circle cx="12" cy="9" r="2.5"/>',
+  );
+  static const folder = MgIconData(
+    'folder',
+    '<path d="M3 6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5'
+        'a2 2 0 0 1-2-2z"/>',
+  );
+  static const star = MgIconData(
+    'star',
+    '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3'
+        ' 6.1-.9z"/>',
+  );
+  static const tag = MgIconData(
+    'tag',
+    '<path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.5"/>',
+  );
+
   static const List<MgIconData> all = [
+    pinOutline,
+    unpin,
+    markUnread,
+    unarchive,
+    clear,
+    leave,
+    hide,
+    poll,
+    location,
+    folder,
+    star,
+    tag,
     group,
     channel,
     compose,

@@ -177,6 +177,8 @@ Future<void> showMessageMenu(
           ),
         ),
       ),
+    // Groups as in Telegram's menu; empty groups leave no line.
+    const MgMenuItem.divider(),
     if (target.text.isNotEmpty && !protected)
       MgMenuItem(
         label: l10n.menuCopyText,
@@ -241,6 +243,7 @@ Future<void> showMessageMenu(
           onSelected: () => unawaited(revealFile(savedPath)),
         ),
     ],
+    const MgMenuItem.divider(),
     if (properties?.canBeForwarded ?? false)
       MgMenuItem(
         label: l10n.menuForward,
@@ -287,6 +290,7 @@ Future<void> showMessageMenu(
         icon: MgIcons.select,
         onSelected: () => onSelect(row),
       ),
+    const MgMenuItem.divider(),
     if (properties?.canReportChat ?? false)
       MgMenuItem(
         label: l10n.menuReport,
@@ -329,7 +333,11 @@ Future<void> showMessageMenu(
       ),
     ),
   );
-  if (items.isEmpty && reactions.isEmpty && infoRows.isEmpty) return;
+  if (items.every((i) => i.isDivider) &&
+      reactions.isEmpty &&
+      infoRows.isEmpty) {
+    return;
+  }
   void pick(String key) => unawaited(
     conversations
         .toggleReaction(
