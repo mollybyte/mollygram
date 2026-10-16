@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -5,6 +6,7 @@ import 'package:flutter/widgets.dart';
 import '../icons.dart';
 import '../theme/colors.dart';
 import '../theme/theme.dart';
+import '../theme/tokens.dart';
 
 /// The color of a sender's name for Telegram's accent color [id]: the seven
 /// built-in colors, lighter on the dark theme. Ids above 6 are profile
@@ -359,8 +361,9 @@ class _CommentsRowState extends State<CommentsRow> {
 }
 
 /// A reaction under a message: the emoji and how many people chose it.
-/// Filled with the accent when the user is among them.
-class ReactionChip extends StatelessWidget {
+/// Filled with the accent when the user is among them. Choosing it pops
+/// the emoji and fills the chip, and the count rolls up or down.
+class ReactionChip extends StatefulWidget {
   const ReactionChip({
     super.key,
     required this.emoji,
@@ -383,39 +386,204 @@ class ReactionChip extends StatelessWidget {
   final VoidCallback? onTap;
 
   @override
+  State<ReactionChip> createState() => _ReactionChipState();
+}
+
+class _ReactionChipState extends State<ReactionChip>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pop = AnimationController(
+    vsync: this,
+    duration: MgMotion.pop,
+  );
+
+  /// Whether the count last went up, which decides the way it rolls.
+  var _up = true;
+
+  static final _emojiScale = TweenSequence<double>([
+    TweenSequenceItem(
+      tween: Tween(
+        begin: 1.0,
+        end: 1.32,
+      ).chain(CurveTween(curve: Curves.easeOut)),
+      weight: 40,
+    ),
+    TweenSequenceItem(
+      tween: Tween(
+        begin: 1.32,
+        end: 1.0,
+      ).chain(CurveTween(curve: Curves.easeInOut)),
+      weight: 60,
+    ),
+  ]);
+
+  @override
+  void didUpdateWidget(ReactionChip old) {
+    super.didUpdateWidget(old);
+    if (widget.count != old.count) _up = widget.count > old.count;
+    if (widget.chosen && !old.chosen && !_reduced) {
+      unawaited(_pop.forward(from: 0));
+    }
+  }
+
+  bool get _reduced => MediaQuery.disableAnimationsOf(context);
+
+  @override
+  void dispose() {
+    _pop.dispose();
+    super.dispose();
+  }
+
+  Widget _count(MgColors c, Color fg, Duration duration) {
+    Widget text(int n) => Text(
+      '$n',
+      key: ValueKey(n),
+      style: mgTextStyle(
+        c,
+        size: MgType.small,
+        weight: FontWeight.w500,
+        color: fg,
+        height: 1.2,
+      ),
+    );
+    return ClipRect(
+      child: AnimatedSwitcher(
+        duration: duration,
+        switchInCurve: MgMotion.enter,
+        switchOutCurve: MgMotion.exitCurve,
+        layoutBuilder: (current, previous) => Stack(
+          alignment: Alignment.centerLeft,
+          children: [...previous, ?current],
+        ),
+        transitionBuilder: (child, animation) {
+          final entering = child.key == ValueKey(widget.count);
+          // The new number comes in from the side it grew from; the old
+          // one leaves the other way.
+          final from = _up ? 0.7 : -0.7;
+          return FadeTransition(
+            opacity: animation,
+            child: SlideTransition(
+              position: Tween(
+                begin: Offset(0, entering ? from : -from),
+                end: Offset.zero,
+              ).animate(animation),
+              child: child,
+            ),
+          );
+        },
+        child: text(widget.count),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final c = MgColors.of(context);
-    final fg = chosen ? c.onAccent : c.fg;
+    final fg = widget.chosen ? c.onAccent : c.fg;
+    final duration = _reduced ? Duration.zero : MgMotion.standard;
+    final emoji =
+        widget.icon ??
+        Text(widget.emoji, style: mgTextStyle(c, size: 13, height: 1.2));
     return MouseRegion(
-      cursor: onTap == null ? MouseCursor.defer : SystemMouseCursors.click,
+      cursor: widget.onTap == null
+          ? MouseCursor.defer
+          : SystemMouseCursors.click,
       child: GestureDetector(
-        onTap: onTap,
-        child: Container(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: duration,
+          curve: MgMotion.standardCurve,
           height: 24,
           padding: const EdgeInsets.symmetric(horizontal: 8),
           decoration: BoxDecoration(
-            color: chosen ? c.accent : c.field,
+            color: widget.chosen ? c.accent : c.field,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              icon ?? Text(emoji, style: mgTextStyle(c, size: 13, height: 1.2)),
-              if (count > 0) ...[
+              ScaleTransition(scale: _pop.drive(_emojiScale), child: emoji),
+              if (widget.count > 0) ...[
                 const SizedBox(width: 4),
-                Text(
-                  '$count',
-                  style: mgTextStyle(
-                    c,
-                    size: MgType.small,
-                    weight: FontWeight.w500,
-                    color: fg,
-                    height: 1.2,
+                if (duration == Duration.zero)
+                  _count(c, fg, duration)
+                else
+                  AnimatedSize(
+                    duration: duration,
+                    curve: MgMotion.enter,
+                    alignment: Alignment.centerLeft,
+                    child: _count(c, fg, duration),
                   ),
-                ),
               ],
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The reactions under a message. A reaction that appears after the row is
+/// on screen, because someone just chose it, pops in; the ones that were
+/// there from the start do not move.
+class ReactionRow extends StatefulWidget {
+  const ReactionRow({super.key, required this.chips});
+
+  /// The chips by a key that names the reaction, in order.
+  final List<(String, ReactionChip)> chips;
+
+  @override
+  State<ReactionRow> createState() => _ReactionRowState();
+}
+
+class _ReactionRowState extends State<ReactionRow> {
+  final _animate = <String, bool>{};
+  var _built = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final reduced = MediaQuery.disableAnimationsOf(context);
+    final shown = {for (final (key, _) in widget.chips) key};
+    _animate.removeWhere((key, _) => !shown.contains(key));
+    for (final (key, _) in widget.chips) {
+      _animate.putIfAbsent(key, () => _built && !reduced);
+    }
+    _built = true;
+    return Wrap(
+      spacing: 4,
+      runSpacing: 4,
+      children: [
+        for (final (key, chip) in widget.chips)
+          _PopIn(
+            key: ValueKey(key),
+            animate: _animate[key]! && !reduced,
+            child: chip,
+          ),
+      ],
+    );
+  }
+}
+
+/// Scales and fades [child] in once, from its left edge.
+class _PopIn extends StatelessWidget {
+  const _PopIn({super.key, required this.animate, required this.child});
+
+  final bool animate;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!animate) return child;
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: MgMotion.pop,
+      curve: MgMotion.popCurve,
+      child: child,
+      builder: (context, t, child) => Opacity(
+        opacity: t.clamp(0.0, 1.0),
+        child: Transform.scale(
+          scale: 0.6 + 0.4 * t,
+          alignment: Alignment.centerLeft,
+          child: child,
         ),
       ),
     );

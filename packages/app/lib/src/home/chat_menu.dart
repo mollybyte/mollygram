@@ -60,6 +60,7 @@ Future<void> showChatMenu(
 
   final clear = MgMenuItem(
     label: l10n.menuClearHistory,
+    icon: MgIcons.clear,
     onSelected: () => unawaited(
       confirm(
         title: l10n.clearHistoryTitle,
@@ -75,6 +76,7 @@ Future<void> showChatMenu(
     _ when saved => null,
     ChatType.private || ChatType.secret => MgMenuItem(
       label: l10n.menuDeleteChat,
+      icon: MgIcons.trash,
       destructive: true,
       onSelected: () => unawaited(
         confirm(
@@ -88,6 +90,7 @@ Future<void> showChatMenu(
     ),
     ChatType.basicGroup => MgMenuItem(
       label: l10n.menuDeleteAndLeave,
+      icon: MgIcons.leave,
       destructive: true,
       onSelected: () => unawaited(
         confirm(
@@ -101,6 +104,7 @@ Future<void> showChatMenu(
       label: chat.type == ChatType.channel
           ? l10n.menuLeaveChannel
           : l10n.menuLeaveGroup,
+      icon: MgIcons.leave,
       destructive: true,
       onSelected: () => unawaited(
         confirm(
@@ -124,16 +128,19 @@ Future<void> showChatMenu(
     items: [
       MgMenuItem(
         label: pinned ? l10n.menuUnpin : l10n.menuPin,
+        icon: pinned ? MgIcons.unpin : MgIcons.pinOutline,
         onSelected: () => run(() => chats.setPinned(chat.id, list, !pinned)),
       ),
       if (!saved)
         chat.isMuted
             ? MgMenuItem(
                 label: l10n.menuUnmute,
+                icon: MgIcons.volume,
                 onSelected: () => run(() => chats.setMuted(chat.id, null)),
               )
             : MgMenuItem(
                 label: l10n.menuMute,
+                icon: MgIcons.muted,
                 submenu: [
                   MgMenuItem(
                     label: l10n.muteFor1Hour,
@@ -158,16 +165,19 @@ Future<void> showChatMenu(
         chat.isUnread || chat.unreadMentionCount > 0
             ? MgMenuItem(
                 label: l10n.menuMarkRead,
+                icon: MgIcons.readTicks,
                 onSelected: () => run(() => chats.markAsRead(chat.id)),
               )
             : MgMenuItem(
                 label: l10n.menuMarkUnread,
+                icon: MgIcons.markUnread,
                 onSelected: () => run(() => chats.markAsUnread(chat.id)),
               ),
       if (!saved && !service) ...[
         const MgMenuItem.divider(),
         MgMenuItem(
           label: chat.isArchived ? l10n.menuUnarchive : l10n.menuArchive,
+          icon: chat.isArchived ? MgIcons.unarchive : MgIcons.archive,
           onSelected: () =>
               run(() => chats.setArchived(chat.id, !chat.isArchived)),
         ),
@@ -192,9 +202,14 @@ Future<void> showArchiveMenu(
     context,
     position: position,
     items: [
-      MgMenuItem(label: l10n.menuHideArchive, onSelected: onHide),
+      MgMenuItem(
+        label: l10n.menuHideArchive,
+        icon: MgIcons.hide,
+        onSelected: onHide,
+      ),
       MgMenuItem(
         label: l10n.menuMarkAllRead,
+        icon: MgIcons.readTicks,
         onSelected: () => unawaited(
           chats
               .markListAsRead(const ChatListLocation.archive())

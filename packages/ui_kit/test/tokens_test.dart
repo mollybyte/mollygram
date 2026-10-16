@@ -149,4 +149,29 @@ void pressableTests() {
     expect(taps, 1);
     expect(tester.widget<AnimatedScale>(find.byType(AnimatedScale)).scale, 1);
   });
+
+  testWidgets('MgPressable lets go when a drag cancels the tap', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildMgTheme(MgColors.light),
+        home: Center(
+          child: MgIconButton(
+            icon: MgIcons.search,
+            tooltip: 'Search',
+            onPressed: () {},
+          ),
+        ),
+      ),
+    );
+    final g = await tester.startGesture(
+      tester.getCenter(find.byType(MgIconButton)),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+    await g.moveBy(const Offset(0, 60));
+    await tester.pumpAndSettle();
+    expect(tester.widget<AnimatedScale>(find.byType(AnimatedScale)).scale, 1);
+    await g.up();
+  });
 }

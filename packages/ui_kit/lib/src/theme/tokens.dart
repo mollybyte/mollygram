@@ -35,8 +35,9 @@ abstract final class MgSpace {
   static const double xxl = 20;
 }
 
-/// Durations and curves of motion. Nothing overshoots: the floating layer
-/// eases in and fades out, as the official macOS client does.
+/// Durations and curves of motion. Nothing overshoots on the floating
+/// layer: it eases in and fades out, as the official macOS client does.
+/// Only small acknowledgements, such as choosing a reaction, pop.
 abstract final class MgMotion {
   /// Hover and press feedback.
   static const Duration fast = Duration(milliseconds: 120);
@@ -72,14 +73,20 @@ abstract final class MgMotion {
 
   /// Long enough for [settle] and [spring] to come to rest.
   static const Duration settleDuration = Duration(milliseconds: 450);
+
+  /// A small thing acknowledging a tap: a reaction landing, a count
+  /// changing.
+  static const Duration pop = Duration(milliseconds: 300);
+
+  /// Settles a hair past its size and back, a spring without the wobble.
+  static const Curve popCurve = Cubic(0.34, 1.35, 0.64, 1);
 }
 
 /// A spring as an animation [Curve], so implicit animations can use it.
 ///
 /// [response] is the time in seconds the spring takes to come to rest,
 /// [damping] the damping ratio: 1.0 settles without overshoot, below 1.0 it
-/// overshoots and rings. The curve covers one unit of time; run it with a
-/// duration a little longer than [response].
+/// overshoots and rings. Run it with a duration equal to [response].
 class MgSpringCurve extends Curve {
   const MgSpringCurve({required this.damping, required this.response});
 

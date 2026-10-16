@@ -1000,6 +1000,28 @@ void main() {
     expect(find.text('Comment 41'), findsOneWidget);
   });
 
+  testWidgets('selects comments from their menu', (tester) async {
+    json.history = [
+      _message(id: 14, senderId: 2, text: 'Post', comments: 2),
+      ..._history,
+    ];
+    await pump(tester, group: false);
+    await tester.tap(find.text('2 comments'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+
+    await rightClick(tester, 'First comment');
+    await tester.tap(find.text('Select'));
+    await tester.pump();
+    expect(find.text('1 selected'), findsOneWidget);
+    // The selection bar stands in for the comment composer.
+    expect(find.text('Copy'), findsOneWidget);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pump();
+    expect(find.text('1 selected'), findsNothing);
+  });
+
   testWidgets('answers a comment from its menu, quoting it', (tester) async {
     json.history = [
       _message(id: 14, senderId: 2, text: 'Post', comments: 2),
@@ -1012,8 +1034,7 @@ void main() {
     await tester.pump();
 
     await rightClick(tester, 'First comment');
-    // A comments thread has no selection mode.
-    expect(find.text('Select'), findsNothing);
+    expect(find.text('Select'), findsOneWidget);
     await tester.tap(find.text('Reply'));
     await tester.pump();
     expect(find.byType(ComposerContextBar), findsOneWidget);
@@ -2407,6 +2428,30 @@ void main() {
     final forward = json.sent.lastWhere((r) => r['@type'] == 'forwardMessages');
     expect(forward['send_copy'], isTrue);
     expect(forward['remove_caption'], isFalse);
+  });
+
+  testWidgets('the message menu keeps every action, in order', (tester) async {
+    await pump(tester);
+    await rightClick(tester, 'Mine');
+    const labels = [
+      'Reply',
+      'Edit',
+      'Copy text',
+      'Forward',
+      'Pin',
+      'Select',
+      'Report',
+      'Delete',
+    ];
+    for (final label in labels) {
+      expect(find.text(label), findsOneWidget, reason: label);
+    }
+    final tops = [
+      for (final label in labels) tester.getTopLeft(find.text(label)).dy,
+    ];
+    for (var i = 1; i < tops.length; i++) {
+      expect(tops[i], greaterThan(tops[i - 1]), reason: labels[i]);
+    }
   });
 
   Future<void> selectTwo(WidgetTester tester) async {

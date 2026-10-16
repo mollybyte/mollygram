@@ -5,6 +5,7 @@ import '../icons.dart';
 import '../theme/colors.dart';
 import '../theme/theme.dart';
 import '../theme/tokens.dart';
+import 'message_menu.dart';
 
 /// One formatting button in the compact row of a [SelectionMenu].
 @immutable
@@ -88,11 +89,10 @@ class SelectionMenu extends StatelessWidget {
             child: ConstrainedBox(
               constraints: const BoxConstraints(minWidth: 232),
               child: Glass(
-                radius: MgRadius.popover,
+                dense: true,
+                radius: MgRadius.card,
                 // Keeps the rows' corners concentric with the panel's.
-                padding: const EdgeInsets.all(
-                  MgRadius.popover - MgRadius.small,
-                ),
+                padding: const EdgeInsets.all(MgRadius.card - MgRadius.small),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -202,7 +202,6 @@ class _CommandRowState extends State<_CommandRow> {
   Widget build(BuildContext context) {
     final c = MgColors.of(context);
     final command = widget.command;
-    final color = _hover ? c.onAccent : c.fg;
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hover = true),
@@ -211,10 +210,11 @@ class _CommandRowState extends State<_CommandRow> {
         behavior: HitTestBehavior.opaque,
         onTap: command.onPressed,
         child: Container(
-          height: 26,
+          height: 30,
           padding: const EdgeInsets.symmetric(horizontal: MgSpace.ml),
+          // The soft fill of the context menus; the text keeps its colour.
           decoration: BoxDecoration(
-            color: _hover ? c.accent : const Color(0x00000000),
+            color: _hover ? menuHighlight(c) : const Color(0x00000000),
             borderRadius: BorderRadius.circular(MgRadius.small),
           ),
           child: Row(
@@ -224,7 +224,7 @@ class _CommandRowState extends State<_CommandRow> {
                   command.label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: mgTextStyle(c, color: color, height: 1.2),
+                  style: mgTextStyle(c, height: 1.2),
                 ),
               ),
               if (command.shortcut case final shortcut?) ...[
@@ -234,7 +234,7 @@ class _CommandRowState extends State<_CommandRow> {
                   style: mgTextStyle(
                     c,
                     size: MgType.small,
-                    color: _hover ? c.onAccent : c.fg2,
+                    color: c.fg2,
                     height: 1.2,
                   ),
                 ),

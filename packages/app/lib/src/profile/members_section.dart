@@ -132,11 +132,13 @@ class _MembersSectionState extends ConsumerState<_MembersSection> {
         if (member.canPromote && !(admin && !widget.rights.isSupergroup))
           MgMenuItem(
             label: admin ? l10n.editAdminRights : l10n.promoteToAdmin,
+            icon: MgIcons.star,
             onSelected: () => unawaited(_promote(member)),
           ),
         if (member.canPromote && admin)
           MgMenuItem(
             label: l10n.dismissAdmin,
+            icon: MgIcons.close,
             onSelected: () => unawaited(
               _act(() => _management.demote(widget.info.chatId, member.userId)),
             ),
@@ -144,11 +146,13 @@ class _MembersSectionState extends ConsumerState<_MembersSection> {
         if (member.canRestrict)
           MgMenuItem(
             label: l10n.restrictMember,
+            icon: MgIcons.lock,
             onSelected: () => unawaited(_restrict(member)),
           ),
         if (member.canRestrict && member.permissions != null)
           MgMenuItem(
             label: l10n.removeRestrictions,
+            icon: MgIcons.lockOpen,
             onSelected: () => unawaited(
               _act(() => _management.demote(widget.info.chatId, member.userId)),
             ),
@@ -156,6 +160,7 @@ class _MembersSectionState extends ConsumerState<_MembersSection> {
         if (member.canRemove)
           MgMenuItem(
             label: channel ? l10n.removeFromChannel : l10n.removeFromGroup,
+            icon: MgIcons.leave,
             destructive: true,
             onSelected: () => unawaited(_remove(member)),
           ),

@@ -108,6 +108,7 @@ Future<void> showSavedTopicMenu(
     items: [
       MgMenuItem(
         label: topic.isPinned ? l10n.menuUnpin : l10n.menuPin,
+        icon: topic.isPinned ? MgIcons.unpin : MgIcons.pinOutline,
         onSelected: () => unawaited(
           run(
             () => conversations.setSavedTopicPinned(topic.id, !topic.isPinned),
@@ -116,6 +117,7 @@ Future<void> showSavedTopicMenu(
       ),
       MgMenuItem(
         label: l10n.menuDelete,
+        icon: MgIcons.trash,
         destructive: true,
         onSelected: () => unawaited(() async {
           final confirmed = await showMgConfirm(

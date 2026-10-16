@@ -377,15 +377,20 @@ class MessageTile extends StatelessWidget {
               ),
             ),
           ),
-        if (reactions != null && reactions.isNotEmpty)
-          SelectionContainer.disabled(
-            child: Padding(
-              padding: const EdgeInsets.only(top: 5),
-              child: Wrap(
-                spacing: 4,
-                runSpacing: 4,
-                children: [
-                  for (final reaction in reactions)
+        // Always mounted, so the first reaction on a message pops in too.
+        SelectionContainer.disabled(
+          child: Padding(
+            padding: EdgeInsets.only(
+              top: reactions == null || reactions.isEmpty ? 0 : 5,
+            ),
+            child: ReactionRow(
+              chips: [
+                for (final reaction
+                    in reactions ?? const <td.MessageReaction>[])
+                  (
+                    reaction.type is td.ReactionTypePaid
+                        ? 'paid'
+                        : reactionKey(reaction.type),
                     ReactionChip(
                       emoji: reactionKey(reaction.type),
                       icon: customReactionIcon(
@@ -402,10 +407,11 @@ class MessageTile extends StatelessWidget {
                               reaction.isChosen,
                             ),
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
           ),
+        ),
         if (comments != null)
           SelectionContainer.disabled(
             child: Padding(

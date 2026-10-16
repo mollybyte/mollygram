@@ -219,10 +219,12 @@ class _StickerSetsBodyState extends ConsumerState<StickerSetsBody> {
       items: [
         MgMenuItem(
           label: l10n.archiveSet,
+          icon: MgIcons.archive,
           onSelected: () => unawaited(_try(() => sets.archive(set))),
         ),
         MgMenuItem(
           label: l10n.remove,
+          icon: MgIcons.trash,
           destructive: true,
           onSelected: () => unawaited(_remove(set)),
         ),

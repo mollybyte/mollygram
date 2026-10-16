@@ -64,7 +64,27 @@ class _MgPressableState extends State<MgPressable> {
   bool _pressed = false;
   bool _focus = false;
 
+  late final FocusNode _focusNode = FocusNode(
+    debugLabel: 'MgPressable',
+    canRequestFocus: widget.focusable,
+    skipTraversal: !widget.focusable,
+  );
+
   bool get _enabled => widget.onTap != null;
+
+  @override
+  void didUpdateWidget(MgPressable old) {
+    super.didUpdateWidget(old);
+    _focusNode
+      ..canRequestFocus = widget.focusable
+      ..skipTraversal = !widget.focusable;
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
 
   void _set(VoidCallback f) {
     if (mounted) setState(f);
@@ -99,7 +119,10 @@ class _MgPressableState extends State<MgPressable> {
       onTap: widget.onTap,
       excludeSemantics: widget.semanticsLabel != null,
       child: FocusableActionDetector(
-        enabled: _enabled && widget.focusable,
+        // Off only without a tap: [focusable] keeps the hover feedback and
+        // turns just the keyboard focus off.
+        enabled: _enabled,
+        focusNode: _focusNode,
         mouseCursor:
             widget.cursor ??
             (_enabled ? SystemMouseCursors.click : MouseCursor.defer),
@@ -126,6 +149,9 @@ class _MgPressableState extends State<MgPressable> {
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: widget.onTap,
+            // A drag or a scroll that wins the gesture cancels the tap: the
+            // control lets go then, not when the pointer is lifted.
+            onTapCancel: () => _set(() => _pressed = false),
             onSecondaryTapUp: widget.onSecondaryTapUp,
             child: DecoratedBox(
               position: DecorationPosition.foreground,
