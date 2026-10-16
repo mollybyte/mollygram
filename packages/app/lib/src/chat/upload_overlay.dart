@@ -99,8 +99,8 @@ class _UploadBadgeState extends State<UploadBadge>
   bool get _waiting => !widget.failed && widget.progress == null;
 
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     _syncSpin();
   }
 
