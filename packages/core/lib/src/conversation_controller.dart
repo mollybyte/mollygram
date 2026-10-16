@@ -1753,6 +1753,25 @@ final class ConversationController {
     );
   }
 
+  /// Stops sending messages that are still on their way and removes
+  /// them, which also ends their uploads.
+  Future<void> cancelSending(int chatId, List<int> messageIds) =>
+      deleteMessages(chatId, messageIds, revoke: true);
+
+  /// Tries again to send messages that failed, oldest first.
+  Future<void> resendMessages(int chatId, List<int> messageIds) async {
+    if (messageIds.isEmpty) return;
+    final sorted = [...messageIds]..sort();
+    final resent = await _client.send(
+      td.ResendMessages(
+        chatId: chatId,
+        messageIds: sorted,
+        paidMessageStarCount: 0,
+      ),
+    );
+    resent.messages.forEach(_add);
+  }
+
   /// Forwards messages of [fromChatId] to [toChatId].
   Future<void> forwardMessages(
     int toChatId,

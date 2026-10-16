@@ -25,6 +25,7 @@ import 'formatted_text.dart';
 import 'media_content.dart';
 import 'other_content.dart';
 import 'td_file.dart';
+import 'upload_overlay.dart';
 
 /// One row of the chat: a single message, or the photos and videos of an
 /// album sent together.
@@ -126,6 +127,8 @@ class MessageRowActions {
     this.onMenu,
     this.onOpen,
     this.onViewMedia,
+    this.onCancelSend,
+    this.onRetrySend,
     this.onJump,
     this.onSelectToggle,
     this.onTextSelected,
@@ -157,6 +160,13 @@ class MessageRowActions {
 
   /// A click on a photo, video or GIF, which opens the media viewer.
   final void Function(ConversationMessage message)? onViewMedia;
+
+  /// The cross on a photo or video still going up, or the delete button
+  /// of one that failed.
+  final void Function(ConversationMessage message)? onCancelSend;
+
+  /// Try again, on a photo or video that failed to send.
+  final void Function(ConversationMessage message)? onRetrySend;
 
   /// A click on a reply's quote, which scrolls to the message it answers.
   final void Function(int messageId)? onJump;
@@ -1064,7 +1074,17 @@ _Visual? _visualFor(MessageRow row, MessageRowActions actions) {
       return null;
   }
   return (
-    widget: _concealIfNeeded(message, size, media, onOpen),
+    widget: _concealIfNeeded(
+      message,
+      size,
+      withUploadOverlay(
+        message: message,
+        child: media,
+        onCancel: actions.onCancelSend,
+        onRetry: actions.onRetrySend,
+      ),
+      onOpen,
+    ),
     width: size.width,
   );
 }
@@ -1141,7 +1161,12 @@ _Visual _album(MessageRow row, MessageRowActions actions) {
                 return _concealIfNeeded(
                   cells[i],
                   size,
-                  _albumCell(cells[i], size, _viewer(cells[i], actions)),
+                  _albumCell(
+                    cells[i],
+                    size,
+                    _viewer(cells[i], actions),
+                    actions,
+                  ),
                   onOpen,
                 );
               }(),
@@ -1171,19 +1196,28 @@ Widget _albumCell(
   ConversationMessage message,
   Size size,
   VoidCallback? onTap,
-) => switch (message.content) {
-  td.MessagePhoto(:final photo) => PhotoContent(
-    photo: photo,
-    size: size,
-    onTap: onTap,
-  ),
-  td.MessageVideo(:final video) => VideoContent(
-    video: video,
-    size: size,
-    onTap: onTap,
-  ),
-  _ => SizedBox.fromSize(size: size),
-};
+  MessageRowActions actions,
+) {
+  final cell = switch (message.content) {
+    td.MessagePhoto(:final photo) => PhotoContent(
+      photo: photo,
+      size: size,
+      onTap: onTap,
+    ),
+    td.MessageVideo(:final video) => VideoContent(
+      video: video,
+      size: size,
+      onTap: onTap,
+    ),
+    _ => SizedBox.fromSize(size: size),
+  };
+  return withUploadOverlay(
+    message: message,
+    child: cell,
+    onCancel: actions.onCancelSend,
+    onRetry: actions.onRetrySend,
+  );
+}
 
 /// How many pictures go in each album row, top to bottom. A wide first
 /// picture of three gets a row of its own.

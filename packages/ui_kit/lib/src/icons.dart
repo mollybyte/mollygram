@@ -100,6 +100,10 @@ abstract final class MgIcons {
     'trash',
     '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v5M14 11v5"/>',
   );
+  static const retry = MgIconData(
+    'retry',
+    '<path d="M20 12a8 8 0 1 1-2.6-5.9L20 8.5M20 4v4.5h-4.5"/>',
+  );
   static const send = MgIconData(
     'send',
     '<path d="M12 19V5M6 11l6-6 6 6"/>',
@@ -468,6 +472,7 @@ abstract final class MgIcons {
     lockOpen,
     chevronUp,
     trash,
+    retry,
     send,
     download,
     downloadAll,
