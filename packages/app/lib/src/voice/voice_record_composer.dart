@@ -300,11 +300,15 @@ class _RecordButtonState extends State<_RecordButton>
                 width: MgSendButton.size,
                 height: MgSendButton.size,
                 alignment: Alignment.center,
-                // A plain grey icon; only the send button that takes its
-                // place carries the accent.
+                // The same accent square as the send button that takes its
+                // place.
                 decoration: BoxDecoration(
-                  color: _hover && !active ? c.hover : const Color(0x00000000),
-                  shape: BoxShape.circle,
+                  color: Color.lerp(
+                    c.accent,
+                    c.onAccent,
+                    active ? 0.12 : (_hover ? 0.06 : 0),
+                  ),
+                  borderRadius: BorderRadius.circular(MgSendButton.radius),
                 ),
                 // A click turns the microphone into the camera and back.
                 child: AnimatedSwitcher(
@@ -324,8 +328,9 @@ class _RecordButtonState extends State<_RecordButton>
                   child: MgIcon(
                     video ? MgIcons.camera : MgIcons.mic,
                     key: ValueKey(video),
-                    size: 22,
-                    color: _hover && !active ? c.fg : c.quiet,
+                    size: 18,
+                    stroke: 2,
+                    color: c.onAccent,
                   ),
                 ),
               ),
