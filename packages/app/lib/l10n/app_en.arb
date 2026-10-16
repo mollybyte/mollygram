@@ -42,6 +42,7 @@
   "missingKeysHint": "Build the app with --dart-define-from-file=config/telegram.json. The template is config/telegram.example.json.",
   "startFailedTitle": "Telegram could not start",
   "searchHint": "Search",
+  "sidebarSearchHint": "Search or ⌘K",
   "folderAll": "All",
   "noChats": "No chats yet",
   "connectionWaitingForNetwork": "Waiting for network…",

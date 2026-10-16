@@ -136,9 +136,9 @@ class _Monogram extends StatelessWidget {
       fontFamilyFallback: mgFontFamilyFallback,
       color: const Color(0xFFFFFFFF),
       fontWeight: MgWeight.medium,
-      fontSize: size * 0.38,
+      fontSize: (size * 0.34).roundToDouble(),
       height: 1,
-      letterSpacing: size * 0.38 >= 16 ? -0.2 : 0,
+      letterSpacing: size * 0.34 >= 16 ? -0.2 : 0,
     ),
   );
 }

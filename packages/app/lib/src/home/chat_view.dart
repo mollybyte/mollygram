@@ -3975,7 +3975,25 @@ class _ChatViewState extends ConsumerState<ChatView> {
                                 '',
                       onTap: () => togglePeerInfo(ref, widget.chatId),
                     ),
-              actions: AudioPlayerCapsule(chatId: widget.chatId),
+              actions: ChatActionsCapsule(
+                children: [
+                  AudioPlayerCapsule(chatId: widget.chatId),
+                  if (!_searching && _thread == null && !_scheduledOpen) ...[
+                    MgIconButton(
+                      icon: MgIcons.search,
+                      tooltip: l10n.searchInChat,
+                      size: 28,
+                      onPressed: _openSearch,
+                    ),
+                    MgIconButton(
+                      icon: MgIcons.panel,
+                      tooltip: l10n.peerInfo,
+                      size: 28,
+                      onPressed: () => togglePeerInfo(ref, widget.chatId),
+                    ),
+                  ],
+                ],
+              ),
               fill: const WindowDragArea(),
             ),
           ),

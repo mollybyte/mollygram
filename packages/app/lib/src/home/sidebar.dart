@@ -245,7 +245,7 @@ class _SidebarState extends ConsumerState<Sidebar> {
         canRequestFocus: false,
         onKeyEvent: _onSearchKey,
         child: MgSearchField(
-          hintText: l10n.searchHint,
+          hintText: l10n.sidebarSearchHint,
           controller: _search,
           focusNode: _searchFocus,
         ),
@@ -274,16 +274,20 @@ class _SidebarState extends ConsumerState<Sidebar> {
           onPressed: widget.onNewMessage,
         ),
       ],
-      folders: AnimatedSwitcher(
-        duration: _listSwitch,
-        switchInCurve: Curves.easeOutCubic,
-        switchOutCurve: Curves.easeInCubic,
-        layoutBuilder: (current, previous) => Stack(
-          alignment: Alignment.centerLeft,
-          children: [...previous, ?current],
-        ),
-        child: header,
-      ),
+      // With no folders of the user's own, a lone "All" segment would be a
+      // wide empty slab: the list starts right under the search instead.
+      folders: folders.isEmpty && !list.isArchive
+          ? null
+          : AnimatedSwitcher(
+              duration: _listSwitch,
+              switchInCurve: Curves.easeOutCubic,
+              switchOutCurve: Curves.easeInCubic,
+              layoutBuilder: (current, previous) => Stack(
+                alignment: Alignment.centerLeft,
+                children: [...previous, ?current],
+              ),
+              child: header,
+            ),
       banner: const DownloadsBar(),
       body: AnimatedSwitcher(
         duration: _listSwitch,
