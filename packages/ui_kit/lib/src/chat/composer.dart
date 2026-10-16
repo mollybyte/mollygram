@@ -483,6 +483,9 @@ class _ComposerState extends State<Composer> {
         Builder(
           builder: (context) => MgIconButton(
             icon: MgIcons.plus,
+            iconSize: 22,
+            size: MgSendButton.size,
+            quiet: true,
             tooltip: l.attach,
             onPressed: switch (widget.onAttachMenu) {
               null => widget.onAttach,
@@ -496,7 +499,7 @@ class _ComposerState extends State<Composer> {
         const SizedBox(width: 8),
         Expanded(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 32),
+            constraints: const BoxConstraints(minHeight: MgSendButton.size),
             child: Center(
               widthFactor: 1,
               child: Focus(
@@ -513,7 +516,7 @@ class _ComposerState extends State<Composer> {
                   contextMenuBuilder: _contextMenu,
                   decoration: InputDecoration.collapsed(
                     hintText: l.hint,
-                    hintStyle: style.copyWith(color: c.fg2),
+                    hintStyle: style.copyWith(color: c.quiet),
                   ),
                 ),
               ),
@@ -524,6 +527,9 @@ class _ComposerState extends State<Composer> {
         ?widget.extraButton,
         MgIconButton(
           icon: MgIcons.emoji,
+          iconSize: 22,
+          size: MgSendButton.size,
+          quiet: true,
           tooltip: l.emoji,
           onPressed: widget.onEmoji,
         ),
@@ -536,7 +542,7 @@ class _ComposerState extends State<Composer> {
         color: c.card,
         border: Border(top: BorderSide(color: c.separator)),
       ),
-      padding: const EdgeInsets.fromLTRB(14, 10, 12, 10),
+      padding: const EdgeInsets.fromLTRB(12, 7, 12, 7),
       child: _withHeader(
         Row(
           crossAxisAlignment: CrossAxisAlignment.end,

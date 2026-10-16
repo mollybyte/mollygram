@@ -51,6 +51,10 @@ class MgColors extends ThemeExtension<MgColors> {
   /// TelegramSwift.
   Color get icon => fg2;
 
+  /// The composer's resting icons and its placeholder: lighter than the
+  /// secondary text in the light theme, so they don't read as typed text.
+  Color get quiet => isDark ? fg2 : muted;
+
   /// The single accent: selection, unread badges, send button, links.
   final Color accent;
 

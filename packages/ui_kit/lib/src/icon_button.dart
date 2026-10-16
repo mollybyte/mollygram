@@ -13,6 +13,8 @@ class MgIconButton extends StatefulWidget {
     this.onPressed,
     this.selected = false,
     this.iconSize = 17,
+    this.size = 32,
+    this.quiet = false,
   });
 
   final MgIconData icon;
@@ -24,6 +26,12 @@ class MgIconButton extends StatefulWidget {
   /// A toggled state, like ghost mode being on.
   final bool selected;
   final double iconSize;
+
+  /// The side of the round hit area and hover fill.
+  final double size;
+
+  /// Rest in the lighter [MgColors.quiet] grey, as the composer's buttons.
+  final bool quiet;
 
   @override
   State<MgIconButton> createState() => _MgIconButtonState();
@@ -37,7 +45,9 @@ class _MgIconButtonState extends State<MgIconButton> {
     final c = MgColors.of(context);
     final enabled = widget.onPressed != null;
     final hover = _hover && enabled;
-    final fg = widget.selected ? c.accent : (hover ? c.fg : c.icon);
+    final fg = widget.selected
+        ? c.accent
+        : (hover ? c.fg : (widget.quiet ? c.quiet : c.icon));
     final bg = widget.selected
         ? c.field
         : (hover ? c.hover : const Color(0x00000000));
@@ -56,8 +66,8 @@ class _MgIconButtonState extends State<MgIconButton> {
           child: GestureDetector(
             onTap: widget.onPressed,
             child: Container(
-              width: 32,
-              height: 32,
+              width: widget.size,
+              height: widget.size,
               alignment: Alignment.center,
               decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
               child: MgIcon(widget.icon, size: widget.iconSize, color: fg),
@@ -69,8 +79,8 @@ class _MgIconButtonState extends State<MgIconButton> {
   }
 }
 
-/// The filled send button, an accent rounded square, that replaces the
-/// microphone when the composer has a draft.
+/// The filled send button, an accent circle, that replaces the microphone
+/// when the composer has a draft.
 class MgSendButton extends StatelessWidget {
   const MgSendButton({
     super.key,
@@ -88,7 +98,7 @@ class MgSendButton extends StatelessWidget {
   /// a menu of other ways to send, such as without sound or later.
   final void Function(Offset position)? onMenu;
 
-  static const double radius = 10;
+  static const double size = 36;
 
   @override
   Widget build(BuildContext context) {
@@ -111,14 +121,14 @@ class MgSendButton extends StatelessWidget {
                 ? null
                 : (details) => onMenu!(details.globalPosition),
             child: Container(
-              width: 32,
-              height: 32,
+              width: size,
+              height: size,
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: c.accent,
-                borderRadius: BorderRadius.circular(radius),
+                shape: BoxShape.circle,
               ),
-              child: MgIcon(icon, size: 15, stroke: 1.9, color: c.onAccent),
+              child: MgIcon(icon, size: 18, stroke: 2, color: c.onAccent),
             ),
           ),
         ),
@@ -127,9 +137,21 @@ class MgSendButton extends StatelessWidget {
   }
 }
 
-/// The microphone in the send button's place while there is no draft: the
-/// same accent square.
-class MgRecordButton extends MgSendButton {
-  const MgRecordButton({super.key, required super.tooltip, super.onPressed})
-    : super(icon: MgIcons.mic);
+/// The microphone in the send button's place while there is no draft: a
+/// plain grey icon, so that a draft visibly arms the accent send button.
+class MgRecordButton extends StatelessWidget {
+  const MgRecordButton({super.key, required this.tooltip, this.onPressed});
+
+  final String tooltip;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) => MgIconButton(
+    icon: MgIcons.mic,
+    tooltip: tooltip,
+    onPressed: onPressed,
+    iconSize: 22,
+    size: MgSendButton.size,
+    quiet: true,
+  );
 }

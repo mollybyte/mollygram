@@ -4526,7 +4526,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get blurTheme => 'Vesper Blur';
 
   @override
-  String get blurThemeHint => 'A dark, matte window that blurs the desktop behind it. Replaces the theme above while on.';
+  String get blurThemeHint =>
+      'A dark, matte window that blurs the desktop behind it. Replaces the theme above while on.';
 
   @override
   String get blurOpacity => 'Window opacity';
