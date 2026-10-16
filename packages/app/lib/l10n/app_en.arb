@@ -244,6 +244,7 @@
   "forwardSearch": "Search chats",
   "forwardHideSender": "Hide sender names",
   "forwardHideCaptions": "Hide captions",
+  "forwardComment": "Add a comment…",
   "noChatsFound": "No chats found",
   "statusOnline": "online",
   "statusJustNow": "last seen just now",

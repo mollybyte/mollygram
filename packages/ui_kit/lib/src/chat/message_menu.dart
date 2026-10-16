@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../glass/glass.dart';
 import '../icon_button.dart';
 import '../icons.dart';
+import '../sign_in/sign_in.dart';
 import '../theme/colors.dart';
 import '../theme/theme.dart';
 import '../theme/tokens.dart';
@@ -77,6 +78,38 @@ Future<void> showMgMenu(
   );
 }
 
+/// Shows a dropdown under the button at [anchor] (its rect in global
+/// coordinates), with a pointer aimed at the button, as Telegram's popovers
+/// have. It opens upwards near the bottom of the window and leans left
+/// for a button on the right half. Keys and submenus work as in
+/// [showMgMenu].
+Future<void> showMgDropdown(
+  BuildContext context, {
+  required Rect anchor,
+  required List<MgMenuItem> items,
+  Widget? header,
+}) {
+  return showGeneralDialog<void>(
+    context: context,
+    barrierDismissible: true,
+    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+    barrierColor: const Color(0x00000000),
+    transitionDuration: Duration.zero,
+    pageBuilder: (context, _, _) => _MenuRoot(
+      position: anchor.bottomLeft,
+      anchor: anchor,
+      items: items,
+      header: header,
+    ),
+  );
+}
+
+/// The global rect of the widget at [context], for [showMgDropdown].
+Rect mgAnchorOf(BuildContext context) {
+  final box = context.findRenderObject()! as RenderBox;
+  return box.localToGlobal(Offset.zero) & box.size;
+}
+
 /// Shows [child] at [position], flipped to the left or upwards when there
 /// is no room, as a menu does. Closes on a click outside, with no
 /// animation and no dimming.
@@ -100,9 +133,18 @@ Future<void> showMgPopover(
 
 /// The menu and, while an item with a submenu is hovered, that submenu.
 class _MenuRoot extends StatefulWidget {
-  const _MenuRoot({required this.position, required this.items, this.header});
+  const _MenuRoot({
+    required this.position,
+    required this.items,
+    this.header,
+    this.anchor,
+  });
 
   final Offset position;
+
+  /// The button a dropdown hangs from; null for a context menu at
+  /// [position].
+  final Rect? anchor;
   final List<MgMenuItem> items;
   final Widget? header;
 
@@ -247,6 +289,10 @@ class _MenuRootState extends State<_MenuRoot> {
 
   @override
   Widget build(BuildContext context) {
+    final dropdown = switch (widget.anchor) {
+      final anchor? => _DropdownPlacement(anchor, MediaQuery.sizeOf(context)),
+      null => null,
+    };
     return Focus(
       focusNode: _focus,
       autofocus: true,
@@ -255,10 +301,11 @@ class _MenuRootState extends State<_MenuRoot> {
         children: [
           Positioned.fill(
             child: CustomSingleChildLayout(
-              delegate: _MenuLayout(widget.position),
+              delegate: dropdown?.layout ?? _MenuLayout(widget.position),
               child: _Menu(
                 items: widget.items,
                 header: widget.header,
+                tail: dropdown?.tail,
                 openItem: _open,
                 activeItem: _active,
                 keyOf: _keyOf,
@@ -284,6 +331,74 @@ class _MenuRootState extends State<_MenuRoot> {
       ),
     );
   }
+}
+
+/// Where a dropdown goes beside its [anchor], decided before layout so
+/// the pointer can be drawn on the first frame.
+class _DropdownPlacement {
+  factory _DropdownPlacement(Rect anchor, Size window) {
+    const margin = _MenuLayout._margin;
+    // Leans away from the nearer window edge, its corner just past the
+    // button's.
+    final right = anchor.center.dx > window.width / 2;
+    final down = anchor.bottom < window.height * 0.6;
+    final edge = right
+        ? (anchor.right + _overhang).clamp(margin, window.width - margin)
+        : (anchor.left - _overhang).clamp(margin, window.width - margin);
+    final x = right ? edge - anchor.center.dx : anchor.center.dx - edge;
+    return _DropdownPlacement._(
+      _AnchoredLayout(anchor: anchor, edge: edge, right: right, down: down),
+      GlassTail(x: x, up: down, fromRight: right),
+    );
+  }
+
+  const _DropdownPlacement._(this.layout, this.tail);
+
+  static const double _overhang = 6;
+
+  final _AnchoredLayout layout;
+  final GlassTail tail;
+}
+
+class _AnchoredLayout extends SingleChildLayoutDelegate {
+  _AnchoredLayout({
+    required this.anchor,
+    required this.edge,
+    required this.right,
+    required this.down,
+  });
+
+  final Rect anchor;
+
+  /// The menu's right edge when [right], else its left one.
+  final double edge;
+  final bool right;
+  final bool down;
+
+  static const double _gap = 2;
+  static const double _margin = _MenuLayout._margin;
+
+  @override
+  BoxConstraints getConstraintsForChild(BoxConstraints constraints) =>
+      BoxConstraints.loose(constraints.biggest)
+          .deflate(const EdgeInsets.all(_margin));
+
+  @override
+  Offset getPositionForChild(Size size, Size child) {
+    final x = right ? edge - child.width : edge;
+    final y = down ? anchor.bottom + _gap : anchor.top - _gap - child.height;
+    return Offset(
+      x.clamp(_margin, size.width - child.width - _margin).toDouble(),
+      y.clamp(_margin, size.height - child.height - _margin).toDouble(),
+    );
+  }
+
+  @override
+  bool shouldRelayout(_AnchoredLayout old) =>
+      old.anchor != anchor ||
+      old.edge != edge ||
+      old.right != right ||
+      old.down != down;
 }
 
 class _MenuLayout extends SingleChildLayoutDelegate {
@@ -356,7 +471,11 @@ class _Menu extends StatelessWidget {
     this.header,
     this.openItem,
     this.activeItem,
+    this.tail,
   });
+
+  /// A dropdown's pointer at its button.
+  final GlassTail? tail;
 
   final List<MgMenuItem> items;
   final Widget? header;
@@ -377,7 +496,10 @@ class _Menu extends StatelessWidget {
   final GlobalKey Function(MgMenuItem item) keyOf;
 
   /// Keeps the rows' corners concentric with the panel's.
-  static const double padding = MgRadius.popover - MgRadius.small;
+  static const double padding = radius - MgRadius.small;
+
+  /// A touch rounder than other popovers, as Telegram's menus are.
+  static const double radius = MgRadius.card;
 
   @override
   Widget build(BuildContext context) {
@@ -385,9 +507,10 @@ class _Menu extends StatelessWidget {
       type: MaterialType.transparency,
       child: IntrinsicWidth(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(minWidth: 190, maxWidth: 320),
+          constraints: const BoxConstraints(minWidth: 210, maxWidth: 320),
           child: Glass(
-            radius: MgRadius.popover,
+            radius: radius,
+            tail: tail,
             padding: const EdgeInsets.all(padding),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -485,11 +608,10 @@ class _MenuRowState extends State<_MenuRow> {
     final c = MgColors.of(context);
     final item = widget.item;
     final lit = widget.active || widget.open;
-    final color = lit
-        ? c.onAccent
-        : item.destructive
-        ? MgDestructive.color
-        : c.fg;
+    // A soft fill under the row, as Telegram does: the text keeps its
+    // colour and the icons stay a quiet grey beside it.
+    final color = item.destructive ? MgDestructive.color : c.fg;
+    final iconColor = item.destructive ? MgDestructive.color : c.fg2;
     return Semantics(
       button: true,
       label: item.label,
@@ -502,20 +624,18 @@ class _MenuRowState extends State<_MenuRow> {
         child: GestureDetector(
           onTap: _select,
           child: Container(
-            height: 26,
+            height: 30,
             padding: const EdgeInsets.symmetric(horizontal: MgSpace.ml),
             alignment: Alignment.centerLeft,
             decoration: BoxDecoration(
-              color: lit
-                  ? (item.destructive ? MgDestructive.color : c.accent)
-                  : const Color(0x00000000),
+              color: lit ? menuHighlight(c) : const Color(0x00000000),
               borderRadius: BorderRadius.circular(MgRadius.small),
             ),
             child: Row(
               children: [
                 if (widget.iconColumn)
                   SizedBox(
-                    width: 24,
+                    width: 28,
                     child: item.leading != null
                         ? Align(
                             alignment: Alignment.centerLeft,
@@ -525,7 +645,11 @@ class _MenuRowState extends State<_MenuRow> {
                         ? null
                         : Align(
                             alignment: Alignment.centerLeft,
-                            child: MgIcon(item.icon!, size: 15, color: color),
+                            child: MgIcon(
+                              item.icon!,
+                              size: 16,
+                              color: iconColor,
+                            ),
                           ),
                   ),
                 Expanded(
@@ -538,7 +662,7 @@ class _MenuRowState extends State<_MenuRow> {
                 ),
                 if (item.submenu.isNotEmpty) ...[
                   const SizedBox(width: MgSpace.xl),
-                  MgIcon(MgIcons.chevron, size: 11, stroke: 2.4, color: color),
+                  MgIcon(MgIcons.chevron, size: 11, stroke: 2.4, color: c.fg2),
                 ],
               ],
             ),
@@ -548,6 +672,10 @@ class _MenuRowState extends State<_MenuRow> {
     );
   }
 }
+
+/// The fill under a highlighted menu row: a soft tint of the text colour
+/// that reads on light and dark glass alike.
+Color menuHighlight(MgColors c) => c.fg.withValues(alpha: 0.08);
 
 /// The red of destructive actions.
 abstract final class MgDestructive {
@@ -933,59 +1061,98 @@ class _ConfirmState extends State<_Confirm> {
         // The checkbox paints on Material.
         child: Material(
           type: MaterialType.transparency,
-          child: SizedBox(
-            width: 300,
-            child: Glass(
-              radius: MgRadius.popover,
-              padding: const EdgeInsets.fromLTRB(
-                MgSpace.xl,
-                MgSpace.xl,
-                MgSpace.xl,
-                MgSpace.l,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    widget.title,
-                    style: mgTextStyle(c, weight: FontWeight.w600),
+          child: MgAlert(
+            title: widget.title,
+            message: widget.message,
+            option: widget.option == null
+                ? null
+                : MgCheckRow(
+                    label: widget.option!,
+                    value: _checked,
+                    onChanged: (value) => setState(() => _checked = value),
                   ),
-                  if (widget.message != null) ...[
-                    const SizedBox(height: MgSpace.s),
-                    Text(widget.message!, style: mgTextStyle(c, color: c.fg2)),
-                  ],
-                  if (widget.option != null) ...[
-                    const SizedBox(height: MgSpace.ml),
-                    MgCheckRow(
-                      label: widget.option!,
-                      value: _checked,
-                      onChanged: (value) => setState(() => _checked = value),
-                    ),
-                  ],
-                  const SizedBox(height: MgSpace.xl),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      MgDialogButton(
-                        label: widget.cancelLabel,
-                        onTap: () => Navigator.of(context).pop(),
-                      ),
-                      const SizedBox(width: MgSpace.m),
-                      MgDialogButton(
-                        label: widget.confirmLabel,
-                        filled: true,
-                        color: widget.destructive
-                            ? MgDestructive.color
-                            : c.accent,
-                        onTap: _confirm,
-                      ),
-                    ],
-                  ),
-                ],
+            actions: [
+              MgDialogButton(
+                label: widget.confirmLabel,
+                filled: true,
+                color: widget.destructive ? MgDestructive.color : c.accent,
+                onTap: _confirm,
               ),
-            ),
+              MgDialogButton(
+                label: widget.cancelLabel,
+                onTap: () => Navigator.of(context).pop(),
+              ),
+            ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The shell of an alert, as macOS draws one: the app's mark, a bold
+/// centred title, the message under it, an optional control such as a
+/// checkbox, and the buttons stacked full width, the main one first.
+class MgAlert extends StatelessWidget {
+  const MgAlert({
+    super.key,
+    required this.title,
+    required this.actions,
+    this.message,
+    this.option,
+  });
+
+  final String title;
+  final String? message;
+  final Widget? option;
+
+  /// [MgDialogButton]s, the main action first.
+  final List<Widget> actions;
+
+  static const double width = 260;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    return SizedBox(
+      width: width,
+      child: Glass(
+        radius: MgRadius.card,
+        padding: const EdgeInsets.fromLTRB(
+          MgSpace.xl,
+          MgSpace.xxl,
+          MgSpace.xl,
+          MgSpace.xl,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Center(child: AppMark(size: 52)),
+            const SizedBox(height: MgSpace.l),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: mgTextStyle(c, weight: FontWeight.w700),
+            ),
+            if (message != null) ...[
+              const SizedBox(height: MgSpace.xs),
+              Text(
+                message!,
+                textAlign: TextAlign.center,
+                style: mgTextStyle(c, size: MgType.caption, height: 1.35),
+              ),
+            ],
+            if (option != null) ...[
+              const SizedBox(height: MgSpace.l),
+              Center(child: option),
+            ],
+            const SizedBox(height: MgSpace.xl),
+            for (final (i, action) in actions.indexed) ...[
+              if (i > 0) const SizedBox(height: MgSpace.m),
+              action,
+            ],
+          ],
         ),
       ),
     );
@@ -1127,7 +1294,7 @@ class _MgMenuInfoRowState extends State<MgMenuInfoRow> {
     final c = MgColors.of(context);
     final enabled = widget.onSelected != null;
     final lit = _hover && enabled;
-    final color = lit ? c.onAccent : c.fg;
+    final color = c.fg;
     return Semantics(
       button: enabled,
       label: widget.label,
@@ -1140,15 +1307,15 @@ class _MgMenuInfoRowState extends State<MgMenuInfoRow> {
         child: GestureDetector(
           onTap: enabled ? _select : null,
           child: Container(
-            height: 26,
+            height: 30,
             padding: const EdgeInsets.symmetric(horizontal: MgSpace.ml),
             decoration: BoxDecoration(
-              color: lit ? c.accent : const Color(0x00000000),
+              color: lit ? menuHighlight(c) : const Color(0x00000000),
               borderRadius: BorderRadius.circular(MgRadius.small),
             ),
             child: Row(
               children: [
-                MgIcon(widget.icon, size: 14, color: color),
+                MgIcon(widget.icon, size: 16, color: c.fg2),
                 const SizedBox(width: MgSpace.m),
                 Expanded(
                   child: Text(
@@ -1172,7 +1339,7 @@ class _MgMenuInfoRowState extends State<MgMenuInfoRow> {
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: lit ? c.accent : c.glassSolid,
+                                  color: c.glassSolid,
                                   width: 1.5,
                                 ),
                               ),

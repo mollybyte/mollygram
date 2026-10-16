@@ -139,10 +139,9 @@ class _PreviewState extends State<_Preview> {
 
   Future<void> _pickTimer(BuildContext anchor) async {
     final l10n = AppLocalizations.of(context);
-    final box = anchor.findRenderObject()! as RenderBox;
-    await showMgMenu(
+    await showMgDropdown(
       context,
-      position: box.localToGlobal(Offset(0, box.size.height)),
+      anchor: mgAnchorOf(anchor),
       items: [
         for (final seconds in _timers)
           MgMenuItem(

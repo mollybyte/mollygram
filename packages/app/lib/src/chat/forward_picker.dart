@@ -15,22 +15,41 @@ import '../session/providers.dart';
 /// without the captions, as the official apps offer.
 @immutable
 final class ForwardChoice {
-  const ForwardChoice({
-    required this.chatId,
+  ForwardChoice({
+    required int chatId,
     this.hideSender = false,
     this.hideCaptions = false,
+  }) : chatIds = [chatId],
+       comment = '';
+
+  const ForwardChoice._(
+    this.chatIds, {
+    required this.hideSender,
+    required this.hideCaptions,
+    required this.comment,
   });
 
-  final int chatId;
+  /// The chats picked, at least one; one unless the picker was opened
+  /// with `multiple`.
+  final List<int> chatIds;
   final bool hideSender;
   final bool hideCaptions;
+
+  /// A message to send before the forwarded ones; empty for none.
+  final String comment;
+
+  int get chatId => chatIds.first;
 }
 
 /// Asks which chat to forward to. Completes with the choice, or null when
 /// the user closes the picker. [hasCaptions] offers hiding the captions.
+/// With [multiple] a click ticks chats, as Telegram's share sheet does,
+/// and a comment can go with them; Enter with nothing ticked still sends
+/// to the highlighted chat at once.
 Future<ForwardChoice?> pickForwardTarget(
   BuildContext context, {
   bool hasCaptions = false,
+  bool multiple = false,
 }) => showGeneralDialog<ForwardChoice>(
   context: context,
   barrierDismissible: true,
@@ -39,14 +58,17 @@ Future<ForwardChoice?> pickForwardTarget(
   transitionDuration: Duration.zero,
   pageBuilder: (context, _, _) => Material(
     type: MaterialType.transparency,
-    child: Center(child: _ForwardPicker(hasCaptions: hasCaptions)),
+    child: Center(
+      child: _ForwardPicker(hasCaptions: hasCaptions, multiple: multiple),
+    ),
   ),
 );
 
 class _ForwardPicker extends ConsumerStatefulWidget {
-  const _ForwardPicker({required this.hasCaptions});
+  const _ForwardPicker({required this.hasCaptions, required this.multiple});
 
   final bool hasCaptions;
+  final bool multiple;
 
   @override
   ConsumerState<_ForwardPicker> createState() => _ForwardPickerState();
@@ -62,6 +84,11 @@ class _ForwardPickerState extends ConsumerState<_ForwardPicker> {
   /// The row the arrow keys are on; Enter forwards there.
   var _cursor = 0;
   var _matches = const <ChatListEntry>[];
+
+  /// The ticked chats, in the order they were ticked.
+  final _picked = <int>[];
+  final _comment = TextEditingController();
+  final _commentFocus = FocusNode();
 
   KeyEventResult _onKey(FocusNode node, KeyEvent event) {
     if (event is KeyUpEvent) return KeyEventResult.ignored;
@@ -110,13 +137,30 @@ class _ForwardPickerState extends ConsumerState<_ForwardPicker> {
     );
   }
 
-  void _pick(int chatId) => Navigator.of(context).pop(
-    ForwardChoice(
-      chatId: chatId,
+  void _send(List<int> chatIds) => Navigator.of(context).pop(
+    ForwardChoice._(
+      chatIds,
       hideSender: _hideSender,
       hideCaptions: _hideSender && _hideCaptions,
+      comment: _comment.text.trim(),
     ),
   );
+
+  /// A click: ticks the chat in a multiple pick, else forwards there.
+  void _tap(int chatId) {
+    if (!widget.multiple) return _send([chatId]);
+    setState(() {
+      if (!_picked.remove(chatId)) _picked.add(chatId);
+    });
+  }
+
+  /// Enter: sends to the ticked chats, or to the highlighted one.
+  void _submit(List<ChatListEntry> matches) {
+    if (_picked.isNotEmpty) return _send(List.of(_picked));
+    if (matches.isNotEmpty) {
+      _send([matches[_cursor.clamp(0, matches.length - 1)].id]);
+    }
+  }
 
   /// Chats TDLib found for the query, archived ones included; null while
   /// the query is empty.
@@ -134,6 +178,8 @@ class _ForwardPickerState extends ConsumerState<_ForwardPicker> {
   void dispose() {
     _search.dispose();
     _scroll.dispose();
+    _comment.dispose();
+    _commentFocus.dispose();
     super.dispose();
   }
 
@@ -215,9 +261,7 @@ class _ForwardPickerState extends ConsumerState<_ForwardPicker> {
                 focusNode: _search,
                 hintText: l10n.forwardSearch,
                 onChanged: (value) => unawaited(_find(value)),
-                onSubmitted: (_) {
-                  if (matches.isNotEmpty) _pick(matches[cursor].id);
-                },
+                onSubmitted: (_) => _submit(matches),
               ),
             ),
             const SizedBox(height: 8),
@@ -237,7 +281,7 @@ class _ForwardPickerState extends ConsumerState<_ForwardPicker> {
                       itemCount: matches.length,
                       itemBuilder: (context, i) {
                         final chat = matches[i];
-                        return ChatListTile(
+                        final tile = ChatListTile(
                           key: ValueKey(chat.id),
                           title: chat.title,
                           avatar: PeerAvatar.chat(
@@ -247,7 +291,23 @@ class _ForwardPickerState extends ConsumerState<_ForwardPicker> {
                           ),
                           subtitle: formatPreview(l10n, chat.lastMessage),
                           highlighted: i == cursor,
-                          onTap: () => _pick(chat.id),
+                          onTap: () => _tap(chat.id),
+                        );
+                        if (!widget.multiple) return tile;
+                        return Stack(
+                          children: [
+                            tile,
+                            Positioned(
+                              right: MgSpace.l,
+                              top: 0,
+                              bottom: 0,
+                              child: IgnorePointer(
+                                child: Center(
+                                  child: _Tick(on: _picked.contains(chat.id)),
+                                ),
+                              ),
+                            ),
+                          ],
                         );
                       },
                     ),
@@ -279,7 +339,131 @@ class _ForwardPickerState extends ConsumerState<_ForwardPicker> {
                   ),
                 ),
               ),
+            // The comment and Send slide in once a chat is ticked.
+            AnimatedSize(
+              duration: MgMotion.standard,
+              curve: MgMotion.enter,
+              alignment: Alignment.topCenter,
+              child: _picked.isEmpty
+                  ? const SizedBox(width: double.infinity)
+                  : Padding(
+                      padding: const EdgeInsets.only(top: MgSpace.ml),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              height: 30,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: MgSpace.l,
+                              ),
+                              alignment: Alignment.centerLeft,
+                              decoration: BoxDecoration(
+                                color: c.field,
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                              child: TextField(
+                                controller: _comment,
+                                focusNode: _commentFocus,
+                                style: mgTextStyle(c),
+                                cursorHeight: 15,
+                                onSubmitted: (_) => _submit(matches),
+                                decoration: InputDecoration.collapsed(
+                                  hintText: l10n.forwardComment,
+                                  hintStyle: mgTextStyle(c, color: c.fg2),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: MgSpace.m),
+                          _SendButton(
+                            label: '${l10n.send} ${_picked.length}',
+                            onTap: () => _submit(matches),
+                          ),
+                        ],
+                      ),
+                    ),
+            ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The round tick on a chat of a multiple pick.
+class _Tick extends StatelessWidget {
+  const _Tick({required this.on});
+
+  final bool on;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    return AnimatedContainer(
+      duration: MgMotion.fast,
+      curve: MgMotion.enter,
+      width: 20,
+      height: 20,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: on ? c.accent : const Color(0x00000000),
+        border: on ? null : Border.all(color: c.fg2, width: 1.5),
+      ),
+      child: AnimatedScale(
+        scale: on ? 1 : 0.4,
+        duration: MgMotion.fast,
+        curve: MgMotion.enter,
+        child: AnimatedOpacity(
+          opacity: on ? 1 : 0,
+          duration: MgMotion.fast,
+          child: MgIcon(
+            MgIcons.check,
+            size: 12,
+            stroke: 2.4,
+            color: c.onAccent,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SendButton extends StatelessWidget {
+  const _SendButton({required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    return Semantics(
+      button: true,
+      label: label,
+      onTap: onTap,
+      excludeSemantics: true,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: onTap,
+          child: Container(
+            height: 30,
+            padding: const EdgeInsets.symmetric(horizontal: MgSpace.l),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: c.accent,
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Text(
+              label,
+              style: mgTextStyle(
+                c,
+                weight: MgWeight.medium,
+                color: c.onAccent,
+                height: 1.2,
+              ),
+            ),
+          ),
         ),
       ),
     );

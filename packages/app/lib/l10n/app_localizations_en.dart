@@ -702,6 +702,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get forwardHideCaptions => 'Hide captions';
 
   @override
+  String get forwardComment => 'Add a comment…';
+
+  @override
   String get noChatsFound => 'No chats found';
 
   @override

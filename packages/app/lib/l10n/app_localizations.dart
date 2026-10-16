@@ -1328,6 +1328,12 @@ abstract class AppLocalizations {
   /// **'Hide captions'**
   String get forwardHideCaptions;
 
+  /// No description provided for @forwardComment.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a comment…'**
+  String get forwardComment;
+
   /// No description provided for @noChatsFound.
   ///
   /// In en, this message translates to:
