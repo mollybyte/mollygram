@@ -1074,16 +1074,12 @@ _Visual? _visualFor(MessageRow row, MessageRowActions actions) {
       return null;
   }
   return (
-    widget: _concealIfNeeded(
-      message,
-      size,
-      withUploadOverlay(
-        message: message,
-        child: media,
-        onCancel: actions.onCancelSend,
-        onRetry: actions.onRetrySend,
-      ),
-      onOpen,
+    // The upload controls stay above a spoiler or timer cover.
+    widget: withUploadOverlay(
+      message: message,
+      child: _concealIfNeeded(message, size, media, onOpen),
+      onCancel: actions.onCancelSend,
+      onRetry: actions.onRetrySend,
     ),
     width: size.width,
   );
@@ -1158,16 +1154,16 @@ _Visual _album(MessageRow row, MessageRowActions actions) {
                   (width - gap * (count - 1)) * ratios[i] / sum,
                   height,
                 );
-                return _concealIfNeeded(
-                  cells[i],
-                  size,
-                  _albumCell(
+                return withUploadOverlay(
+                  message: cells[i],
+                  child: _concealIfNeeded(
                     cells[i],
                     size,
-                    _viewer(cells[i], actions),
-                    actions,
+                    _albumCell(cells[i], size, _viewer(cells[i], actions)),
+                    onOpen,
                   ),
-                  onOpen,
+                  onCancel: actions.onCancelSend,
+                  onRetry: actions.onRetrySend,
                 );
               }(),
             ),
@@ -1196,28 +1192,19 @@ Widget _albumCell(
   ConversationMessage message,
   Size size,
   VoidCallback? onTap,
-  MessageRowActions actions,
-) {
-  final cell = switch (message.content) {
-    td.MessagePhoto(:final photo) => PhotoContent(
-      photo: photo,
-      size: size,
-      onTap: onTap,
-    ),
-    td.MessageVideo(:final video) => VideoContent(
-      video: video,
-      size: size,
-      onTap: onTap,
-    ),
-    _ => SizedBox.fromSize(size: size),
-  };
-  return withUploadOverlay(
-    message: message,
-    child: cell,
-    onCancel: actions.onCancelSend,
-    onRetry: actions.onRetrySend,
-  );
-}
+) => switch (message.content) {
+  td.MessagePhoto(:final photo) => PhotoContent(
+    photo: photo,
+    size: size,
+    onTap: onTap,
+  ),
+  td.MessageVideo(:final video) => VideoContent(
+    video: video,
+    size: size,
+    onTap: onTap,
+  ),
+  _ => SizedBox.fromSize(size: size),
+};
 
 /// How many pictures go in each album row, top to bottom. A wide first
 /// picture of three gets a row of its own.

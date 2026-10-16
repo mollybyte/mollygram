@@ -48,6 +48,16 @@ Widget withUploadOverlay({
   final file = uploadFileOf(message.content);
   if (file == null) return child;
   final failed = message.sendState == MessageSendState.failed;
+  final state = message.message.sendingState;
+  // TDLib resends only what it permits as is; the rest can only go.
+  final canRetry =
+      state is td.MessageSendingStateFailed &&
+      state.canRetry &&
+      state.retryAfter <= 0 &&
+      !state.needAnotherSender &&
+      !state.needAnotherReplyQuote &&
+      !state.needDropReply &&
+      state.requiredPaidMessageStarCount == 0;
   return Stack(
     fit: StackFit.passthrough,
     children: [
@@ -58,6 +68,7 @@ Widget withUploadOverlay({
           builder: (context, latest) => UploadBadge(
             progress: uploadProgress(latest),
             failed: failed,
+            canRetry: canRetry,
             onCancel: onCancel == null ? null : () => onCancel(message),
             onRetry: onRetry == null ? null : () => onRetry(message),
           ),
@@ -75,6 +86,7 @@ class UploadBadge extends StatefulWidget {
     super.key,
     required this.progress,
     required this.failed,
+    this.canRetry = true,
     this.onCancel,
     this.onRetry,
   });
@@ -82,6 +94,9 @@ class UploadBadge extends StatefulWidget {
   /// 0 to 1, or null while the upload has not started.
   final double? progress;
   final bool failed;
+
+  /// Whether the failed message can be sent again as it is.
+  final bool canRetry;
   final VoidCallback? onCancel;
   final VoidCallback? onRetry;
 
@@ -139,43 +154,49 @@ class _UploadBadgeState extends State<UploadBadge>
           ),
         ),
         Center(
-          child: AnimatedSwitcher(
-            duration: MgMotion.standard,
-            switchInCurve: MgMotion.enter,
-            switchOutCurve: MgMotion.exitCurve,
-            transitionBuilder: (child, animation) => FadeTransition(
-              opacity: animation,
-              child: ScaleTransition(
-                scale: Tween<double>(begin: 0.92, end: 1).animate(animation),
-                child: child,
+          // A narrow album cell shrinks the controls to fit.
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: AnimatedSwitcher(
+              duration: MgMotion.standard,
+              switchInCurve: MgMotion.enter,
+              switchOutCurve: MgMotion.exitCurve,
+              transitionBuilder: (child, animation) => FadeTransition(
+                opacity: animation,
+                child: ScaleTransition(
+                  scale: Tween<double>(begin: 0.92, end: 1).animate(animation),
+                  child: child,
+                ),
               ),
+              child: failed
+                  ? Row(
+                      key: const ValueKey('failed'),
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (widget.canRetry) ...[
+                          _RoundButton(
+                            icon: _retryIcon,
+                            label: l10n.retryUpload,
+                            onTap: widget.onRetry,
+                          ),
+                          const SizedBox(width: 10),
+                        ],
+                        _RoundButton(
+                          icon: MgIcons.trash,
+                          label: l10n.discardUpload,
+                          onTap: widget.onCancel,
+                        ),
+                      ],
+                    )
+                  : _RoundButton(
+                      key: const ValueKey('sending'),
+                      icon: MgIcons.close,
+                      label: l10n.cancelUpload,
+                      onTap: widget.onCancel,
+                      ring: _spin,
+                      progress: widget.progress,
+                    ),
             ),
-            child: failed
-                ? Row(
-                    key: const ValueKey('failed'),
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _RoundButton(
-                        icon: _retryIcon,
-                        label: l10n.retryUpload,
-                        onTap: widget.onRetry,
-                      ),
-                      const SizedBox(width: 10),
-                      _RoundButton(
-                        icon: MgIcons.trash,
-                        label: l10n.discardUpload,
-                        onTap: widget.onCancel,
-                      ),
-                    ],
-                  )
-                : _RoundButton(
-                    key: const ValueKey('sending'),
-                    icon: MgIcons.close,
-                    label: l10n.cancelUpload,
-                    onTap: widget.onCancel,
-                    ring: _spin,
-                    progress: widget.progress,
-                  ),
           ),
         ),
       ],

@@ -1756,7 +1756,8 @@ final class ConversationController {
   /// Stops sending messages that are still on their way and removes
   /// them, which also ends their uploads.
   Future<void> cancelSending(int chatId, List<int> messageIds) =>
-      deleteMessages(chatId, messageIds, revoke: true);
+      // Unsent messages exist only here; TDLib allows no wider scope.
+      deleteMessages(chatId, messageIds, revoke: false);
 
   /// Tries again to send messages that failed, oldest first.
   Future<void> resendMessages(int chatId, List<int> messageIds) async {

@@ -9,6 +9,7 @@ void main() {
     WidgetTester tester, {
     double? progress,
     bool failed = false,
+    bool canRetry = true,
     VoidCallback? onCancel,
     VoidCallback? onRetry,
   }) => tester.pumpWidget(
@@ -22,6 +23,7 @@ void main() {
         child: UploadBadge(
           progress: progress,
           failed: failed,
+          canRetry: canRetry,
           onCancel: onCancel,
           onRetry: onRetry,
         ),
@@ -54,6 +56,14 @@ void main() {
     expect(retried, 1);
     expect(deleted, 1);
     expect(find.bySemanticsLabel('Cancel sending'), findsNothing);
+  });
+
+  testWidgets('hides retry when TDLib does not allow it', (tester) async {
+    await show(tester, failed: true, canRetry: false);
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.bySemanticsLabel('Try again'), findsNothing);
+    expect(find.bySemanticsLabel('Delete'), findsOneWidget);
   });
 
   testWidgets('waits with a turning ring before the upload starts', (
