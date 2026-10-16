@@ -397,7 +397,7 @@ class RichTextEditingController extends TextEditingController {
           style = style.copyWith(
             fontFamily: 'Menlo',
             fontFamilyFallback: const ['Consolas', 'monospace'],
-            fontSize: MgType.body - 0.5,
+            fontSize: MgType.small,
             color: colors.accent,
           );
         case TextFormat.spoiler:

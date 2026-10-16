@@ -5,6 +5,7 @@ import '../icon_button.dart';
 import '../icons.dart';
 import '../theme/colors.dart';
 import '../theme/theme.dart';
+import '../theme/tokens.dart';
 
 /// A month of days to jump to, as in Telegram for macOS: the month and
 /// year with arrows above a grid of weeks. Days after [today] can't be
@@ -42,7 +43,7 @@ class MgCalendar extends StatefulWidget {
   final int firstWeekday;
 
   static const double cell = 32;
-  static const double width = cell * 7 + 24;
+  static const double width = cell * 7 + MgSpace.l * 2;
 
   @override
   State<MgCalendar> createState() => _MgCalendarState();
@@ -83,10 +84,15 @@ class _MgCalendarState extends State<MgCalendar> {
     final lead = (_month.weekday - widget.firstWeekday + 7) % 7;
     final weeks = ((lead + daysInMonth) / 7).ceil();
     return Glass(
-      radius: 14,
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+      radius: MgRadius.popover,
+      padding: const EdgeInsets.fromLTRB(
+        MgSpace.l,
+        MgSpace.m,
+        MgSpace.l,
+        MgSpace.l,
+      ),
       child: SizedBox(
-        width: MgCalendar.width - 24,
+        width: MgCalendar.width - MgSpace.l * 2,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -113,7 +119,7 @@ class _MgCalendarState extends State<MgCalendar> {
                 ),
               ],
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: MgSpace.s),
             Row(
               children: [
                 for (var i = 0; i < 7; i++)
@@ -132,7 +138,7 @@ class _MgCalendarState extends State<MgCalendar> {
                   ),
               ],
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: MgSpace.xs),
             for (var week = 0; week < weeks; week++)
               Row(
                 children: [
@@ -190,7 +196,7 @@ class _DayState extends State<_Day> {
           dimension: MgCalendar.cell,
           child: Center(
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 120),
+              duration: MgMotion.fast,
               width: 26,
               height: 26,
               alignment: Alignment.center,

@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import '../glass/glass.dart';
 import '../theme/colors.dart';
 import '../theme/theme.dart';
+import '../theme/tokens.dart';
+import 'dialogs.dart';
 
 /// Localized labels of the composer's formatting menu and link sheet.
 @immutable
@@ -62,31 +64,8 @@ Future<String?> showLinkSheet(
   BuildContext context, {
   required FormatLabels labels,
   String initial = '',
-}) => showGeneralDialog<String>(
-  context: context,
-  barrierDismissible: true,
-  barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-  barrierColor: const Color(0x00000000),
-  // The same short, eased entrance as the other sheets.
-  transitionDuration: const Duration(milliseconds: 160),
-  transitionBuilder: (context, animation, _, child) {
-    final curved = CurvedAnimation(
-      parent: animation,
-      curve: Curves.easeOutCubic,
-      reverseCurve: Curves.easeInCubic,
-    );
-    return FadeTransition(
-      opacity: curved,
-      child: ScaleTransition(
-        scale: Tween(begin: 0.96, end: 1.0).animate(curved),
-        child: child,
-      ),
-    );
-  },
-  pageBuilder: (context, _, _) => Center(
-    child: _LinkSheet(labels: labels, initial: initial),
-  ),
-);
+}) =>
+    showMgSheet<String>(context, _LinkSheet(labels: labels, initial: initial));
 
 class _LinkSheet extends StatefulWidget {
   const _LinkSheet({required this.labels, required this.initial});
@@ -134,8 +113,13 @@ class _LinkSheetState extends State<_LinkSheet> {
         child: SizedBox(
           width: 320,
           child: Glass(
-            radius: 14,
-            padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
+            radius: MgRadius.popover,
+            padding: const EdgeInsets.fromLTRB(
+              MgSpace.xl,
+              MgSpace.xl,
+              MgSpace.xl,
+              MgSpace.l,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -144,14 +128,14 @@ class _LinkSheetState extends State<_LinkSheet> {
                   l.linkTitle,
                   style: mgTextStyle(c, weight: FontWeight.w600),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: MgSpace.l),
                 Container(
                   height: 30,
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: MgSpace.ml),
                   alignment: Alignment.centerLeft,
                   decoration: BoxDecoration(
                     color: c.field,
-                    borderRadius: BorderRadius.circular(7),
+                    borderRadius: BorderRadius.circular(MgRadius.small),
                   ),
                   child: TextField(
                     controller: _url,
@@ -166,7 +150,7 @@ class _LinkSheetState extends State<_LinkSheet> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: MgSpace.xl),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
@@ -174,7 +158,7 @@ class _LinkSheetState extends State<_LinkSheet> {
                       label: l.cancel,
                       onTap: () => Navigator.of(context).pop(),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: MgSpace.m),
                     _SheetButton(label: l.apply, filled: true, onTap: _apply),
                   ],
                 ),
@@ -212,11 +196,11 @@ class _SheetButton extends StatelessWidget {
           onTap: onTap,
           child: Container(
             height: 28,
-            padding: const EdgeInsets.symmetric(horizontal: 14),
+            padding: const EdgeInsets.symmetric(horizontal: MgSpace.xl),
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: filled ? c.accent : c.field,
-              borderRadius: BorderRadius.circular(7),
+              borderRadius: BorderRadius.circular(MgRadius.control),
             ),
             child: Text(
               label,

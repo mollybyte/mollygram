@@ -24,7 +24,7 @@ class ChatHeaderBar extends StatelessWidget {
   final Widget actions;
   final Widget? fill;
 
-  static const double height = 54;
+  static const double height = 50;
 
   @override
   Widget build(BuildContext context) {
@@ -158,8 +158,8 @@ class ChatTitleCapsule extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: mgTextStyle(
                             c,
-                            size: 15,
-                            weight: FontWeight.w600,
+                            size: MgType.title,
+                            weight: MgWeight.semibold,
                             height: 1.2,
                           ),
                         ),

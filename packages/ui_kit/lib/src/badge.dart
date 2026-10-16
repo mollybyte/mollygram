@@ -29,13 +29,17 @@ class UnreadBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = MgColors.of(context);
+    // The muted text grey is too light under a white count in dark themes.
+    final mutedFill = c.isDark
+        ? Color.lerp(c.muted, const Color(0xFF000000), 0.35)!
+        : c.muted;
     return Container(
       constraints: const BoxConstraints(minWidth: 18),
       height: 18,
       padding: const EdgeInsets.symmetric(horizontal: 5),
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: onAccent ? c.onAccent : (muted ? c.muted : c.accent),
+        color: onAccent ? c.onAccent : (muted ? mutedFill : c.accent),
         borderRadius: BorderRadius.circular(9),
       ),
       child: Text(
@@ -86,7 +90,7 @@ class GlyphBadge extends StatelessWidget {
           : Text(
               '@',
               style: TextStyle(
-                fontSize: 11.5,
+                fontSize: 12,
                 height: 1,
                 fontWeight: FontWeight.w700,
                 color: fg,

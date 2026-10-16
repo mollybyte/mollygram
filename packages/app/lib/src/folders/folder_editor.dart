@@ -275,7 +275,7 @@ class _FolderEditorState extends ConsumerState<FolderEditor> {
           width: 440,
           height: 600,
           child: Glass(
-            radius: 14,
+            radius: MgRadius.popover,
             padding: EdgeInsets.zero,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -532,8 +532,13 @@ class _DeleteConfirmState extends State<_DeleteConfirm> {
         child: SizedBox(
           width: 320,
           child: Glass(
-            radius: 14,
-            padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
+            radius: MgRadius.popover,
+            padding: const EdgeInsets.fromLTRB(
+              MgSpace.xl,
+              MgSpace.xl,
+              MgSpace.xl,
+              MgSpace.l,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1098,7 +1103,7 @@ class _DestructiveButtonState extends State<_DestructiveButton> {
                   : _hover && enabled
                   ? red.withValues(alpha: 0.1)
                   : const Color(0x00000000),
-              borderRadius: BorderRadius.circular(7),
+              borderRadius: BorderRadius.circular(MgRadius.control),
             ),
             child: Text(
               widget.label,

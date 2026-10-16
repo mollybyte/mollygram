@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/colors.dart';
 import '../theme/theme.dart';
+import '../theme/tokens.dart';
 
 /// The main action of a form: a 34 px accent-filled button. While [loading]
 /// it shows a spinner and ignores taps.
@@ -47,7 +48,7 @@ class MgPrimaryButton extends StatelessWidget {
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: c.accent,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(MgRadius.control),
               ),
               child: loading
                   ? SizedBox.square(
@@ -110,11 +111,11 @@ class _MgTextButtonState extends State<MgTextButton> {
           onTap: widget.onPressed,
           child: Container(
             height: 30,
-            padding: const EdgeInsets.symmetric(horizontal: 10),
+            padding: const EdgeInsets.symmetric(horizontal: MgSpace.ml),
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: _hover && enabled ? c.hover : const Color(0x00000000),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(MgRadius.control),
             ),
             child: Text(
               widget.label,

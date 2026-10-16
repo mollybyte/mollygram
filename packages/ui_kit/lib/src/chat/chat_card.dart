@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 import '../theme/colors.dart';
+import '../theme/tokens.dart';
 
 /// The card a conversation lies on: a solid [MgColors.card] sheet with
 /// rounded corners and a soft shadow, raised over the window frame. Its
@@ -12,7 +13,7 @@ class ChatCard extends StatelessWidget {
   final Widget child;
   final Widget? background;
 
-  static const double radius = 12;
+  static const double radius = MgRadius.card;
 
   @override
   Widget build(BuildContext context) {

@@ -4581,6 +4581,15 @@ class AppLocalizationsRu extends AppLocalizations {
   String get nightTo => 'До';
 
   @override
+  String get blurTheme => 'Vesper Blur';
+
+  @override
+  String get blurThemeHint => 'Тёмное матовое окно, размывающее рабочий стол под ним. Пока включено, заменяет тему выше.';
+
+  @override
+  String get blurOpacity => 'Непрозрачность окна';
+
+  @override
   String get layout => 'Вид';
 
   @override

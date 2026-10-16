@@ -7,31 +7,7 @@ import '../../l10n/app_localizations.dart';
 /// Shows [sheet] over the window, with the short eased entrance of the
 /// other sheets; the window is not dimmed.
 Future<T?> showManageSheet<T>(BuildContext context, Widget sheet) =>
-    showGeneralDialog<T>(
-      context: context,
-      barrierDismissible: true,
-      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-      barrierColor: const Color(0x00000000),
-      transitionDuration: const Duration(milliseconds: 180),
-      transitionBuilder: (context, animation, _, child) {
-        final curved = CurvedAnimation(
-          parent: animation,
-          curve: Curves.easeOutCubic,
-          reverseCurve: Curves.easeInCubic,
-        );
-        return FadeTransition(
-          opacity: curved,
-          child: ScaleTransition(
-            scale: Tween(begin: 0.96, end: 1.0).animate(curved),
-            child: child,
-          ),
-        );
-      },
-      pageBuilder: (context, _, _) => Material(
-        type: MaterialType.transparency,
-        child: Center(child: sheet),
-      ),
-    );
+    showMgSheet<T>(context, sheet);
 
 /// The glass card of a management sheet: a title row, the [child] and,
 /// at the bottom, Cancel and the main action. Esc cancels.
@@ -133,8 +109,13 @@ class ManageSheetFrame extends StatelessWidget {
           width: 360,
           height: height,
           child: Glass(
-            radius: 14,
-            padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+            radius: MgRadius.popover,
+            padding: const EdgeInsets.fromLTRB(
+              MgSpace.ml,
+              MgSpace.m,
+              MgSpace.ml,
+              MgSpace.ml,
+            ),
             child: body,
           ),
         ),

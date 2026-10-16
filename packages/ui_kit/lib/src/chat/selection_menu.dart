@@ -4,6 +4,7 @@ import '../glass/glass.dart';
 import '../icons.dart';
 import '../theme/colors.dart';
 import '../theme/theme.dart';
+import '../theme/tokens.dart';
 
 /// One formatting button in the compact row of a [SelectionMenu].
 @immutable
@@ -64,19 +65,19 @@ class SelectionMenu extends StatelessWidget {
     final below = anchors.secondaryAnchor ?? above;
     return CustomSingleChildLayout(
       delegate: TextSelectionToolbarLayoutDelegate(
-        anchorAbove: above - const Offset(0, 8),
-        anchorBelow: below + const Offset(0, 8),
+        anchorAbove: above - const Offset(0, MgSpace.m),
+        anchorBelow: below + const Offset(0, MgSpace.m),
       ),
       child: TweenAnimationBuilder<double>(
         tween: Tween(begin: 0, end: 1),
         duration: MediaQuery.disableAnimationsOf(context)
             ? Duration.zero
-            : const Duration(milliseconds: 140),
-        curve: const Cubic(0.23, 1, 0.32, 1),
+            : MgMotion.fast,
+        curve: MgMotion.enter,
         builder: (context, t, child) => Opacity(
           opacity: t,
           child: Transform.scale(
-            scale: 0.96 + 0.04 * t,
+            scale: 0.97 + 0.03 * t,
             alignment: Alignment.bottomCenter,
             child: child,
           ),
@@ -87,8 +88,11 @@ class SelectionMenu extends StatelessWidget {
             child: ConstrainedBox(
               constraints: const BoxConstraints(minWidth: 232),
               child: Glass(
-                radius: 12,
-                padding: const EdgeInsets.all(5),
+                radius: MgRadius.popover,
+                // Keeps the rows' corners concentric with the panel's.
+                padding: const EdgeInsets.all(
+                  MgRadius.popover - MgRadius.small,
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -123,7 +127,10 @@ class _Divider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+    padding: const EdgeInsets.symmetric(
+      vertical: MgSpace.xs,
+      horizontal: MgSpace.m,
+    ),
     child: SizedBox(
       height: 1,
       child: ColoredBox(color: MgColors.of(context).separator),
@@ -159,7 +166,7 @@ class _FormatButtonState extends State<_FormatButton> {
           behavior: HitTestBehavior.opaque,
           onTap: format.onPressed,
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 100),
+            duration: MgMotion.fast,
             width: 26,
             height: 26,
             alignment: Alignment.center,
@@ -169,7 +176,7 @@ class _FormatButtonState extends State<_FormatButton> {
                   : _hover
                   ? c.fg.withValues(alpha: 0.08)
                   : const Color(0x00000000),
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(MgRadius.small),
             ),
             child: format.glyph(color),
           ),
@@ -205,10 +212,10 @@ class _CommandRowState extends State<_CommandRow> {
         onTap: command.onPressed,
         child: Container(
           height: 26,
-          padding: const EdgeInsets.symmetric(horizontal: 10),
+          padding: const EdgeInsets.symmetric(horizontal: MgSpace.ml),
           decoration: BoxDecoration(
             color: _hover ? c.accent : const Color(0x00000000),
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(MgRadius.small),
           ),
           child: Row(
             children: [
@@ -221,7 +228,7 @@ class _CommandRowState extends State<_CommandRow> {
                 ),
               ),
               if (command.shortcut case final shortcut?) ...[
-                const SizedBox(width: 20),
+                const SizedBox(width: MgSpace.xxl),
                 Text(
                   shortcut,
                   style: mgTextStyle(
