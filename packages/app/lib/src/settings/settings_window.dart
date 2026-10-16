@@ -530,7 +530,7 @@ class _PageSwitcher extends StatelessWidget {
   );
 }
 
-class _SidebarItem extends StatefulWidget {
+class _SidebarItem extends StatelessWidget {
   const _SidebarItem({
     super.key,
     required this.section,
@@ -543,51 +543,37 @@ class _SidebarItem extends StatefulWidget {
   final VoidCallback onTap;
 
   @override
-  State<_SidebarItem> createState() => _SidebarItemState();
-}
-
-class _SidebarItemState extends State<_SidebarItem> {
-  var _hover = false;
-
-  @override
   Widget build(BuildContext context) {
     final c = MgColors.of(context);
     final l10n = AppLocalizations.of(context);
-    final selected = widget.selected;
     return Semantics(
       button: true,
       selected: selected,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        onEnter: (_) => setState(() => _hover = true),
-        onExit: (_) => setState(() => _hover = false),
-        child: GestureDetector(
-          onTap: widget.onTap,
-          child: SettingsSidebarTile(
-            selected: selected,
-            hover: _hover,
-            height: 34,
-            child: Row(
-              children: [
-                SettingsSymbol(
-                  icon: widget.section.icon,
-                  tint: widget.section.tint,
-                ),
-                const SizedBox(width: MgSpace.ml),
-                Expanded(
-                  child: Text(
-                    widget.section.title(l10n),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: mgTextStyle(
-                      c,
-                      color: selected ? c.onAccent : null,
-                      height: 1.2,
-                    ),
+      child: MgPressable(
+        scale: 1,
+        onTap: onTap,
+        builder: (context, state) => SettingsSidebarTile(
+          selected: selected,
+          hover: state.hovered,
+          pressed: state.pressed,
+          height: 34,
+          child: Row(
+            children: [
+              SettingsSymbol(icon: section.icon, tint: section.tint),
+              const SizedBox(width: MgSpace.ml),
+              Expanded(
+                child: Text(
+                  section.title(l10n),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: mgTextStyle(
+                    c,
+                    color: selected ? c.onAccent : null,
+                    height: 1.2,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -602,12 +588,16 @@ class SettingsSidebarTile extends StatelessWidget {
     super.key,
     required this.selected,
     required this.hover,
+    this.pressed = false,
     required this.height,
     required this.child,
   });
 
   final bool selected;
   final bool hover;
+
+  /// Held down: a shade deeper than hover, before the click selects it.
+  final bool pressed;
   final double height;
   final Widget child;
 
@@ -615,13 +605,15 @@ class SettingsSidebarTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = MgColors.of(context);
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 120),
+      duration: pressed ? MgMotion.press : const Duration(milliseconds: 120),
       curve: settingsCurve,
       height: height,
       padding: const EdgeInsets.symmetric(horizontal: 6),
       decoration: BoxDecoration(
         color: selected
             ? c.accent
+            : pressed
+            ? Color.alphaBlend(c.hover, c.hover)
             : hover
             ? c.hover
             : c.accent.withValues(alpha: 0),

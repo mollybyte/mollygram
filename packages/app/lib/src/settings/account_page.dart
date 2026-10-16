@@ -42,8 +42,6 @@ class AccountCard extends ConsumerStatefulWidget {
 }
 
 class _AccountCardState extends ConsumerState<AccountCard> {
-  var _hover = false;
-
   @override
   Widget build(BuildContext context) {
     final c = MgColors.of(context);
@@ -54,53 +52,50 @@ class _AccountCardState extends ConsumerState<AccountCard> {
       button: true,
       selected: selected,
       label: name,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        onEnter: (_) => setState(() => _hover = true),
-        onExit: (_) => setState(() => _hover = false),
-        child: GestureDetector(
-          onTap: widget.onTap,
-          child: SettingsSidebarTile(
-            selected: selected,
-            hover: _hover,
-            height: 64,
-            child: Row(
-              children: [
-                SenderAvatar(name: name, size: 44, photo: profile?.photo),
-                const SizedBox(width: MgSpace.ml),
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: mgTextStyle(
-                          c,
-                          size: MgType.title,
-                          weight: MgWeight.medium,
-                          color: selected ? c.onAccent : null,
-                          height: 1.3,
-                        ),
+      child: MgPressable(
+        scale: 1,
+        onTap: widget.onTap,
+        builder: (context, state) => SettingsSidebarTile(
+          selected: selected,
+          hover: state.hovered,
+          pressed: state.pressed,
+          height: 64,
+          child: Row(
+            children: [
+              SenderAvatar(name: name, size: 44, photo: profile?.photo),
+              const SizedBox(width: MgSpace.ml),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: mgTextStyle(
+                        c,
+                        size: MgType.title,
+                        weight: MgWeight.medium,
+                        color: selected ? c.onAccent : null,
+                        height: 1.3,
                       ),
-                      Text(
-                        formatPhone(profile?.phoneNumber ?? ''),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: mgTextStyle(
-                          c,
-                          size: MgType.small,
-                          color: selected ? c.onAccentSecondary : c.fg2,
-                          height: 1.3,
-                        ),
+                    ),
+                    Text(
+                      formatPhone(profile?.phoneNumber ?? ''),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: mgTextStyle(
+                        c,
+                        size: MgType.small,
+                        color: selected ? c.onAccentSecondary : c.fg2,
+                        height: 1.3,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

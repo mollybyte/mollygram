@@ -122,6 +122,29 @@ void pressableTests() {
     },
   );
 
+  testWidgets('a primary button cross-fades its label into the spinner', (
+    tester,
+  ) async {
+    Widget button(bool loading) => MaterialApp(
+      theme: buildMgTheme(MgColors.light),
+      home: Center(
+        child: MgPrimaryButton(
+          label: 'Next',
+          loading: loading,
+          onPressed: () {},
+        ),
+      ),
+    );
+    await tester.pumpWidget(button(false));
+    await tester.pumpWidget(button(true));
+    await tester.pump(const Duration(milliseconds: 40));
+    // Mid-way both are on screen, the label fading out.
+    expect(find.text('Next'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    await tester.pump(MgMotion.fast * 2);
+    expect(find.text('Next'), findsNothing);
+  });
+
   testWidgets('MgPressable sinks on pointer down and fires on tap', (
     tester,
   ) async {

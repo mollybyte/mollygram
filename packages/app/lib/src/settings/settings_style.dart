@@ -302,13 +302,7 @@ class SettingsRow extends StatefulWidget implements SettingsGroupRow {
 }
 
 class _SettingsRowState extends State<SettingsRow> {
-  var _pressed = false;
-  var _hover = false;
   final _leading = GlobalKey();
-
-  void _press(bool value) {
-    if (_pressed != value) setState(() => _pressed = value);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -317,93 +311,87 @@ class _SettingsRowState extends State<SettingsRow> {
     final tappable = widget.onTap != null;
     final subtitle = widget.subtitle;
     final separator = _RowSeparator.of(context);
-    Widget row = AnimatedContainer(
-      duration: const Duration(milliseconds: 90),
-      constraints: const BoxConstraints(minHeight: 40),
-      padding: const EdgeInsets.symmetric(
-        horizontal: settingsInset,
-        vertical: 7,
-      ),
-      color: _pressed
-          ? s.pressed
-          : _hover && tappable
-          ? c.hover
-          : s.group.withValues(alpha: 0),
-      child: Row(
-        children: [
-          if (widget.leading != null) ...[
-            KeyedSubtree(key: _leading, child: widget.leading!),
-            const SizedBox(width: _leadingGap),
-          ],
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  widget.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: mgTextStyle(
-                    c,
-                    color: widget.destructive ? MgDestructive.color : null,
-                    height: 1.3,
-                  ),
-                ),
-                if (subtitle != null && subtitle.isNotEmpty)
+    Widget body({bool hover = false, bool pressed = false}) {
+      Widget row = AnimatedContainer(
+        duration: pressed ? MgMotion.press : const Duration(milliseconds: 90),
+        constraints: const BoxConstraints(minHeight: 40),
+        padding: const EdgeInsets.symmetric(
+          horizontal: settingsInset,
+          vertical: 7,
+        ),
+        color: pressed
+            ? s.pressed
+            : hover
+            ? c.hover
+            : s.group.withValues(alpha: 0),
+        child: Row(
+          children: [
+            if (widget.leading != null) ...[
+              KeyedSubtree(key: _leading, child: widget.leading!),
+              const SizedBox(width: _leadingGap),
+            ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
                   Text(
-                    subtitle,
-                    maxLines: 3,
+                    widget.title,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: mgTextStyle(
                       c,
-                      size: MgType.small,
-                      color: c.fg2,
-                      height: 1.35,
+                      color: widget.destructive ? MgDestructive.color : null,
+                      height: 1.3,
                     ),
                   ),
-              ],
+                  if (subtitle != null && subtitle.isNotEmpty)
+                    Text(
+                      subtitle,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: mgTextStyle(
+                        c,
+                        size: MgType.small,
+                        color: c.fg2,
+                        height: 1.35,
+                      ),
+                    ),
+                ],
+              ),
             ),
-          ),
-          if (widget.trailing != null) ...[
-            const SizedBox(width: 10),
-            widget.trailing!,
+            if (widget.trailing != null) ...[
+              const SizedBox(width: 10),
+              widget.trailing!,
+            ],
+            if (widget.chevron) ...[
+              const SizedBox(width: 6),
+              MgIcon(MgIcons.chevron, size: 12, stroke: 1.8, color: c.muted),
+            ],
           ],
-          if (widget.chevron) ...[
-            const SizedBox(width: 6),
-            MgIcon(MgIcons.chevron, size: 12, stroke: 1.8, color: c.muted),
-          ],
-        ],
-      ),
-    );
-    if (separator) {
-      row = CustomPaint(
-        foregroundPainter: _SeparatorPainter(
-          color: c.separator,
-          leading: widget.leading == null ? null : _leading,
         ),
-        child: row,
       );
+      if (separator) {
+        row = CustomPaint(
+          foregroundPainter: _SeparatorPainter(
+            color: c.separator,
+            leading: widget.leading == null ? null : _leading,
+          ),
+          child: row,
+        );
+      }
+      return row;
     }
-    if (!tappable) return MergeSemantics(child: row);
-    row = MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _hover = true),
-      onExit: (_) => setState(() {
-        _hover = false;
-        _pressed = false;
-      }),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTapDown: (_) => _press(true),
-        onTapCancel: () => _press(false),
-        onTapUp: (_) => _press(false),
-        onTap: widget.onTap,
-        child: row,
-      ),
-    );
+
+    if (!tappable) return MergeSemantics(child: body());
     return MergeSemantics(
-      child: Semantics(button: true, onTap: widget.onTap, child: row),
+      child: MgPressable(
+        scale: 1,
+        focusRadius: 0,
+        onTap: widget.onTap,
+        builder: (context, state) =>
+            body(hover: state.hovered, pressed: state.pressed),
+      ),
     );
   }
 }
@@ -444,7 +432,7 @@ class _SeparatorPainter extends CustomPainter {
 }
 
 /// A small macOS push button, such as "Log out…" under a group.
-class SettingsButton extends StatefulWidget {
+class SettingsButton extends StatelessWidget {
   const SettingsButton({
     super.key,
     required this.label,
@@ -457,52 +445,39 @@ class SettingsButton extends StatefulWidget {
   final bool destructive;
 
   @override
-  State<SettingsButton> createState() => _SettingsButtonState();
-}
-
-class _SettingsButtonState extends State<SettingsButton> {
-  var _pressed = false;
-
-  @override
   Widget build(BuildContext context) {
     final c = MgColors.of(context);
     final s = SettingsColors.of(context);
-    final enabled = widget.onPressed != null;
-    return Semantics(
-      button: true,
-      enabled: enabled,
-      label: widget.label,
-      onTap: widget.onPressed,
-      excludeSemantics: true,
-      child: MouseRegion(
-        cursor: enabled ? SystemMouseCursors.click : MouseCursor.defer,
-        child: GestureDetector(
-          onTapDown: enabled ? (_) => setState(() => _pressed = true) : null,
-          onTapCancel: () => setState(() => _pressed = false),
-          onTapUp: (_) => setState(() => _pressed = false),
-          onTap: widget.onPressed,
-          child: AnimatedOpacity(
-            duration: settingsMotionOf(context),
-            opacity: enabled ? 1 : 0.45,
-            child: Container(
-              height: 24,
-              padding: const EdgeInsets.symmetric(horizontal: 11),
-              decoration: BoxDecoration(
-                color: _pressed ? s.pressed : c.field,
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: s.groupBorder, width: 0.5),
-              ),
-              child: Center(
-                widthFactor: 1,
-                child: Text(
-                  widget.label,
-                  maxLines: 1,
-                  style: mgTextStyle(
-                    c,
-                    color: widget.destructive ? MgDestructive.color : null,
-                    height: 1.2,
-                  ),
-                ),
+    final enabled = onPressed != null;
+    return MgPressable(
+      onTap: onPressed,
+      semanticsLabel: label,
+      focusRadius: 6,
+      builder: (context, state) => AnimatedOpacity(
+        duration: settingsMotionOf(context),
+        opacity: enabled ? 1 : 0.45,
+        child: AnimatedContainer(
+          duration: state.pressed ? MgMotion.press : MgMotion.fast,
+          height: 24,
+          padding: const EdgeInsets.symmetric(horizontal: 11),
+          decoration: BoxDecoration(
+            color: state.pressed
+                ? s.pressed
+                : state.hovered
+                ? Color.alphaBlend(c.hover, c.field)
+                : c.field,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: s.groupBorder, width: 0.5),
+          ),
+          child: Center(
+            widthFactor: 1,
+            child: Text(
+              label,
+              maxLines: 1,
+              style: mgTextStyle(
+                c,
+                color: destructive ? MgDestructive.color : null,
+                height: 1.2,
               ),
             ),
           ),

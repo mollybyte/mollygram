@@ -431,6 +431,8 @@ void main() {
       expect(taps, 1);
 
       await pump(loading: true);
+      // The label fades out under the spinner.
+      await tester.pump(MgMotion.fast * 2);
       expect(find.text('Next'), findsNothing);
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
       await tester.tap(find.byType(MgPrimaryButton));

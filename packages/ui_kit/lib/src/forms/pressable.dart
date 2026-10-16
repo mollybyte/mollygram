@@ -66,18 +66,24 @@ class _MgPressableState extends State<MgPressable> {
 
   late final FocusNode _focusNode = FocusNode(
     debugLabel: 'MgPressable',
-    canRequestFocus: widget.focusable,
-    skipTraversal: !widget.focusable,
+    canRequestFocus: _focusable,
+    skipTraversal: !_focusable,
   );
 
   bool get _enabled => widget.onTap != null;
+
+  bool get _focusable => widget.focusable && _enabled;
 
   @override
   void didUpdateWidget(MgPressable old) {
     super.didUpdateWidget(old);
     _focusNode
-      ..canRequestFocus = widget.focusable
-      ..skipTraversal = !widget.focusable;
+      ..canRequestFocus = _focusable
+      ..skipTraversal = !_focusable;
+    if (!_enabled) {
+      _hover = false;
+      _pressed = false;
+    }
   }
 
   @override
@@ -119,9 +125,10 @@ class _MgPressableState extends State<MgPressable> {
       onTap: widget.onTap,
       excludeSemantics: widget.semanticsLabel != null,
       child: FocusableActionDetector(
-        // Off only without a tap: [focusable] keeps the hover feedback and
-        // turns just the keyboard focus off.
-        enabled: _enabled,
+        // Always on: switching it off rewraps the subtree and drops the
+        // state below (a label to spinner cross-fade, say). Without a tap
+        // the node takes no focus and the actions do nothing.
+        enabled: true,
         focusNode: _focusNode,
         mouseCursor:
             widget.cursor ??
