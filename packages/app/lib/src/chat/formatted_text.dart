@@ -340,7 +340,7 @@ List<InlineSpan> buildEntitySpans(
           style = style.copyWith(
             fontFamily: 'Menlo',
             fontFamilyFallback: const ['Consolas', 'monospace'],
-            fontSize: MgType.body - 0.5,
+            fontSize: MgType.small,
             // A colored block keeps its plain text in the text color.
             color: highlights.containsKey(e.offset) ? null : colors.accent,
           );

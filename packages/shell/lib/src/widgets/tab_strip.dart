@@ -138,7 +138,7 @@ class _TabPillState extends State<_TabPill> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 12.5,
+                        fontSize: 13,
                         fontWeight: FontWeight.w500,
                         color: widget.selected || _hover ? c.fg : c.fg2,
                       ),

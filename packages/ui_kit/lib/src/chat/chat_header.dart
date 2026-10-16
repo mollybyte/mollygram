@@ -158,8 +158,8 @@ class ChatTitleCapsule extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: mgTextStyle(
                             c,
-                            size: 15,
-                            weight: FontWeight.w600,
+                            size: MgType.title,
+                            weight: MgWeight.semibold,
                             height: 1.2,
                           ),
                         ),

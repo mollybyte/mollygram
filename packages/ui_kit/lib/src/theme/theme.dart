@@ -101,29 +101,34 @@ abstract final class MgWeight {
 }
 
 /// Type scale. Everything uses the system font; sizes are in logical
-/// pixels and the base size is 14, a step over the mockup's 13, which read
-/// small on a real screen.
+/// pixels and whole numbers only, on the steps TelegramSwift uses
+/// (11/12/13/14/15/18): half-pixel steps next to each other read as
+/// mismatched text. The base size is 14, a step over the official 13,
+/// which read small on a real screen.
 abstract final class MgType {
   /// Body text: 14.
   static const double body = 14;
 
-  /// Chat titles in the header, the composer: 14.5.
-  static const double title = 14.5;
+  /// Chat titles in the header, the composer: 14.
+  static const double title = 14;
 
   /// Folder tabs: 13.
   static const double tab = 13;
 
-  /// Date pills: 12.5.
-  static const double small = 12.5;
+  /// Date pills, reply and forward blocks: 13.
+  static const double small = 13;
 
   /// Times in the chat list, header subtitles, folder counters: 12.
   static const double caption = 12;
 
-  /// Message meta, badges, file sizes: 11.5.
-  static const double meta = 11.5;
+  /// Message meta, badges, file sizes: 12.
+  static const double meta = 12;
 
-  /// Message text: 15.
-  static const double message = 15;
+  /// Fine print: 11.
+  static const double tiny = 11;
+
+  /// Message text: 14, one step over the official client's 13.
+  static const double message = 14;
 }
 
 /// SF Pro's tracking for [size], as the system applies it to its own

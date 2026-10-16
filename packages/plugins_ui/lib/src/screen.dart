@@ -281,7 +281,7 @@ class _Sidebar extends StatelessWidget {
                 Text(
                   state,
                   style: TextStyle(
-                    fontSize: 11.5,
+                    fontSize: 12,
                     color: on ? const Color(0xCCFFFFFF) : c.fg2,
                   ),
                 ),
