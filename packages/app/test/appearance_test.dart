@@ -7,6 +7,39 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 void main() {
   MgColors colorsOf(ThemeData theme) => theme.extension<MgColors>()!;
 
+  group('vesperBlur', () {
+    double luminanceOver(Color top, Color backdrop) =>
+        Color.alphaBlend(top, backdrop).computeLuminance();
+    double contrast(Color fg, Color bg) {
+      final a = fg.computeLuminance() + 0.05;
+      final b = bg.computeLuminance() + 0.05;
+      return a > b ? a / b : b / a;
+    }
+
+    test('text stays above 4.5:1 on the frame over a bright desktop', () {
+      // The native material already darkens the desktop; a mid grey is the
+      // brightest the blur shows in practice, white is the extreme.
+      for (final opacity in [
+        Preferences.minBlurOpacity,
+        Preferences.defaultBlurOpacity,
+        Preferences.maxBlurOpacity,
+      ]) {
+        final c = vesperBlur(MgColors.dark, opacity);
+        final frame = Color.alphaBlend(c.frame, const Color(0xFF5A5A5A));
+        expect(contrast(c.fg, frame), greaterThan(4.5));
+        expect(contrast(c.fg2, frame), greaterThan(4.5));
+        expect(contrast(c.onAccent, c.accent), greaterThan(4.5));
+        expect(luminanceOver(c.frame, const Color(0xFF5A5A5A)), lessThan(0.1));
+      }
+    });
+
+    test('the frame is translucent by the chosen opacity', () {
+      final c = vesperBlur(MgColors.dark, 0.75);
+      expect(c.frame.a, closeTo(0.75, 0.01));
+      expect(c.card.a, greaterThan(c.frame.a));
+    });
+  });
+
   group('appThemes', () {
     test('a tinted wallpaper changes the glass and secondary text', () {
       final themes = appThemes(

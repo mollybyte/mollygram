@@ -7568,6 +7568,24 @@ abstract class AppLocalizations {
   /// **'To'**
   String get nightTo;
 
+  /// No description provided for @blurTheme.
+  ///
+  /// In en, this message translates to:
+  /// **'Vesper Blur'**
+  String get blurTheme;
+
+  /// No description provided for @blurThemeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A dark, matte window that blurs the desktop behind it. Replaces the theme above while on.'**
+  String get blurThemeHint;
+
+  /// No description provided for @blurOpacity.
+  ///
+  /// In en, this message translates to:
+  /// **'Window opacity'**
+  String get blurOpacity;
+
   /// No description provided for @layout.
   ///
   /// In en, this message translates to:

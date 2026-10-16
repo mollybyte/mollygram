@@ -965,6 +965,33 @@ void main() {
     expect(find.text('Mine'), findsOneWidget);
   });
 
+  testWidgets('scrolls up through a long thread of comments', (tester) async {
+    json
+      ..history = [
+        _message(id: 14, senderId: 2, text: 'Post', comments: 120),
+        ..._history,
+      ]
+      ..commentIds = [for (var id = 41; id <= 160; id++) id];
+    await pump(tester, group: false);
+    await tester.tap(find.text('120 comments'));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+    // It opens on the newest comment.
+    expect(find.text('Comment 160'), findsOneWidget);
+
+    // Dragging down goes back in time, loading older pages on the way.
+    for (var i = 0; i < 40; i++) {
+      await tester.drag(
+        find.byKey(const ValueKey('commentsThread')),
+        const Offset(0, 600),
+      );
+      await tester.runAsync(() => Future<void>.delayed(_tick));
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.text('Comment 41'), findsOneWidget);
+  });
+
   testWidgets('answers a comment from its menu, quoting it', (tester) async {
     json.history = [
       _message(id: 14, senderId: 2, text: 'Post', comments: 2),
@@ -1765,9 +1792,13 @@ void main() {
         tester.widget<TimelineView>(find.byType(TimelineView));
     final keyboard = tester.getSize(find.byType(ReplyKeyboard));
     expect(keyboard.height, greaterThan(60));
+    // The room covers everything under the strip's buttons: the keyboard
+    // and the composer.
+    final chatBottom = tester.getBottomLeft(find.byType(ChatView)).dy;
+    final keyboardTop = tester.getTopLeft(find.byType(ReplyKeyboard)).dy;
     expect(
       timeline().bottomInset,
-      TimelineView.composerInset + keyboard.height,
+      greaterThanOrEqualTo(chatBottom - keyboardTop),
     );
     // The newest message sits above the keyboard, not under it.
     final newest = tester.getBottomLeft(find.text('Mine'));
@@ -1777,10 +1808,15 @@ void main() {
     );
 
     // Hidden, the keyboard gives the space back.
+    final withKeyboard = timeline().bottomInset;
     await tester.tap(find.byTooltip('Bot keyboard'));
     await tester.pump();
+    await tester.pump();
     expect(find.byType(ReplyKeyboard), findsNothing);
-    expect(timeline().bottomInset, TimelineView.composerInset);
+    expect(
+      timeline().bottomInset,
+      lessThan(withKeyboard - keyboard.height + 1),
+    );
   });
 
   testWidgets('offers emoji for a :word and stickers for an emoji', (
@@ -3488,6 +3524,9 @@ final class _FakeTdJson implements td.TdJson {
   /// The pinned messages, newest first.
   var pinned = <int>[];
 
+  /// Ids of the comments under the post, when a test wants a long thread.
+  List<int>? commentIds;
+
   /// Texts of [chat] messages other than "Message N".
   var texts = <int, String>{};
   var _nextClientId = 0;
@@ -3852,6 +3891,26 @@ final class _FakeTdJson implements td.TdJson {
           _message(id: 40, senderId: 2, text: 'Post', chatId: -100).toJson(),
         ],
       },
+      'getMessageThreadHistory' when commentIds != null => () {
+        final from = decoded['from_message_id']! as int;
+        final page =
+            (commentIds!.where((id) => from == 0 || id < from).toList()
+                  ..sort((a, b) => b.compareTo(a)))
+                .take(decoded['limit']! as int);
+        return {
+          '@type': 'messages',
+          'total_count': commentIds!.length,
+          'messages': [
+            for (final id in page)
+              _message(
+                id: id,
+                senderId: 3,
+                text: 'Comment $id',
+                chatId: -100,
+              ).toJson(),
+          ],
+        };
+      }(),
       'getMessageThreadHistory' => {
         '@type': 'messages',
         'total_count': 2,

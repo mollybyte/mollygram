@@ -147,7 +147,9 @@ class _KeyState extends State<_Key> {
       td.ButtonStyleDanger() => (_danger, const Color(0xFFFFFFFF)),
       td.ButtonStyleSuccess() => (_success, const Color(0xFFFFFFFF)),
       td.ButtonStyleLink() => (const Color(0x00000000), c.accent),
-      _ => (c.datePill, c.fg),
+      // A light neutral fill under the regular text colour; the date pill
+      // is darker and carries white text.
+      _ => (const Color(0x2E000000), c.fg),
     };
     final animate = !MediaQuery.disableAnimationsOf(context);
     final pill = AnimatedContainer(

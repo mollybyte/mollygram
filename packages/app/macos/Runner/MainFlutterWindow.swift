@@ -14,6 +14,9 @@ class MainFlutterWindow: NSWindow {
   /// The user defaults key under which AppKit keeps the window frame.
   private static let frameName = "MainWindow"
 
+  /// The blur behind the window while the Vesper Blur theme is on.
+  private var vibrancyView: NSVisualEffectView?
+
   private var notifications: NotificationsChannel?
   private var voiceCapture: VoiceCaptureChannel?
   private var videoNoteCapture: VideoNoteCaptureChannel?
@@ -53,13 +56,26 @@ class MainFlutterWindow: NSWindow {
       case "startDrag":
         if let event = NSApp.currentEvent { self.performDrag(with: event) }
         result(nil)
+      case "setBlurred":
+        self.setBlurred(call.arguments as? Bool ?? false)
+        result(nil)
       case "setBackgroundColor":
-        if let argb = call.arguments as? Int {
+        // The blurred theme keeps the window clear.
+        if self.vibrancyView == nil, let argb = call.arguments as? Int {
           self.backgroundColor = NSColor(
             srgbRed: CGFloat((argb >> 16) & 0xFF) / 255,
             green: CGFloat((argb >> 8) & 0xFF) / 255,
             blue: CGFloat(argb & 0xFF) / 255,
             alpha: 1)
+        }
+        result(nil)
+      case "setAppearance":
+        // The app's own theme, not the system's: AppKit draws the window's
+        // outline and shadow for the window's appearance. The blurred theme
+        // keeps its own dark appearance.
+        if self.vibrancyView == nil {
+          let dark = call.arguments as? Bool ?? false
+          self.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
         }
         result(nil)
       case "zoom":
@@ -117,6 +133,35 @@ class MainFlutterWindow: NSWindow {
 
     super.awakeFromNib()
     placeWindowButtons()
+  }
+
+  /// Turns the blurred, see-through window on or off. On, the window stops
+  /// being opaque and a vibrancy view behind Flutter's surface blurs what
+  /// lies under the window; the dark appearance keeps the material matte
+  /// graphite whatever the system theme is.
+  private func setBlurred(_ on: Bool) {
+    if on {
+      if vibrancyView == nil, let frameView = contentView?.superview,
+         let content = contentView {
+        let effect = NSVisualEffectView(frame: frameView.bounds)
+        effect.autoresizingMask = [.width, .height]
+        effect.material = .underWindowBackground
+        effect.blendingMode = .behindWindow
+        effect.state = .active
+        frameView.addSubview(effect, positioned: .below, relativeTo: content)
+        vibrancyView = effect
+      }
+      appearance = NSAppearance(named: .darkAqua)
+      isOpaque = false
+      backgroundColor = .clear
+    } else {
+      vibrancyView?.removeFromSuperview()
+      vibrancyView = nil
+      appearance = nil
+      isOpaque = true
+      // Dart sends the frame's colour again once the blur is off.
+    }
+    invalidateShadow()
   }
 
   // AppKit puts the buttons back at their default spot whenever it lays out

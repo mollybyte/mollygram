@@ -47,9 +47,9 @@ class MgColors extends ThemeExtension<MgColors> {
   /// Secondary text: subtitles, times, placeholders, idle icons.
   final Color fg2;
 
-  /// Icons at rest: between [fg2] and [fg], so a thin line glyph reads as
-  /// clearly as the secondary text beside it.
-  Color get icon => Color.lerp(fg2, fg, 0.45)!;
+  /// Icons at rest: the secondary text's grey, one tone for both, as in
+  /// TelegramSwift.
+  Color get icon => fg2;
 
   /// The single accent: selection, unread badges, send button, links.
   final Color accent;
@@ -155,9 +155,9 @@ class MgColors extends ThemeExtension<MgColors> {
     hover: Color(0x0D000000),
     avatarTop: Color(0xFFA9ADB6),
     avatarBottom: Color(0xFF878B94),
-    muted: Color(0xFFA1A1A6),
+    muted: Color(0xFF737378),
     mediaPill: Color(0x59000000),
-    datePill: Color(0x2E000000),
+    datePill: Color(0x8C000000),
     glass: Color(0x6BFFFFFF),
     glassSolid: Color(0xF0F7F7F9),
     rim: Color(0x99FFFFFF),
@@ -192,7 +192,7 @@ class MgColors extends ThemeExtension<MgColors> {
     hover: Color(0x0FFFFFFF),
     avatarTop: Color(0xFF71757E),
     avatarBottom: Color(0xFF565A62),
-    muted: Color(0xFF636366),
+    muted: Color(0xFF98989D),
     mediaPill: Color(0x59000000),
     datePill: Color(0x2E000000),
     glass: Color(0x6B1C1E22),
