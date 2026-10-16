@@ -3434,12 +3434,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
             !fitsAsPhoto(width: size.$1, height: size.$2, bytes: bytes)) {
           return OutgoingFile(path: file.path, kind: OutgoingKind.document);
         }
-        return OutgoingFile(
-          path: file.path,
-          kind: file.kind,
-          width: size.$1,
-          height: size.$2,
-        );
+        return file.copyWith(width: size.$1, height: size.$2);
       case OutgoingKind.video || OutgoingKind.animation || OutgoingKind.audio:
         // An edited video arrives measured by the editor.
         if (file.duration > 0) return file;

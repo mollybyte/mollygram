@@ -75,7 +75,7 @@ class _Preview extends StatefulWidget {
 class _PreviewState extends State<_Preview> {
   late final _caption = TextEditingController(text: widget.caption);
   final _focus = FocusNode();
-  late final _items = [...widget.files];
+  late final _items = _mediaFirst(widget.files);
   var _asFiles = false;
   var _grouped = true;
   int? _dragging;
@@ -156,6 +156,18 @@ class _PreviewState extends State<_Preview> {
     );
   }
 
+  /// Photos and videos first, each group in its own order, as the tray
+  /// lists them, so the order shown is the order sent.
+  static List<OutgoingFile> _mediaFirst(List<OutgoingFile> files) => [
+    for (final file in files)
+      if (_isVisual(file)) file,
+    for (final file in files)
+      if (!_isVisual(file)) file,
+  ];
+
+  static bool _isVisual(OutgoingFile file) =>
+      file.kind == OutgoingKind.photo || file.kind == OutgoingKind.video;
+
   void _remove(int index) {
     // The last one stays: an empty tray has nothing to send.
     if (_items.length == 1) {
@@ -167,7 +179,10 @@ class _PreviewState extends State<_Preview> {
 
   void _move(int from, int to) {
     if (from == to) return;
-    setState(() => _items.insert(to, _items.removeAt(from)));
+    setState(() {
+      _items.insert(to, _items.removeAt(from));
+      _items.replaceRange(0, _items.length, _mediaFirst(_items));
+    });
   }
 
   Future<void> _addMore() async {
@@ -180,6 +195,7 @@ class _PreviewState extends State<_Preview> {
           OutgoingFile(path: file.path, kind: outgoingKindOf(file.path)),
         );
       }
+      _items.replaceRange(0, _items.length, _mediaFirst(_items));
     });
     _focus.requestFocus();
   }
