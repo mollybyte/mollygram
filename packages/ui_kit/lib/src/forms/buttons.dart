@@ -51,25 +51,34 @@ class MgPrimaryButton extends StatelessWidget {
                       : c.accent),
             borderRadius: BorderRadius.circular(MgRadius.control),
           ),
-          child: loading
-              ? SizedBox.square(
-                  dimension: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: c.onAccent,
+          // The label and the spinner cross-fade: no jump when a request
+          // starts or comes back.
+          child: AnimatedSwitcher(
+            duration: MediaQuery.disableAnimationsOf(context)
+                ? Duration.zero
+                : MgMotion.fast,
+            child: loading
+                ? SizedBox.square(
+                    key: const ValueKey('spinner'),
+                    dimension: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: c.onAccent,
+                    ),
+                  )
+                : Text(
+                    label,
+                    key: const ValueKey('label'),
+                    maxLines: 1,
+                    style: mgTextStyle(
+                      c,
+                      size: MgType.title,
+                      weight: FontWeight.w600,
+                      color: c.onAccent,
+                      height: 1.2,
+                    ),
                   ),
-                )
-              : Text(
-                  label,
-                  maxLines: 1,
-                  style: mgTextStyle(
-                    c,
-                    size: MgType.title,
-                    weight: FontWeight.w600,
-                    color: c.onAccent,
-                    height: 1.2,
-                  ),
-                ),
+          ),
         ),
       ),
     );

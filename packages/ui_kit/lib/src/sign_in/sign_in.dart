@@ -6,6 +6,7 @@ import '../icon_button.dart';
 import '../icons.dart';
 import '../theme/colors.dart';
 import '../theme/theme.dart';
+import '../theme/tokens.dart';
 
 /// A sign-in screen as in the official Telegram apps: a plain window
 /// background with one centered column, no wallpaper and no glass.
@@ -65,7 +66,10 @@ class SignInPage extends StatelessWidget {
                   child: ConstrainedBox(
                     constraints: BoxConstraints(minHeight: box.maxHeight - 44),
                     child: Center(
-                      child: SizedBox(width: columnWidth, child: child),
+                      child: SizedBox(
+                        width: columnWidth,
+                        child: _StepSwitcher(child: child),
+                      ),
                     ),
                   ),
                 ),
@@ -386,4 +390,35 @@ class PhoneNumberField extends StatelessWidget {
       ],
     );
   }
+}
+
+/// One sign-in step gives way to the next: the old one fades out and the
+/// new one fades in rising a few pixels, so the column never cuts.
+class _StepSwitcher extends StatelessWidget {
+  const _StepSwitcher({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => AnimatedSwitcher(
+    duration: MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : MgMotion.standard,
+    switchInCurve: MgMotion.settle,
+    switchOutCurve: Curves.easeIn,
+    layoutBuilder: (current, previous) =>
+        Stack(alignment: Alignment.center, children: [...previous, ?current]),
+    transitionBuilder: (child, animation) => FadeTransition(
+      opacity: animation,
+      child: AnimatedBuilder(
+        animation: animation,
+        builder: (context, child) => Transform.translate(
+          offset: Offset(0, 6 * (1 - animation.value)),
+          child: child,
+        ),
+        child: child,
+      ),
+    ),
+    child: child,
+  );
 }
