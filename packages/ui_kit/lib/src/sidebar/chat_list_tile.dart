@@ -53,6 +53,7 @@ class ChatListTile extends StatefulWidget {
     this.verified = false,
     this.selected = false,
     this.menuOpen = false,
+    this.highlighted = false,
     this.avatar,
     this.onTap,
     this.onContextMenu,
@@ -115,6 +116,10 @@ class ChatListTile extends StatefulWidget {
 
   /// The row's context menu is open: an accent outline, as on macOS.
   final bool menuOpen;
+
+  /// The keyboard cursor is on the row (arrow keys in the search or a
+  /// picker): the hover fill, so Enter's target is visible.
+  final bool highlighted;
 
   /// Defaults to a [MonogramAvatar] of [title], [avatarSize] across.
   final Widget? avatar;
@@ -230,7 +235,7 @@ class _ChatListTileState extends State<ChatListTile> {
             decoration: BoxDecoration(
               color: on
                   ? c.selected
-                  : (_hover || widget.menuOpen
+                  : (_hover || widget.menuOpen || widget.highlighted
                         ? c.hover
                         : const Color(0x00000000)),
               borderRadius: BorderRadius.circular(10),

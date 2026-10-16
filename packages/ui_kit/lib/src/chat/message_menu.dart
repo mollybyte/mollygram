@@ -114,7 +114,31 @@ class _MenuRootState extends State<_MenuRoot> {
   MgMenuItem? _open;
   Rect? _anchor;
 
+  /// The highlighted row of the menu and of the open submenu: under the
+  /// mouse, or moved there with the arrow keys.
+  MgMenuItem? _active;
+  MgMenuItem? _subActive;
+
+  /// The arrow keys move in the submenu, after → or Enter opened it.
+  var _inSubmenu = false;
+
+  final _rows = <MgMenuItem, GlobalKey>{};
+  final _focus = FocusNode(debugLabel: 'menu');
+
+  GlobalKey _keyOf(MgMenuItem item) => _rows[item] ??= GlobalKey();
+
+  @override
+  void dispose() {
+    _focus.dispose();
+    super.dispose();
+  }
+
   void _hover(MgMenuItem item, Rect row) {
+    setState(() {
+      _active = item;
+      _inSubmenu = false;
+      _subActive = null;
+    });
     if (item.submenu.isEmpty) {
       if (_open != null) setState(() => _open = null);
       return;
@@ -126,29 +150,138 @@ class _MenuRootState extends State<_MenuRoot> {
     });
   }
 
+  void _hoverSub(MgMenuItem item, Rect row) => setState(() {
+    _subActive = item;
+    _inSubmenu = true;
+  });
+
+  void _leave(MgMenuItem item) {
+    if (identical(_active, item) && !identical(_open, item)) {
+      setState(() => _active = null);
+    } else if (identical(_subActive, item)) {
+      setState(() => _subActive = null);
+    }
+  }
+
+  /// Opens [item]'s submenu with its first row highlighted.
+  void _openSubmenu(MgMenuItem item) {
+    final row = _rows[item]?.currentContext?.findRenderObject();
+    if (row is! RenderBox) return;
+    setState(() {
+      _open = item;
+      _anchor = row.localToGlobal(Offset.zero) & row.size;
+      _inSubmenu = true;
+      _subActive = _step(item.submenu, null, 1);
+    });
+  }
+
+  /// The next selectable item of [items] after [from], [delta] rows on;
+  /// the first (or last) one when nothing is highlighted. Stops at the
+  /// ends, as macOS menus do.
+  static MgMenuItem? _step(
+    List<MgMenuItem> items,
+    MgMenuItem? from,
+    int delta,
+  ) {
+    final rows = [
+      for (final item in items)
+        if (!item.isDivider) item,
+    ];
+    if (rows.isEmpty) return null;
+    final at = from == null ? -1 : rows.indexWhere((i) => identical(i, from));
+    if (at < 0) return delta > 0 ? rows.first : rows.last;
+    return rows[(at + delta).clamp(0, rows.length - 1)];
+  }
+
+  KeyEventResult _onKey(FocusNode node, KeyEvent event) {
+    if (event is KeyUpEvent) return KeyEventResult.ignored;
+    final key = event.logicalKey;
+    final open = _open;
+    final sub = _inSubmenu && open != null;
+    if (key == LogicalKeyboardKey.arrowDown ||
+        key == LogicalKeyboardKey.arrowUp) {
+      final delta = key == LogicalKeyboardKey.arrowDown ? 1 : -1;
+      setState(() {
+        if (sub) {
+          _subActive = _step(open.submenu, _subActive, delta);
+        } else {
+          _active = _step(widget.items, _active, delta);
+          // Moving off a row closes its submenu, as the mouse does.
+          if (!identical(_open, _active)) _open = null;
+        }
+      });
+      return KeyEventResult.handled;
+    }
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    final active = sub ? _subActive : _active;
+    if (key == LogicalKeyboardKey.arrowRight) {
+      if (!sub && active != null && active.submenu.isNotEmpty) {
+        _openSubmenu(active);
+      }
+      return KeyEventResult.handled;
+    }
+    if (sub &&
+        (key == LogicalKeyboardKey.arrowLeft ||
+            key == LogicalKeyboardKey.escape)) {
+      setState(() {
+        _inSubmenu = false;
+        _subActive = null;
+        _open = null;
+      });
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.enter ||
+        key == LogicalKeyboardKey.numpadEnter ||
+        key == LogicalKeyboardKey.space) {
+      if (active == null) return KeyEventResult.handled;
+      if (active.submenu.isNotEmpty) {
+        _openSubmenu(active);
+      } else {
+        Navigator.of(context).pop();
+        active.onSelected?.call();
+      }
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Positioned.fill(
-          child: CustomSingleChildLayout(
-            delegate: _MenuLayout(widget.position),
-            child: _Menu(
-              items: widget.items,
-              header: widget.header,
-              openItem: _open,
-              onHover: _hover,
-            ),
-          ),
-        ),
-        if ((_open, _anchor) case (final open?, final anchor?))
+    return Focus(
+      focusNode: _focus,
+      autofocus: true,
+      onKeyEvent: _onKey,
+      child: Stack(
+        children: [
           Positioned.fill(
             child: CustomSingleChildLayout(
-              delegate: _SubmenuLayout(anchor),
-              child: _Menu(items: open.submenu, onHover: (_, _) {}),
+              delegate: _MenuLayout(widget.position),
+              child: _Menu(
+                items: widget.items,
+                header: widget.header,
+                openItem: _open,
+                activeItem: _active,
+                keyOf: _keyOf,
+                onHover: _hover,
+                onLeave: _leave,
+              ),
             ),
           ),
-      ],
+          if ((_open, _anchor) case (final open?, final anchor?))
+            Positioned.fill(
+              child: CustomSingleChildLayout(
+                delegate: _SubmenuLayout(anchor),
+                child: _Menu(
+                  items: open.submenu,
+                  activeItem: _subActive,
+                  keyOf: _keyOf,
+                  onHover: _hoverSub,
+                  onLeave: _leave,
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -218,8 +351,11 @@ class _Menu extends StatelessWidget {
   const _Menu({
     required this.items,
     required this.onHover,
+    required this.onLeave,
+    required this.keyOf,
     this.header,
     this.openItem,
+    this.activeItem,
   });
 
   final List<MgMenuItem> items;
@@ -228,8 +364,17 @@ class _Menu extends StatelessWidget {
   /// The item whose submenu is showing; it stays highlighted.
   final MgMenuItem? openItem;
 
+  /// The highlighted row, by the mouse or the arrow keys.
+  final MgMenuItem? activeItem;
+
   /// A row was hovered; its rect is in global coordinates.
   final void Function(MgMenuItem item, Rect row) onHover;
+
+  /// The mouse left a row.
+  final ValueChanged<MgMenuItem> onLeave;
+
+  /// Each row's key, so the keyboard can find its rect.
+  final GlobalKey Function(MgMenuItem item) keyOf;
 
   /// Keeps the rows' corners concentric with the panel's.
   static const double padding = MgRadius.popover - MgRadius.small;
@@ -256,12 +401,15 @@ class _Menu extends StatelessWidget {
                   item.isDivider
                       ? const _Separator()
                       : _MenuRow(
+                          key: keyOf(item),
                           item: item,
                           iconColumn: items.any(
                             (i) => i.icon != null || i.leading != null,
                           ),
                           open: identical(item, openItem),
+                          active: identical(item, activeItem),
                           onHover: onHover,
+                          onLeave: onLeave,
                         ),
               ],
             ),
@@ -290,9 +438,12 @@ class _Separator extends StatelessWidget {
 
 class _MenuRow extends StatefulWidget {
   const _MenuRow({
+    super.key,
     required this.item,
     required this.open,
+    required this.active,
     required this.onHover,
+    required this.onLeave,
     this.iconColumn = false,
   });
 
@@ -303,15 +454,17 @@ class _MenuRow extends StatefulWidget {
 
   /// This row's submenu is showing.
   final bool open;
+
+  /// Highlighted by the mouse or the arrow keys.
+  final bool active;
   final void Function(MgMenuItem item, Rect row) onHover;
+  final ValueChanged<MgMenuItem> onLeave;
 
   @override
   State<_MenuRow> createState() => _MenuRowState();
 }
 
 class _MenuRowState extends State<_MenuRow> {
-  var _hover = false;
-
   Rect _rect() {
     final box = context.findRenderObject()! as RenderBox;
     return box.localToGlobal(Offset.zero) & box.size;
@@ -331,7 +484,7 @@ class _MenuRowState extends State<_MenuRow> {
   Widget build(BuildContext context) {
     final c = MgColors.of(context);
     final item = widget.item;
-    final lit = _hover || widget.open;
+    final lit = widget.active || widget.open;
     final color = lit
         ? c.onAccent
         : item.destructive
@@ -344,11 +497,8 @@ class _MenuRowState extends State<_MenuRow> {
       excludeSemantics: true,
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
-        onEnter: (_) {
-          setState(() => _hover = true);
-          widget.onHover(item, _rect());
-        },
-        onExit: (_) => setState(() => _hover = false),
+        onEnter: (_) => widget.onHover(item, _rect()),
+        onExit: (_) => widget.onLeave(item),
         child: GestureDetector(
           onTap: _select,
           child: Container(

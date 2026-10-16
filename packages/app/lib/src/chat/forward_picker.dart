@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mollygram_core/mollygram_core.dart';
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
@@ -58,6 +59,57 @@ class _ForwardPickerState extends ConsumerState<_ForwardPicker> {
   var _hideSender = false;
   var _hideCaptions = false;
 
+  /// The row the arrow keys are on; Enter forwards there.
+  var _cursor = 0;
+  var _matches = const <ChatListEntry>[];
+
+  KeyEventResult _onKey(FocusNode node, KeyEvent event) {
+    if (event is KeyUpEvent) return KeyEventResult.ignored;
+    final key = event.logicalKey;
+    final count = _matches.length;
+    if (key == LogicalKeyboardKey.arrowDown ||
+        key == LogicalKeyboardKey.arrowUp) {
+      if (count == 0) return KeyEventResult.handled;
+      final delta = key == LogicalKeyboardKey.arrowDown ? 1 : -1;
+      setState(() => _cursor = (_cursor + delta).clamp(0, count - 1));
+      _reveal();
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.escape && event is KeyDownEvent) {
+      Navigator.of(context).pop();
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
+  /// Reveals the cursor once new results are laid out, since the list
+  /// keeps its scroll offset while the cursor goes back to the top.
+  void _revealAfterLayout() =>
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _reveal();
+      });
+
+  /// Scrolls by the least that shows the cursor's row whole.
+  void _reveal() {
+    if (!_scroll.hasClients) return;
+    final extent = ChatListTile.extentOf(context);
+    final top = _cursor * extent;
+    final position = _scroll.position;
+    final target = top < position.pixels
+        ? top
+        : top + extent > position.pixels + position.viewportDimension
+        ? top + extent - position.viewportDimension
+        : null;
+    if (target == null) return;
+    unawaited(
+      _scroll.animateTo(
+        target.clamp(0.0, position.maxScrollExtent),
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOutCubic,
+      ),
+    );
+  }
+
   void _pick(int chatId) => Navigator.of(context).pop(
     ForwardChoice(
       chatId: chatId,
@@ -97,8 +149,10 @@ class _ForwardPickerState extends ConsumerState<_ForwardPicker> {
 
   Future<void> _find(String query) async {
     final id = ++_searchId;
+    _revealAfterLayout();
     setState(() {
       _query = query;
+      _cursor = 0;
       if (query.trim().isEmpty) _found = null;
     });
     if (query.trim().isEmpty) return;
@@ -115,6 +169,7 @@ class _ForwardPickerState extends ConsumerState<_ForwardPicker> {
         for (final chatId in ids) ?session.chatLists.store.chat(chatId),
       ];
     });
+    _revealAfterLayout();
   }
 
   @override
@@ -135,6 +190,8 @@ class _ForwardPickerState extends ConsumerState<_ForwardPicker> {
     for (final chat in _found ?? const <ChatListEntry>[]) {
       if (ids.add(chat.id)) matches.add(chat);
     }
+    _matches = matches;
+    final cursor = matches.isEmpty ? 0 : _cursor.clamp(0, matches.length - 1);
     return SizedBox(
       width: 360,
       height: 540,
@@ -151,13 +208,17 @@ class _ForwardPickerState extends ConsumerState<_ForwardPicker> {
                 style: mgTextStyle(c, weight: FontWeight.w600),
               ),
             ),
-            MgSearchField(
-              focusNode: _search,
-              hintText: l10n.forwardSearch,
-              onChanged: (value) => unawaited(_find(value)),
-              onSubmitted: (_) {
-                if (matches.isNotEmpty) _pick(matches.first.id);
-              },
+            Focus(
+              canRequestFocus: false,
+              onKeyEvent: _onKey,
+              child: MgSearchField(
+                focusNode: _search,
+                hintText: l10n.forwardSearch,
+                onChanged: (value) => unawaited(_find(value)),
+                onSubmitted: (_) {
+                  if (matches.isNotEmpty) _pick(matches[cursor].id);
+                },
+              ),
             ),
             const SizedBox(height: 8),
             Expanded(
@@ -172,6 +233,7 @@ class _ForwardPickerState extends ConsumerState<_ForwardPicker> {
                     )
                   : ListView.builder(
                       controller: _scroll,
+                      itemExtent: ChatListTile.extentOf(context),
                       itemCount: matches.length,
                       itemBuilder: (context, i) {
                         final chat = matches[i];
@@ -184,6 +246,7 @@ class _ForwardPickerState extends ConsumerState<_ForwardPicker> {
                             photo: chat.photo,
                           ),
                           subtitle: formatPreview(l10n, chat.lastMessage),
+                          highlighted: i == cursor,
                           onTap: () => _pick(chat.id),
                         );
                       },
