@@ -317,8 +317,8 @@ abstract class AppLocalizations {
   /// No description provided for @sidebarSearchHint.
   ///
   /// In en, this message translates to:
-  /// **'Search or ⌘K'**
-  String get sidebarSearchHint;
+  /// **'Search or {shortcut}'**
+  String sidebarSearchHint(String shortcut);
 
   /// No description provided for @folderAll.
   ///

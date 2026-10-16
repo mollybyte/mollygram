@@ -127,7 +127,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get searchHint => 'Search';
 
   @override
-  String get sidebarSearchHint => 'Search or ⌘K';
+  String sidebarSearchHint(String shortcut) {
+    return 'Search or $shortcut';
+  }
 
   @override
   String get folderAll => 'All';

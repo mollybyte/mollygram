@@ -36,7 +36,7 @@
   "missingKeysHint": "Соберите приложение с --dart-define-from-file=config/telegram.json. Шаблон лежит в config/telegram.example.json.",
   "startFailedTitle": "Не удалось запустить Telegram",
   "searchHint": "Поиск",
-  "sidebarSearchHint": "Поиск или ⌘K",
+  "sidebarSearchHint": "Поиск или {shortcut}",
   "folderAll": "Все",
   "noChats": "Чатов пока нет",
   "connectionWaitingForNetwork": "Ожидание сети…",

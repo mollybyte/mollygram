@@ -128,7 +128,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get searchHint => 'Поиск';
 
   @override
-  String get sidebarSearchHint => 'Поиск или ⌘K';
+  String sidebarSearchHint(String shortcut) {
+    return 'Поиск или $shortcut';
+  }
 
   @override
   String get folderAll => 'Все';

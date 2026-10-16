@@ -3985,24 +3985,34 @@ class _ChatViewState extends ConsumerState<ChatView> {
                                 '',
                       onTap: () => togglePeerInfo(ref, widget.chatId),
                     ),
-              actions: ChatActionsCapsule(
-                children: [
-                  AudioPlayerCapsule(chatId: widget.chatId),
-                  if (!_searching && _thread == null && !_scheduledOpen) ...[
-                    MgIconButton(
-                      icon: MgIcons.search,
-                      tooltip: l10n.searchInChat,
-                      size: 28,
-                      onPressed: _openSearch,
-                    ),
-                    MgIconButton(
-                      icon: MgIcons.panel,
-                      tooltip: l10n.peerInfo,
-                      size: 28,
-                      onPressed: () => togglePeerInfo(ref, widget.chatId),
-                    ),
+              actions: LayoutBuilder(
+                // A narrow pane leaves the room to the player; search stays
+                // on ⌘F and info on a click on the title.
+                builder: (context, header) => ChatActionsCapsule(
+                  children: [
+                    AudioPlayerCapsule(chatId: widget.chatId),
+                    if (header.maxWidth >= 640 &&
+                        !_searching &&
+                        _thread == null &&
+                        !_scheduledOpen &&
+                        !_pinnedListOpen &&
+                        !_savedOpen &&
+                        !_forum) ...[
+                      MgIconButton(
+                        icon: MgIcons.search,
+                        tooltip: l10n.searchInChat,
+                        size: 28,
+                        onPressed: _openSearch,
+                      ),
+                      MgIconButton(
+                        icon: MgIcons.panel,
+                        tooltip: l10n.peerInfo,
+                        size: 28,
+                        onPressed: () => togglePeerInfo(ref, widget.chatId),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
               fill: const WindowDragArea(),
             ),
