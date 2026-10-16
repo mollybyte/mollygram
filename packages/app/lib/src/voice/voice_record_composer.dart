@@ -31,6 +31,10 @@ const _red = Color(0xFFFF3B30);
 /// )
 /// ```
 class VoiceRecordComposer extends StatefulWidget {
+  /// What the focus node of the recording bar is called, so the chat can
+  /// tell that typing belongs to the recording and not to the composer.
+  static const focusLabel = 'voice recording';
+
   const VoiceRecordComposer({
     super.key,
     required this.onRecorded,
@@ -62,7 +66,7 @@ class VoiceRecordComposer extends StatefulWidget {
 class _VoiceRecordComposerState extends State<VoiceRecordComposer> {
   late final VoiceRecordController _controller;
   final _composerLink = LayerLink();
-  final _barFocus = FocusNode(debugLabel: 'voice recording');
+  final _barFocus = FocusNode(debugLabel: VoiceRecordComposer.focusLabel);
   FocusNode? _focusBefore;
   bool _wasRecording = false;
 

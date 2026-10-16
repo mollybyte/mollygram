@@ -3326,6 +3326,32 @@ void main() {
     });
     expect(find.byType(EmojiPanel), findsNothing);
   });
+
+  testWidgets('the composer has the cursor on opening and takes typing', (
+    tester,
+  ) async {
+    await pump(tester);
+    await tester.pump();
+    final field = find.descendant(
+      of: find.byType(Composer),
+      matching: find.byType(EditableText),
+    );
+    expect(tester.widget<EditableText>(field).focusNode.hasFocus, isTrue);
+
+    // Focus somewhere else in the chat, then type: the letter lands in the
+    // composer and the cursor follows it.
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pump();
+    expect(tester.widget<EditableText>(field).focusNode.hasFocus, isFalse);
+    await tester.tapAt(
+      tester.getCenter(find.byType(Composer)) - const Offset(0, 200),
+    );
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyH, character: 'h');
+    await tester.pump();
+    expect(tester.widget<EditableText>(field).focusNode.hasFocus, isTrue);
+    expect(tester.widget<EditableText>(field).controller.text, 'h');
+  });
 }
 
 const _tick = Duration(milliseconds: 20);

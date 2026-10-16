@@ -75,9 +75,13 @@ import 'workspace.dart';
 /// One conversation: messages scroll under the floating header and
 /// composer.
 class ChatView extends ConsumerStatefulWidget {
-  const ChatView({super.key, required this.chatId});
+  const ChatView({super.key, required this.chatId, this.focused = true});
 
   final int chatId;
+
+  /// Whether this is the pane that has the keyboard; in a split tab only
+  /// that one takes the cursor.
+  final bool focused;
 
   @override
   ConsumerState<ChatView> createState() => _ChatViewState();
@@ -94,6 +98,10 @@ class _ChatViewState extends ConsumerState<ChatView> {
   late final _stickerHints = StickerSuggester(controller: _draft);
   late final _inline = InlineQuerySuggester(controller: _draft);
   final _focus = FocusNode();
+
+  /// Holds the focus when the chat is clicked outside any field, so typing
+  /// still reaches [_typeToComposer].
+  final _area = FocusNode(skipTraversal: true, debugLabel: 'chat area');
   late final ConversationController _conversations;
 
   /// The message the next one answers, shown above the composer.
@@ -281,6 +289,87 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _scheduledScroll.addListener(() => _followList(_scheduledScroll));
     _open(widget.chatId);
     WidgetsBinding.instance.addPostFrameCallback((_) => _takeJump());
+    _focusComposer();
+  }
+
+  /// Puts the cursor in the composer once the frame is built, as the
+  /// official client does whenever a chat comes to the front: on opening
+  /// it, on switching back to its tab or pane. A dialog or sheet above the
+  /// chat keeps the focus it has.
+  void _focusComposer() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_onScreen || !widget.focused) return;
+      if (_inputFocus.context == null) return;
+      if (ModalRoute.of(context)?.isCurrent == false) return;
+      _inputFocus.requestFocus();
+    });
+  }
+
+  /// The field that takes typing: the thread's while comments, a topic or
+  /// a saved tag are open, the chat's otherwise.
+  FocusNode get _inputFocus => _thread != null ? _threadFocus : _focus;
+  RichTextEditingController get _inputDraft =>
+      _thread != null ? _threadDraft : _draft;
+
+  /// A click on the chat that lands on no field leaves the focus on the
+  /// chat as a whole rather than nowhere, also when it was left on
+  /// something outside the chat, such as the workspace after a palette.
+  void _claimFocus() {
+    scheduleMicrotask(() {
+      if (!mounted || _area.hasFocus) return;
+      final focused = FocusManager.instance.primaryFocus;
+      final context = focused?.context;
+      if (context?.findAncestorWidgetOfExactType<EditableText>() != null) {
+        return;
+      }
+      // A control inside the chat keeps the focus it was just given.
+      final inside = focused != null && focused.ancestors.contains(_area);
+      if (!inside) _area.requestFocus();
+    });
+  }
+
+  /// Typing anywhere in the chat, with nothing being edited, goes to the
+  /// composer: the key that started it is not lost.
+  KeyEventResult _typeToComposer(FocusNode node, KeyEvent event) {
+    final input = _inputFocus;
+    if (event is! KeyDownEvent || input.hasFocus || input.context == null) {
+      return KeyEventResult.ignored;
+    }
+    final primary = FocusManager.instance.primaryFocus;
+    if (primary?.context?.findAncestorWidgetOfExactType<EditableText>() !=
+        null) {
+      return KeyEventResult.ignored;
+    }
+    // Escape and Enter belong to a recording in progress.
+    if (primary?.debugLabel == VoiceRecordComposer.focusLabel) {
+      return KeyEventResult.ignored;
+    }
+    // Option and AltGr make characters of their own, so Alt alone passes;
+    // a shortcut is Control or Command without it.
+    final keys = HardwareKeyboard.instance;
+    if (keys.isMetaPressed || (keys.isControlPressed && !keys.isAltPressed)) {
+      return KeyEventResult.ignored;
+    }
+    final character = event.character;
+    if (character == null ||
+        character.isEmpty ||
+        character.codeUnitAt(0) < 0x20 ||
+        character.codeUnitAt(0) == 0x7f) {
+      return KeyEventResult.ignored;
+    }
+    input.requestFocus();
+    final draft = _inputDraft;
+    final value = draft.value;
+    final selection = value.selection.isValid
+        ? value.selection
+        : TextSelection.collapsed(offset: value.text.length);
+    draft.value = value.copyWith(
+      text: value.text.replaceRange(selection.start, selection.end, character),
+      selection: TextSelection.collapsed(
+        offset: selection.start + character.length,
+      ),
+    );
+    return KeyEventResult.handled;
   }
 
   /// Shows the message another panel asked this chat to show.
@@ -293,7 +382,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
   @override
   void didUpdateWidget(ChatView old) {
     super.didUpdateWidget(old);
+    if (widget.focused && !old.focused) _focusComposer();
     if (old.chatId == widget.chatId) return;
+    _focusComposer();
     // An edit belongs to the old chat: give back the draft it set aside.
     if (_editing != null) _draft.setFormatted(_setAside, _setAsideRanges);
     _editing = null;
@@ -370,6 +461,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     _threadFocus.dispose();
     _draft.dispose();
     _focus.dispose();
+    _area.dispose();
     _scroll.dispose();
     _pinnedScroll.dispose();
     _scheduledScroll.dispose();
@@ -2908,6 +3000,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
     bool silent = false,
     td.MessageSchedulingState? schedule,
   }) async {
+    // A click on the send button must not take the cursor with it.
+    _focus.requestFocus();
     final editing = _editing;
     // A caption may be removed; a text message can't be emptied.
     if (editing != null && (text.trim().isNotEmpty || _isCaption(editing))) {
@@ -3598,7 +3692,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
 
   @override
   Widget build(BuildContext context) {
+    final wasOnScreen = _onScreen;
     _onScreen = TickerMode.valuesOf(context).enabled;
+    if (_onScreen && !wasOnScreen) _focusComposer();
     // A jump or a page of history moves the view without a scroll event.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _followScroll();
@@ -4069,7 +4165,15 @@ class _ChatViewState extends ConsumerState<ChatView> {
     );
     return CallbackShortcuts(
       bindings: {primaryShortcut(LogicalKeyboardKey.keyF): _openSearch},
-      child: ChatTranslationScope(translation: _translation, child: view),
+      child: Listener(
+        behavior: HitTestBehavior.translucent,
+        onPointerDown: (_) => _claimFocus(),
+        child: Focus(
+          focusNode: _area,
+          onKeyEvent: _typeToComposer,
+          child: ChatTranslationScope(translation: _translation, child: view),
+        ),
+      ),
     );
   }
 }

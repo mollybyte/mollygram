@@ -288,7 +288,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           : PeerInfoHost(
                               key: ValueKey(chat),
                               chatId: chat,
-                              child: ChatView(chatId: chat),
+                              child: ChatView(chatId: chat, focused: focused),
                             ),
                     ),
                   ),
