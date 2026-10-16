@@ -617,5 +617,29 @@ void main() {
       final list = tester.getRect(find.byType(ComposerSuggestionList));
       expect(list.right, lessThanOrEqualTo(200));
     });
+
+    testWidgets('suggestions clear a bar above the composer', (tester) async {
+      final c = RichTextEditingController();
+      addTearDown(c.dispose);
+      await tester.pumpWidget(
+        themed(
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Composer(
+              labels: labels,
+              controller: c,
+              onSend: (_) {},
+              suggestionsLift: 80,
+              suggestions: const [ComposerSuggestion(title: 'Boris')],
+              onSuggestion: (_) {},
+            ),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 300));
+      final bar = tester.getRect(find.byType(Composer));
+      final list = tester.getRect(find.byType(ComposerSuggestionList));
+      expect(list.bottom, lessThanOrEqualTo(bar.top - 80));
+    });
   });
 }

@@ -67,6 +67,7 @@ class Composer extends StatefulWidget {
     this.suggestions = const [],
     this.onSuggestion,
     this.onDismissSuggestions,
+    this.suggestionsLift = 0,
   });
 
   final ComposerLabels labels;
@@ -130,6 +131,10 @@ class Composer extends StatefulWidget {
   final List<ComposerSuggestion> suggestions;
   final ValueChanged<int>? onSuggestion;
   final VoidCallback? onDismissSuggestions;
+
+  /// How far above the composer the suggestions float, for a bar the
+  /// parent lays out between them (a bot's reply keyboard).
+  final double suggestionsLift;
 
   @override
   State<Composer> createState() => _ComposerState();
@@ -616,7 +621,7 @@ class _ComposerState extends State<Composer> {
         link: _link,
         targetAnchor: Alignment.topLeft,
         followerAnchor: Alignment.bottomLeft,
-        offset: const Offset(16, -6),
+        offset: Offset(16, -6 - widget.suggestionsLift),
         child: Align(
           alignment: Alignment.bottomLeft,
           child: suggestions.isEmpty
