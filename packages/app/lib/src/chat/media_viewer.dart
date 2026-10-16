@@ -922,7 +922,7 @@ class _TopBar extends StatelessWidget {
                     maxLines: 1,
                     style: const TextStyle(
                       color: _onDarkSecondary,
-                      fontSize: 11.5,
+                      fontSize: 12,
                     ),
                   ),
               ],
@@ -958,7 +958,7 @@ class _TopBar extends StatelessWidget {
               counter,
               style: const TextStyle(
                 color: _onDarkSecondary,
-                fontSize: 12.5,
+                fontSize: 13,
                 fontFeatures: [FontFeature.tabularFigures()],
               ),
             ),
@@ -1082,7 +1082,7 @@ class _Notice extends StatelessWidget {
         color: const Color(0xCC2A2A2E),
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Text(text, style: const TextStyle(color: _onDark, fontSize: 12.5)),
+      child: Text(text, style: const TextStyle(color: _onDark, fontSize: 13)),
     ),
   );
 }
@@ -1505,7 +1505,7 @@ class _RateButton extends StatelessWidget {
               text,
               style: TextStyle(
                 color: rate == 1 ? _onDarkSecondary : _onDark,
-                fontSize: 12.5,
+                fontSize: 13,
                 fontWeight: FontWeight.w600,
                 fontFeatures: const [FontFeature.tabularFigures()],
               ),

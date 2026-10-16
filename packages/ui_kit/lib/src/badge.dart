@@ -86,7 +86,7 @@ class GlyphBadge extends StatelessWidget {
           : Text(
               '@',
               style: TextStyle(
-                fontSize: 11.5,
+                fontSize: 12,
                 height: 1,
                 fontWeight: FontWeight.w700,
                 color: fg,
