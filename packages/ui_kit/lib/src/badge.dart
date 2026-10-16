@@ -2,6 +2,17 @@ import 'package:flutter/widgets.dart';
 
 import 'icons.dart';
 import 'theme/colors.dart';
+import 'theme/theme.dart';
+
+/// The height of the chat row's badges: TelegramSwift's 11 pt count with
+/// its padding.
+const double _badgeSize = 20;
+
+/// Centres the count on the badge's middle rather than on the line box.
+const _tightText = TextHeightBehavior(
+  applyHeightToFirstAscent: false,
+  applyHeightToLastDescent: false,
+);
 
 /// The unread counter of a chat row.
 class UnreadBadge extends StatelessWidget {
@@ -34,20 +45,22 @@ class UnreadBadge extends StatelessWidget {
         ? Color.lerp(c.muted, const Color(0xFF000000), 0.35)!
         : c.muted;
     return Container(
-      constraints: const BoxConstraints(minWidth: 18),
-      height: 18,
-      padding: const EdgeInsets.symmetric(horizontal: 5),
+      constraints: const BoxConstraints(minWidth: _badgeSize),
+      height: _badgeSize,
+      padding: const EdgeInsets.symmetric(horizontal: 6),
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: onAccent ? c.onAccent : (muted ? mutedFill : c.accent),
-        borderRadius: BorderRadius.circular(9),
+        borderRadius: BorderRadius.circular(_badgeSize / 2),
       ),
       child: Text(
         label ?? (count > 0 ? '$count' : ''),
-        style: TextStyle(
-          fontSize: 11,
+        textHeightBehavior: _tightText,
+        style: mgTextStyle(
+          c,
+          size: MgType.tiny,
+          weight: MgWeight.medium,
           height: 1,
-          fontWeight: FontWeight.w600,
           color: onAccent ? c.accent : c.onAccent,
         ),
       ),
@@ -78,21 +91,23 @@ class GlyphBadge extends StatelessWidget {
     final fill = _reaction ? reactionColor : c.accent;
     final fg = onAccent ? fill : c.onAccent;
     return Container(
-      width: 18,
-      height: 18,
+      width: _badgeSize,
+      height: _badgeSize,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: onAccent ? c.onAccent : fill,
         shape: BoxShape.circle,
       ),
       child: _reaction
-          ? MgIcon(MgIcons.heart, size: 11, stroke: 2.8, color: fg)
+          ? MgIcon(MgIcons.heart, size: 12, stroke: 2.6, color: fg)
           : Text(
               '@',
-              style: TextStyle(
-                fontSize: 12,
+              textHeightBehavior: _tightText,
+              style: mgTextStyle(
+                c,
+                size: MgType.caption,
+                weight: MgWeight.semibold,
                 height: 1,
-                fontWeight: FontWeight.w700,
                 color: fg,
               ),
             ),
