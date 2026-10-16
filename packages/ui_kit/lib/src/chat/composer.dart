@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -166,6 +167,7 @@ class _ComposerState extends State<Composer> {
 
   final _suggestionsPortal = OverlayPortalController();
   final _link = LayerLink();
+  var _paneWidth = 320.0;
 
   bool _hadDraft = false;
 
@@ -632,7 +634,9 @@ class _ComposerState extends State<Composer> {
                     ),
                   ),
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 320),
+                    constraints: BoxConstraints(
+                      maxWidth: math.max(0, math.min(320, _paneWidth - 32)),
+                    ),
                     child: ComposerSuggestionList(
                       suggestions: suggestions,
                       highlighted: _highlighted.clamp(
@@ -646,7 +650,21 @@ class _ComposerState extends State<Composer> {
                 ),
         ),
       ),
-      child: CompositedTransformTarget(link: _link, child: composer),
+      child: CompositedTransformTarget(
+        link: _link,
+        // The list is no wider than its own pane, whatever the window.
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            if (_paneWidth != constraints.maxWidth) {
+              _paneWidth = constraints.maxWidth;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) setState(() {});
+              });
+            }
+            return composer;
+          },
+        ),
+      ),
     );
   }
 }
