@@ -77,4 +77,31 @@ void main() {
     );
     expect(taps, ['link /start']);
   });
+
+  test('inline code and code blocks hand their text to be copied', () {
+    const text = td.FormattedText(
+      text: 'key abc-123 and x = 1',
+      entities: [
+        td.TextEntity(offset: 4, length: 7, type: td.TextEntityTypeCode()),
+        td.TextEntity(offset: 16, length: 5, type: td.TextEntityTypePre()),
+      ],
+    );
+    final copied = <String>[];
+    final spans = buildEntitySpans(
+      text,
+      colors: MgColors.light,
+      onCode: (code) {
+        copied.add(code);
+        return TapGestureRecognizer();
+      },
+    );
+    expect(copied, ['abc-123', 'x = 1']);
+    expect(
+      [
+        for (final span in spans)
+          if (span is TextSpan && span.recognizer != null) span.text,
+      ],
+      ['abc-123', 'x = 1'],
+    );
+  });
 }

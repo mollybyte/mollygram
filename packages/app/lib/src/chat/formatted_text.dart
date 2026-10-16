@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/gestures.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mollygram_core/mollygram_core.dart' show TelegramLinks;
@@ -9,6 +10,7 @@ import 'package:mollygram_tdlib/mollygram_tdlib.dart' as td;
 import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../links/link_router.dart';
 import '../plugins/code_highlight.dart';
 import 'custom_emoji.dart';
@@ -191,6 +193,15 @@ class _FormattedTextViewState extends ConsumerState<FormattedTextView> {
           return r;
         },
       },
+      onCode: (code) {
+        final r = TapGestureRecognizer()
+          ..onTap = () {
+            unawaited(Clipboard.setData(ClipboardData(text: code)));
+            showMgToast(context, AppLocalizations.of(context).copied);
+          };
+        _recognizers.add(r);
+        return r;
+      },
       onSpoiler: (offset) {
         final r = TapGestureRecognizer()
           ..onTap = () => setState(() => _revealed.add(offset));
@@ -249,6 +260,7 @@ List<InlineSpan> buildEntitySpans(
   GestureRecognizer Function(String url)? onLink,
   GestureRecognizer Function(String hashtag)? onHashtag,
   GestureRecognizer Function(String command)? onBotCommand,
+  GestureRecognizer Function(String code)? onCode,
   GestureRecognizer Function(int offset)? onSpoiler,
   InlineSpan? Function(int customEmojiId, int offset, int length)?
   onCustomEmoji,
@@ -347,6 +359,10 @@ List<InlineSpan> buildEntitySpans(
           if (token case (final from, _, final color) when from <= start) {
             style = style.copyWith(color: color);
           }
+          // A tap copies it, as in the official client; a drag still
+          // selects.
+          recognizer = onCode?.call(whole);
+          cursor = SystemMouseCursors.click;
         case td.TextEntityTypeBlockQuote() ||
             td.TextEntityTypeExpandableBlockQuote():
           style = style.copyWith(fontStyle: FontStyle.italic);
