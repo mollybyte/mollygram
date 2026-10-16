@@ -160,6 +160,7 @@ class _MembersSectionState extends ConsumerState<_MembersSection> {
         if (member.canRemove)
           MgMenuItem(
             label: channel ? l10n.removeFromChannel : l10n.removeFromGroup,
+            icon: MgIcons.leave,
             destructive: true,
             onSelected: () => unawaited(_remove(member)),
           ),
