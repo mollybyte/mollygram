@@ -64,17 +64,17 @@ import 'preferences.dart';
   return (
     light: buildMgTheme(light.copyWith(accent: accent.light), metrics: metrics),
     dark: buildMgTheme(
-      // Vesper Blur brings its own amber accent.
-      blur
-          ? dark
-          : dark.copyWith(
-              accent: accent.dark,
-              // The light violet of the dark theme is too pale under the
-              // white text of the selected row.
-              selection: preferences.accent == AccentChoice.violet
-                  ? const Color(0xFF6F4FEA)
-                  : null,
-            ),
+      dark.copyWith(
+        accent: accent.dark,
+        // The light violet of the dark theme is too pale under the white
+        // text of the selected row.
+        selection: preferences.accent == AccentChoice.violet
+            ? const Color(0xFF6F4FEA)
+            : null,
+        // The blurred palette's own on-accent text is tuned for amber.
+        onAccent: blur ? MgColors.dark.onAccent : null,
+        onAccentSecondary: blur ? MgColors.dark.onAccentSecondary : null,
+      ),
       metrics: metrics,
     ),
   );
@@ -110,7 +110,7 @@ MgColors vesperBlur(MgColors base, double opacity) => base.copyWith(
   highlight: const Color(0x24FFFFFF),
   frame: const Color(0xFF1A1714).withValues(alpha: opacity),
   card: const Color(0xFF24201C)
-      .withValues(alpha: (opacity + 0.08).clamp(0.0, 1.0)),
+      .withValues(alpha: (opacity - 0.14).clamp(0.2, 1.0)),
 );
 
 /// One wallpaper's tint of the window and the text: the window frame and
