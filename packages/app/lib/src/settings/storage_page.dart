@@ -166,7 +166,12 @@ class _StoragePageState extends ConsumerState<StoragePage> {
           footer: SettingsFooter(l10n.autoDownloadHint),
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+              padding: const EdgeInsets.fromLTRB(
+                settingsInset,
+                8,
+                settingsInset,
+                0,
+              ),
               child: Row(
                 children: [
                   const Spacer(),
@@ -285,7 +290,12 @@ class _StoragePageState extends ConsumerState<StoragePage> {
           ),
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+              padding: const EdgeInsets.fromLTRB(
+                settingsInset,
+                12,
+                settingsInset,
+                12,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [

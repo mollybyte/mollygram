@@ -63,11 +63,11 @@ class _AccountCardState extends ConsumerState<AccountCard> {
           child: SettingsSidebarTile(
             selected: selected,
             hover: _hover,
-            height: 54,
+            height: 64,
             child: Row(
               children: [
-                SenderAvatar(name: name, size: 38, photo: profile?.photo),
-                const SizedBox(width: 9),
+                SenderAvatar(name: name, size: 44, photo: profile?.photo),
+                const SizedBox(width: MgSpace.ml),
                 Expanded(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -79,7 +79,8 @@ class _AccountCardState extends ConsumerState<AccountCard> {
                         overflow: TextOverflow.ellipsis,
                         style: mgTextStyle(
                           c,
-                          weight: FontWeight.w600,
+                          size: MgType.title,
+                          weight: MgWeight.medium,
                           color: selected ? c.onAccent : null,
                           height: 1.3,
                         ),
@@ -90,7 +91,7 @@ class _AccountCardState extends ConsumerState<AccountCard> {
                         overflow: TextOverflow.ellipsis,
                         style: mgTextStyle(
                           c,
-                          size: MgType.caption,
+                          size: MgType.small,
                           color: selected ? c.onAccentSecondary : c.fg2,
                           height: 1.3,
                         ),
@@ -764,7 +765,10 @@ class _FieldRowState extends State<_FieldRow> {
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 40),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            padding: const EdgeInsets.symmetric(
+              horizontal: settingsInset,
+              vertical: 10,
+            ),
             child: Row(
               children: [
                 if (label != null) ...[
