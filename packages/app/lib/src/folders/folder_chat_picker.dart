@@ -275,8 +275,13 @@ class _FolderChatPickerState extends ConsumerState<FolderChatPicker> {
         width: 380,
         height: 540,
         child: Glass(
-          radius: 14,
-          padding: const EdgeInsets.fromLTRB(10, 14, 10, 12),
+          radius: MgRadius.popover,
+          padding: const EdgeInsets.fromLTRB(
+            MgSpace.ml,
+            MgSpace.l,
+            MgSpace.ml,
+            MgSpace.l,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -440,11 +445,11 @@ class _PickRowState extends State<_PickRow> {
           behavior: HitTestBehavior.opaque,
           onTap: widget.onTap,
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 120),
+            duration: MgMotion.fast,
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
             decoration: BoxDecoration(
               color: _hover ? c.hover : const Color(0x00000000),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(MgRadius.control),
             ),
             child: Row(
               children: [

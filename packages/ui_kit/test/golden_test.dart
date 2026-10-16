@@ -768,6 +768,8 @@ void main() {
         ),
       );
       await tester.pump();
+      // The alert fades and grows in.
+      await tester.pump(MgMotion.standard);
       await expectLater(
         find.byType(MaterialApp),
         matchesGoldenFile('goldens/message_menu_$theme.png'),

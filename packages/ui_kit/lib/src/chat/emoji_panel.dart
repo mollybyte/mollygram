@@ -10,6 +10,7 @@ import '../sidebar/folder_tabs.dart';
 import '../sidebar/search_field.dart';
 import '../theme/colors.dart';
 import '../theme/theme.dart';
+import '../theme/tokens.dart';
 import 'emoji_data.dart';
 
 export 'emoji_data.dart' show EmojiGroup;
@@ -51,12 +52,14 @@ class _EmojiPanelState extends State<EmojiPanel> {
       // Grows out of the emoji button's corner as it fades in.
       child: TweenAnimationBuilder<double>(
         tween: Tween(begin: 0, end: 1),
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOutCubic,
+        duration: MediaQuery.disableAnimationsOf(context)
+            ? Duration.zero
+            : MgMotion.standard,
+        curve: MgMotion.enter,
         builder: (context, t, child) => Opacity(
           opacity: t,
           child: Transform.scale(
-            scale: 0.94 + 0.06 * t,
+            scale: 0.97 + 0.03 * t,
             alignment: Alignment.bottomRight,
             child: child,
           ),
@@ -65,12 +68,15 @@ class _EmojiPanelState extends State<EmojiPanel> {
           width: EmojiPanel.width,
           height: widget.height,
           child: Glass(
-            radius: 14,
+            radius: MgRadius.popover,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Padding(
-                  padding: const EdgeInsets.only(top: 8, bottom: 4),
+                  padding: const EdgeInsets.only(
+                    top: MgSpace.m,
+                    bottom: MgSpace.xs,
+                  ),
                   child: Center(
                     child: FolderSegments(
                       selected: _tab,
@@ -135,7 +141,7 @@ class SectionedGrid extends StatefulWidget {
   final ValueChanged<int>? onSection;
 
   static const double titleHeight = 26;
-  static const double padding = 8;
+  static const double padding = MgSpace.m;
 
   @override
   State<SectionedGrid> createState() => _SectionedGridState();
@@ -223,7 +229,12 @@ class _SectionedGridState extends State<SectionedGrid> {
                 child: Container(
                   height: SectionedGrid.titleHeight,
                   alignment: Alignment.bottomLeft,
-                  padding: const EdgeInsets.fromLTRB(14, 0, 14, 5),
+                  padding: const EdgeInsets.fromLTRB(
+                    MgSpace.l,
+                    0,
+                    MgSpace.l,
+                    MgSpace.xs,
+                  ),
                   child: Text(
                     section.title,
                     maxLines: 1,
@@ -253,7 +264,7 @@ class _SectionedGridState extends State<SectionedGrid> {
                 ),
               ),
             ],
-            const SliverToBoxAdapter(child: SizedBox(height: 6)),
+            const SliverToBoxAdapter(child: SizedBox(height: MgSpace.s)),
           ],
         );
       },
@@ -289,7 +300,10 @@ class PanelSectionBar extends StatelessWidget {
       ),
       child: ListView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+        padding: const EdgeInsets.symmetric(
+          horizontal: MgSpace.s,
+          vertical: MgSpace.xs,
+        ),
         children: [
           for (final (i, item) in items.indexed)
             _SectionButton(
@@ -348,7 +362,7 @@ class _SectionButtonState extends State<_SectionButton> {
                   : _hover
                   ? c.hover
                   : const Color(0x00000000),
-              borderRadius: BorderRadius.circular(7),
+              borderRadius: BorderRadius.circular(MgRadius.small),
             ),
             child: IconTheme.merge(
               data: IconThemeData(color: widget.selected ? c.fg : c.fg2),
@@ -417,7 +431,7 @@ class _PanelCellState extends State<PanelCell> {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: _hover ? c.hover : const Color(0x00000000),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(MgRadius.control),
             ),
             child: widget.child,
           ),
@@ -571,7 +585,12 @@ class _EmojiTabState extends State<EmojiTab> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(10, 4, 10, 0),
+          padding: const EdgeInsets.fromLTRB(
+            MgSpace.ml,
+            MgSpace.xs,
+            MgSpace.ml,
+            0,
+          ),
           child: MgSearchField(
             hintText: l.search,
             controller: _query,
