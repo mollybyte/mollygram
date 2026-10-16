@@ -2781,20 +2781,33 @@ class _ChatViewState extends ConsumerState<ChatView> {
     );
     final choice = toChat != null
         ? ForwardChoice(chatId: toChat, hideSender: false, hideCaptions: false)
-        : await pickForwardTarget(context, hasCaptions: hasCaptions);
+        : await pickForwardTarget(
+            context,
+            hasCaptions: hasCaptions,
+            multiple: true,
+          );
     if (choice == null || messages.isEmpty) return;
-    try {
-      await _conversations.forwardMessages(
-        choice.chatId,
-        messages.first.chatId,
-        [for (final message in messages) message.id],
-        hideSender: choice.hideSender,
-        hideCaptions: choice.hideCaptions,
-      );
-    } catch (_) {
-      // Such as a channel the user can't post in.
-      if (mounted) setState(() => _failure = _Failure.forward);
+    var failed = false;
+    // Each chat on its own, so one that refuses doesn't stop the rest.
+    for (final chatId in choice.chatIds) {
+      try {
+        // The comment goes first, as in Telegram, so it reads above them.
+        if (choice.comment.isNotEmpty) {
+          await _conversations.sendText(chatId, choice.comment);
+        }
+        await _conversations.forwardMessages(
+          chatId,
+          messages.first.chatId,
+          [for (final message in messages) message.id],
+          hideSender: choice.hideSender,
+          hideCaptions: choice.hideCaptions,
+        );
+      } catch (_) {
+        // Such as a channel the user can't post in.
+        failed = true;
+      }
     }
+    if (failed && mounted) setState(() => _failure = _Failure.forward);
   }
 
   var _olderScheduled = false;

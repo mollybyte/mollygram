@@ -2254,7 +2254,12 @@ void main() {
     await tester.pump();
     await tester.pump();
     expect(find.text('Forward to chat'), findsOneWidget);
+    // A click ticks the chat; the comment and Send come in.
     await tester.tap(find.text('Saved'));
+    await tester.pumpAndSettle();
+    expect(json.sent.where((r) => r['@type'] == 'forwardMessages'), isEmpty);
+    await tester.enterText(find.byType(TextField).last, 'Look at this');
+    await tester.tap(find.text('Send 1'));
     await tester.runAsync(() => Future<void>.delayed(_tick));
     await tester.pump();
 
@@ -2262,6 +2267,27 @@ void main() {
     expect(forward['chat_id'], 9);
     expect(forward['message_ids'], [12]);
     expect(forward['send_copy'], isFalse);
+    // The comment went first.
+    final comment = json.sent.lastWhere((r) => r['@type'] == 'sendMessage');
+    expect(comment['chat_id'], 9);
+    expect(json.sent.indexOf(comment), lessThan(json.sent.indexOf(forward)));
+  });
+
+  testWidgets('Enter forwards to the highlighted chat at once', (tester) async {
+    await pump(tester);
+
+    await rightClick(tester, 'From Vera');
+    await tester.tap(find.text('Forward'));
+    await tester.pump();
+    await tester.pump();
+    // Nothing ticked: Enter sends to the highlighted first chat.
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.runAsync(() => Future<void>.delayed(_tick));
+    await tester.pump();
+
+    expect(find.text('Forward to chat'), findsNothing);
+    final forward = json.sent.lastWhere((r) => r['@type'] == 'forwardMessages');
+    expect(forward['message_ids'], [12]);
   });
 
   testWidgets('forwards from the recent chats in the menu', (tester) async {
@@ -2373,6 +2399,8 @@ void main() {
     await tester.tap(find.text('Hide sender names'));
     await tester.pump();
     await tester.tap(find.text('Saved'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Send 1'));
     await tester.runAsync(() => Future<void>.delayed(_tick));
     await tester.pump();
 
@@ -2402,6 +2430,8 @@ void main() {
     await tester.pump();
     expect(find.byType(SelectionBar), findsNothing);
     await tester.tap(find.text('Saved'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Send 1'));
     await tester.runAsync(() => Future<void>.delayed(_tick));
     await tester.pump();
 

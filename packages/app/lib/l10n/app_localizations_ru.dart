@@ -708,6 +708,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get forwardHideCaptions => 'Скрыть подписи';
 
   @override
+  String get forwardComment => 'Добавить комментарий…';
+
+  @override
   String get noChatsFound => 'Чаты не найдены';
 
   @override
