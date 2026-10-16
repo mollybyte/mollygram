@@ -7,7 +7,7 @@ import '../theme/theme.dart';
 import 'bar_strip.dart';
 
 /// The pinned message under the chat header, as in Telegram for macOS: a
-/// glass capsule with a segmented indicator on the left that shows which
+/// full-width strip with a segmented indicator on the left that shows which
 /// of [count] pinned messages is [index], the title and the text. A click
 /// goes to the message and the bar moves on to the previous one, so the
 /// text slides as they cycle.
@@ -42,7 +42,7 @@ class PinnedBar extends StatelessWidget {
   final String? listTooltip;
   final VoidCallback? onList;
 
-  static const double height = 40;
+  static const double height = 44;
 
   @override
   Widget build(BuildContext context) {
