@@ -381,26 +381,27 @@ class MessageTile extends StatelessWidget {
           SelectionContainer.disabled(
             child: Padding(
               padding: const EdgeInsets.only(top: 5),
-              child: Wrap(
-                spacing: 4,
-                runSpacing: 4,
-                children: [
+              child: ReactionRow(
+                chips: [
                   for (final reaction in reactions)
-                    ReactionChip(
-                      emoji: reactionKey(reaction.type),
-                      icon: customReactionIcon(
-                        reactionKey(reaction.type),
-                        ReactionChip.iconSize,
+                    (
+                      reactionKey(reaction.type),
+                      ReactionChip(
+                        emoji: reactionKey(reaction.type),
+                        icon: customReactionIcon(
+                          reactionKey(reaction.type),
+                          ReactionChip.iconSize,
+                        ),
+                        count: reaction.totalCount,
+                        chosen: reaction.isChosen,
+                        onTap: reaction.type is td.ReactionTypePaid
+                            ? null
+                            : () => actions.onReaction(
+                                message,
+                                reaction.type,
+                                reaction.isChosen,
+                              ),
                       ),
-                      count: reaction.totalCount,
-                      chosen: reaction.isChosen,
-                      onTap: reaction.type is td.ReactionTypePaid
-                          ? null
-                          : () => actions.onReaction(
-                              message,
-                              reaction.type,
-                              reaction.isChosen,
-                            ),
                     ),
                 ],
               ),
