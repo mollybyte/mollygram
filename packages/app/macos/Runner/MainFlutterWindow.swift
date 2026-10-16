@@ -154,7 +154,7 @@ class MainFlutterWindow: NSWindow {
          let content = contentView {
         let effect = PassiveEffectView(frame: frameView.bounds)
         effect.autoresizingMask = [.width, .height]
-        effect.material = .underWindowBackground
+        effect.material = .hudWindow
         effect.blendingMode = .behindWindow
         effect.state = .active
         // Bottom-most in the frame view, so it can never sit over the content.
