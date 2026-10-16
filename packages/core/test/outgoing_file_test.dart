@@ -28,6 +28,15 @@ void main() {
     expect([for (final group in groups) group.length], [2, 2, 1, 1]);
   });
 
+  test('keeps photos apart when they are marked alone', () {
+    final groups = groupForSending([
+      _file('1.jpg').copyWith(alone: true),
+      _file('2.jpg').copyWith(alone: true),
+      _file('3.jpg').copyWith(alone: true),
+    ]);
+    expect([for (final group in groups) group.length], [1, 1, 1]);
+  });
+
   test('splits albums at ten', () {
     final groups = groupForSending([
       for (var i = 0; i < 12; i++) _file('$i.jpg'),

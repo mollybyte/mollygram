@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mollygram_core/mollygram_core.dart';
@@ -35,41 +36,18 @@ Future<AttachmentChoice?> showAttachmentPreview(
   String caption = '',
   bool allowSelfDestruct = false,
   bool allowSendWhenOnline = false,
-}) => showGeneralDialog<AttachmentChoice>(
-  context: context,
-  barrierDismissible: true,
-  barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-  barrierColor: const Color(0x33000000),
-  transitionDuration: const Duration(milliseconds: 180),
-  transitionBuilder: (context, animation, _, child) {
-    if (MediaQuery.disableAnimationsOf(context)) return child;
-    final curved = CurvedAnimation(
-      parent: animation,
-      curve: const Cubic(0.23, 1, 0.32, 1),
-      reverseCurve: Curves.easeIn,
-    );
-    return FadeTransition(
-      opacity: curved,
-      child: ScaleTransition(
-        scale: Tween<double>(begin: 0.97, end: 1).animate(curved),
-        child: child,
-      ),
-    );
-  },
-  pageBuilder: (context, _, _) => Material(
-    type: MaterialType.transparency,
-    child: Center(
-      child: _Preview(
-        files: [
-          for (final path in paths)
-            OutgoingFile(path: path, kind: outgoingKindOf(path)),
-        ],
-        caption: caption,
-        allowSelfDestruct: allowSelfDestruct,
-        allowSendWhenOnline: allowSendWhenOnline,
-      ),
-    ),
+}) => showMgSheet<AttachmentChoice>(
+  context,
+  _Preview(
+    files: [
+      for (final path in paths)
+        OutgoingFile(path: path, kind: outgoingKindOf(path)),
+    ],
+    caption: caption,
+    allowSelfDestruct: allowSelfDestruct,
+    allowSendWhenOnline: allowSendWhenOnline,
   ),
+  barrierColor: const Color(0x33000000),
 );
 
 class _Preview extends StatefulWidget {
@@ -97,7 +75,10 @@ class _Preview extends StatefulWidget {
 class _PreviewState extends State<_Preview> {
   late final _caption = TextEditingController(text: widget.caption);
   final _focus = FocusNode();
+  late final _items = _mediaFirst(widget.files);
   var _asFiles = false;
+  var _grouped = true;
+  int? _dragging;
   var _spoiler = false;
   var _selfDestruct = 0;
 
@@ -123,10 +104,11 @@ class _PreviewState extends State<_Preview> {
   }
 
   List<OutgoingFile> get _files => [
-    for (final file in widget.files)
+    for (final file in _items)
       _asFiles && file.isMedia
           ? file.asDocument()
           : _withEdit(file).copyWith(
+              alone: !_grouped,
               spoiler: _spoiler && file.isMedia,
               selfDestruct: file.isMedia ? _selfDestruct : 0,
             ),
@@ -172,6 +154,50 @@ class _PreviewState extends State<_Preview> {
       width: edit.width,
       height: edit.height,
     );
+  }
+
+  /// Photos and videos first, each group in its own order, as the tray
+  /// lists them, so the order shown is the order sent.
+  static List<OutgoingFile> _mediaFirst(List<OutgoingFile> files) => [
+    for (final file in files)
+      if (_isVisual(file)) file,
+    for (final file in files)
+      if (!_isVisual(file)) file,
+  ];
+
+  static bool _isVisual(OutgoingFile file) =>
+      file.kind == OutgoingKind.photo || file.kind == OutgoingKind.video;
+
+  void _remove(int index) {
+    // The last one stays: an empty tray has nothing to send.
+    if (_items.length == 1) {
+      Navigator.of(context).pop();
+      return;
+    }
+    setState(() => _items.removeAt(index));
+  }
+
+  void _move(int from, int to) {
+    if (from == to) return;
+    setState(() {
+      _items.insert(to, _items.removeAt(from));
+      _items.replaceRange(0, _items.length, _mediaFirst(_items));
+    });
+  }
+
+  Future<void> _addMore() async {
+    final picked = await openFiles();
+    if (!mounted || picked.isEmpty) return;
+    setState(() {
+      for (final file in picked) {
+        if (_items.any((item) => item.path == file.path)) continue;
+        _items.add(
+          OutgoingFile(path: file.path, kind: outgoingKindOf(file.path)),
+        );
+      }
+      _items.replaceRange(0, _items.length, _mediaFirst(_items));
+    });
+    _focus.requestFocus();
   }
 
   Future<void> _edit(OutgoingFile file) async {
@@ -264,7 +290,7 @@ class _PreviewState extends State<_Preview> {
     final c = MgColors.of(context);
     final l10n = AppLocalizations.of(context);
     final files = _files;
-    final anyMedia = widget.files.any((file) => file.isMedia);
+    final anyMedia = _items.any((file) => file.isMedia);
     final allPhotos = files.every((file) => file.kind == OutgoingKind.photo);
     final style = mgTextStyle(c, size: MgType.title);
     final media = [
@@ -273,42 +299,56 @@ class _PreviewState extends State<_Preview> {
           (i, file),
     ];
     final others = [
-      for (final file in files)
+      for (final (i, file) in files.indexed)
         if (file.kind != OutgoingKind.photo && file.kind != OutgoingKind.video)
-          file,
+          (i, file),
     ];
     final single = media.length == 1 && others.isEmpty;
     Widget tile((int, OutgoingFile) entry, {required double? side}) {
       final (i, file) = entry;
-      return switch (file.kind) {
-        OutgoingKind.photo => _Thumbnail(
-          key: ValueKey(file.path),
-          side: side,
-          image: Image.file(
-            File(file.path),
-            fit: side == null ? BoxFit.contain : BoxFit.cover,
-            cacheWidth: side == null ? 900 : 300,
-            errorBuilder: (context, _, _) => ColoredBox(color: c.field),
+      return _Reorderable(
+        key: ValueKey('tile-${file.path}'),
+        index: i,
+        dragging: _dragging,
+        onDragStarted: () => setState(() => _dragging = i),
+        onDragEnd: () => setState(() => _dragging = null),
+        onMove: _move,
+        removeTooltip: l10n.removeFromSend,
+        onRemove: () => _remove(i),
+        child: switch (file.kind) {
+          OutgoingKind.photo => _Thumbnail(
+            key: ValueKey(file.path),
+            side: side,
+            image: Image.file(
+              File(file.path),
+              fit: side == null ? BoxFit.contain : BoxFit.cover,
+              cacheWidth: side == null ? 900 : 300,
+              errorBuilder: (context, _, _) => ColoredBox(color: c.field),
+            ),
+            onEdit: () => _edit(_items[i]),
           ),
-          onEdit: () => _edit(widget.files[i]),
-        ),
-        _ => _VideoThumbnail(
-          key: ValueKey(file.path),
-          side: side,
-          path: file.path,
-          engine: _videoEngine,
-          onEdit: () => _edit(widget.files[i]),
-        ),
-      };
+          _ => _VideoThumbnail(
+            key: ValueKey(file.path),
+            side: side,
+            path: file.path,
+            engine: _videoEngine,
+            onEdit: () => _edit(_items[i]),
+          ),
+        },
+      );
     }
 
     const gap = 6.0;
-    return SizedBox(
-      width: 440,
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        minWidth: 440,
+        maxWidth: 440,
+        maxHeight: MediaQuery.sizeOf(context).height - 48,
+      ),
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: c.solid(c.card),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(MgRadius.popover),
           border: Border.all(color: c.separator, width: 0.5),
           boxShadow: const [
             BoxShadow(
@@ -347,42 +387,69 @@ class _PreviewState extends State<_Preview> {
                 ],
               ),
               const SizedBox(height: 12),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 340),
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (single)
-                        Center(child: tile(media.single, side: null))
-                      else if (media.isNotEmpty)
-                        LayoutBuilder(
-                          builder: (context, box) {
-                            final columns = media.length == 2 ? 2 : 3;
-                            final side =
-                                (box.maxWidth - gap * (columns - 1)) / columns;
-                            return Wrap(
-                              spacing: gap,
-                              runSpacing: gap,
-                              children: [
-                                for (final entry in media)
-                                  tile(entry, side: side),
-                              ],
-                            );
-                          },
-                        ),
-                      if (media.isNotEmpty && others.isNotEmpty)
-                        const SizedBox(height: 10),
-                      for (final (i, file) in others.indexed) ...[
-                        if (i > 0) const SizedBox(height: 8),
-                        _FileLine(file: file),
+              Flexible(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 340),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (single)
+                          Center(child: tile(media.single, side: null))
+                        else if (media.isNotEmpty)
+                          LayoutBuilder(
+                            builder: (context, box) {
+                              final columns = media.length == 2 ? 2 : 3;
+                              final side =
+                                  (box.maxWidth - gap * (columns - 1)) /
+                                  columns;
+                              return Wrap(
+                                spacing: gap,
+                                runSpacing: gap,
+                                children: [
+                                  for (final entry in media)
+                                    tile(entry, side: side),
+                                ],
+                              );
+                            },
+                          ),
+                        if (media.isNotEmpty && others.isNotEmpty)
+                          const SizedBox(height: 10),
+                        for (final (n, (i, file)) in others.indexed) ...[
+                          if (n > 0) const SizedBox(height: 8),
+                          _Reorderable(
+                            key: ValueKey('line-${file.path}'),
+                            index: i,
+                            dragging: _dragging,
+                            onDragStarted: () => setState(() => _dragging = i),
+                            onDragEnd: () => setState(() => _dragging = null),
+                            onMove: _move,
+                            removeTooltip: l10n.removeFromSend,
+                            onRemove: () => _remove(i),
+                            child: _FileLine(file: file),
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
               ),
+              const SizedBox(height: 10),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: MgTextButton(
+                  label: l10n.attachAddMore,
+                  onPressed: _addMore,
+                ),
+              ),
+              if (media.length > 1 && !_asFiles)
+                _OptionRow(
+                  label: l10n.groupAlbum,
+                  value: _grouped,
+                  onChanged: (value) => setState(() => _grouped = value),
+                ),
               if (anyMedia) ...[
-                const SizedBox(height: 14),
+                const SizedBox(height: 4),
                 _OptionRow(
                   label: l10n.sendAsFiles,
                   value: _asFiles,
@@ -714,6 +781,117 @@ class _FileLine extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// A tray item that can be dragged onto another to take its place, and
+/// removed with a button that appears on hover.
+class _Reorderable extends StatefulWidget {
+  const _Reorderable({
+    super.key,
+    required this.index,
+    required this.dragging,
+    required this.onDragStarted,
+    required this.onDragEnd,
+    required this.onMove,
+    required this.onRemove,
+    required this.removeTooltip,
+    required this.child,
+  });
+
+  final int index;
+
+  /// The index being dragged, if any item is.
+  final int? dragging;
+  final VoidCallback onDragStarted;
+  final VoidCallback onDragEnd;
+  final void Function(int from, int to) onMove;
+  final VoidCallback onRemove;
+  final String removeTooltip;
+  final Widget child;
+
+  @override
+  State<_Reorderable> createState() => _ReorderableState();
+}
+
+class _ReorderableState extends State<_Reorderable> {
+  var _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    final dragging = widget.dragging == widget.index;
+    final body = MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: AnimatedOpacity(
+        opacity: dragging ? 0.35 : 1,
+        duration: MgMotion.fast,
+        child: Stack(
+          children: [
+            widget.child,
+            Positioned(
+              left: 6,
+              top: 6,
+              child: AnimatedOpacity(
+                opacity: _hover && !dragging ? 1 : 0,
+                duration: MgMotion.fast,
+                child: IgnorePointer(
+                  ignoring: !_hover,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: c.mediaPill,
+                      shape: BoxShape.circle,
+                    ),
+                    child: MgIconButton(
+                      icon: MgIcons.close,
+                      iconSize: 12,
+                      size: 24,
+                      tooltip: widget.removeTooltip,
+                      onPressed: widget.onRemove,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    return DragTarget<int>(
+      onWillAcceptWithDetails: (details) => details.data != widget.index,
+      onAcceptWithDetails: (details) =>
+          widget.onMove(details.data, widget.index),
+      builder: (context, candidates, _) => AnimatedContainer(
+        duration: MgMotion.standard,
+        curve: MgMotion.standardCurve,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(MgRadius.control),
+          border: Border.all(
+            color: candidates.isEmpty ? Colors.transparent : c.accent,
+            width: 2,
+          ),
+        ),
+        child: Draggable<int>(
+          data: widget.index,
+          onDragStarted: widget.onDragStarted,
+          onDragEnd: (_) => widget.onDragEnd(),
+          onDraggableCanceled: (_, _) => widget.onDragEnd(),
+          feedback: Opacity(
+            opacity: 0.85,
+            child: SizedBox(
+              width: 96,
+              child: Material(
+                type: MaterialType.transparency,
+                child: widget.child,
+              ),
+            ),
+          ),
+          childWhenDragging: body,
+          child: body,
+        ),
       ),
     );
   }

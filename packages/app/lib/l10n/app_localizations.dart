@@ -1766,6 +1766,24 @@ abstract class AppLocalizations {
   /// **'{count, plural, one{Send {count} photo} other{Send {count} photos}}'**
   String attachPhotosTitle(int count);
 
+  /// No description provided for @attachAddMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Add more'**
+  String get attachAddMore;
+
+  /// No description provided for @groupAlbum.
+  ///
+  /// In en, this message translates to:
+  /// **'Group as an album'**
+  String get groupAlbum;
+
+  /// No description provided for @removeFromSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get removeFromSend;
+
   /// No description provided for @sendAsFiles.
   ///
   /// In en, this message translates to:

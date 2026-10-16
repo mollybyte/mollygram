@@ -130,6 +130,17 @@ void main() {
     expect([for (final file in choice!.files) file.spoiler], [true, false]);
   });
 
+  testWidgets('sends photos one by one when grouping is off', (tester) async {
+    File('${directory.path}/b.jpg').writeAsBytesSync([1, 2, 3]);
+    await open(tester, ['sea.jpg', 'b.jpg']);
+    await tester.tap(find.text('Group as an album'));
+    await tester.pump();
+    await tester.tap(find.text('Send'));
+    await tester.pump();
+
+    expect([for (final file in choice!.files) file.alone], [true, true]);
+  });
+
   testWidgets('files offer no spoiler', (tester) async {
     await open(tester, ['sea.jpg']);
     await tester.tap(find.text('Send as files'));
