@@ -34,8 +34,9 @@ abstract final class MgSpace {
   static const double xxl = 20;
 }
 
-/// Durations and curves of motion. Nothing overshoots: the floating layer
-/// eases in and fades out, as the official macOS client does.
+/// Durations and curves of motion. Nothing overshoots on the floating
+/// layer: it eases in and fades out, as the official macOS client does.
+/// Only small acknowledgements, such as choosing a reaction, pop.
 abstract final class MgMotion {
   /// Hover and press feedback.
   static const Duration fast = Duration(milliseconds: 120);
@@ -54,4 +55,11 @@ abstract final class MgMotion {
 
   /// Everything else, such as hover fills and layout changes.
   static const Curve standardCurve = Curves.easeOut;
+
+  /// A small thing acknowledging a tap: a reaction landing, a count
+  /// changing.
+  static const Duration pop = Duration(milliseconds: 300);
+
+  /// Settles a hair past its size and back, a spring without the wobble.
+  static const Curve popCurve = Cubic(0.34, 1.35, 0.64, 1);
 }
