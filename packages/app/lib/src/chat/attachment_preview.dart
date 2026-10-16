@@ -320,8 +320,12 @@ class _PreviewState extends State<_Preview> {
     }
 
     const gap = 6.0;
-    return SizedBox(
-      width: 440,
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        minWidth: 440,
+        maxWidth: 440,
+        maxHeight: MediaQuery.sizeOf(context).height - 48,
+      ),
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: c.solid(c.card),
@@ -364,47 +368,50 @@ class _PreviewState extends State<_Preview> {
                 ],
               ),
               const SizedBox(height: 12),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 340),
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (single)
-                        Center(child: tile(media.single, side: null))
-                      else if (media.isNotEmpty)
-                        LayoutBuilder(
-                          builder: (context, box) {
-                            final columns = media.length == 2 ? 2 : 3;
-                            final side =
-                                (box.maxWidth - gap * (columns - 1)) / columns;
-                            return Wrap(
-                              spacing: gap,
-                              runSpacing: gap,
-                              children: [
-                                for (final entry in media)
-                                  tile(entry, side: side),
-                              ],
-                            );
-                          },
-                        ),
-                      if (media.isNotEmpty && others.isNotEmpty)
-                        const SizedBox(height: 10),
-                      for (final (n, (i, file)) in others.indexed) ...[
-                        if (n > 0) const SizedBox(height: 8),
-                        _Reorderable(
-                          key: ValueKey('line-${file.path}'),
-                          index: i,
-                          dragging: _dragging,
-                          onDragStarted: () => setState(() => _dragging = i),
-                          onDragEnd: () => setState(() => _dragging = null),
-                          onMove: _move,
-                          removeTooltip: l10n.removeFromSend,
-                          onRemove: () => _remove(i),
-                          child: _FileLine(file: file),
-                        ),
+              Flexible(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 340),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (single)
+                          Center(child: tile(media.single, side: null))
+                        else if (media.isNotEmpty)
+                          LayoutBuilder(
+                            builder: (context, box) {
+                              final columns = media.length == 2 ? 2 : 3;
+                              final side =
+                                  (box.maxWidth - gap * (columns - 1)) /
+                                  columns;
+                              return Wrap(
+                                spacing: gap,
+                                runSpacing: gap,
+                                children: [
+                                  for (final entry in media)
+                                    tile(entry, side: side),
+                                ],
+                              );
+                            },
+                          ),
+                        if (media.isNotEmpty && others.isNotEmpty)
+                          const SizedBox(height: 10),
+                        for (final (n, (i, file)) in others.indexed) ...[
+                          if (n > 0) const SizedBox(height: 8),
+                          _Reorderable(
+                            key: ValueKey('line-${file.path}'),
+                            index: i,
+                            dragging: _dragging,
+                            onDragStarted: () => setState(() => _dragging = i),
+                            onDragEnd: () => setState(() => _dragging = null),
+                            onMove: _move,
+                            removeTooltip: l10n.removeFromSend,
+                            onRemove: () => _remove(i),
+                            child: _FileLine(file: file),
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
               ),
