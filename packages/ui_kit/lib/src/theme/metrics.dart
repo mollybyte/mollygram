@@ -21,7 +21,7 @@ class MgMetrics extends ThemeExtension<MgMetrics> {
   double get rowPadding => compact ? 4 : 8;
 
   /// Air between two messages of the same sender.
-  double get messageGap => compact ? 1 : 4;
+  double get messageGap => compact ? 2 : 6;
 
   static MgMetrics of(BuildContext context) =>
       Theme.of(context).extension<MgMetrics>() ?? defaults;
