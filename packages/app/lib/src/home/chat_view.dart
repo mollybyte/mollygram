@@ -2360,6 +2360,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
   /// timeline makes room for; 0 until they are laid out.
   var _bottomHeight = 0.0;
 
+  /// The height of the bot keyboard strip, which the suggestions clear.
+  var _keyboardHeight = 0.0;
+
   /// The space the timeline leaves under its newest message: the composer
   /// and the bot keyboard above it, with a little air.
   double get _bottomInset =>
@@ -3733,11 +3736,10 @@ class _ChatViewState extends ConsumerState<ChatView> {
               Positioned(
                 top:
                     ChatHeaderBar.height +
-                    8 +
                     _translateInset +
                     (_tagsShown ? SavedTagBar.height : 0),
-                left: 14,
-                right: 14,
+                left: 0,
+                right: 0,
                 child: bar,
               ),
           Positioned(
@@ -3951,16 +3953,23 @@ class _ChatViewState extends ConsumerState<ChatView> {
                       // A bot's keyboard is a solid strip above the composer, so
                       // messages never scroll through the gaps between buttons.
                       if (keyboardPanel != null)
-                        DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: c.card,
-                            border: Border(
-                              top: BorderSide(color: c.separator, width: 0.5),
+                        Measured(
+                          onSize: (size) {
+                            if (mounted && size.height != _keyboardHeight) {
+                              setState(() => _keyboardHeight = size.height);
+                            }
+                          },
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: c.card,
+                              border: Border(
+                                top: BorderSide(color: c.separator, width: 0.5),
+                              ),
                             ),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
-                            child: keyboardPanel,
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
+                              child: keyboardPanel,
+                            ),
                           ),
                         ),
                       // The composer is the card's own bottom edge; the other
@@ -3990,6 +3999,9 @@ class _ChatViewState extends ConsumerState<ChatView> {
                             onRecordedVideo: _sendVideoNote,
                             builder: (context, recordButton, recordingBar) =>
                                 Composer(
+                                  suggestionsLift: keyboardPanel == null
+                                      ? 0
+                                      : _keyboardHeight,
                                   suggestions: _suggester.suggestions,
                                   onSuggestion: _suggester.pick,
                                   onDismissSuggestions: _suggester.dismiss,

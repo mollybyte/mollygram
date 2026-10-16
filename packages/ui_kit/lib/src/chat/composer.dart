@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -66,6 +67,7 @@ class Composer extends StatefulWidget {
     this.suggestions = const [],
     this.onSuggestion,
     this.onDismissSuggestions,
+    this.suggestionsLift = 0,
   });
 
   final ComposerLabels labels;
@@ -130,6 +132,10 @@ class Composer extends StatefulWidget {
   final ValueChanged<int>? onSuggestion;
   final VoidCallback? onDismissSuggestions;
 
+  /// How far above the composer the suggestions float, for a bar the
+  /// parent lays out between them (a bot's reply keyboard).
+  final double suggestionsLift;
+
   @override
   State<Composer> createState() => _ComposerState();
 }
@@ -143,6 +149,7 @@ class _ComposerState extends State<Composer> {
   void initState() {
     super.initState();
     _text.addListener(_changed);
+    _suggestionsPortal.show();
   }
 
   @override
@@ -162,6 +169,10 @@ class _ComposerState extends State<Composer> {
     _own?.dispose();
     super.dispose();
   }
+
+  final _suggestionsPortal = OverlayPortalController();
+  final _link = LayerLink();
+  var _paneWidth = 320.0;
 
   bool _hadDraft = false;
 
@@ -359,13 +370,13 @@ class _ComposerState extends State<Composer> {
           TextFormat.monospace,
           labels.monospace,
           '$modifier${shift}M',
-          (c) => Icon(Icons.code, size: 17, color: c),
+          (c) => selectionIcon(MgIcons.code, c),
         ),
         format(
           TextFormat.spoiler,
           labels.spoiler,
           '$modifier${shift}P',
-          (c) => Icon(Icons.visibility_off_outlined, size: 15, color: c),
+          (c) => selectionIcon(MgIcons.spoiler, c),
         ),
         format(
           TextFormat.quote,
@@ -602,54 +613,63 @@ class _ComposerState extends State<Composer> {
       ),
     );
     final suggestions = widget.suggestions;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // The list grows in over the composer rather than popping up.
-        AnimatedSize(
-          duration: const Duration(milliseconds: 160),
-          curve: Curves.easeOutCubic,
+    // The list floats over the chat above the composer, so it never moves
+    // the bot keyboard or the messages.
+    return OverlayPortal(
+      controller: _suggestionsPortal,
+      overlayChildBuilder: (_) => CompositedTransformFollower(
+        link: _link,
+        targetAnchor: Alignment.topLeft,
+        followerAnchor: Alignment.bottomLeft,
+        offset: Offset(16, -6 - widget.suggestionsLift),
+        child: Align(
           alignment: Alignment.bottomLeft,
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 160),
-            switchInCurve: Curves.easeOutCubic,
-            switchOutCurve: Curves.easeInCubic,
-            transitionBuilder: (child, animation) => FadeTransition(
-              opacity: animation,
-              child: SlideTransition(
-                position: Tween(
-                  begin: const Offset(0, 0.06),
-                  end: Offset.zero,
-                ).animate(animation),
-                child: child,
-              ),
-            ),
-            child: suggestions.isEmpty
-                ? const SizedBox(key: ValueKey('none'), width: 0)
-                : Padding(
-                    key: const ValueKey('suggestions'),
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 320),
-                        child: ComposerSuggestionList(
-                          suggestions: suggestions,
-                          highlighted: _highlighted.clamp(
-                            0,
-                            suggestions.length - 1,
-                          ),
-                          onPick: (i) => widget.onSuggestion?.call(i),
-                          onHover: (i) => setState(() => _highlighted = i),
-                        ),
-                      ),
+          child: suggestions.isEmpty
+              ? const SizedBox.shrink()
+              : TweenAnimationBuilder<double>(
+                  key: const ValueKey('suggestions'),
+                  tween: Tween(begin: 0, end: 1),
+                  duration: const Duration(milliseconds: 160),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, t, child) => Opacity(
+                    opacity: t,
+                    child: Transform.translate(
+                      offset: Offset(0, 6 * (1 - t)),
+                      child: child,
                     ),
                   ),
-          ),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: math.max(0, math.min(320, _paneWidth - 32)),
+                    ),
+                    child: ComposerSuggestionList(
+                      suggestions: suggestions,
+                      highlighted: _highlighted.clamp(
+                        0,
+                        suggestions.length - 1,
+                      ),
+                      onPick: (i) => widget.onSuggestion?.call(i),
+                      onHover: (i) => setState(() => _highlighted = i),
+                    ),
+                  ),
+                ),
         ),
-        composer,
-      ],
+      ),
+      child: CompositedTransformTarget(
+        link: _link,
+        // The list is no wider than its own pane, whatever the window.
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            if (_paneWidth != constraints.maxWidth) {
+              _paneWidth = constraints.maxWidth;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) setState(() {});
+              });
+            }
+            return composer;
+          },
+        ),
+      ),
     );
   }
 }

@@ -560,5 +560,86 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.tab);
       expect(picked, [1, 1]);
     });
+
+    testWidgets(
+      'suggestions float over the chat and leave the composer alone',
+      (tester) async {
+        final c = RichTextEditingController();
+        addTearDown(c.dispose);
+        Widget build(List<ComposerSuggestion> suggestions) => themed(
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Composer(
+              labels: labels,
+              controller: c,
+              onSend: (_) {},
+              suggestions: suggestions,
+              onSuggestion: (_) {},
+            ),
+          ),
+        );
+        await tester.pumpWidget(build(const []));
+        final bar = tester.getRect(find.byType(Composer));
+        await tester.pumpWidget(
+          build(const [
+            ComposerSuggestion(title: 'Boris'),
+            ComposerSuggestion(title: 'Vera'),
+          ]),
+        );
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(tester.getRect(find.byType(Composer)), bar);
+        final list = tester.getRect(find.byType(ComposerSuggestionList));
+        expect(list.bottom, lessThanOrEqualTo(bar.top));
+      },
+    );
+
+    testWidgets('suggestions stay inside a narrow pane', (tester) async {
+      final c = RichTextEditingController();
+      addTearDown(c.dispose);
+      await tester.pumpWidget(
+        themed(
+          Align(
+            alignment: Alignment.bottomLeft,
+            child: SizedBox(
+              width: 200,
+              child: Composer(
+                labels: labels,
+                controller: c,
+                onSend: (_) {},
+                suggestions: const [ComposerSuggestion(title: 'Boris')],
+                onSuggestion: (_) {},
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 300));
+      final list = tester.getRect(find.byType(ComposerSuggestionList));
+      expect(list.right, lessThanOrEqualTo(200));
+    });
+
+    testWidgets('suggestions clear a bar above the composer', (tester) async {
+      final c = RichTextEditingController();
+      addTearDown(c.dispose);
+      await tester.pumpWidget(
+        themed(
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Composer(
+              labels: labels,
+              controller: c,
+              onSend: (_) {},
+              suggestionsLift: 80,
+              suggestions: const [ComposerSuggestion(title: 'Boris')],
+              onSuggestion: (_) {},
+            ),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 300));
+      final bar = tester.getRect(find.byType(Composer));
+      final list = tester.getRect(find.byType(ComposerSuggestionList));
+      expect(list.bottom, lessThanOrEqualTo(bar.top - 80));
+    });
   });
 }
