@@ -75,8 +75,63 @@ class _MgIconButtonState extends State<MgIconButton> {
   }
 }
 
-/// The filled send button, an accent circle, that replaces the microphone
-/// when the composer has a draft.
+/// The composer's action: a 32 px accent rounded square with a white glyph,
+/// which is the send arrow while there is a draft and the microphone
+/// otherwise ([MgSendButton] and [MgRecordButton]). Both draw the same
+/// square, so the composer can morph one glyph into the other in place.
+class _ActionSquare extends StatelessWidget {
+  const _ActionSquare({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+    this.onMenu,
+  });
+
+  final MgIconData icon;
+  final String tooltip;
+  final VoidCallback? onTap;
+  final void Function(Offset position)? onMenu;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = MgColors.of(context);
+    return Tooltip(
+      message: tooltip,
+      excludeFromSemantics: true,
+      child: GestureDetector(
+        onLongPressStart: onMenu == null
+            ? null
+            : (details) => onMenu!(details.globalPosition),
+        child: MgPressable(
+          onTap: onTap,
+          onSecondaryTapUp: onMenu == null
+              ? null
+              : (details) => onMenu!(details.globalPosition),
+          semanticsLabel: tooltip,
+          focusRadius: MgSendButton.radius,
+          builder: (context, st) => AnimatedContainer(
+            duration: MgMotion.fast,
+            curve: MgMotion.standardCurve,
+            width: MgSendButton.size,
+            height: MgSendButton.size,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: Color.lerp(
+                c.accent,
+                c.onAccent,
+                st.pressed ? 0.12 : (st.hovered ? 0.06 : 0),
+              ),
+              borderRadius: BorderRadius.circular(MgSendButton.radius),
+            ),
+            child: MgIcon(icon, size: 18, stroke: 2, color: c.onAccent),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The send half of the composer's action, shown while there is a draft.
 class MgSendButton extends StatelessWidget {
   const MgSendButton({
     super.key,
@@ -94,47 +149,23 @@ class MgSendButton extends StatelessWidget {
   /// a menu of other ways to send, such as without sound or later.
   final void Function(Offset position)? onMenu;
 
-  static const double size = 36;
+  static const double size = 32;
+  static const double radius = 10;
+
+  /// The height of a composer row, which the 32 px action sits centred in.
+  static const double rowHeight = 36;
 
   @override
-  Widget build(BuildContext context) {
-    final c = MgColors.of(context);
-    return Tooltip(
-      message: tooltip,
-      excludeFromSemantics: true,
-      child: Semantics(
-        button: true,
-        enabled: onPressed != null,
-        label: tooltip,
-        child: MouseRegion(
-          cursor: SystemMouseCursors.click,
-          child: GestureDetector(
-            onTap: onPressed,
-            onSecondaryTapUp: onMenu == null
-                ? null
-                : (details) => onMenu!(details.globalPosition),
-            onLongPressStart: onMenu == null
-                ? null
-                : (details) => onMenu!(details.globalPosition),
-            child: Container(
-              width: size,
-              height: size,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: c.accent,
-                shape: BoxShape.circle,
-              ),
-              child: MgIcon(icon, size: 18, stroke: 2, color: c.onAccent),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => _ActionSquare(
+    icon: icon,
+    tooltip: tooltip,
+    onTap: onPressed,
+    onMenu: onMenu,
+  );
 }
 
-/// The microphone in the send button's place while there is no draft: a
-/// plain grey icon, so that a draft visibly arms the accent send button.
+/// The microphone half of the composer's action, shown while there is no
+/// draft.
 class MgRecordButton extends StatelessWidget {
   const MgRecordButton({super.key, required this.tooltip, this.onPressed});
 
@@ -142,12 +173,6 @@ class MgRecordButton extends StatelessWidget {
   final VoidCallback? onPressed;
 
   @override
-  Widget build(BuildContext context) => MgIconButton(
-    icon: MgIcons.mic,
-    tooltip: tooltip,
-    onPressed: onPressed,
-    iconSize: 22,
-    size: MgSendButton.size,
-    quiet: true,
-  );
+  Widget build(BuildContext context) =>
+      _ActionSquare(icon: MgIcons.mic, tooltip: tooltip, onTap: onPressed);
 }
