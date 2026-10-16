@@ -294,42 +294,55 @@ class _ChatViewState extends ConsumerState<ChatView> {
   /// chat keeps the focus it has.
   void _focusComposer() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_onScreen || _focus.context == null) return;
+      if (!mounted || !_onScreen || _inputFocus.context == null) return;
       if (ModalRoute.of(context)?.isCurrent == false) return;
-      _focus.requestFocus();
+      _inputFocus.requestFocus();
     });
   }
 
+  /// The field that takes typing: the thread's while comments, a topic or
+  /// a saved tag are open, the chat's otherwise.
+  FocusNode get _inputFocus => _thread != null ? _threadFocus : _focus;
+  RichTextEditingController get _inputDraft =>
+      _thread != null ? _threadDraft : _draft;
+
   /// A click on the chat that lands on no field leaves the focus on the
-  /// chat as a whole rather than nowhere.
+  /// chat as a whole rather than nowhere, also when it was left on
+  /// something outside the chat, such as the workspace after a palette.
   void _claimFocus() {
     scheduleMicrotask(() {
       if (!mounted || _area.hasFocus) return;
       final focused = FocusManager.instance.primaryFocus;
-      if (focused?.context?.findAncestorWidgetOfExactType<EditableText>() !=
-          null) {
+      final context = focused?.context;
+      if (context?.findAncestorWidgetOfExactType<EditableText>() != null) {
         return;
       }
-      if (focused == null ||
-          focused.context == null ||
-          focused.hasPrimaryFocus && focused.context!.widget is FocusScope) {
-        _area.requestFocus();
-      }
+      // A control inside the chat keeps the focus it was just given.
+      final inside = focused != null && focused.ancestors.contains(_area);
+      if (!inside) _area.requestFocus();
     });
   }
 
   /// Typing anywhere in the chat, with nothing being edited, goes to the
   /// composer: the key that started it is not lost.
   KeyEventResult _typeToComposer(FocusNode node, KeyEvent event) {
-    if (event is! KeyDownEvent || _focus.hasFocus || _focus.context == null) {
+    final input = _inputFocus;
+    if (event is! KeyDownEvent || input.hasFocus || input.context == null) {
       return KeyEventResult.ignored;
     }
-    final focused = FocusManager.instance.primaryFocus?.context;
-    if (focused?.findAncestorWidgetOfExactType<EditableText>() != null) {
+    final primary = FocusManager.instance.primaryFocus;
+    if (primary?.context?.findAncestorWidgetOfExactType<EditableText>() !=
+        null) {
       return KeyEventResult.ignored;
     }
+    // Escape and Enter belong to a recording in progress.
+    if (primary?.debugLabel == VoiceRecordComposer.focusLabel) {
+      return KeyEventResult.ignored;
+    }
+    // Option and AltGr make characters of their own, so Alt alone passes;
+    // a shortcut is Control or Command without it.
     final keys = HardwareKeyboard.instance;
-    if (keys.isControlPressed || keys.isMetaPressed || keys.isAltPressed) {
+    if (keys.isMetaPressed || (keys.isControlPressed && !keys.isAltPressed)) {
       return KeyEventResult.ignored;
     }
     final character = event.character;
@@ -339,12 +352,13 @@ class _ChatViewState extends ConsumerState<ChatView> {
         character.codeUnitAt(0) == 0x7f) {
       return KeyEventResult.ignored;
     }
-    _focus.requestFocus();
-    final value = _draft.value;
+    input.requestFocus();
+    final draft = _inputDraft;
+    final value = draft.value;
     final selection = value.selection.isValid
         ? value.selection
         : TextSelection.collapsed(offset: value.text.length);
-    _draft.value = value.copyWith(
+    draft.value = value.copyWith(
       text: value.text.replaceRange(selection.start, selection.end, character),
       selection: TextSelection.collapsed(
         offset: selection.start + character.length,
