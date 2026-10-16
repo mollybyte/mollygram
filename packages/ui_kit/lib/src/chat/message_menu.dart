@@ -626,6 +626,7 @@ class ComposerContextBar extends StatelessWidget {
     required this.closeTooltip,
     required this.onClose,
     this.onTap,
+    this.icon = MgIcons.reply,
   });
 
   final String title;
@@ -636,11 +637,15 @@ class ComposerContextBar extends StatelessWidget {
   /// Scrolls to the quoted message.
   final VoidCallback? onTap;
 
+  /// What is happening, in the column of the composer's attach button so
+  /// that the text lines up with the field below.
+  final MgIconData icon;
+
   @override
   Widget build(BuildContext context) {
     final c = MgColors.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(10, 4, 0, 2),
+      padding: const EdgeInsets.only(bottom: 5),
       child: Row(
         children: [
           Expanded(
@@ -649,35 +654,48 @@ class ComposerContextBar extends StatelessWidget {
                   ? MouseCursor.defer
                   : SystemMouseCursors.click,
               child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
                 onTap: onTap,
-                child: Container(
-                  padding: const EdgeInsets.only(left: 8),
-                  decoration: BoxDecoration(
-                    border: Border(left: BorderSide(color: c.accent, width: 2)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: mgTextStyle(
-                          c,
-                          weight: FontWeight.w600,
-                          color: c.accent,
-                          height: 1.3,
-                        ),
+                child: Row(
+                  children: [
+                    SizedBox.square(
+                      dimension: MgSendButton.size,
+                      child: Center(
+                        child: MgIcon(icon, size: 20, color: c.accent),
                       ),
-                      Text(
-                        text,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: mgTextStyle(c, color: c.fg2, height: 1.3),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: mgTextStyle(
+                              c,
+                              size: MgType.small,
+                              weight: MgWeight.medium,
+                              color: c.accent,
+                              height: 1.3,
+                            ),
+                          ),
+                          Text(
+                            text,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: mgTextStyle(
+                              c,
+                              size: MgType.small,
+                              height: 1.3,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -685,7 +703,9 @@ class ComposerContextBar extends StatelessWidget {
           MgIconButton(
             icon: MgIcons.close,
             tooltip: closeTooltip,
-            iconSize: 14,
+            iconSize: 16,
+            size: MgSendButton.size,
+            quiet: true,
             onPressed: onClose,
           ),
         ],

@@ -1380,6 +1380,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
   Widget? _threadComposerHeader(AppLocalizations l10n) {
     if (_threadEditing case final editing?) {
       return ComposerContextBar(
+        icon: MgIcons.edit,
         title: l10n.editingMessage,
         text: describeContent(l10n, editing.content),
         closeTooltip: l10n.close,
@@ -3373,6 +3374,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     final editing = _editing;
     if (editing != null) {
       return ComposerContextBar(
+        icon: MgIcons.edit,
         title: l10n.editingMessage,
         text: describeContent(l10n, editing.content),
         closeTooltip: l10n.close,
