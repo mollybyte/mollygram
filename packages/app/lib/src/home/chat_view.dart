@@ -1374,6 +1374,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
         recentChats: _recentForwardTargets,
         onForwardTo: (messages, chatId) =>
             unawaited(_forward(messages, toChat: chatId)),
+        onSelect: _select,
       ),
     );
   }
@@ -1499,6 +1500,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
     onReaction: _actions.onReaction,
     onNeedReplied: _actions.onNeedReplied,
     onMenu: (row, position) => unawaited(_showThreadMenu(row, position)),
+    onSelectToggle: _toggleSelected,
     onViewMedia: _actions.onViewMedia,
     onTextSelected: _actions.onTextSelected,
     onPollVote: _actions.onPollVote,
@@ -1984,7 +1986,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
 
   /// Starts selecting with [row], or adds it when already selecting.
   void _select(MessageRow row) {
-    if (row.primary.chatId != widget.chatId) return;
+    if (row.primary.chatId != _selectionChatId) return;
     final selected = _selected ?? <int>{};
     selected.addAll([for (final message in row.messages) message.id]);
     _setSelection(selected);
@@ -2023,11 +2025,17 @@ class _ChatViewState extends ConsumerState<ChatView> {
     if (_selected != null) _setSelection(null);
   }
 
+  /// The chat whose messages are selected: the open thread's (comments,
+  /// a topic, a Saved Messages tag) or this one.
+  int get _selectionChatId => _thread?.chatId ?? widget.chatId;
+
   /// The selected messages, oldest first.
   List<ConversationMessage> _selectedMessages() {
     final selected = _selected ?? const <int>{};
+    final shown =
+        _thread?.messages ?? _conversations.store.messagesFor(widget.chatId);
     return [
-      for (final message in _conversations.store.messagesFor(widget.chatId))
+      for (final message in shown)
         if (selected.contains(message.id)) message,
     ].reversed.toList();
   }
@@ -2035,7 +2043,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
   /// Fetches what may be done with the selection; the bar's commands
   /// enable once it is known. A change of selection meanwhile wins.
   Future<void> _loadSelectedProperties(Set<int> selected) async {
-    final chatId = widget.chatId;
+    final chatId = _selectionChatId;
     final ids = selected.toList();
     final List<td.MessageProperties> properties;
     try {
@@ -2046,7 +2054,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
       return;
     }
     if (!mounted ||
-        widget.chatId != chatId ||
+        _selectionChatId != chatId ||
         !identical(_selected, selected)) {
       return;
     }
@@ -3788,6 +3796,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
                     unawaited(_quiet(_thread!.view([message.id]))),
                 onNearTop: () => unawaited(_quiet(_thread!.loadOlder())),
                 onNearBottom: () {},
+                selection: _selected,
                 actions: _threadActions,
               ),
               AsyncData() when _scheduledOpen => TimelineView(
@@ -4100,8 +4109,13 @@ class _ChatViewState extends ConsumerState<ChatView> {
                         ),
                       // The composer is the card's own bottom edge; the other
                       // bars still float over the messages.
-                      if (_thread case final thread?)
+                      if (_thread case final thread? when _selected == null)
                         _threadComposer(l10n, thread)
+                      else if (_thread != null)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+                          child: _selectionBar(l10n),
+                        )
                       else if (_forum || _savedOpen)
                         const SizedBox.shrink()
                       else if (switch (null) {
