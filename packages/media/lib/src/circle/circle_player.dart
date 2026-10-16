@@ -61,6 +61,17 @@ abstract class CirclePlayer {
   /// Whether playback is running (also true while loading with autoplay).
   ValueListenable<bool> get playing;
 
+  /// How far playback is, wrapping to zero when the loop restarts.
+  ValueListenable<Duration> get position;
+
+  /// The length of the open source; zero until it is known.
+  ValueListenable<Duration> get duration;
+
+  /// The playback speed, 1 by default.
+  ValueListenable<double> get rate;
+
+  Future<void> setRate(double rate);
+
   /// Opens [source] and, if [play] is true, starts it muted and looping.
   Future<void> open(CircleSource source, {bool play = true});
 

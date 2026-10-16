@@ -389,6 +389,8 @@ class _VideoNoteContentState extends ConsumerState<VideoNoteContent> {
   // widget has left the tree.
   late final CirclePlayerPool _pool;
   late final ConversationController _conversations;
+  late final ValueNotifier<ActiveCircle?> _active;
+  late final AudioTrackPlayer _audio;
 
   @override
   void initState() {
@@ -398,6 +400,28 @@ class _VideoNoteContentState extends ConsumerState<VideoNoteContent> {
         .read(telegramSessionProvider)
         .requireValue
         .conversations;
+    _active = ref.read(activeCircleProvider);
+    _audio = ref.read(audioPlayerProvider);
+    _active.addListener(_onActive);
+  }
+
+  bool get _isActive {
+    final active = _active.value;
+    return active != null &&
+        active.chatId == widget.chatId &&
+        active.messageId == widget.messageId;
+  }
+
+  /// The capsule's close button, or another circle taking over, silences
+  /// this one again.
+  void _onActive() {
+    if (!_withSound || _isActive) return;
+    final player = _player;
+    if (player != null) {
+      unawaited(player.setMuted(true));
+      unawaited(player.setRate(1));
+    }
+    if (mounted) setState(() => _withSound = false);
   }
 
   void _attach(String path) {
@@ -412,6 +436,14 @@ class _VideoNoteContentState extends ConsumerState<VideoNoteContent> {
     if (player == null) return;
     if (!_withSound) {
       setState(() => _withSound = true);
+      // One sound at a time: a voice message stops, and the capsule moves
+      // from it to this circle.
+      unawaited(_audio.stop());
+      _active.value = (
+        chatId: widget.chatId,
+        messageId: widget.messageId,
+        player: player,
+      );
       await player.setMuted(false);
       await player.play();
       unawaited(
@@ -430,6 +462,13 @@ class _VideoNoteContentState extends ConsumerState<VideoNoteContent> {
 
   @override
   void dispose() {
+    _active.removeListener(_onActive);
+    if (_isActive) {
+      // Listeners rebuild widgets, which is not allowed while the tree is
+      // being taken apart.
+      final active = _active;
+      scheduleMicrotask(() => active.value = null);
+    }
     final player = _player;
     if (player != null) {
       unawaited(_pool.release(player));

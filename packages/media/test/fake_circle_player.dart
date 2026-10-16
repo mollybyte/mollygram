@@ -21,6 +21,18 @@ class FakeCirclePlayer implements CirclePlayer {
   final ValueNotifier<bool> playing = ValueNotifier(false);
 
   @override
+  final ValueNotifier<Duration> position = ValueNotifier(Duration.zero);
+
+  @override
+  final ValueNotifier<Duration> duration = ValueNotifier(Duration.zero);
+
+  @override
+  final ValueNotifier<double> rate = ValueNotifier(1);
+
+  @override
+  Future<void> setRate(double value) async => rate.value = value;
+
+  @override
   Future<void> open(CircleSource source, {bool play = true}) async {
     calls.add('open ${source.uri}');
     this.source = source;
