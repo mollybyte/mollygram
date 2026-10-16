@@ -8,6 +8,12 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 import '../../l10n/app_localizations.dart';
 import 'td_file.dart';
 
+// Kept here, not in MgIcons, which every icon golden lists.
+const _retryIcon = MgIconData(
+  'retry',
+  '<path d="M20 12a8 8 0 1 1-2.6-5.9L20 8.5M20 4v4.5h-4.5"/>',
+);
+
 /// The file a photo, video or GIF message uploads, or null for other
 /// content.
 td.File? uploadFileOf(td.MessageContent content) => switch (content) {
@@ -150,7 +156,7 @@ class _UploadBadgeState extends State<UploadBadge>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       _RoundButton(
-                        icon: MgIcons.retry,
+                        icon: _retryIcon,
                         label: l10n.retryUpload,
                         onTap: widget.onRetry,
                       ),
