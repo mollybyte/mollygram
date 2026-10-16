@@ -31,7 +31,7 @@ class ChatHeaderBar extends StatelessWidget {
     final c = MgColors.of(context);
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: c.card,
+        color: c.solid(c.card),
         border: Border(bottom: BorderSide(color: c.separator, width: 0.5)),
       ),
       child: Padding(

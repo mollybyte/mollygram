@@ -51,6 +51,14 @@ class MgColors extends ThemeExtension<MgColors> {
   /// TelegramSwift.
   Color get icon => fg2;
 
+  /// [color] made opaque over the matte base of [glassSolid]. The blurred
+  /// theme's frame and card are translucent so the desktop shows through
+  /// the main surfaces; panels, dialogs and the settings window use this to
+  /// stay readable and matte instead of showing the desktop sharply.
+  Color solid(Color color) => color.a >= 0.99
+      ? color
+      : Color.alphaBlend(color, glassSolid.withValues(alpha: 1));
+
   /// The composer's resting icons and its placeholder: lighter than the
   /// secondary text in the light theme, so they don't read as typed text.
   Color get quiet => isDark ? fg2 : muted;

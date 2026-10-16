@@ -305,7 +305,7 @@ class _PreviewState extends State<_Preview> {
       width: 440,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: c.card,
+          color: c.solid(c.card),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: c.separator, width: 0.5),
           boxShadow: const [

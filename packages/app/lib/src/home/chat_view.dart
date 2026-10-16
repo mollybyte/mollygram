@@ -3963,7 +3963,7 @@ class _ChatViewState extends ConsumerState<ChatView> {
                           },
                           child: DecoratedBox(
                             decoration: BoxDecoration(
-                              color: c.card,
+                              color: c.solid(c.card),
                               border: Border(
                                 top: BorderSide(color: c.separator, width: 0.5),
                               ),

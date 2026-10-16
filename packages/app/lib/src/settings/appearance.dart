@@ -104,7 +104,7 @@ MgColors vesperBlur(MgColors base, double opacity) => base.copyWith(
   field: const Color(0x14F3EEE7),
   avatarTop: const Color(0xFF5C544B),
   avatarBottom: const Color(0xFF443E37),
-  glass: const Color(0x8C26221E),
+  glass: const Color(0xDC26221E),
   glassSolid: const Color(0xF026221E),
   rim: const Color(0x1AFFFFFF),
   highlight: const Color(0x24FFFFFF),

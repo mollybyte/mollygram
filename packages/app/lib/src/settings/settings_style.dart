@@ -32,9 +32,9 @@ class SettingsColors {
   static SettingsColors of(BuildContext context) {
     final c = MgColors.of(context);
     return SettingsColors._(
-      sidebar: c.frame,
-      pane: Color.lerp(c.card, c.frame, 0.65)!,
-      group: c.card,
+      sidebar: c.solid(c.frame),
+      pane: c.solid(Color.lerp(c.card, c.frame, 0.65)!),
+      group: c.solid(c.card),
       groupBorder: c.separator,
       pressed: c.isDark ? const Color(0x1AFFFFFF) : const Color(0x14000000),
     );
