@@ -10,7 +10,10 @@ const _window = MethodChannel('mollygram/window');
 
 /// Paints the native window behind Flutter in the frame's colour, so the
 /// rounded corners and the edge pixels Flutter's surface leaves uncovered
-/// match the window instead of showing the view's black backing.
+/// match the window instead of showing the view's black backing, and gives
+/// the window the app's light or dark appearance: macOS draws the window's
+/// outline for the appearance it has, so a light app in a dark system got
+/// the dark outline.
 class WindowBackground extends ConsumerStatefulWidget {
   const WindowBackground({super.key, required this.child});
 
@@ -22,15 +25,24 @@ class WindowBackground extends ConsumerStatefulWidget {
 
 class _WindowBackgroundState extends ConsumerState<WindowBackground> {
   Color? _sent;
+  bool? _dark;
   bool _blurSent = false;
 
-  void _sync(Color frame, bool blur) {
+  void _sync(Color frame, bool dark, bool blur) {
     // The blurred theme's frame is translucent: the window goes clear and
     // a native vibrancy view behind Flutter's surface supplies the blur.
     if (blur != _blurSent) {
       _blurSent = blur;
-      _sent = null; // the frame's colour goes out again after the switch
+      // The frame's colour and the appearance go out again after the switch.
+      _sent = null;
+      _dark = null;
       _window.invokeMethod<void>('setBlurred', blur).catchError((Object _) {});
+    }
+    if (dark != _dark) {
+      _dark = dark;
+      _window
+          .invokeMethod<void>('setAppearance', dark)
+          .catchError((Object _) {});
     }
     final opaque = blur ? frame.withValues(alpha: 1) : frame;
     if (opaque == _sent) return;
@@ -42,10 +54,8 @@ class _WindowBackgroundState extends ConsumerState<WindowBackground> {
 
   @override
   Widget build(BuildContext context) {
-    _sync(
-      MgColors.of(context).frame,
-      blurThemeActive(ref.watch(preferencesProvider)),
-    );
+    final c = MgColors.of(context);
+    _sync(c.frame, c.isDark, blurThemeActive(ref.watch(preferencesProvider)));
     return widget.child;
   }
 }
