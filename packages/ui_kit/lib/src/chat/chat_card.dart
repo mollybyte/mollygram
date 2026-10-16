@@ -23,27 +23,27 @@ class ChatCard extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: shape,
         boxShadow: c.isDark
-            ? const [
+            ? [
                 BoxShadow(
                   color: Color(0x4D000000),
-                  blurRadius: 2,
+                  blurRadius: cssBlur(2),
                   offset: Offset(0, 1),
                 ),
                 BoxShadow(
                   color: Color(0x59000000),
-                  blurRadius: 30,
+                  blurRadius: cssBlur(30),
                   offset: Offset(0, 10),
                 ),
               ]
-            : const [
+            : [
                 BoxShadow(
                   color: Color(0x0F281450),
-                  blurRadius: 2,
+                  blurRadius: cssBlur(2),
                   offset: Offset(0, 1),
                 ),
                 BoxShadow(
                   color: Color(0x1A281450),
-                  blurRadius: 28,
+                  blurRadius: cssBlur(28),
                   offset: Offset(0, 8),
                 ),
               ],

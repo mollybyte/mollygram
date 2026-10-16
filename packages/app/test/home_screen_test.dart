@@ -135,6 +135,16 @@ void main() {
     expect(container.read(workspaceControllerProvider).value.focusedChat, 2);
   });
 
+  testWidgets('without folders the folder bar is gone and the header has '
+      'search and info', (tester) async {
+    await pump(tester);
+    expect(find.byType(FolderSegments), findsNothing);
+    await tester.tap(row('Anna'));
+    await settle(tester);
+    expect(find.byTooltip('Search in chat'), findsOneWidget);
+    expect(find.byTooltip('Info'), findsOneWidget);
+  });
+
   testWidgets('an open chat fills its card', (tester) async {
     await pump(tester);
     await tester.tap(row('Anna'));

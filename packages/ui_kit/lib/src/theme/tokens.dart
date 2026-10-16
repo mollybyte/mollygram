@@ -112,3 +112,9 @@ class MgSpringCurve extends Curve {
     return sim.x(t * response);
   }
 }
+
+/// The Flutter [BoxShadow.blurRadius] that draws a CSS `box-shadow` blur of
+/// [css] pixels: CSS blurs with a sigma of half the radius, Flutter with
+/// `0.577 * r + 0.5`, so copying the canvas's numbers as they are spreads
+/// every shadow by about 15 % and makes it read as a flat grey band.
+double cssBlur(double css) => css <= 1 ? 0 : (css / 2 - 0.5) / 0.57735;

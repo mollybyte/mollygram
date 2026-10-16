@@ -10,6 +10,7 @@ import '../icons.dart';
 import '../theme/colors.dart';
 import '../theme/metrics.dart';
 import '../theme/theme.dart';
+import '../theme/tokens.dart';
 
 /// What a chat is, for the small glyph before its title.
 enum ChatRowKind { private, group, channel }
@@ -159,6 +160,10 @@ class ChatListTile extends StatefulWidget {
 class _ChatListTileState extends State<ChatListTile> {
   bool _hover = false;
 
+  /// The primary button is down on the row: the fill deepens at once, so
+  /// the row answers the press, not the release.
+  bool _pressed = false;
+
   /// Set after the first frame: badges that are there from the start, or
   /// when the row scrolls into view, don't pop in.
   bool _settled = false;
@@ -215,174 +220,185 @@ class _ChatListTileState extends State<ChatListTile> {
       child: MouseRegion(
         onEnter: (_) => setState(() => _hover = true),
         onExit: (_) => setState(() => _hover = false),
-        child: GestureDetector(
-          onTap: widget.onTap,
-          onSecondaryTapUp: widget.onContextMenu == null
-              ? null
-              : (details) => widget.onContextMenu!(details.globalPosition),
-          onLongPressStart: widget.onContextMenu == null
-              ? null
-              : (details) => widget.onContextMenu!(details.globalPosition),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 120),
-            margin: const EdgeInsets.only(bottom: 1),
-            padding: EdgeInsets.fromLTRB(
-              8,
-              metrics.rowPadding,
-              10,
-              metrics.rowPadding,
-            ),
-            decoration: BoxDecoration(
-              color: on
-                  ? c.selected
-                  : (_hover || widget.menuOpen || widget.highlighted
-                        ? c.hover
-                        : const Color(0x00000000)),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            foregroundDecoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: widget.menuOpen && !on
-                    ? c.accent
-                    : const Color(0x00000000),
-                width: ChatListTile._ring,
-                strokeAlign: BorderSide.strokeAlignInside,
+        child: Listener(
+          onPointerDown: (e) {
+            if (e.buttons == 1) setState(() => _pressed = true);
+          },
+          onPointerUp: (_) => setState(() => _pressed = false),
+          onPointerCancel: (_) => setState(() => _pressed = false),
+          child: GestureDetector(
+            onTap: widget.onTap,
+            onTapCancel: () => setState(() => _pressed = false),
+            onSecondaryTapUp: widget.onContextMenu == null
+                ? null
+                : (details) => widget.onContextMenu!(details.globalPosition),
+            onLongPressStart: widget.onContextMenu == null
+                ? null
+                : (details) => widget.onContextMenu!(details.globalPosition),
+            child: AnimatedContainer(
+              duration: _pressed ? MgMotion.press : MgMotion.fast,
+              curve: MgMotion.standardCurve,
+              margin: const EdgeInsets.only(bottom: 1),
+              padding: EdgeInsets.fromLTRB(
+                8,
+                metrics.rowPadding,
+                10,
+                metrics.rowPadding,
               ),
-            ),
-            child: Row(
-              children: [
-                _AvatarWithDot(
-                  avatar:
-                      widget.avatar ??
-                      MonogramAvatar(
-                        name: widget.title,
-                        size: ChatListTile.avatarSize,
-                      ),
-                  online: widget.online,
-                  selected: on,
+              decoration: BoxDecoration(
+                color: on
+                    ? c.selected
+                    : _pressed
+                    ? Color.alphaBlend(c.hover, c.hover)
+                    : (_hover || widget.menuOpen || widget.highlighted
+                          ? c.hover
+                          : const Color(0x00000000)),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              foregroundDecoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: widget.menuOpen && !on
+                      ? c.accent
+                      : const Color(0x00000000),
+                  width: ChatListTile._ring,
+                  strokeAlign: BorderSide.strokeAlignInside,
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        height: ChatListTile._titleLine,
-                        child: Row(
-                          children: [
-                            if (kindIcon != null) ...[
-                              MgIcon(kindIcon, size: 12, color: icon),
-                              const SizedBox(width: 4),
-                            ],
-                            if (widget.secret) ...[
-                              MgIcon(
-                                MgIcons.lock,
-                                size: 12,
-                                stroke: 2.2,
-                                color: on ? c.onAccent : c.fg,
+              ),
+              child: Row(
+                children: [
+                  _AvatarWithDot(
+                    avatar:
+                        widget.avatar ??
+                        MonogramAvatar(
+                          name: widget.title,
+                          size: ChatListTile.avatarSize,
+                        ),
+                    online: widget.online,
+                    selected: on,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          height: ChatListTile._titleLine,
+                          child: Row(
+                            children: [
+                              if (kindIcon != null) ...[
+                                MgIcon(kindIcon, size: 12, color: icon),
+                                const SizedBox(width: 4),
+                              ],
+                              if (widget.secret) ...[
+                                MgIcon(
+                                  MgIcons.lock,
+                                  size: 12,
+                                  stroke: 2.2,
+                                  color: on ? c.onAccent : c.fg,
+                                ),
+                                const SizedBox(width: 4),
+                              ],
+                              // The title and its marks take what the time
+                              // leaves; a long title ellipsizes before them.
+                              Expanded(
+                                child: Row(
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        widget.title,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: mgTextStyle(
+                                          c,
+                                          size: MgType.body,
+                                          weight: MgWeight.semibold,
+                                          height: 1.3,
+                                          color: on ? c.onAccent : c.fg,
+                                        ),
+                                      ),
+                                    ),
+                                    if (widget.verified)
+                                      Padding(
+                                        padding: const EdgeInsets.only(left: 4),
+                                        child: VerifiedMark(
+                                          size: 13,
+                                          onAccent: on,
+                                        ),
+                                      ),
+                                    _Appear(
+                                      visible: widget.muted,
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(left: 4),
+                                        child: MgIcon(
+                                          MgIcons.muted,
+                                          size: 11,
+                                          stroke: 2.2,
+                                          color: faint,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              const SizedBox(width: 4),
+                              if (widget.time.isNotEmpty) ...[
+                                const SizedBox(width: 6),
+                                _Ticks(status: widget.status, selected: on),
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 2),
+                                  child: Text(
+                                    widget.time,
+                                    style: mgTextStyle(
+                                      c,
+                                      size: MgType.caption,
+                                      color: on ? c.onAccentSecondary : c.muted,
+                                      height: 1.3,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ],
-                            // The title and its marks take what the time
-                            // leaves; a long title ellipsizes before them.
+                          ),
+                        ),
+                        const SizedBox(height: 1),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
                             Expanded(
+                              child: SizedBox(
+                                height: 2 * ChatListTile._line,
+                                child: Align(
+                                  alignment: Alignment.topLeft,
+                                  child: _preview(c, on),
+                                ),
+                              ),
+                            ),
+                            AnimatedSize(
+                              duration: _badgeDuration,
+                              curve: Curves.easeOutCubic,
+                              alignment: Alignment.centerRight,
                               child: Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Flexible(
-                                    child: Text(
-                                      widget.title,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: mgTextStyle(
-                                        c,
-                                        size: MgType.body,
-                                        weight: MgWeight.medium,
-                                        height: 1.3,
-                                        color: on ? c.onAccent : c.fg,
-                                      ),
-                                    ),
-                                  ),
-                                  if (widget.verified)
+                                  for (final badge in trailing)
                                     Padding(
+                                      key: badge.key,
                                       padding: const EdgeInsets.only(left: 4),
-                                      child: VerifiedMark(
-                                        size: 13,
-                                        onAccent: on,
+                                      child: _PopIn(
+                                        animate: _settled,
+                                        child: badge,
                                       ),
                                     ),
-                                  _Appear(
-                                    visible: widget.muted,
-                                    child: Padding(
-                                      padding: const EdgeInsets.only(left: 4),
-                                      child: MgIcon(
-                                        MgIcons.muted,
-                                        size: 11,
-                                        stroke: 2.2,
-                                        color: faint,
-                                      ),
-                                    ),
-                                  ),
                                 ],
                               ),
                             ),
-                            if (widget.time.isNotEmpty) ...[
-                              const SizedBox(width: 6),
-                              _Ticks(status: widget.status, selected: on),
-                              Padding(
-                                padding: const EdgeInsets.only(left: 2),
-                                child: Text(
-                                  widget.time,
-                                  style: mgTextStyle(
-                                    c,
-                                    size: MgType.caption,
-                                    color: on ? c.onAccentSecondary : c.muted,
-                                    height: 1.3,
-                                  ),
-                                ),
-                              ),
-                            ],
                           ],
                         ),
-                      ),
-                      const SizedBox(height: 1),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Expanded(
-                            child: SizedBox(
-                              height: 2 * ChatListTile._line,
-                              child: Align(
-                                alignment: Alignment.topLeft,
-                                child: _preview(c, on),
-                              ),
-                            ),
-                          ),
-                          AnimatedSize(
-                            duration: _badgeDuration,
-                            curve: Curves.easeOutCubic,
-                            alignment: Alignment.centerRight,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                for (final badge in trailing)
-                                  Padding(
-                                    key: badge.key,
-                                    padding: const EdgeInsets.only(left: 4),
-                                    child: _PopIn(
-                                      animate: _settled,
-                                      child: badge,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

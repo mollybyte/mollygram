@@ -368,7 +368,7 @@ class _NoChat extends StatelessWidget {
         height: 52,
         child: WindowDragArea(),
       ),
-      Center(child: DatePill(AppLocalizations.of(context).selectChat)),
+      MgEmptyState(AppLocalizations.of(context).selectChat, icon: MgIcons.chat),
     ],
   );
 }

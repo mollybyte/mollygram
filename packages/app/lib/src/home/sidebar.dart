@@ -11,6 +11,7 @@ import 'package:mollygram_ui_kit/mollygram_ui_kit.dart';
 import '../../l10n/app_localizations.dart';
 import '../avatar/peer_avatar.dart';
 import '../chat/forum_topics.dart' show TopicIcon;
+import '../commands/shortcut_key.dart';
 import '../downloads/downloads_bar.dart';
 import '../folders/folder_icons.dart';
 import '../privacy/ghost_mode_capsule.dart';
@@ -239,13 +240,23 @@ class _SidebarState extends ConsumerState<Sidebar> {
             ],
           );
 
+    // The palette's key as the user has it: their own binding, the
+    // platform's default, or none when they took the key away.
+    final custom = ref.watch(preferencesProvider.select((p) => p.shortcuts));
+    final paletteKey = custom.containsKey('shell.palette')
+        ? ShortcutKey.decode(custom['shell.palette'])?.label
+        : shortcutLabel(ShellShortcuts.palette);
+
     return SidebarIsland(
       titleBarFill: const WindowDragArea(),
       search: Focus(
         canRequestFocus: false,
         onKeyEvent: _onSearchKey,
         child: MgSearchField(
-          hintText: l10n.searchHint,
+          hintText: switch (paletteKey) {
+            final key? => l10n.sidebarSearchHint(key),
+            null => l10n.searchHint,
+          },
           controller: _search,
           focusNode: _searchFocus,
         ),
@@ -274,16 +285,20 @@ class _SidebarState extends ConsumerState<Sidebar> {
           onPressed: widget.onNewMessage,
         ),
       ],
-      folders: AnimatedSwitcher(
-        duration: _listSwitch,
-        switchInCurve: Curves.easeOutCubic,
-        switchOutCurve: Curves.easeInCubic,
-        layoutBuilder: (current, previous) => Stack(
-          alignment: Alignment.centerLeft,
-          children: [...previous, ?current],
-        ),
-        child: header,
-      ),
+      // With no folders of the user's own, a lone "All" segment would be a
+      // wide empty slab: the list starts right under the search instead.
+      folders: folders.isEmpty && list.isMain
+          ? null
+          : AnimatedSwitcher(
+              duration: _listSwitch,
+              switchInCurve: Curves.easeOutCubic,
+              switchOutCurve: Curves.easeInCubic,
+              layoutBuilder: (current, previous) => Stack(
+                alignment: Alignment.centerLeft,
+                children: [...previous, ?current],
+              ),
+              child: header,
+            ),
       banner: const DownloadsBar(),
       body: AnimatedSwitcher(
         duration: _listSwitch,
