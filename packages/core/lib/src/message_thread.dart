@@ -286,6 +286,15 @@ final class MessageThread {
           )
           when chatId == this.chatId:
         _patch(messageId, {'content': newContent.toJson()});
+      case td.UpdateMessageContentOpened(:final chatId, :final messageId)
+          when chatId == this.chatId:
+        final content = _messages[messageId]?.message.content;
+        final opened = switch (content) {
+          td.MessageVoiceNote() => {...content.toJson(), 'is_listened': true},
+          td.MessageVideoNote() => {...content.toJson(), 'is_viewed': true},
+          _ => null,
+        };
+        if (opened != null) _patch(messageId, {'content': opened});
       case td.UpdateMessageEdited(
             :final chatId,
             :final messageId,

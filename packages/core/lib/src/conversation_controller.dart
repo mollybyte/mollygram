@@ -407,6 +407,12 @@ final class ConversationController {
     await _client.send(
       td.OpenMessageContent(chatId: chatId, messageId: messageId),
     );
+    // With receipts hidden the request never reaches TDLib, so nothing
+    // would tell us the message was played; mark it here the way the
+    // update would, for the timeline and for any open thread.
+    _onUpdate(
+      td.UpdateMessageContentOpened(chatId: chatId, messageId: messageId),
+    );
   }
 
   /// Adds the reaction, or takes it back when [chosen] is true.

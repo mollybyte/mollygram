@@ -403,12 +403,14 @@ class _SharedListState extends ConsumerState<_SharedList> {
         document: document,
         meta: date,
       ),
-      td.MessageVoiceNote(:final voiceNote) => VoiceNoteContent(
-        chatId: message.chatId,
-        messageId: message.id,
-        voiceNote: voiceNote,
-        meta: date,
-      ),
+      td.MessageVoiceNote(:final voiceNote, :final isListened) =>
+        VoiceNoteContent(
+          chatId: message.chatId,
+          messageId: message.id,
+          voiceNote: voiceNote,
+          unread: !isListened,
+          meta: date,
+        ),
       td.MessageAudio(:final audio) => AudioContent(
         chatId: message.chatId,
         messageId: message.id,
