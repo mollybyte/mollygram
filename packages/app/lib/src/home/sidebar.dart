@@ -86,10 +86,13 @@ class _SidebarState extends ConsumerState<Sidebar> {
     if (key == LogicalKeyboardKey.enter ||
         key == LogicalKeyboardKey.numpadEnter) {
       final cursor = _cursor;
-      if (event is KeyDownEvent && cursor != null && cursor < chats.length) {
+      if (event is KeyDownEvent && cursor != null && chats.isNotEmpty) {
+        // The list may have shrunk under the cursor: open the row that is
+        // drawn highlighted.
+        final row = cursor.clamp(0, chats.length - 1);
         ref
             .read(workspaceControllerProvider)
-            .open(chats[cursor].id, target: _clickTarget());
+            .open(chats[row].id, target: _clickTarget());
       }
       return KeyEventResult.handled;
     }
@@ -532,7 +535,10 @@ class _ChatListState extends ConsumerState<_ChatList> {
   void didUpdateWidget(_ChatList old) {
     super.didUpdateWidget(old);
     final highlighted = widget.highlightedId;
-    if (highlighted != null && highlighted != old.highlightedId) {
+    // The highlighted row can also move when the results change under it.
+    if (highlighted != null &&
+        (highlighted != old.highlightedId ||
+            !identical(old.chats, widget.chats))) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _reveal(highlighted);
       });

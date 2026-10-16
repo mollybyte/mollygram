@@ -82,6 +82,13 @@ class _ForwardPickerState extends ConsumerState<_ForwardPicker> {
     return KeyEventResult.ignored;
   }
 
+  /// Reveals the cursor once new results are laid out, since the list
+  /// keeps its scroll offset while the cursor goes back to the top.
+  void _revealAfterLayout() =>
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _reveal();
+      });
+
   /// Scrolls by the least that shows the cursor's row whole.
   void _reveal() {
     if (!_scroll.hasClients) return;
@@ -142,6 +149,7 @@ class _ForwardPickerState extends ConsumerState<_ForwardPicker> {
 
   Future<void> _find(String query) async {
     final id = ++_searchId;
+    _revealAfterLayout();
     setState(() {
       _query = query;
       _cursor = 0;
@@ -161,6 +169,7 @@ class _ForwardPickerState extends ConsumerState<_ForwardPicker> {
         for (final chatId in ids) ?session.chatLists.store.chat(chatId),
       ];
     });
+    _revealAfterLayout();
   }
 
   @override
