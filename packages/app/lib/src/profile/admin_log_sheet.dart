@@ -79,11 +79,11 @@ class _AdminLogSheetState extends ConsumerState<AdminLogSheet> {
     }
   }
 
-  Future<void> _pickAdmin(Offset position) async {
+  Future<void> _pickAdmin(Rect anchor) async {
     final l10n = AppLocalizations.of(context);
-    await showMgMenu(
+    await showMgDropdown(
       context,
-      position: position,
+      anchor: anchor,
       items: [
         MgMenuItem(label: l10n.allAdmins, onSelected: () => _filter(0)),
         for (final (id, name) in _admins)
@@ -124,10 +124,7 @@ class _AdminLogSheetState extends ConsumerState<AdminLogSheet> {
                 builder: (context) => MgTextButton(
                   label: adminName ?? l10n.allAdmins,
                   onPressed: () {
-                    final box = context.findRenderObject()! as RenderBox;
-                    unawaited(
-                      _pickAdmin(box.localToGlobal(Offset(0, box.size.height))),
-                    );
+                    unawaited(_pickAdmin(mgAnchorOf(context)));
                   },
                 ),
               ),

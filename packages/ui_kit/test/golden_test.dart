@@ -775,6 +775,63 @@ void main() {
         matchesGoldenFile('goldens/message_menu_$theme.png'),
       );
     });
+
+    testWidgets('dropdown $theme', skip: _skip, (tester) async {
+      tester.view.physicalSize = const Size(420, 300);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        themed(
+          const Stack(
+            children: [
+              Positioned.fill(child: Wallpaper()),
+              Positioned(
+                right: 16,
+                top: 16,
+                child: SizedBox(width: 28, height: 28),
+              ),
+            ],
+          ),
+          colors: colors,
+        ),
+      );
+      final context = tester.element(find.byType(Wallpaper));
+      unawaited(
+        showMgDropdown(
+          context,
+          anchor: const Rect.fromLTWH(376, 16, 28, 28),
+          items: [
+            MgMenuItem(
+              label: 'View info',
+              icon: MgIcons.profile,
+              onSelected: () {},
+            ),
+            MgMenuItem(
+              label: 'Search',
+              icon: MgIcons.search,
+              onSelected: () {},
+            ),
+            MgMenuItem(
+              label: 'Mute',
+              icon: MgIcons.muted,
+              submenu: [MgMenuItem(label: '1 hour', onSelected: () {})],
+            ),
+            const MgMenuItem.divider(),
+            MgMenuItem(
+              label: 'Leave group',
+              icon: MgIcons.trash,
+              destructive: true,
+              onSelected: () {},
+            ),
+          ],
+        ),
+      );
+      await tester.pump();
+      await expectLater(
+        find.byType(MaterialApp),
+        matchesGoldenFile('goldens/dropdown_$theme.png'),
+      );
+    });
   }
 }
 
