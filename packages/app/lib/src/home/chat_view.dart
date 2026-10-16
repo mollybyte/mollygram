@@ -3778,7 +3778,17 @@ class _ChatViewState extends ConsumerState<ChatView> {
                 _savedTopicsView(store),
               AsyncData(value: final list)
                   when list.isEmpty && store.reachedStart(widget.chatId) =>
-                Center(child: DatePill(l10n.noMessages)),
+                // Over a picture the pill keeps the note legible; on the
+                // plain card or a soft gradient it would read as an alert.
+                ref.watch(
+                      preferencesProvider.select(
+                        (p) =>
+                            p.wallpaperKind == WallpaperKind.image &&
+                            p.wallpaperImage != null,
+                      ),
+                    )
+                    ? Center(child: DatePill(l10n.noMessages))
+                    : MgEmptyState(l10n.noMessages),
               AsyncData() when _thread != null => TimelineView(
                 key: const ValueKey('commentsThread'),
                 messages: _thread!.messages,
