@@ -123,25 +123,26 @@ class ChatListTile extends StatefulWidget {
   /// A secondary click or a long press, with its global position.
   final ValueChanged<Offset>? onContextMenu;
 
-  static const double avatarSize = 44;
+  static const double avatarSize = 50;
   static const double senderAvatarSize = 15;
 
   static const double _titleLine = 19;
-  static const double _line = 18;
+  static const double _line = 17;
 
   /// The title line, a 1 px gap and the two lines under it.
   static const double _content = _titleLine + 1 + 2 * _line;
 
-  /// The menu outline drawn inside the row, which pads its content.
+  /// The menu outline, drawn over the row's padding.
   static const double _ring = 1.5;
 
   /// The height of every row, including the 1 px gap below it; the list
-  /// lays rows out at this fixed extent.
-  static const double extent = _content + 2 * (8 + _ring) + 1;
+  /// lays rows out at this fixed extent. 70 tall rows with 50 avatars, as
+  /// in TelegramSwift.
+  static const double extent = _content + 2 * 8 + 1;
 
   /// [extent] for the density in [context]: compact rows are shorter.
   static double extentOf(BuildContext context) =>
-      _content + 2 * (MgMetrics.of(context).rowPadding + _ring) + 1;
+      _content + 2 * MgMetrics.of(context).rowPadding + 1;
 
   /// The online dot's green.
   static const Color onlineGreen = Color(0xFF34C759);
@@ -193,7 +194,7 @@ class _ChatListTileState extends State<ChatListTile> {
             Padding(
               key: const ValueKey('pin'),
               padding: const EdgeInsets.only(right: 2, bottom: 3),
-              child: MgIcon(MgIcons.pin, size: 12, color: icon),
+              child: MgIcon(MgIcons.pin, size: 12, color: faint),
             ),
           ]
         : badges;
@@ -232,6 +233,9 @@ class _ChatListTileState extends State<ChatListTile> {
                   : (_hover || widget.menuOpen
                         ? c.hover
                         : const Color(0x00000000)),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            foregroundDecoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
                 color: widget.menuOpen && !on
@@ -288,7 +292,7 @@ class _ChatListTileState extends State<ChatListTile> {
                                       style: mgTextStyle(
                                         c,
                                         size: MgType.body,
-                                        weight: MgWeight.semibold,
+                                        weight: MgWeight.medium,
                                         height: 1.3,
                                         color: on ? c.onAccent : c.fg,
                                       ),
@@ -384,15 +388,13 @@ class _ChatListTileState extends State<ChatListTile> {
   /// The two lines under the title: what someone is doing; or who wrote
   /// last and the message on one line each; or the message on both.
   Widget _preview(MgColors c, bool on) {
-    const size = 13.0;
+    const size = MgType.small;
+    // Grey under a dark title, as in TelegramSwift; in dark themes the
+    // muted grey is too dim for two lines of text.
+    final grey = on ? c.onAccentSecondary : (c.isDark ? c.fg2 : c.muted);
     final activity = widget.activity;
     if (activity != null) {
-      return MgStatusText(
-        activity,
-        activity: true,
-        size: size,
-        color: on ? c.onAccentSecondary : c.fg2,
-      );
+      return MgStatusText(activity, activity: true, size: size, color: grey);
     }
     final sender = widget.draftLabel == null ? widget.sender : null;
     final thumbnails = widget.thumbnails;
@@ -402,7 +404,7 @@ class _ChatListTileState extends State<ChatListTile> {
       leadColor: on ? c.onAccent : MgColors.draftRed,
       size: size,
       lineHeight: ChatListTile._line / size,
-      color: on ? c.onAccentSecondary : c.fg2,
+      color: grey,
       maxLines: sender == null ? 2 : 1,
       leading: thumbnails.isEmpty
           ? null
@@ -492,7 +494,7 @@ class _Ticks extends StatelessWidget {
     if (icon == null) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.only(right: 2),
-      child: MgIcon(icon, size: 15, stroke: 1.6, color: color),
+      child: MgIcon(icon, size: 13, stroke: 1.6, color: color),
     );
   }
 }
