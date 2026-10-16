@@ -205,7 +205,7 @@ class _TimelineViewState extends State<TimelineView> {
                 duration: Duration(milliseconds: _scrolling ? 120 : 300),
                 curve: Curves.easeOut,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 28),
+                  padding: const EdgeInsets.symmetric(horizontal: MgSpace.xxl),
                   child: DatePill(
                     formatDay(l10n, day, locale),
                     key: const ValueKey('floatingDate'),
@@ -352,7 +352,7 @@ class _TimelineList extends StatelessWidget {
       final padded = _Appear(
         animate: fresh,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 28),
+          padding: const EdgeInsets.symmetric(horizontal: MgSpace.xxl),
           // The text size chosen in Settings, Appearance.
           child: MessageTextSize(child: child),
         ),

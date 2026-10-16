@@ -24,7 +24,7 @@ class ChatHeaderBar extends StatelessWidget {
   final Widget actions;
   final Widget? fill;
 
-  static const double height = 54;
+  static const double height = 50;
 
   @override
   Widget build(BuildContext context) {
