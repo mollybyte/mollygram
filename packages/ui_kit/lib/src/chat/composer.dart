@@ -559,7 +559,7 @@ class _ComposerState extends State<Composer> {
     // under a hairline.
     final composer = Container(
       decoration: BoxDecoration(
-        color: c.card,
+        color: c.solid(c.card),
         border: Border(top: BorderSide(color: c.separator)),
       ),
       padding: const EdgeInsets.fromLTRB(12, 7, 12, 7),
