@@ -17,31 +17,7 @@ import 'downloads_providers.dart';
 
 /// Opens the downloads over the window, as the people sheet opens.
 Future<void> showDownloadsSheet(BuildContext context) =>
-    showGeneralDialog<void>(
-      context: context,
-      barrierDismissible: true,
-      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-      barrierColor: const Color(0x00000000),
-      transitionDuration: const Duration(milliseconds: 180),
-      transitionBuilder: (context, animation, _, child) {
-        final curved = CurvedAnimation(
-          parent: animation,
-          curve: Curves.easeOutCubic,
-          reverseCurve: Curves.easeInCubic,
-        );
-        return FadeTransition(
-          opacity: curved,
-          child: ScaleTransition(
-            scale: Tween(begin: 0.96, end: 1.0).animate(curved),
-            child: child,
-          ),
-        );
-      },
-      pageBuilder: (context, _, _) => const Material(
-        type: MaterialType.transparency,
-        child: Center(child: DownloadsSheet()),
-      ),
-    );
+    showMgSheet<void>(context, const DownloadsSheet());
 
 /// The downloads: active ones first with their progress, then paused and
 /// finished ones. A row pauses or resumes its download; a finished one
@@ -67,8 +43,13 @@ class DownloadsSheet extends ConsumerWidget {
       width: 400,
       height: 480,
       child: Glass(
-        radius: 14,
-        padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+        radius: MgRadius.popover,
+        padding: const EdgeInsets.fromLTRB(
+          MgSpace.ml,
+          MgSpace.m,
+          MgSpace.ml,
+          MgSpace.ml,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -255,11 +236,11 @@ class _DownloadRowState extends ConsumerState<_DownloadRow> {
         onSecondaryTapUp: (d) => unawaited(_menu(d.globalPosition)),
         onDoubleTap: entry.isCompleted ? () => unawaited(_primary()) : null,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 120),
-          padding: const EdgeInsets.fromLTRB(6, 6, 6, 6),
+          duration: MgMotion.fast,
+          padding: const EdgeInsets.all(MgSpace.s),
           decoration: BoxDecoration(
             color: _hover ? c.hover : const Color(0x00000000),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(MgRadius.control),
           ),
           child: Row(
             children: [
@@ -300,7 +281,7 @@ class _DownloadRowState extends ConsumerState<_DownloadRow> {
                 ),
               ),
               AnimatedOpacity(
-                duration: const Duration(milliseconds: 120),
+                duration: MgMotion.fast,
                 opacity: _hover ? 1 : 0,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,

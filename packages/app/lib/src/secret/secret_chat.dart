@@ -128,8 +128,11 @@ class SecretChatClosedBar extends ConsumerWidget {
     final c = MgColors.of(context);
     final l10n = AppLocalizations.of(context);
     return Glass(
-      radius: 22,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      radius: 22, // A pill, like the other bars floating over the composer.
+      padding: const EdgeInsets.symmetric(
+        horizontal: MgSpace.xl,
+        vertical: MgSpace.s,
+      ),
       child: Row(
         children: [
           const SecretChatLock(),
@@ -190,33 +193,7 @@ Future<void> showSecretKeySheet(
   BuildContext context, {
   required int chatId,
   required String name,
-}) => showGeneralDialog<void>(
-  context: context,
-  barrierDismissible: true,
-  barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-  barrierColor: const Color(0x00000000),
-  transitionDuration: const Duration(milliseconds: 180),
-  transitionBuilder: (context, animation, _, child) {
-    final curved = CurvedAnimation(
-      parent: animation,
-      curve: Curves.easeOutCubic,
-      reverseCurve: Curves.easeInCubic,
-    );
-    return FadeTransition(
-      opacity: curved,
-      child: ScaleTransition(
-        scale: Tween(begin: 0.96, end: 1.0).animate(curved),
-        child: child,
-      ),
-    );
-  },
-  pageBuilder: (context, _, _) => Material(
-    type: MaterialType.transparency,
-    child: Center(
-      child: SecretKeySheet(chatId: chatId, name: name),
-    ),
-  ),
-);
+}) => showMgSheet<void>(context, SecretKeySheet(chatId: chatId, name: name));
 
 class SecretKeySheet extends ConsumerWidget {
   const SecretKeySheet({super.key, required this.chatId, required this.name});
@@ -242,8 +219,13 @@ class SecretKeySheet extends ConsumerWidget {
         child: SizedBox(
           width: 340,
           child: Glass(
-            radius: 14,
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 14),
+            radius: MgRadius.popover,
+            padding: const EdgeInsets.fromLTRB(
+              MgSpace.xxl,
+              MgSpace.xxl,
+              MgSpace.xxl,
+              MgSpace.l,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,

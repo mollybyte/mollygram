@@ -42,4 +42,5 @@ export 'src/sign_in/sign_in.dart';
 export 'src/theme/colors.dart';
 export 'src/theme/metrics.dart';
 export 'src/theme/theme.dart';
+export 'src/theme/tokens.dart';
 export 'src/wallpaper.dart';

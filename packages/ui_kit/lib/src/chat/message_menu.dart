@@ -6,6 +6,8 @@ import '../icon_button.dart';
 import '../icons.dart';
 import '../theme/colors.dart';
 import '../theme/theme.dart';
+import '../theme/tokens.dart';
+import 'dialogs.dart';
 
 /// One command in a [showMgMenu] menu.
 final class MgMenuItem {
@@ -155,7 +157,7 @@ class _MenuLayout extends SingleChildLayoutDelegate {
   _MenuLayout(this.position);
 
   final Offset position;
-  static const double _margin = 8;
+  static const double _margin = MgSpace.m;
 
   @override
   BoxConstraints getConstraintsForChild(BoxConstraints constraints) =>
@@ -185,10 +187,10 @@ class _SubmenuLayout extends SingleChildLayoutDelegate {
   _SubmenuLayout(this.row);
 
   final Rect row;
-  static const double _margin = 8;
+  static const double _margin = MgSpace.m;
 
   /// The menu's padding, so the submenu's first row lines up with [row].
-  static const double _inset = 5;
+  static const double _inset = _Menu.padding;
 
   @override
   BoxConstraints getConstraintsForChild(BoxConstraints constraints) =>
@@ -229,6 +231,9 @@ class _Menu extends StatelessWidget {
   /// A row was hovered; its rect is in global coordinates.
   final void Function(MgMenuItem item, Rect row) onHover;
 
+  /// Keeps the rows' corners concentric with the panel's.
+  static const double padding = MgRadius.popover - MgRadius.small;
+
   @override
   Widget build(BuildContext context) {
     return Material(
@@ -237,8 +242,8 @@ class _Menu extends StatelessWidget {
         child: ConstrainedBox(
           constraints: const BoxConstraints(minWidth: 190, maxWidth: 320),
           child: Glass(
-            radius: 12,
-            padding: const EdgeInsets.all(5),
+            radius: MgRadius.popover,
+            padding: const EdgeInsets.all(padding),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -272,7 +277,10 @@ class _Separator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+    padding: const EdgeInsets.symmetric(
+      vertical: MgSpace.xs,
+      horizontal: MgSpace.m,
+    ),
     child: SizedBox(
       height: 1,
       child: ColoredBox(color: MgColors.of(context).separator),
@@ -345,13 +353,13 @@ class _MenuRowState extends State<_MenuRow> {
           onTap: _select,
           child: Container(
             height: 26,
-            padding: const EdgeInsets.symmetric(horizontal: 10),
+            padding: const EdgeInsets.symmetric(horizontal: MgSpace.ml),
             alignment: Alignment.centerLeft,
             decoration: BoxDecoration(
               color: lit
                   ? (item.destructive ? MgDestructive.color : c.accent)
                   : const Color(0x00000000),
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(MgRadius.small),
             ),
             child: Row(
               children: [
@@ -379,7 +387,7 @@ class _MenuRowState extends State<_MenuRow> {
                   ),
                 ),
                 if (item.submenu.isNotEmpty) ...[
-                  const SizedBox(width: 16),
+                  const SizedBox(width: MgSpace.xl),
                   MgIcon(MgIcons.chevron, size: 11, stroke: 2.4, color: color),
                 ],
               ],
@@ -427,10 +435,10 @@ class ReactionBar extends StatelessWidget {
     final c = MgColors.of(context);
     final onMore = this.onMore;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+      padding: const EdgeInsets.all(MgSpace.xxs),
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        spacing: 2,
+        spacing: MgSpace.xxs,
         children: [
           for (final emoji in reactions)
             _ReactionButton(
@@ -489,8 +497,8 @@ class ReactionGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = MgColors.of(context);
     return Glass(
-      radius: 14,
-      padding: const EdgeInsets.all(6),
+      radius: MgRadius.popover,
+      padding: const EdgeInsets.all(MgSpace.s),
       child: SizedBox(
         width: cell * columns,
         child: ConstrainedBox(
@@ -700,22 +708,16 @@ Future<bool?> showMgConfirm(
   bool optionValue = false,
   bool destructive = false,
 }) {
-  return showGeneralDialog<bool>(
-    context: context,
-    barrierDismissible: true,
-    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-    barrierColor: const Color(0x00000000),
-    transitionDuration: Duration.zero,
-    pageBuilder: (context, _, _) => Center(
-      child: _Confirm(
-        title: title,
-        message: message,
-        option: option,
-        optionValue: optionValue,
-        confirmLabel: confirmLabel,
-        cancelLabel: cancelLabel,
-        destructive: destructive,
-      ),
+  return showMgSheet<bool>(
+    context,
+    _Confirm(
+      title: title,
+      message: message,
+      option: option,
+      optionValue: optionValue,
+      confirmLabel: confirmLabel,
+      cancelLabel: cancelLabel,
+      destructive: destructive,
     ),
   );
 }
@@ -764,8 +766,13 @@ class _ConfirmState extends State<_Confirm> {
           child: SizedBox(
             width: 300,
             child: Glass(
-              radius: 14,
-              padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
+              radius: MgRadius.popover,
+              padding: const EdgeInsets.fromLTRB(
+                MgSpace.xl,
+                MgSpace.xl,
+                MgSpace.xl,
+                MgSpace.l,
+              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -775,18 +782,18 @@ class _ConfirmState extends State<_Confirm> {
                     style: mgTextStyle(c, weight: FontWeight.w600),
                   ),
                   if (widget.message != null) ...[
-                    const SizedBox(height: 6),
+                    const SizedBox(height: MgSpace.s),
                     Text(widget.message!, style: mgTextStyle(c, color: c.fg2)),
                   ],
                   if (widget.option != null) ...[
-                    const SizedBox(height: 10),
+                    const SizedBox(height: MgSpace.ml),
                     MgCheckRow(
                       label: widget.option!,
                       value: _checked,
                       onChanged: (value) => setState(() => _checked = value),
                     ),
                   ],
-                  const SizedBox(height: 16),
+                  const SizedBox(height: MgSpace.xl),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
@@ -794,7 +801,7 @@ class _ConfirmState extends State<_Confirm> {
                         label: widget.cancelLabel,
                         onTap: () => Navigator.of(context).pop(),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: MgSpace.m),
                       MgDialogButton(
                         label: widget.confirmLabel,
                         filled: true,
@@ -845,11 +852,11 @@ class MgDialogButton extends StatelessWidget {
           onTap: onTap,
           child: Container(
             height: 28,
-            padding: const EdgeInsets.symmetric(horizontal: 14),
+            padding: const EdgeInsets.symmetric(horizontal: MgSpace.xl),
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: filled ? color : c.field,
-              borderRadius: BorderRadius.circular(7),
+              borderRadius: BorderRadius.circular(MgRadius.control),
             ),
             child: Text(
               label,
@@ -901,7 +908,7 @@ class MgCheckRow extends StatelessWidget {
                   onChanged: (checked) => onChanged(checked ?? false),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: MgSpace.m),
               Expanded(child: Text(label, style: mgTextStyle(c))),
             ],
           ),
@@ -964,15 +971,15 @@ class _MgMenuInfoRowState extends State<MgMenuInfoRow> {
           onTap: enabled ? _select : null,
           child: Container(
             height: 26,
-            padding: const EdgeInsets.symmetric(horizontal: 10),
+            padding: const EdgeInsets.symmetric(horizontal: MgSpace.ml),
             decoration: BoxDecoration(
               color: lit ? c.accent : const Color(0x00000000),
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(MgRadius.small),
             ),
             child: Row(
               children: [
                 MgIcon(widget.icon, size: 14, color: color),
-                const SizedBox(width: 8),
+                const SizedBox(width: MgSpace.m),
                 Expanded(
                   child: Text(
                     widget.label,
@@ -982,7 +989,7 @@ class _MgMenuInfoRowState extends State<MgMenuInfoRow> {
                   ),
                 ),
                 if (widget.avatars.isNotEmpty) ...[
-                  const SizedBox(width: 10),
+                  const SizedBox(width: MgSpace.ml),
                   SizedBox(
                     width: 18 + 12.0 * (widget.avatars.length - 1),
                     height: 18,
@@ -1045,14 +1052,17 @@ class MgPeopleList extends StatelessWidget {
     return ConstrainedBox(
       constraints: const BoxConstraints(minWidth: 220, maxWidth: 300),
       child: Glass(
-        radius: 12,
-        padding: const EdgeInsets.all(5),
+        radius: MgRadius.popover,
+        padding: const EdgeInsets.all(MgSpace.xs),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(10, 5, 10, 6),
+              padding: const EdgeInsets.symmetric(
+                horizontal: MgSpace.ml,
+                vertical: MgSpace.s,
+              ),
               child: Text(
                 title,
                 style: mgTextStyle(
@@ -1072,8 +1082,8 @@ class MgPeopleList extends StatelessWidget {
                   for (final person in people)
                     Padding(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
+                        horizontal: MgSpace.ml,
+                        vertical: MgSpace.xs,
                       ),
                       child: Row(
                         children: [
@@ -1083,7 +1093,7 @@ class MgPeopleList extends StatelessWidget {
                               child: person.avatar,
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: MgSpace.m),
                           Expanded(
                             child: Text(
                               person.name,
@@ -1093,7 +1103,7 @@ class MgPeopleList extends StatelessWidget {
                             ),
                           ),
                           if (person.trailing case final trailing?) ...[
-                            const SizedBox(width: 10),
+                            const SizedBox(width: MgSpace.ml),
                             Text(
                               trailing,
                               style: mgTextStyle(
