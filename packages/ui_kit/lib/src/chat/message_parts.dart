@@ -458,7 +458,7 @@ class _ReactionChipState extends State<ReactionChip>
           final entering = child.key == ValueKey(widget.count);
           // The new number comes in from the side it grew from; the old
           // one leaves the other way.
-          final from = entering == _up ? 0.7 : -0.7;
+          final from = _up ? 0.7 : -0.7;
           return FadeTransition(
             opacity: animation,
             child: SlideTransition(
@@ -542,6 +542,8 @@ class _ReactionRowState extends State<ReactionRow> {
   @override
   Widget build(BuildContext context) {
     final reduced = MediaQuery.disableAnimationsOf(context);
+    final shown = {for (final (key, _) in widget.chips) key};
+    _animate.removeWhere((key, _) => !shown.contains(key));
     for (final (key, _) in widget.chips) {
       _animate.putIfAbsent(key, () => _built && !reduced);
     }
@@ -551,7 +553,11 @@ class _ReactionRowState extends State<ReactionRow> {
       runSpacing: 4,
       children: [
         for (final (key, chip) in widget.chips)
-          _PopIn(key: ValueKey(key), animate: _animate[key]!, child: chip),
+          _PopIn(
+            key: ValueKey(key),
+            animate: _animate[key]! && !reduced,
+            child: chip,
+          ),
       ],
     );
   }
