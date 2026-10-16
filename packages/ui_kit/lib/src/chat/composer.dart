@@ -609,51 +609,58 @@ class _ComposerState extends State<Composer> {
             // The square stays put and the glyph morphs: the new button
             // grows and fades in over the old one, which only fades at
             // the very end, so there is never a gap in the square.
-            AnimatedSwitcher(
-              duration: MediaQuery.disableAnimationsOf(context)
-                  ? Duration.zero
-                  : MgMotion.standard,
-              switchInCurve: MgMotion.enter,
-              switchOutCurve: Curves.linear,
-              transitionBuilder: (child, animation) {
-                final entering =
-                    child.key == ValueKey(hasDraft ? 'send' : 'record');
-                if (!entering) {
-                  return FadeTransition(
-                    opacity: CurvedAnimation(
-                      parent: animation,
-                      curve: const Interval(0, 0.15),
-                    ),
-                    child: child,
-                  );
-                }
-                return FadeTransition(
-                  opacity: animation,
-                  child: ScaleTransition(
-                    scale: Tween(begin: 0.7, end: 1.0).animate(animation),
-                    child: child,
-                  ),
-                );
-              },
-              child: hasDraft
-                  ? MgSendButton(
-                      key: const ValueKey('send'),
-                      tooltip: l.send,
-                      onPressed: widget.onSend == null ? null : _send,
-                      onMenu: widget.onSendMenu == null
-                          ? null
-                          : (position) =>
-                                widget.onSendMenu!(_text.text, position),
-                    )
-                  : KeyedSubtree(
-                      key: const ValueKey('record'),
-                      child:
-                          widget.recordButton ??
-                          MgRecordButton(
-                            tooltip: l.record,
-                            onPressed: widget.onRecord,
+            SizedBox(
+              height: MgSendButton.rowHeight,
+              child: Center(
+                child: AnimatedSwitcher(
+                  duration: MediaQuery.disableAnimationsOf(context)
+                      ? Duration.zero
+                      : MgMotion.standard,
+                  switchInCurve: MgMotion.enter,
+                  switchOutCurve: Curves.linear,
+                  transitionBuilder: (child, animation) {
+                    final entering =
+                        child.key == ValueKey(hasDraft ? 'send' : 'record');
+                    if (!entering) {
+                      return IgnorePointer(
+                        child: FadeTransition(
+                          opacity: CurvedAnimation(
+                            parent: animation,
+                            curve: const Interval(0, 0.15),
                           ),
-                    ),
+                          child: child,
+                        ),
+                      );
+                    }
+                    return FadeTransition(
+                      opacity: animation,
+                      child: ScaleTransition(
+                        scale: Tween(begin: 0.7, end: 1.0).animate(animation),
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: hasDraft
+                      ? MgSendButton(
+                          key: const ValueKey('send'),
+                          tooltip: l.send,
+                          onPressed: widget.onSend == null ? null : _send,
+                          onMenu: widget.onSendMenu == null
+                              ? null
+                              : (position) =>
+                                    widget.onSendMenu!(_text.text, position),
+                        )
+                      : KeyedSubtree(
+                          key: const ValueKey('record'),
+                          child:
+                              widget.recordButton ??
+                              MgRecordButton(
+                                tooltip: l.record,
+                                onPressed: widget.onRecord,
+                              ),
+                        ),
+                ),
+              ),
             ),
           ],
         ),
