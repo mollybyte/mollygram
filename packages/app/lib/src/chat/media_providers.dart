@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show ValueNotifier;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mollygram_media/mollygram_media.dart';
 
@@ -13,6 +14,26 @@ final circlePlayerPoolProvider = Provider<CirclePlayerPool>((ref) {
   );
   ref.onDispose(() => unawaited(pool.dispose()));
   return pool;
+});
+
+/// The video message that is playing with sound, which the player capsule
+/// in the chat header shows. Null when no circle is playing aloud.
+typedef ActiveCircle = ({int chatId, int messageId, CirclePlayer player});
+
+final activeCircleProvider = Provider<ValueNotifier<ActiveCircle?>>((ref) {
+  final active = ValueNotifier<ActiveCircle?>(null);
+  // A voice message or music starting takes the sound from the circle.
+  final audio = ref.read(audioPlayerProvider);
+  void onTrack() {
+    if (audio.track.value != null) active.value = null;
+  }
+
+  audio.track.addListener(onTrack);
+  ref.onDispose(() {
+    audio.track.removeListener(onTrack);
+    active.dispose();
+  });
+  return active;
 });
 
 /// The one player for voice messages and music: starting a track stops

@@ -23,7 +23,8 @@ import 'voice_autoplay.dart';
 /// the right of the chat header, like the player bar of the official
 /// client: play or pause, who sent it and what it is, the time, the speed
 /// and a close button. The title shows the message in its chat. Nothing
-/// is drawn while nothing is loaded.
+/// is drawn while nothing is loaded. A video circle that plays with sound
+/// takes the same place, with its own capsule.
 class AudioPlayerCapsule extends ConsumerWidget {
   const AudioPlayerCapsule({super.key, required this.chatId});
 
@@ -35,30 +36,186 @@ class AudioPlayerCapsule extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final player = ref.watch(audioPlayerProvider);
-    return ValueListenableBuilder(
-      valueListenable: player.track,
-      builder: (context, track, _) => AnimatedSwitcher(
-        duration: _duration,
-        switchInCurve: Curves.easeOutCubic,
-        switchOutCurve: Curves.easeInCubic,
-        transitionBuilder: (child, animation) => FadeTransition(
-          opacity: animation,
-          child: SlideTransition(
-            position: Tween(
-              begin: const Offset(0.08, 0),
-              end: Offset.zero,
-            ).animate(animation),
-            child: child,
+    final active = ref.watch(activeCircleProvider);
+    // One switcher for both, so a handoff between a voice message and a
+    // circle never lays out two full capsules at once.
+    return ListenableBuilder(
+      listenable: Listenable.merge([player.track, active]),
+      builder: (context, _) {
+        final track = player.track.value;
+        final circle = active.value;
+        return AnimatedSwitcher(
+          duration: _duration,
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeInCubic,
+          layoutBuilder: (current, previous) => Stack(
+            alignment: Alignment.centerRight,
+            children: [...previous, ?current],
           ),
-        ),
-        child: track is AudioTrackKey
-            ? _Capsule(
-                key: ValueKey(track),
-                track: track,
-                player: player,
-                currentChatId: chatId,
-              )
-            : const SizedBox.shrink(),
+          transitionBuilder: (child, animation) => FadeTransition(
+            opacity: animation,
+            child: SlideTransition(
+              position: Tween(
+                begin: const Offset(0.08, 0),
+                end: Offset.zero,
+              ).animate(animation),
+              child: child,
+            ),
+          ),
+          child: circle != null
+              ? _CircleCapsule(
+                  key: ValueKey((circle.chatId, circle.messageId)),
+                  circle: circle,
+                  active: active,
+                  currentChatId: chatId,
+                )
+              : track is AudioTrackKey
+              ? _Capsule(
+                  key: ValueKey(track),
+                  track: track,
+                  player: player,
+                  currentChatId: chatId,
+                )
+              : const SizedBox.shrink(),
+        );
+      },
+    );
+  }
+}
+
+class _CircleCapsule extends ConsumerWidget {
+  const _CircleCapsule({
+    super.key,
+    required this.circle,
+    required this.active,
+    required this.currentChatId,
+  });
+
+  final ActiveCircle circle;
+  final ValueNotifier<ActiveCircle?> active;
+  final int currentChatId;
+
+  void _show(WidgetRef ref) {
+    ref
+        .read(messageJumpProvider.notifier)
+        .request(circle.chatId, circle.messageId);
+    if (circle.chatId != currentChatId) {
+      ref.read(workspaceControllerProvider).open(circle.chatId);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final c = MgColors.of(context);
+    final store = ref
+        .watch(telegramSessionProvider)
+        .asData
+        ?.value
+        .conversations
+        .store;
+    final message = store?.message(circle.chatId, circle.messageId);
+    final title = message == null || store == null
+        ? ref.watch(chatEntryProvider(circle.chatId)).value?.title ?? ''
+        : nameOfSender(l10n, store, message.sender);
+    final player = circle.player;
+    final tabular = const [FontFeature.tabularFigures()];
+    return Glass(
+      radius: 22,
+      padding: const EdgeInsets.all(5),
+      child: ListenableBuilder(
+        listenable: Listenable.merge([
+          player.playing,
+          player.position,
+          player.duration,
+          player.rate,
+        ]),
+        builder: (context, _) {
+          final playing = player.playing.value;
+          final length = player.duration.value;
+          final rate = player.rate.value;
+          const rates = AudioTrackPlayer.rates;
+          final time = length > Duration.zero
+              ? '${formatDuration(player.position.value.inSeconds)} / '
+                    '${formatDuration(length.inSeconds)}'
+              : formatDuration(player.position.value.inSeconds);
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              MgIconButton(
+                icon: playing ? MgIcons.pause : MgIcons.play,
+                tooltip: playing ? l10n.pause : l10n.play,
+                onPressed: () =>
+                    unawaited(playing ? player.pause() : player.play()),
+              ),
+              const SizedBox(width: 6),
+              Tooltip(
+                message: l10n.showInChat,
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => _show(ref),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 180),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: mgTextStyle(
+                              c,
+                              weight: FontWeight.w600,
+                              height: 1.2,
+                            ),
+                          ),
+                          Text(
+                            l10n.previewVideoNote,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: mgTextStyle(
+                              c,
+                              size: MgType.caption,
+                              color: c.fg2,
+                              height: 1.2,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                time,
+                style: mgTextStyle(
+                  c,
+                  size: MgType.caption,
+                  color: c.fg2,
+                ).copyWith(fontFeatures: tabular),
+              ),
+              const SizedBox(width: 8),
+              SpeedButton(
+                rate: rate,
+                onTap: () => unawaited(
+                  player.setRate(
+                    rates[(rates.indexOf(rate) + 1) % rates.length],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 2),
+              MgIconButton(
+                icon: MgIcons.close,
+                tooltip: l10n.close,
+                onPressed: () => active.value = null,
+              ),
+            ],
+          );
+        },
       ),
     );
   }

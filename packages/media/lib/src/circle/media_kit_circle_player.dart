@@ -20,6 +20,8 @@ class MediaKitCirclePlayer implements CirclePlayer {
     _subscriptions = [
       _player.stream.position.listen(_onPosition),
       _player.stream.playing.listen((v) => _playing.value = v),
+      _player.stream.duration.listen((v) => _duration.value = v),
+      _player.stream.rate.listen((v) => _rate.value = v),
       _player.stream.error.listen(_onError),
     ];
     _ready = _init();
@@ -49,6 +51,9 @@ class MediaKitCirclePlayer implements CirclePlayer {
 
   final _status = ValueNotifier(CircleStatus.idle);
   final _playing = ValueNotifier(false);
+  final _position = ValueNotifier(Duration.zero);
+  final _duration = ValueNotifier(Duration.zero);
+  final _rate = ValueNotifier(1.0);
   CircleSource? _source;
 
   // Position events count only after the current open() returned; until then
@@ -72,11 +77,25 @@ class MediaKitCirclePlayer implements CirclePlayer {
   ValueListenable<bool> get playing => _playing;
 
   @override
+  ValueListenable<Duration> get position => _position;
+
+  @override
+  ValueListenable<Duration> get duration => _duration;
+
+  @override
+  ValueListenable<double> get rate => _rate;
+
+  @override
+  Future<void> setRate(double rate) => _player.setRate(rate);
+
+  @override
   Future<void> open(CircleSource source, {bool play = true}) async {
     final generation = ++_generation;
     _source = source;
     _waitingForFrames = false;
     _status.value = CircleStatus.loading;
+    _duration.value = Duration.zero;
+    _position.value = Duration.zero;
     await _ready;
     if (_disposed || generation != _generation) return;
     await _player.open(Media(source.uri), play: play);
@@ -85,6 +104,7 @@ class MediaKitCirclePlayer implements CirclePlayer {
   }
 
   void _onPosition(Duration position) {
+    _position.value = position;
     if (!_waitingForFrames || position <= Duration.zero) return;
     _waitingForFrames = false;
     final generation = _generation;
@@ -121,6 +141,9 @@ class MediaKitCirclePlayer implements CirclePlayer {
     _status.value = CircleStatus.idle;
     await _player.stop();
     await _player.setVolume(0);
+    await _player.setRate(1);
+    _position.value = Duration.zero;
+    _duration.value = Duration.zero;
   }
 
   @override
@@ -142,6 +165,9 @@ class MediaKitCirclePlayer implements CirclePlayer {
     }
     _status.dispose();
     _playing.dispose();
+    _position.dispose();
+    _duration.dispose();
+    _rate.dispose();
     await _player.dispose();
   }
 }
