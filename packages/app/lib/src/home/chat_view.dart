@@ -1502,6 +1502,8 @@ class _ChatViewState extends ConsumerState<ChatView> {
     onMenu: (row, position) => unawaited(_showThreadMenu(row, position)),
     onSelectToggle: _toggleSelected,
     onViewMedia: _actions.onViewMedia,
+    onCancelSend: _actions.onCancelSend,
+    onRetrySend: _actions.onRetrySend,
     onTextSelected: _actions.onTextSelected,
     onPollVote: _actions.onPollVote,
     onPollVoters: _actions.onPollVoters,
@@ -1760,6 +1762,12 @@ class _ChatViewState extends ConsumerState<ChatView> {
     onOpenForwardSource: (origin) => unawaited(_openForwardSource(origin)),
     onOpenSender: (sender) => unawaited(_openSender(sender)),
     onMenu: (row, position) => unawaited(_showMenu(row, position)),
+    onCancelSend: (message) => unawaited(
+      _quiet(_conversations.cancelSending(message.chatId, [message.id])),
+    ),
+    onRetrySend: (message) => unawaited(
+      _quiet(_conversations.resendMessages(message.chatId, [message.id])),
+    ),
     onViewMedia: (message) => unawaited(
       showChatMediaViewer(
         context,

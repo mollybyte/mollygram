@@ -1790,6 +1790,24 @@ abstract class AppLocalizations {
   /// **'Remove'**
   String get removeFromSend;
 
+  /// No description provided for @cancelUpload.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel sending'**
+  String get cancelUpload;
+
+  /// No description provided for @retryUpload.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get retryUpload;
+
+  /// No description provided for @discardUpload.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get discardUpload;
+
   /// No description provided for @sendAsFiles.
   ///
   /// In en, this message translates to:

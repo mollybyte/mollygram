@@ -1006,6 +1006,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get removeFromSend => 'Remove';
 
   @override
+  String get cancelUpload => 'Cancel sending';
+
+  @override
+  String get retryUpload => 'Try again';
+
+  @override
+  String get discardUpload => 'Delete';
+
+  @override
   String get sendAsFiles => 'Send as files';
 
   @override

@@ -25,6 +25,7 @@ import 'formatted_text.dart';
 import 'media_content.dart';
 import 'other_content.dart';
 import 'td_file.dart';
+import 'upload_overlay.dart';
 
 /// One row of the chat: a single message, or the photos and videos of an
 /// album sent together.
@@ -126,6 +127,8 @@ class MessageRowActions {
     this.onMenu,
     this.onOpen,
     this.onViewMedia,
+    this.onCancelSend,
+    this.onRetrySend,
     this.onJump,
     this.onSelectToggle,
     this.onTextSelected,
@@ -157,6 +160,13 @@ class MessageRowActions {
 
   /// A click on a photo, video or GIF, which opens the media viewer.
   final void Function(ConversationMessage message)? onViewMedia;
+
+  /// The cross on a photo or video still going up, or the delete button
+  /// of one that failed.
+  final void Function(ConversationMessage message)? onCancelSend;
+
+  /// Try again, on a photo or video that failed to send.
+  final void Function(ConversationMessage message)? onRetrySend;
 
   /// A click on a reply's quote, which scrolls to the message it answers.
   final void Function(int messageId)? onJump;
@@ -1064,7 +1074,13 @@ _Visual? _visualFor(MessageRow row, MessageRowActions actions) {
       return null;
   }
   return (
-    widget: _concealIfNeeded(message, size, media, onOpen),
+    // The upload controls stay above a spoiler or timer cover.
+    widget: withUploadOverlay(
+      message: message,
+      child: _concealIfNeeded(message, size, media, onOpen),
+      onCancel: actions.onCancelSend,
+      onRetry: actions.onRetrySend,
+    ),
     width: size.width,
   );
 }
@@ -1138,11 +1154,16 @@ _Visual _album(MessageRow row, MessageRowActions actions) {
                   (width - gap * (count - 1)) * ratios[i] / sum,
                   height,
                 );
-                return _concealIfNeeded(
-                  cells[i],
-                  size,
-                  _albumCell(cells[i], size, _viewer(cells[i], actions)),
-                  onOpen,
+                return withUploadOverlay(
+                  message: cells[i],
+                  child: _concealIfNeeded(
+                    cells[i],
+                    size,
+                    _albumCell(cells[i], size, _viewer(cells[i], actions)),
+                    onOpen,
+                  ),
+                  onCancel: actions.onCancelSend,
+                  onRetry: actions.onRetrySend,
                 );
               }(),
             ),

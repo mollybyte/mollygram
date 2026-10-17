@@ -1011,6 +1011,15 @@ class AppLocalizationsRu extends AppLocalizations {
   String get removeFromSend => 'Убрать';
 
   @override
+  String get cancelUpload => 'Отменить отправку';
+
+  @override
+  String get retryUpload => 'Повторить';
+
+  @override
+  String get discardUpload => 'Удалить';
+
+  @override
   String get sendAsFiles => 'Отправить как файлы';
 
   @override
